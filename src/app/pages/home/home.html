@@ -1,0 +1,187 @@
+<div class="home-page">
+    <section id="hero" class="hero-section py-30">
+
+        <div class="hero-bubbles">
+            <a
+                *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
+                class="hero-bubble"
+                [ngClass]="'hero-bubble--' + (i + 1)"
+                [routerLink]="'/ask-and-contact'"
+                [queryParams]="{ question: bubble }">
+                {{ bubble }}
+            </a>
+        </div>
+        <div class="hero-surface" aria-hidden="true"></div>
+
+        <div class="hero-content">
+            <div
+                class="w-fit mx-auto rounded-full border border-[var(--colors-green-30)] text-[var(--color-text-caption)] bg-white px-4 py-1 text-sm font-medium">
+                <span
+                    class="text-[var(--special-secondary)] whitespace-break-spaces ">1,700,556,000+</span>
+                Muslim brothers &amp; sisters
+                <wbr>
+                around the world
+            </div>
+            <h1 class="hero-title">
+                To <span>Understand</span><br />You Just Need To
+                <br>
+                <span>Ask</span>
+            </h1>
+
+            <form class="hero-search" aria-label="Search answered questions">
+                <label class="sr-only" for="home-search">Search question</label>
+                <div class="search-wrapper">
+                    <img src="/icons/icons 24/select=search.svg" alt="Search"
+                        class="search-icon" />
+                    <input id="home-search" type="search"
+                        placeholder="Do you have a religious question in mind?" />
+                </div>
+            </form>
+
+            <div class="hero-stat-line">
+                <span
+                    *ngFor="let stat of heroStats; let isLast = last; trackBy: trackByIndex"
+                    class="hero-stat-item">
+
+                    <strong>{{ stat.value }}</strong> {{ stat.label }}
+                    <span *ngIf="!isLast" class="stat-separator">•</span>
+                </span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="section-block what-section">
+        <div class="section-shell section-shell--soft">
+            <div class="section-heading">
+                <p class="eyebrow">What is "Ask a Muslim"</p>
+                <h2>A trusted platform to answer questions and guide Muslims
+                    &amp; non-Muslims</h2>
+
+            </div>
+
+            <div class="feature-grid">
+                <article
+                    *ngFor="let feature of featureCards; trackBy: trackByIndex"
+                    class="feature-card">
+                    <div class="feature-icon">
+                        <img [src]="feature.icon"
+                            [alt]="feature.title + ' icon'" loading="lazy" />
+                    </div>
+                    <div class="feature-copy">
+                        <h3>{{ feature.title }}</h3>
+                        <p>{{ feature.description }}</p>
+                    </div>
+                    <div class="feature-cta">
+                        <a *ngIf="!feature.status" [routerLink]="feature.href"
+                            class="feature-link">
+                            {{ feature.cta }}
+                            <img src="/icons/icons 24/select=arrow right.svg"
+                                alt="Go" />
+                        </a>
+                        <span *ngIf="feature.status === 'soon'"
+                            class="feature-soon">{{ feature.cta }}</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-block events-section">
+        <div class="section-shell section-shell--raised">
+            <div class="section-heading">
+                <p class="eyebrow">Events and Sessions</p>
+                <h2>Check out the latest &amp; upcoming events to gain answers
+                    from scholars</h2>
+                <p>We curate online and offline experiences so you can interact
+                    live, ask nuanced questions, and connect with the
+                    community.</p>
+            </div>
+
+            <div class="events-grid">
+                <article *ngFor="let event of eventCards; trackBy: trackByIndex"
+                    class="event-card">
+                    <div class="event-image">
+                        <img [src]="event.image" [alt]="event.title"
+                            loading="lazy" />
+                        <button type="button" class="play-pill">
+                            <img src="/icons/icons 24/select=video.svg"
+                                alt="Play" />
+                        </button>
+                    </div>
+                    <div class="event-body">
+                        <span class="event-date">{{ event.date }}</span>
+                        <p class="event-tag">{{ event.tag }}</p>
+                        <h3>{{ event.title }}</h3>
+                        <p class="event-description">{{ event.description }}</p>
+                        <div class="event-speaker">
+                            <img src="/Images/profile picture navbar.png"
+                                alt="{{ event.speaker }}" />
+                            <div>
+                                <p>{{ event.speaker }}</p>
+                                <span>{{ event.speakerRole }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="section-cta">
+                <a class="button" [routerLink]="'/account'">Join for
+                    Free</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-block islam-section">
+        <div class="section-shell section-shell--split">
+            <div class="islam-grid">
+                <div class="islam-copy">
+                    <h2>What is Islam?</h2>
+                    <p>
+                        Islam is a monotheistic Abrahamic religion
+                        that teaches that there is only one God and
+                        all prophets including Muses, Esa and
+                        Muhammad are messengers of God.
+                        It has 5 pillars that every Muslim must do.
+                    </p>
+                    <a class="secondary-btn" [routerLink]="'/roadmap'">Check the
+                        Roadmap</a>
+                </div>
+                <div class="pillars-list">
+                    <div class="pillar-item"
+                        *ngFor="let pillar of pillars; trackBy: trackByIndex">
+                        <span class="pillar-number">{{ pillar.number }}</span>
+                        <div class="pillar-copy">
+                            <p class="pillar-title">
+                                <span class="pillar-arabic">{{
+                                    pillar.title.split(' - ')[0] || pillar.title
+                                    }}</span>
+                                <span class="pillar-dash"
+                                    *ngIf="pillar.title.includes(' - ')"> -
+                                </span>
+                                <span class="pillar-english">{{
+                                    pillar.title.split(' - ')[1] }}</span>
+                            </p>
+                            <p class="pillar-description">{{ pillar.description
+                                }}</p>
+                        </div>
+                        <img src="/icons/icons 24/select=arrow right.svg"
+                            alt="Open pillar details" class="pillar-arrow" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="advice-section">
+        <p class="eyebrow">Here is a good advice for you!</p>
+        <blockquote>
+            {{ adviceQuote }}
+        </blockquote>
+        <a class="primary-btn" [routerLink]="'/ask-and-contact'">Start
+            Asking</a>
+        <p class="advice-caption">“What is the most important thing in your life
+            than to understand the purpose of it.”</p>
+    </section>
+</div>

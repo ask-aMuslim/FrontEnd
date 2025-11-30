@@ -1,0 +1,66 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+    --font-family-english: Poppins;
+    --font-family-arabic: IBM Plex Sans Arabic;
+    --font-size-10: 10px;
+    --font-size-11: 11px;
+    --font-size-12: 12px;
+    --font-size-14: 14px;
+    --font-size-16: 16px;
+    --font-size-18: 18px;
+    --font-size-20: 20px;
+    --font-size-24: 24px;
+    --font-size-28: 28px;
+    --font-size-32: 32px;
+    --font-size-36: 36px;
+    --font-size-40: 40px;
+    --font-size-44: 44px;
+    --font-size-48: 48px;
+    --font-size-52: 52px;
+    --font-size-56: 56px;
+    --font-size-60: 60px;
+    --font-size-64: 64px;
+    --font-size-68: 68px;
+    --font-size-72: 72px;
+    --font-weights-thin: 100rem;
+    --font-weights-light: 300rem;
+    --font-weights-regular: 400rem;
+    --font-weights-medium: 500rem;
+    --font-weights-semi-bold: 600rem;
+    --font-weights-bold: 700rem;
+    --font-weights-extra-bold: 800rem;
+    --font-weights-black: 900rem;
+    --font-letterspacing-n-2: -2px;
+    --font-letterspacing-n-1-5: -1.5px;
+    --font-letterspacing-n-1: -1px;
+    --font-letterspacing-n-0-5: -0.5px;
+    --font-letterspacing-n0: 0px;
+    --font-letterspacing-n0-5: 0.5px;
+    --font-letterspacing-n1: 1px;
+    --font-letterspacing-n1-5: 1.5px;
+    --font-letterspacing-n2: 2px;
+    --font-lineheight-100: 100px;
+    --font-lineheight-105: 105px;
+    --font-lineheight-110: 110px;
+    --font-lineheight-115: 115px;
+    --font-lineheight-120: 120px;
+    --font-lineheight-125: 125px;
+    --font-lineheight-130: 130px;
+    --font-lineheight-135: 135px;
+    --font-lineheight-140: 140px;
+    --font-lineheight-145: 145px;
+    --font-lineheight-150: 150px;
+    --font-lineheight-155: 155px;
+    --font-lineheight-160: 160px;
+    --font-lineheight-165: 165px;
+    --font-lineheight-170: 170px;
+    --font-lineheight-175: 175px;
+    --font-lineheight-180: 180px;
+    --font-lineheight-185: 185px;
+    --font-lineheight-190: 190px;
+    --font-lineheight-195: 195px;
+    --font-lineheight-200: 200px;
+}

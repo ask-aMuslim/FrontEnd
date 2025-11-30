@@ -1,0 +1,65 @@
+<footer class="site-footer">
+    <div class="footer-shell">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/footer/footer logo big.svg" alt="Ask A Muslim"
+                    class="footer-logo" />
+                <p class="footer-copy">
+                    Subscribe to our newsletter to receive the latest updates.
+                </p>
+                <form class="footer-subscribe"
+                    aria-label="Newsletter subscription">
+                    <label class="sr-only" for="footer-email">Your email</label>
+                    <input id="footer-email" type="email"
+                        placeholder="email@examples.com" />
+                    <button type="submit">Subscribe</button>
+                </form>
+            </div>
+
+            <div class="footer-grid">
+                <div class="footer-column" *ngFor="let column of footerColumns">
+                    <p class="column-title">{{ column.title }}</p>
+                    <ul>
+                        <li
+                            *ngFor="let link of column.links; trackBy: trackByLabel">
+                            <a [routerLink]="link.href"
+                                *ngIf="link.href.startsWith('/') else externalLink">{{
+                                link.label }}</a>
+                            <ng-template #externalLink>
+                                <a [href]="link.href" rel="noreferrer">{{
+                                    link.label }}</a>
+                            </ng-template>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <p class="column-title">Find us on</p>
+                    <div class="social-row">
+                        <a
+                            *ngFor="let social of socialLinks; trackBy: trackByLabel"
+                            [href]="social.href" target="_blank" rel="noopener">
+                            <img [src]="social.icon" [alt]="social.label" />
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="bottom-left">
+                <p>© 2025 Ask A Muslim — Built with DevandroPies</p>
+            </div>
+            <div class="store-buttons">
+                <a *ngFor="let store of storeBadges; trackBy: trackByLabel"
+                    [href]="store.href" class="store-badge">
+                    <img [src]="store.icon" [alt]="store.subtitle" />
+                    <div>
+                        <small>{{ store.title }}</small>
+                        <strong>{{ store.subtitle }}</strong>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,46 @@
+@import "./colors.css";
+@import "./typography.css";
+@import "./spacing.css";
+@import "./borders.css";
+@import "./shadows.css";
+@import "./breakpoints.css";
+
+:root {
+  /* Colors */
+  --color-primary: var(--colors-system-sys-blue-500);
+  --color-primary-hover: var(--colors-system-sys-blue-600);
+  --color-secondary: var(--colors-system-sys-green-500);
+  --color-secondary-hover: var(--colors-system-sys-green-600);
+  --color-accent: var(--colors-system-sys-orange-500);
+  --color-accent-hover: var(--colors-system-sys-orange-600);
+  --color-surface-primary: #E8F5E8;
+  /* Typography */
+  --font-family-base: 'Roboto', sans-serif;
+  --font-size-base: 16px;
+  --line-height-base: 1.5;
+
+  /* Spacing */
+  --spacing-unit: 8px;
+
+  /* Borders */
+  --border-radius-default: 8px;
+
+  /* Shadows */
+  --shadow-base: var(--shadows-shadow-md);
+
+  /* Brand colors used by home, header and footer */
+  --special-primary: #156b40;
+  --special-primary-hovering: #115C36;
+  --special-primary-clicked: #0C4E2D;
+  --special-primary-6: rgba(21, 107, 64, 0.06);
+  --special-primary-10: rgba(21, 107, 64, 0.10);
+  --special-secondary: #cda736;
+  --color-text-caption: #6C757D;
+  --color-text-placeholder: #ADB5BD;
+  --color-selected-surface: #156B401A;
+  --color-selected-surface-secondary: #ECC1400F;
+
+  /* Convenience aliases used by Tailwind config and layout */
+  --spacing-md: 16px;
+  --radius-md: 12px;
+}

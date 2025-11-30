@@ -1,5 +1,5 @@
 {
-  "name": "ask-amuslim",
+  "name": "ask-a-muslim",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:AskAMuslim": "node dist/AskAMuslim/server/server.mjs"
+    "serve:ssr:AskAMuslim": "node dist/AskAMuslim/server/server.mjs",
+    "build:tokens": "style-dictionary build"
   },
   "prettier": {
     "printWidth": 100,
@@ -31,7 +32,12 @@
     "@angular/platform-server": "^20.3.0",
     "@angular/router": "^20.3.0",
     "@angular/ssr": "^20.3.7",
+    "@fortawesome/fontawesome-free": "^7.1.0",
+    "@tailwindcss/postcss": "^4.1.17",
     "express": "^5.1.0",
+    "flowbite": "^3.1.2",
+    "gsap": "^3.13.0",
+    "postcss": "^8.5.6",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -48,6 +54,8 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "style-dictionary": "^5.1.1",
+    "tailwindcss": "^4.1.17",
     "typescript": "~5.9.2"
   }
 }

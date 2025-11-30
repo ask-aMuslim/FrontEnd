@@ -1,0 +1,377 @@
+{
+  "Colors": {
+    "$type": "color",
+    "Buttons": {
+      "primary": {
+        "normal": {
+          "$value": "{colors.green.100}"
+        },
+        "hovering": {
+          "$value": "{colors.green.200}"
+        },
+        "clicked": {
+          "$value": "{colors.green.300}"
+        },
+        "disabled": {
+          "$value": "{colors.rare-grays.40}"
+        }
+      },
+      "secondary": {
+        "normal": {
+          "$value": "{colors.orange.100}"
+        },
+        "hovering": {
+          "$value": "{colors.orange.200}"
+        },
+        "clicked": {
+          "$value": "{colors.orange.300}"
+        }
+      },
+      "neutral": {
+        "normal": {
+          "$value": "{colors.rare-grays.20}"
+        },
+        "hovering": {
+          "$value": "{colors.rare-grays.30}"
+        },
+        "clicked": {
+          "$value": "{colors.rare-grays.40}"
+        }
+      }
+    },
+    "Backgrounds": {
+      "base": {
+        "$value": "{colors.rare-grays.0}"
+      },
+      "baseSurface": {
+        "$value": "{colors.rare-grays.10}"
+      }
+    },
+    "Cards": {
+      "main": {
+        "$value": "{colors.rare-grays.0}"
+      },
+      "surface1": {
+        "$value": "{colors.rare-grays.10}"
+      },
+      "surface_primary": {
+        "$value": "{colors.system.sys-green.10}"
+      },
+      "surface_secondary": {
+        "$value": "{colors.orange.10}"
+      },
+      "surface2": {
+        "$value": "{colors.rare-grays.20}"
+      },
+      "surface3": {
+        "$value": "{colors.rare-grays.30}"
+      },
+      "surface4": {
+        "$value": "{colors.rare-grays.40}"
+      }
+    },
+    "Text&Icons": {
+      "title": {
+        "$value": "{colors.green.1000}"
+      },
+      "body": {
+        "$value": "{colors.rare-grays.80}"
+      },
+      "caption": {
+        "$value": "{colors.rare-grays.60}"
+      },
+      "placeholder": {
+        "$value": "{colors.rare-grays.50}"
+      },
+      "onPrimary": {
+        "$value": "{colors.rare-grays.0}"
+      },
+      "onSecondary": {
+        "$value": "{colors.orange.1000}"
+      },
+      "onNeutral": {
+        "$value": "{colors.rare-grays.100}"
+      },
+      "specialPrimary": {
+        "$value": "{colors.green.100}"
+      },
+      "specialSecondary": {
+        "$value": "{colors.orange.100}"
+      },
+      "specialNeutral": {
+        "$value": "{colors.rare-grays.80}"
+      }
+    },
+    "Chips": {
+      "data": {
+        "$value": "{colors.green.100}"
+      },
+      "dataSurface": {
+        "$value": "{colors.green.10}"
+      },
+      "selectedData": {
+        "$value": "{app-code.brand-primary}"
+      },
+      "selectedDataSurface": {
+        "$value": "{app-code.brand-primary_10%}"
+      },
+      "data_2": {
+        "$value": "{colors.orange.100}"
+      },
+      "dataSurface_2": {
+        "$value": "{colors.orange.10}"
+      },
+      "selectedData_2": {
+        "$value": "{app-code.brand-secondary}"
+      },
+      "selectedDataSurface_2": {
+        "$value": "{app-code.brand-secondary_6%}"
+      },
+      "selectedDataSurface_hover": {
+        "$value": "{app-code.brand-secondary_10%}"
+      }
+    },
+    "Border": {
+      "normal": {
+        "low": {
+          "$value": "{colors.rare-grays.20}"
+        },
+        "medium": {
+          "$value": "{colors.rare-grays.50}"
+        },
+        "high": {
+          "$value": "{Colors.Text&Icons.title}"
+        }
+      },
+      "brand": {
+        "low": {
+          "$value": "{colors.green.30}"
+        },
+        "medium": {
+          "$value": "{colors.green.50}"
+        },
+        "high": {
+          "$value": "{colors.green.100}"
+        },
+        "low_2": {
+          "$value": "{colors.orange.20}"
+        },
+        "medium_2": {
+          "$value": "{colors.orange.50}"
+        },
+        "high_2": {
+          "$value": "{colors.orange.100}"
+        }
+      }
+    },
+    "Semantic": {
+      "success": {
+        "light": {
+          "$value": "{colors.system.sys-green.10}"
+        },
+        "base": {
+          "$value": "{colors.system.sys-green.100}"
+        },
+        "dark": {
+          "$value": "{colors.system.sys-green.500}"
+        }
+      },
+      "critical": {
+        "light": {
+          "$value": "{colors.system.sys-red.10}"
+        },
+        "base": {
+          "$value": "{colors.system.sys-red.100}"
+        },
+        "dark": {
+          "$value": "{colors.system.sys-red.500}"
+        }
+      },
+      "warning": {
+        "light": {
+          "$value": "{colors.system.sys-orange.10}"
+        },
+        "base": {
+          "$value": "{colors.system.sys-orange.100}"
+        },
+        "dark": {
+          "$value": "{colors.system.sys-orange.500}"
+        }
+      },
+      "info": {
+        "light": {
+          "$value": "{colors.system.sys-blue.10}"
+        },
+        "base": {
+          "$value": "{colors.system.sys-blue.100}"
+        },
+        "dark": {
+          "$value": "{colors.system.sys-blue.500}"
+        }
+      }
+    }
+  },
+  "Radius": {
+    "$type": "dimension",
+    "default": {
+      "$value": "{numbers.grids.g8}"
+    },
+    "inner": {
+      "$value": "{numbers.grids.g4}"
+    },
+    "none": {
+      "$value": "{numbers.grids.g0}"
+    },
+    "Outer?!": {
+      "$value": "40px"
+    },
+    "full": {
+      "$value": "{numbers.grids.g10000000}"
+    }
+  },
+  "Stroke": {
+    "$type": "dimension",
+    "thin": {
+      "$value": "{numbers.s-num.n0-5}"
+    },
+    "normal": {
+      "$value": "{numbers.s-num.n1-5}"
+    },
+    "thick": {
+      "$value": "{numbers.s-num.n2}"
+    }
+  },
+  "Spaces": {
+    "$type": "dimension",
+    "gap": {
+      "x": {
+        "$value": "{numbers.grids.g4}"
+      },
+      "2x": {
+        "$value": "{numbers.grids.g8}"
+      },
+      "3x": {
+        "$value": "{numbers.grids.g12}"
+      },
+      "4x": {
+        "$value": "{numbers.grids.g16}"
+      },
+      "5x": {
+        "$value": "{numbers.grids.g20}"
+      },
+      "6x": {
+        "$value": "{numbers.grids.g24}"
+      },
+      "7x": {
+        "$value": "{numbers.grids.g28}"
+      },
+      "8x": {
+        "$value": "{numbers.grids.g32}"
+      },
+      "9x": {
+        "$value": "{numbers.grids.g36}"
+      },
+      "10x": {
+        "$value": "{numbers.grids.g40}"
+      },
+      "11x": {
+        "$value": "{numbers.grids.g44}"
+      },
+      "12x": {
+        "$value": "{numbers.grids.g48}"
+      },
+      "13x": {
+        "$value": "{numbers.grids.g52}"
+      },
+      "14x": {
+        "$value": "{numbers.grids.g56}"
+      },
+      "page-margin": {
+        "$value": "{numbers.grids.g96}"
+      }
+    }
+  },
+  "Shadow": {
+    "$type": "color",
+    "drop-colors": {
+      "light": {
+        "$value": "{colors.rare-grays.60}"
+      },
+      "medium": {
+        "$value": "{colors.rare-grays.70}"
+      },
+      "dark": {
+        "$value": "{colors.rare-grays.80}"
+      }
+    }
+  },
+  "Typography": {
+    "family": {
+      "$type": "string",
+      "default": {
+        "$value": "{font.family.English}"
+      },
+      "special": {
+        "$value": "{font.family.Arabic}"
+      }
+    },
+    "types": {
+      "$type": "dimension",
+      "h1": {
+        "$value": "{font.size.32}"
+      },
+      "h2": {
+        "$value": "{font.size.28}"
+      },
+      "h3": {
+        "$value": "{font.size.24}"
+      },
+      "h4": {
+        "$value": "{font.size.20}"
+      },
+      "body1": {
+        "$value": "{font.size.16}"
+      },
+      "body2": {
+        "$value": "{font.size.14}"
+      },
+      "placeholder": {
+        "$value": "{font.size.12}"
+      },
+      "caption": {
+        "$value": "{font.size.10}"
+      },
+      "Body": {
+        "$value": "18px"
+      }
+    },
+    "styles": {
+      "$type": "dimension",
+      "weights": {
+        "Regular": {
+          "$value": "{font.weights.Regular}"
+        },
+        "Medium": {
+          "$value": "{font.weights.Medium}"
+        },
+        "Bold": {
+          "$value": "{font.weights.Bold}"
+        },
+        "Semibold!": {
+          "$value": "{font.weights.SemiBold}"
+        }
+      },
+      "letterspacing": {
+        "closer": {
+          "$value": "{font.letterspacing.n-1}"
+        },
+        "normal": {
+          "$value": "{font.letterspacing.n0}"
+        },
+        "away": {
+          "$value": "{font.letterspacing.n1}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,326 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.site-header {
+    background: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.nav-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.75rem clamp(1rem, 4vw, 2.5rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+}
+
+.brand img {
+    height: 58px;
+}
+
+.primary-nav {
+    margin-left: clamp(1rem, 5vw, 4rem);
+    flex: 1;
+}
+
+.primary-nav ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+}
+
+.nav-link {
+    position: relative;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-caption);
+    white-space: nowrap;
+}
+
+.nav-link:hover {
+    color: var(--special-primary-hovering);
+}
+
+
+
+.active {
+    &:hover {
+        a {
+            color: var(--special-primary-hovering);
+        }
+
+        border-bottom: 2px solid var(--special-primary-hovering);
+    }
+
+    a {
+        color: var(--special-primary);
+    }
+
+    border-bottom: 2px solid var(--special-primary);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem 0.5rem 1rem;
+    background: var(--color-surface-primary);
+    border-radius: var(--border-radius-default);
+}
+
+.user-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.user-name {
+    color: #111;
+    font-weight: var(--font-weights-medium);
+}
+
+.user-meta {
+    color: var(--special-primary);
+    font-size: 0.875rem;
+}
+
+.user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.mobile-toggle {
+    background: transparent;
+    border: none;
+    color: #1d3122;
+    display: inline-flex;
+    padding: 0.4rem;
+}
+
+.user-alert {
+    border: none;
+    background: var(--color-selected-surface);
+    border-radius: 12px;
+    padding: 0.45rem;
+    display: grid;
+    place-items: center;
+    margin-left: auto;
+}
+
+.user-alert__icon {
+    stroke: var(--special-primary);
+}
+
+.mobile-user-card {
+    display: none;
+}
+
+.drawer-close {
+    display: none;
+}
+
+.nav-overlay {
+    display: none;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 960px) {
+    .nav-shell {
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+
+    .brand {
+        flex: 1;
+    }
+
+    .primary-nav {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 70%;
+        max-width: 85vw;
+        margin-left: 0;
+        background: #ffffff;
+        padding: 1.25rem;
+        box-shadow: -4px 0 30px rgba(5, 22, 10, 0.12);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .primary-nav.open {
+        transform: translateX(0);
+    }
+
+    .drawer-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: flex-end;
+        background: transparent;
+        border: none;
+        color: #1d3122;
+        padding: 0.4rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+    }
+
+    .primary-nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .nav-item {
+        width: 100%;
+    }
+
+    .mobile-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+    }
+
+    .header-right {
+        order: 2;
+        width: auto;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .header-right .user-card {
+        display: none;
+    }
+
+    .mobile-user-card {
+        display: block;
+        margin-top: auto;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(17, 17, 17, 0.08);
+    }
+
+    .mobile-user-card .user-card {
+        width: 100%;
+    }
+
+    .nav-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 22, 10, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 90;
+    }
+
+    .nav-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+/* Tablet: make drawer roughly half the screen */
+@media (min-width: 641px) and (max-width: 960px) {
+    .primary-nav {
+        width: 52%;
+        max-width: 52vw;
+    }
+}
+
+/* Mobile: drawer should take most of the screen */
+@media (max-width: 640px) {
+    .primary-nav {
+        width: 92%;
+        max-width: 92vw;
+        padding: 1rem;
+    }
+
+    .user-card {
+        padding: 0.5rem;
+    }
+}
+
+/* Mobile-specific user card adjustments inside the drawer */
+@media (max-width: 960px) {
+    .user-card--mobile {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0.5rem;
+        background: var(--color-surface-primary);
+        border-radius: var(--border-radius-default);
+    }
+
+    .user-card--mobile .user-avatar {
+        width: 56px;
+        height: 56px;
+    }
+
+    .mobile-user-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        width: 100%;
+    }
+
+    .mobile-user-actions a.button,
+    .mobile-user-actions a.secondary-btn {
+        display: inline-flex;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        padding: 0.6rem 0.75rem;
+    }
+}
+
+@media (min-width: 961px) {
+    .mobile-toggle {
+        display: none;
+    }
+}
