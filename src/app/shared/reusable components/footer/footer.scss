@@ -3,8 +3,8 @@
 }
 
 .site-footer {
-    background: #f4f7f3;
     margin-top: 0;
+    padding-top: 1rem;
 }
 
 .footer-shell {
@@ -12,8 +12,8 @@
     margin: 0 auto;
     padding: clamp(2.5rem, 6vw, 4rem) clamp(1.5rem, 5vw, 3rem);
     background: #ffffff;
-    border-radius: 32px 32px 0 0;
-    box-shadow: 0 -20px 60px rgba(10, 24, 14, 0.08);
+    border-radius: 0;
+    box-shadow: none;
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
@@ -44,6 +44,7 @@
 .footer-copy {
     color: #47524a;
     margin-bottom: 1.25rem;
+    font-size: 0.95rem;
 }
 
 .footer-subscribe {
@@ -59,20 +60,8 @@
     font-size: 0.95rem;
 }
 
-.footer-subscribe button {
-    border: none;
-    border-radius: 999px;
-    background: var(--special-primary);
-    color: #fff;
-    font-weight: 600;
-    padding: 0.65rem 1.75rem;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
 
-.footer-subscribe button:hover {
-    background: #0f5430;
-}
+
 
 .footer-grid {
     flex: 1;
@@ -154,19 +143,26 @@
 
 .store-buttons {
     display: flex;
-    gap: 0.75rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
+}
+
+.store-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .store-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.5rem 1rem;
-    border-radius: 14px;
-    background: #0f1f11;
-    color: #fff;
+    padding: 0.65rem 1.25rem;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #0f1f11;
     text-decoration: none;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     min-width: 170px;
 }
 
@@ -178,13 +174,21 @@
 .store-badge small {
     display: block;
     font-size: 0.7rem;
-    opacity: 0.8;
+    color: #4b5a50;
 }
 
 .store-badge strong {
     display: block;
     font-size: 0.95rem;
     letter-spacing: 0.02em;
+    color: #0f1f11;
+}
+
+.store-qr {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .sr-only {

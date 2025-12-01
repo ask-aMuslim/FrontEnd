@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 interface HeroStat {
   value: string;
@@ -35,14 +36,15 @@ interface PillarItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home implements AfterViewInit, OnDestroy {
+  protected searchQuery = '';
   protected readonly heroStats: HeroStat[] = [
     { value: '13,000+', label: 'Answered Questions' },
-    { value: '26+ ', label: 'Scholars & Teachers' },
+    { value: '250+ ', label: 'Scholars & Teachers' },
   ];
 
   protected readonly heroBubbles: string[] = [
@@ -161,7 +163,15 @@ export class Home implements AfterViewInit, OnDestroy {
 
   private cleanupFns: (() => void)[] = [];
 
-  constructor(private readonly host: ElementRef<HTMLElement>) { }
+  constructor(private readonly host: ElementRef<HTMLElement>, private readonly router: Router) { }
+
+  protected onSearch(): void {
+    const q = (this.searchQuery || '').trim();
+    if (!q) {
+      return;
+    }
+    void this.router.navigate(['/ask-and-contact'], { queryParams: { question: q } });
+  }
 
   ngAfterViewInit(): void {
     if (globalThis.window === undefined) {

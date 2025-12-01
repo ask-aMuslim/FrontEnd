@@ -1,6 +1,6 @@
 <header class="site-header">
     <ng-template #userCardTemplate>
-        <div class="user-card ">
+        <div class="user-card " routerLink="/account" (click)="closeNav()">
             <img src="/Images/profile picture navbar.png"
                 alt="{{ userName }}" class="user-avatar" />
             <div class="user-text">
@@ -29,28 +29,14 @@
         </div>
     </ng-template>
 
-    <!-- Mobile-specific user card shown inside the drawer -->
-    <ng-template #mobileUserCardTemplate>
-        <div class="user-card user-card--mobile">
-            <img src="/Images/profile picture navbar.png"
-                alt="{{ userName }}" class="user-avatar" />
-            <div class="user-text">
-                <span class="user-name">{{ userName }}</span>
-                <span class="user-meta">{{ userMeta }}</span>
-            </div>
-            <div class="mobile-user-actions">
-                <a class="button" routerLink="/account" (click)="closeNav()">Account</a>
-                <a class="secondary-btn" routerLink="/ask-and-contact" (click)="closeNav()">Start Asking</a>
-            </div>
-        </div>
-    </ng-template>
+    <!-- removed duplicate mobile template; will reuse desktop userCardTemplate in drawer -->
 
     <div class="nav-shell">
         <a class="brand" routerLink="/home" aria-label="Ask A Muslim home">
             <img src="/AskAMuslimLogo.png" alt="Ask A Muslim logo" />
         </a>
 
-        <nav class="primary-nav" [class.open]="navOpen"
+        <nav class="primary-nav ms-auto" [class.open]="navOpen"
             id="primary-navigation" aria-label="Primary navigation">
             <button class="drawer-close" type="button" (click)="closeNav()"
                 aria-label="Close menu">
@@ -75,7 +61,8 @@
                 }
             </ul>
             <div class="mobile-user-card">
-                <ng-container *ngTemplateOutlet="mobileUserCardTemplate"></ng-container>
+                <ng-container
+                    *ngTemplateOutlet="userCardTemplate"></ng-container>
             </div>
         </nav>
 

@@ -12,7 +12,7 @@
                     <label class="sr-only" for="footer-email">Your email</label>
                     <input id="footer-email" type="email"
                         placeholder="email@examples.com" />
-                    <button type="submit">Subscribe</button>
+                    <button type="submit" class="button-light" >Subscribe</button>
                 </form>
             </div>
 
@@ -48,17 +48,33 @@
 
         <div class="footer-bottom">
             <div class="bottom-left">
-                <p>© 2025 Ask A Muslim — Built with DevandroPies</p>
+                <p>© 2025 Ask A Muslim • Built with GeneratePress</p>
             </div>
             <div class="store-buttons">
-                <a *ngFor="let store of storeBadges; trackBy: trackByLabel"
-                    [href]="store.href" class="store-badge">
-                    <img [src]="store.icon" [alt]="store.subtitle" />
-                    <div>
-                        <small>{{ store.title }}</small>
-                        <strong>{{ store.subtitle }}</strong>
-                    </div>
-                </a>
+                <div class="store-group">
+                    <a href="#" class="store-badge">
+                        <img src="/icons/icons social apps/Property 1=apple.svg"
+                            alt="App Store" />
+                        <div>
+                            <small>Download on</small>
+                            <strong>App Store</strong>
+                        </div>
+                    </a>
+                    <img src="/footer/qr-appstore.svg" alt="App Store QR"
+                        class="store-qr" />
+                </div>
+                <div class="store-group">
+                    <a href="#" class="store-badge">
+                        <img src="/footer/google-play-icon.svg"
+                            alt="Google Play" />
+                        <div>
+                            <small>Get our App from</small>
+                            <strong>Google Play</strong>
+                        </div>
+                    </a>
+                    <img src="/footer/qr-googleplay.svg" alt="Google Play QR"
+                        class="store-qr" />
+                </div>
             </div>
         </div>
     </div>

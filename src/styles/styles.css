@@ -60,7 +60,7 @@
     transform: translateY(-1px);
     color: var(--special-primary-hovering);
     background-color: var(--color-selected-surface);
-    box-shadow: 0 5px 25px rgba(205, 167, 54, 0.25);
+
 }
 
 .button:disabled,

@@ -15,9 +15,9 @@
 
         <div class="hero-content">
             <div
-                class="w-fit mx-auto rounded-full border border-[var(--colors-green-30)] text-[var(--color-text-caption)] bg-white px-4 py-1 text-sm font-medium">
+                class="mx-auto rounded-full border border-[var(--colors-green-30)] text-[var(--color-text-caption)] bg-white px-4 py-1 text-sm font-medium hint">
                 <span
-                    class="text-[var(--special-secondary)] whitespace-break-spaces ">1,700,556,000+</span>
+                    class="text-[var(--special-secondary)]">1,700,556,000+</span>
                 Muslim brothers &amp; sisters
                 <wbr>
                 around the world
@@ -28,13 +28,20 @@
                 <span>Ask</span>
             </h1>
 
-            <form class="hero-search" aria-label="Search answered questions">
+            <form class="hero-search" aria-label="Search answered questions"
+                (ngSubmit)="onSearch()" #searchForm="ngForm">
                 <label class="sr-only" for="home-search">Search question</label>
                 <div class="search-wrapper">
                     <img src="/icons/icons 24/select=search.svg" alt="Search"
                         class="search-icon" />
-                    <input id="home-search" type="search"
-                        placeholder="Do you have a religious question in mind?" />
+                    <input id="home-search" name="q" type="search"
+                        placeholder="Do you have a religious question in mind?"
+                        [(ngModel)]="searchQuery" />
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="button">
+                        Search
+                    </button>
                 </div>
             </form>
 
