@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      - master
+      - dev
+      
 
 jobs:
   syntax-checker-job:
