@@ -56,9 +56,9 @@ export class Footer {
   ];
 
   protected readonly socialLinks: SocialLink[] = [
-    { icon: '/icons/icons social apps/Property 1=facebook.svg', label: 'Facebook', href: 'https://facebook.com' },
-    { icon: '/icons/icons social apps/Property 1=youtube.svg', label: 'YouTube', href: 'https://youtube.com' },
-    { icon: '/icons/icons social apps/Property 1=instagram.svg', label: 'Instagram', href: 'https://instagram.com' },
+    { icon: '/icons/icons social apps/Property 1=facebook.svg', label: 'Facebook', href: 'https://www.facebook.com/askamuslimofficial/' },
+    { icon: '/icons/icons social apps/Property 1=youtube.svg', label: 'YouTube', href: 'https://www.youtube.com/AskAMuslim' },
+    { icon: '/icons/icons social apps/Property 1=instagram.svg', label: 'Instagram', href: 'https://www.instagram.com/askamuslim/' },
   ];
 
   protected readonly storeBadges: StoreBadge[] = [
