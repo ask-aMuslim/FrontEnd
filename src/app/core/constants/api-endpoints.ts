@@ -4,7 +4,22 @@ import { environment } from '../../../environments/environment';
  * Base API URL for all endpoints (from environment)
  * @constant
  */
-const BASE_URL = environment.apiBaseUrl;
+// Normalize base URL to avoid accidental double-slashes when joining paths
+const BASE_URL = environment.apiBaseUrl.replace(/\/+$/g, '');
+
+/**
+ * Encode path parameters safely and consistently
+ */
+const encodeParam = (v: string | number) => encodeURIComponent(String(v));
+
+/**
+ * Build a full route safely from a path fragment. Ensures exactly one slash
+ * between base and path and preserves any protocol/host in BASE_URL.
+ */
+const route = (path: string) => {
+  if (!path.startsWith('/')) path = '/' + path;
+  return `${BASE_URL}${path}`;
+};
 
 /**
  * Type-safe API endpoint configuration
@@ -12,14 +27,15 @@ const BASE_URL = environment.apiBaseUrl;
  */
 export const API_ENDPOINTS = {
   adminNotes: {
-    getByStudent: (studentId: string): string => `${BASE_URL}/AdminNotes/${studentId}`,
-    create: (): string => `${BASE_URL}/AdminNotes`,
+    getByStudent: (studentId: string | number): string =>
+      route(`/AdminNotes/${encodeParam(studentId)}`),
+    create: (): string => route('/AdminNotes'),
   },
 
   admins: {
-    me: (): string => `${BASE_URL}/Admins/me`,
-    getById: (userId: string): string => `${BASE_URL}/Admins/${userId}`,
-    update: (): string => `${BASE_URL}/Admins/me`,
+    me: (): string => route('/Admins/me'),
+    getById: (userId: string | number): string => route(`/Admins/${encodeParam(userId)}`),
+    update: (): string => route('/Admins/me'),
   },
 
   auth: {
@@ -30,188 +46,206 @@ export const API_ENDPOINTS = {
   },
 
   certificates: {
-    getById: (id: string): string => `${BASE_URL}/Certificates/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Certificates/${id}`,
-    getByStudent: (studentId: string): string => `${BASE_URL}/Certificates/by-student/${studentId}`,
-    create: (): string => `${BASE_URL}/Certificates`,
+    getById: (id: string | number): string => route(`/Certificates/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Certificates/${encodeParam(id)}`),
+    getByStudent: (studentId: string | number): string =>
+      route(`/Certificates/by-student/${encodeParam(studentId)}`),
+    create: (): string => route('/Certificates'),
   },
 
   courses: {
-    getAll: (): string => `${BASE_URL}/Courses`,
-    create: (): string => `${BASE_URL}/Courses`,
-    getById: (id: string): string => `${BASE_URL}/Courses/${id}`,
-    update: (id: string): string => `${BASE_URL}/Courses/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Courses/${id}`,
+    getAll: (): string => route('/Courses'),
+    create: (): string => route('/Courses'),
+    getById: (id: string | number): string => route(`/Courses/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Courses/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Courses/${encodeParam(id)}`),
   },
 
   enrollments: {
-    getById: (id: string): string => `${BASE_URL}/Enrollments/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Enrollments/${id}`,
-    getByCourse: (courseId: string): string => `${BASE_URL}/Enrollments/by-course/${courseId}`,
-    getByStudent: (studentId: string): string => `${BASE_URL}/Enrollments/by-student/${studentId}`,
-    create: (): string => `${BASE_URL}/Enrollments`,
-    updateStatus: (id: string): string => `${BASE_URL}/Enrollments/${id}/status`,
+    getById: (id: string | number): string => route(`/Enrollments/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Enrollments/${encodeParam(id)}`),
+    getByCourse: (courseId: string | number): string =>
+      route(`/Enrollments/by-course/${encodeParam(courseId)}`),
+    getByStudent: (studentId: string | number): string =>
+      route(`/Enrollments/by-student/${encodeParam(studentId)}`),
+    create: (): string => route('/Enrollments'),
+    updateStatus: (id: string | number): string => route(`/Enrollments/${encodeParam(id)}/status`),
   },
 
   eventRegistrations: {
-    getById: (id: string): string => `${BASE_URL}/EventRegistrations/${id}`,
-    delete: (id: string): string => `${BASE_URL}/EventRegistrations/${id}`,
-    getByEvent: (eventId: string): string => `${BASE_URL}/EventRegistrations/by-event/${eventId}`,
-    getByUser: (userId: string): string => `${BASE_URL}/EventRegistrations/by-user/${userId}`,
-    create: (): string => `${BASE_URL}/EventRegistrations`,
-    updateStatus: (id: string): string => `${BASE_URL}/EventRegistrations/${id}/status`,
+    getById: (id: string | number): string => route(`/EventRegistrations/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/EventRegistrations/${encodeParam(id)}`),
+    getByEvent: (eventId: string | number): string =>
+      route(`/EventRegistrations/by-event/${encodeParam(eventId)}`),
+    getByUser: (userId: string | number): string =>
+      route(`/EventRegistrations/by-user/${encodeParam(userId)}`),
+    create: (): string => route('/EventRegistrations'),
+    updateStatus: (id: string | number): string =>
+      route(`/EventRegistrations/${encodeParam(id)}/status`),
   },
 
   events: {
-    getAll: (): string => `${BASE_URL}/Events`,
-    create: (): string => `${BASE_URL}/Events`,
-    getById: (id: string): string => `${BASE_URL}/Events/${id}`,
-    update: (id: string): string => `${BASE_URL}/Events/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Events/${id}`,
+    getAll: (): string => route('/Events'),
+    create: (): string => route('/Events'),
+    getById: (id: string | number): string => route(`/Events/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Events/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Events/${encodeParam(id)}`),
   },
 
   inquiryRequests: {
-    getById: (id: string): string => `${BASE_URL}/InquiryRequests/${id}`,
-    getByRequester: (requesterId: string): string =>
-      `${BASE_URL}/InquiryRequests/by-requester/${requesterId}`,
-    getByScholar: (scholarId: string): string =>
-      `${BASE_URL}/InquiryRequests/by-scholar/${scholarId}`,
-    create: (): string => `${BASE_URL}/InquiryRequests`,
-    updateStatus: (id: string): string => `${BASE_URL}/InquiryRequests/${id}/status`,
-    updateResponse: (id: string): string => `${BASE_URL}/InquiryRequests/${id}/response`,
+    getById: (id: string | number): string => route(`/InquiryRequests/${encodeParam(id)}`),
+    getByRequester: (requesterId: string | number): string =>
+      route(`/InquiryRequests/by-requester/${encodeParam(requesterId)}`),
+    getByScholar: (scholarId: string | number): string =>
+      route(`/InquiryRequests/by-scholar/${encodeParam(scholarId)}`),
+    create: (): string => route('/InquiryRequests'),
+    updateStatus: (id: string | number): string =>
+      route(`/InquiryRequests/${encodeParam(id)}/status`),
+    updateResponse: (id: string | number): string =>
+      route(`/InquiryRequests/${encodeParam(id)}/response`),
   },
 
   instructors: {
-    me: (): string => `${BASE_URL}/Instructors/me`,
-    getById: (userId: string): string => `${BASE_URL}/Instructors/${userId}`,
-    getAll: (): string => `${BASE_URL}/Instructors`,
-    update: (): string => `${BASE_URL}/Instructors/me`,
+    me: (): string => route('/Instructors/me'),
+    getById: (userId: string | number): string => route(`/Instructors/${encodeParam(userId)}`),
+    getAll: (): string => route('/Instructors'),
+    update: (): string => route('/Instructors/me'),
   },
 
   lessons: {
-    getAll: (): string => `${BASE_URL}/Lessons`,
-    create: (): string => `${BASE_URL}/Lessons`,
-    getById: (id: string): string => `${BASE_URL}/Lessons/${id}`,
-    update: (id: string): string => `${BASE_URL}/Lessons/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Lessons/${id}`,
+    getAll: (): string => route('/Lessons'),
+    create: (): string => route('/Lessons'),
+    getById: (id: string | number): string => route(`/Lessons/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Lessons/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Lessons/${encodeParam(id)}`),
   },
 
   levels: {
-    getAll: (): string => `${BASE_URL}/Levels`,
-    create: (): string => `${BASE_URL}/Levels`,
-    getById: (id: string): string => `${BASE_URL}/Levels/${id}`,
-    update: (id: string): string => `${BASE_URL}/Levels/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Levels/${id}`,
+    getAll: (): string => route('/Levels'),
+    create: (): string => route('/Levels'),
+    getById: (id: string | number): string => route(`/Levels/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Levels/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Levels/${encodeParam(id)}`),
   },
 
   meetingRequests: {
-    getById: (id: string): string => `${BASE_URL}/MeetingRequests/${id}`,
-    getByRequester: (requesterId: string): string =>
-      `${BASE_URL}/MeetingRequests/by-requester/${requesterId}`,
-    getByScholar: (scholarId: string): string =>
-      `${BASE_URL}/MeetingRequests/by-scholar/${scholarId}`,
-    create: (): string => `${BASE_URL}/MeetingRequests`,
-    updateStatus: (id: string): string => `${BASE_URL}/MeetingRequests/${id}/status`,
-    updateResponse: (id: string): string => `${BASE_URL}/MeetingRequests/${id}/response`,
+    getById: (id: string | number): string => route(`/MeetingRequests/${encodeParam(id)}`),
+    getByRequester: (requesterId: string | number): string =>
+      route(`/MeetingRequests/by-requester/${encodeParam(requesterId)}`),
+    getByScholar: (scholarId: string | number): string =>
+      route(`/MeetingRequests/by-scholar/${encodeParam(scholarId)}`),
+    create: (): string => route('/MeetingRequests'),
+    updateStatus: (id: string | number): string =>
+      route(`/MeetingRequests/${encodeParam(id)}/status`),
+    updateResponse: (id: string | number): string =>
+      route(`/MeetingRequests/${encodeParam(id)}/response`),
   },
 
   muslimTube: {
     channels: {
-      getAll: (): string => `${BASE_URL}/MuslimTube/channels`,
-      create: (): string => `${BASE_URL}/MuslimTube/channels`,
-      delete: (channelId: string): string => `${BASE_URL}/MuslimTube/channels/${channelId}`,
-      resync: (channelId: string): string => `${BASE_URL}/MuslimTube/channels/${channelId}/resync`,
-      getVideos: (channelId: string): string =>
-        `${BASE_URL}/MuslimTube/channels/${channelId}/videos`,
+      getAll: (): string => route('/MuslimTube/channels'),
+      create: (): string => route('/MuslimTube/channels'),
+      delete: (channelId: string | number): string =>
+        route(`/MuslimTube/channels/${encodeParam(channelId)}`),
+      resync: (channelId: string | number): string =>
+        route(`/MuslimTube/channels/${encodeParam(channelId)}/resync`),
+      getVideos: (channelId: string | number): string =>
+        route(`/MuslimTube/channels/${encodeParam(channelId)}/videos`),
     },
     videos: {
-      getAll: (): string => `${BASE_URL}/MuslimTube/videos`,
-      getById: (id: string): string => `${BASE_URL}/MuslimTube/videos/${id}`,
+      getAll: (): string => route('/MuslimTube/videos'),
+      getById: (id: string | number): string => route(`/MuslimTube/videos/${encodeParam(id)}`),
     },
   },
 
   notifications: {
-    getByUser: (userId: string): string => `${BASE_URL}/Notifications/${userId}`,
-    send: (): string => `${BASE_URL}/Notifications/send`,
-    markRead: (notificationId: string): string =>
-      `${BASE_URL}/Notifications/${notificationId}/mark-read`,
+    getByUser: (userId: string | number): string => route(`/Notifications/${encodeParam(userId)}`),
+    send: (): string => route('/Notifications/send'),
+    markRead: (notificationId: string | number): string =>
+      route(`/Notifications/${encodeParam(notificationId)}/mark-read`),
   },
 
   options: {
-    getByQuestion: (questionId: string): string => `${BASE_URL}/Options/by-question/${questionId}`,
-    create: (): string => `${BASE_URL}/Options`,
-    update: (id: string): string => `${BASE_URL}/Options/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Options/${id}`,
+    getByQuestion: (questionId: string | number): string =>
+      route(`/Options/by-question/${encodeParam(questionId)}`),
+    create: (): string => route('/Options'),
+    update: (id: string | number): string => route(`/Options/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Options/${encodeParam(id)}`),
   },
 
   preachers: {
-    me: (): string => `${BASE_URL}/Preachers/me`,
-    getById: (userId: string): string => `${BASE_URL}/Preachers/${userId}`,
-    getAll: (): string => `${BASE_URL}/Preachers`,
-    update: (): string => `${BASE_URL}/Preachers/me`,
+    me: (): string => route('/Preachers/me'),
+    getById: (userId: string | number): string => route(`/Preachers/${encodeParam(userId)}`),
+    getAll: (): string => route('/Preachers'),
+    update: (): string => route('/Preachers/me'),
   },
 
   qas: {
-    getAll: (): string => `${BASE_URL}/QAs`,
-    create: (): string => `${BASE_URL}/QAs`,
-    getById: (id: string): string => `${BASE_URL}/QAs/${id}`,
-    update: (id: string): string => `${BASE_URL}/QAs/${id}`,
-    delete: (id: string): string => `${BASE_URL}/QAs/${id}`,
+    getAll: (): string => route('/QAs'),
+    create: (): string => route('/QAs'),
+    getById: (id: string | number): string => route(`/QAs/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/QAs/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/QAs/${encodeParam(id)}`),
   },
 
   questions: {
-    getAll: (): string => `${BASE_URL}/Questions`,
-    create: (): string => `${BASE_URL}/Questions`,
-    getById: (id: string): string => `${BASE_URL}/Questions/${id}`,
-    update: (id: string): string => `${BASE_URL}/Questions/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Questions/${id}`,
+    getAll: (): string => route('/Questions'),
+    create: (): string => route('/Questions'),
+    getById: (id: string | number): string => route(`/Questions/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Questions/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Questions/${encodeParam(id)}`),
   },
 
   quizAttempts: {
-    getByQuiz: (quizId: string): string => `${BASE_URL}/QuizAttempts/by-quiz/${quizId}`,
-    getByStudent: (studentId: string): string => `${BASE_URL}/QuizAttempts/by-student/${studentId}`,
-    create: (): string => `${BASE_URL}/QuizAttempts`,
-    complete: (attemptId: string): string => `${BASE_URL}/QuizAttempts/complete/${attemptId}`,
+    getByQuiz: (quizId: string | number): string =>
+      route(`/QuizAttempts/by-quiz/${encodeParam(quizId)}`),
+    getByStudent: (studentId: string | number): string =>
+      route(`/QuizAttempts/by-student/${encodeParam(studentId)}`),
+    create: (): string => route('/QuizAttempts'),
+    complete: (attemptId: string | number): string =>
+      route(`/QuizAttempts/complete/${encodeParam(attemptId)}`),
   },
 
   quizzes: {
-    getAll: (): string => `${BASE_URL}/Quizzes`,
-    create: (): string => `${BASE_URL}/Quizzes`,
-    getById: (id: string): string => `${BASE_URL}/Quizzes/${id}`,
-    update: (id: string): string => `${BASE_URL}/Quizzes/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Quizzes/${id}`,
+    getAll: (): string => route('/Quizzes'),
+    create: (): string => route('/Quizzes'),
+    getById: (id: string | number): string => route(`/Quizzes/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Quizzes/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Quizzes/${encodeParam(id)}`),
   },
 
   studentNotes: {
-    getById: (id: string): string => `${BASE_URL}/StudentNotes/${id}`,
-    delete: (id: string): string => `${BASE_URL}/StudentNotes/${id}`,
-    getByLesson: (lessonId: string): string => `${BASE_URL}/StudentNotes/by-lesson/${lessonId}`,
-    create: (): string => `${BASE_URL}/StudentNotes`,
+    getById: (id: string | number): string => route(`/StudentNotes/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/StudentNotes/${encodeParam(id)}`),
+    getByLesson: (lessonId: string | number): string =>
+      route(`/StudentNotes/by-lesson/${encodeParam(lessonId)}`),
+    create: (): string => route('/StudentNotes'),
   },
 
   studentQuestions: {
-    getById: (id: string): string => `${BASE_URL}/StudentQuestions/${id}`,
-    delete: (id: string): string => `${BASE_URL}/StudentQuestions/${id}`,
-    getByLesson: (lessonId: string): string => `${BASE_URL}/StudentQuestions/by-lesson/${lessonId}`,
-    getByStudent: (studentId: string): string =>
-      `${BASE_URL}/StudentQuestions/by-student/${studentId}`,
-    create: (): string => `${BASE_URL}/StudentQuestions`,
-    answer: (id: string): string => `${BASE_URL}/StudentQuestions/${id}/answer`,
+    getById: (id: string | number): string => route(`/StudentQuestions/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/StudentQuestions/${encodeParam(id)}`),
+    getByLesson: (lessonId: string | number): string =>
+      route(`/StudentQuestions/by-lesson/${encodeParam(lessonId)}`),
+    getByStudent: (studentId: string | number): string =>
+      route(`/StudentQuestions/by-student/${encodeParam(studentId)}`),
+    create: (): string => route('/StudentQuestions'),
+    answer: (id: string | number): string => route(`/StudentQuestions/${encodeParam(id)}/answer`),
   },
 
   students: {
-    me: (): string => `${BASE_URL}/Students/me`,
-    getById: (userId: string): string => `${BASE_URL}/Students/${userId}`,
-    getAll: (): string => `${BASE_URL}/Students`,
-    dashboard: (): string => `${BASE_URL}/Students/dashboard`,
-    update: (): string => `${BASE_URL}/Students/me`,
+    me: (): string => route('/Students/me'),
+    getById: (userId: string | number): string => route(`/Students/${encodeParam(userId)}`),
+    getAll: (): string => route('/Students'),
+    dashboard: (): string => route('/Students/dashboard'),
+    update: (): string => route('/Students/me'),
   },
 
   tags: {
-    getAll: (): string => `${BASE_URL}/Tags`,
-    create: (): string => `${BASE_URL}/Tags`,
-    getById: (id: string): string => `${BASE_URL}/Tags/${id}`,
-    update: (id: string): string => `${BASE_URL}/Tags/${id}`,
-    delete: (id: string): string => `${BASE_URL}/Tags/${id}`,
+    getAll: (): string => route('/Tags'),
+    create: (): string => route('/Tags'),
+    getById: (id: string | number): string => route(`/Tags/${encodeParam(id)}`),
+    update: (id: string | number): string => route(`/Tags/${encodeParam(id)}`),
+    delete: (id: string | number): string => route(`/Tags/${encodeParam(id)}`),
   },
 } as const;
