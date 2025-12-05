@@ -59,8 +59,10 @@
 .button-light:hover {
     transform: translateY(-1px);
     color: var(--special-primary-hovering);
-    background-color: var(--color-selected-surface);
-    box-shadow: 0 5px 25px rgba(205, 167, 54, 0.25);
+    background-color: var(--color-surface-primary);
+    box-shadow: 0 5px 25px var(--special-primary-hovering);
+    transform: translateY(-2px);
+
 }
 
 .button:disabled,
@@ -70,4 +72,8 @@
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
+}
+
+p {
+    color: var(--color-text-body);
 }

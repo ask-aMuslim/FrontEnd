@@ -1,3 +1,7 @@
+<!-- 
+CTRL + F "- update" to find and update links and images as needed
+-->
+
 <footer class="site-footer">
     <div class="footer-shell">
         <div class="footer-content">
@@ -12,7 +16,8 @@
                     <label class="sr-only" for="footer-email">Your email</label>
                     <input id="footer-email" type="email"
                         placeholder="email@examples.com" />
-                    <button type="submit">Subscribe</button>
+                    <button type="submit"
+                        class="button-light">Subscribe</button>
                 </form>
             </div>
 
@@ -48,17 +53,38 @@
 
         <div class="footer-bottom">
             <div class="bottom-left">
-                <p>© 2025 Ask A Muslim — Built with DevandroPies</p>
+                <p>© 2025 Ask A Muslim</p>
             </div>
             <div class="store-buttons">
-                <a *ngFor="let store of storeBadges; trackBy: trackByLabel"
-                    [href]="store.href" class="store-badge">
-                    <img [src]="store.icon" [alt]="store.subtitle" />
-                    <div>
-                        <small>{{ store.title }}</small>
-                        <strong>{{ store.subtitle }}</strong>
-                    </div>
-                </a>
+                <div class="store-group">
+
+                    <!-- update appstore link -->
+                    <a href="#" class="store-badge">
+                        <img src="/icons/icons social apps/Property 1=apple.svg"
+                            alt="App Store" />
+                        <div>
+                            Download on App Store
+                        </div>
+                    </a>
+                    <!-- update qr code -->
+                    <img src="/footer/qr-code.svg" alt="App Store QR"
+                        class="store-qr" />
+                </div>
+                <div class="store-group">
+
+                    <!-- update google play link -->
+                    <a href="#" class="store-badge">
+                        <img
+                            src="/icons/icons social apps/Property 1=google play.svg"
+                            alt="Google Play" />
+                        <div>
+                            Get our App from Google Play
+                        </div>
+                    </a>
+                    <!-- update qr code -->
+                    <img src="/footer/qr-code.svg" alt="Google Play QR"
+                        class="store-qr" />
+                </div>
             </div>
         </div>
     </div>

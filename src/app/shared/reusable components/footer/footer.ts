@@ -37,30 +37,28 @@ export class Footer {
     {
       title: 'Trusted Channels',
       links: [
-        { label: 'One Message', href: '#' },
-        { label: 'Foundation', href: '#' },
-        { label: 'One Tribe Message', href: '#' },
-        { label: 'Donation', href: '#' },
+        { label: 'One Message Foundation', href: '#' },
+        { label: 'One True Message Foundation', href: '#' },
         { label: 'The Muslim Lantern', href: '#' },
-        { label: 'IBN TV', href: '#' },
-        { label: 'Find more channels', href: '#' },
+        { label: 'IMAN TV', href: '#' },
+        { label: 'Find More Channels', href: '#' },
       ],
     },
     {
       title: 'Ask & Contact',
       links: [
+        { label: 'Ask', href: '/ask-and-contact' },
         { label: 'Virtual Assistant', href: '/ask-and-contact' },
-        { label: 'Email your inquiry', href: '/ask-and-contact' },
-        { label: 'Talk to a scholar', href: '/ask-and-contact' },
-        { label: 'Submit a question', href: '/ask-and-contact' },
+        { label: 'Email your Inquiry', href: '/ask-and-contact' },
+        { label: 'Talk to a Scholar', href: '/ask-and-contact' },
       ],
     },
   ];
 
   protected readonly socialLinks: SocialLink[] = [
-    { icon: '/icons/icons social apps/Property 1=facebook.svg', label: 'Facebook', href: 'https://facebook.com' },
-    { icon: '/icons/icons social apps/Property 1=instagram.svg', label: 'Instagram', href: 'https://instagram.com' },
-    { icon: '/icons/icons social apps/Property 1=youtube.svg', label: 'YouTube', href: 'https://youtube.com' },
+    { icon: '/icons/icons social apps/Property 1=facebook.svg', label: 'Facebook', href: 'https://www.facebook.com/askamuslimofficial/' },
+    { icon: '/icons/icons social apps/Property 1=youtube.svg', label: 'YouTube', href: 'https://www.youtube.com/AskAMuslim' },
+    { icon: '/icons/icons social apps/Property 1=instagram.svg', label: 'Instagram', href: 'https://www.instagram.com/askamuslim/' },
   ];
 
   protected readonly storeBadges: StoreBadge[] = [

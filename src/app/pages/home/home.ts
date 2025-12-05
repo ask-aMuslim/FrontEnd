@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 interface HeroStat {
   value: string;
@@ -20,10 +21,11 @@ interface EventCard {
   date: string;
   tag: string;
   title: string;
-  description: string;
+  bullets: string[];
   image: string;
   speaker: string;
   speakerRole: string;
+  videoUrl: string;
 }
 
 interface PillarItem {
@@ -35,14 +37,16 @@ interface PillarItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home implements AfterViewInit, OnDestroy {
+  protected readonly Math = Math;
+  protected searchQuery = '';
   protected readonly heroStats: HeroStat[] = [
     { value: '13,000+', label: 'Answered Questions' },
-    { value: '26+ ', label: 'Scholars & Teachers' },
+    { value: '250+ ', label: 'Scholars & Teachers' },
   ];
 
   protected readonly heroBubbles: string[] = [
@@ -104,43 +108,59 @@ export class Home implements AfterViewInit, OnDestroy {
   protected readonly eventCards: EventCard[] = [
     {
       date: '29 December, 2025',
-      tag: 'Oxford Union | London, UK',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion',
-      description:
-        'The motion debates what “This House” believes. Mehdi Hasan shares the framework for Muslims to respond to misconceptions.',
+      tag: 'Oxford Union',
+      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
+      bullets: [
+        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
+        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
+        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
+      ],
       image: '/Images/Events Picture.png',
       speaker: 'Mehdi Hasan',
-      speakerRole: 'Host @ American Broadcast',
+      speakerRole: 'Indian-American broadcas...',
+      videoUrl: 'https://www.youtube.com/watch?v=example2',
     },
     {
-      date: '19 October, 2025',
-      tag: 'Global Livestream',
-      title: 'Islam & Compassion – Live Q&A with Scholars',
-      description:
-        'An open session addressing faith, family life, and civic responsibilities with live moderation and resources shared.',
+      date: '20 October, 2025',
+      tag: 'Oxford Union',
+      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
+      bullets: [
+        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
+        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
+        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
+      ],
       image: '/Images/Events Picture.png',
       speaker: 'Mehdi Hasan',
-      speakerRole: 'Host @ American Broadcast',
+      speakerRole: 'Indian-American broadcas...',
+      videoUrl: 'https://www.youtube.com/watch?v=example3',
     },
     {
-      date: '03 November, 2025',
-      tag: 'Oxford Union | London, UK',
-      title: 'Understanding the Quranic Worldview',
-      description:
-        'A scholar-guided walk through Makkan and Madinan revelations, focusing on mercy, justice, and spiritual discipline.',
+      date: '20 October, 2025',
+      tag: 'Oxford Union',
+      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
+      bullets: [
+        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
+        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
+        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
+      ],
       image: '/Images/Events Picture.png',
       speaker: 'Mehdi Hasan',
-      speakerRole: 'Host @ American Broadcast',
+      speakerRole: 'Indian-American broadcas...',
+      videoUrl: 'https://www.youtube.com/watch?v=example1',
     },
     {
-      date: '12 December, 2025',
-      tag: 'Hybrid Workshop',
-      title: 'Community Building & Dawah Essentials',
-      description:
-        'Practical tips to serve local communities, nurture better questions, and invite others with empathy.',
+      date: '20 October, 2025',
+      tag: 'Oxford Union',
+      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
+      bullets: [
+        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
+        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
+        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
+      ],
       image: '/Images/Events Picture.png',
       speaker: 'Mehdi Hasan',
-      speakerRole: 'Host @ American Broadcast',
+      speakerRole: 'Indian-American broadcas...',
+      videoUrl: 'https://www.youtube.com/watch?v=example4',
     },
   ];
 
@@ -153,15 +173,23 @@ export class Home implements AfterViewInit, OnDestroy {
   ];
 
   protected readonly adviceQuote =
-    '“Grab a pen & paper, and list down whatever questions you thought of. After that, go to the scholars of your religion and get the answers of your list, then go to the nearest mosque and ask for a scholar to answer your same list.”';
-
+    `“Grab a pen & paper, and list down whatever questions you thought of.
+    After that, go to the scholars of your religion and get the answers of your list, then go to the nearest mosque and ask for a scholar to answer your same list.”`;
   protected trackByIndex(index: number): number {
     return index;
   }
 
   private cleanupFns: (() => void)[] = [];
 
-  constructor(private readonly host: ElementRef<HTMLElement>) { }
+  constructor(private readonly host: ElementRef<HTMLElement>, private readonly router: Router) { }
+
+  protected onSearch(): void {
+    const q = (this.searchQuery || '').trim();
+    if (!q) {
+      return;
+    }
+    void this.router.navigate(['/ask-and-contact'], { queryParams: { question: q } });
+  }
 
   ngAfterViewInit(): void {
     if (globalThis.window === undefined) {
