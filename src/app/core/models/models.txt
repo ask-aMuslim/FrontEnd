@@ -1,0 +1,1539 @@
+GET /api/AdminNotes/{studentId}
+{
+  "studentId": "string($guid)"
+}
+
+POST /api/AdminNotes
+{
+  "studentId": "string",
+  "content": "string",
+  "isPrivate": true
+}
+
+GET /api/Admins/me
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "department": "string",
+  "phoneNumber": "string",
+  "isSuperAdmin": true,
+  "isActive": true,
+  "joinedDate": "2025-12-05T22:14:56.733Z",
+  "lastLoginDate": "2025-12-05T22:14:56.733Z"
+}
+
+PUT /api/Admins/me
+{
+  "department": "string",
+  "phoneNumber": "string"
+}
+
+GET /api/Admins/{userId}
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "department": "string",
+  "phoneNumber": "string",
+  "isSuperAdmin": true,
+  "isActive": true,
+  "joinedDate": "2025-12-05T22:14:56.742Z",
+  "lastLoginDate": "2025-12-05T22:14:56.742Z"
+}
+POST /api/Authentication/register
+
+
+
+
+{
+  "email": "string",
+  "password": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "role": 1
+}
+POST /api/Authentication/login
+
+
+
+
+{
+  "email": "string",
+  "password": "string"
+}
+POST /api/Authentication/login/google
+
+
+
+
+{
+  "idToken": "string"
+}
+POST /api/Authentication/login/facebook
+
+
+
+
+{
+  "accessToken": "string"
+}
+GET /api/Certificates/{id}
+
+
+
+
+{
+  "id": "string",
+  "studentId": "string",
+  "levelId": "string",
+  "url": "string",
+  "issuedAt": "2025-12-05T22:14:56.773Z"
+}
+DELETE /api/Certificates/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Certificates/by-student/{studentId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "studentId": "string",
+    "levelId": "string",
+    "url": "string",
+    "issuedAt": "2025-12-05T22:14:56.780Z"
+  }
+]
+POST /api/Certificates
+
+
+
+
+{
+  "studentId": "string",
+  "levelId": "string",
+  "url": "string"
+}
+GET /api/Courses
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "levelId": "string",
+      "title": "string",
+      "description": "string",
+      "thumbnailUrl": "string",
+      "isPublished": true,
+      "order": 0,
+      "tagIds": [
+        "string"
+      ]
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/Courses
+
+
+
+
+{
+  "id": "string",
+  "levelId": "string",
+  "title": "string",
+  "description": "string",
+  "thumbnailUrl": "string",
+  "isPublished": true,
+  "order": 0,
+  "tagIds": [
+    "string"
+  ]
+}
+GET /api/Courses/{id}
+
+
+
+
+{
+  "id": "string",
+  "levelId": "string",
+  "title": "string",
+  "description": "string",
+  "thumbnailUrl": "string",
+  "isPublished": true,
+  "order": 0,
+  "tagIds": [
+    "string"
+  ]
+}
+PUT /api/Courses/{id}
+
+
+
+
+{
+  "id": "string",
+  "levelId": "string",
+  "title": "string",
+  "description": "string",
+  "thumbnailUrl": "string",
+  "isPublished": true,
+  "order": 0,
+  "tagIds": [
+    "string"
+  ]
+}
+DELETE /api/Courses/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Enrollments/{id}
+
+
+
+
+{
+  "id": "string",
+  "studentId": "string",
+  "courseId": "string",
+  "enrolledAt": "2025-12-05T22:14:56.800Z",
+  "status": 1,
+  "levelProgress": 0,
+  "courseProgress": 0
+}
+DELETE /api/Enrollments/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Enrollments/by-course/{courseId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "studentId": "string",
+    "courseId": "string",
+    "enrolledAt": "2025-12-05T22:14:56.806Z",
+    "status": 1,
+    "levelProgress": 0,
+    "courseProgress": 0
+  }
+]
+GET /api/Enrollments/by-student/{studentId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "studentId": "string",
+    "courseId": "string",
+    "enrolledAt": "2025-12-05T22:14:56.810Z",
+    "status": 1,
+    "levelProgress": 0,
+    "courseProgress": 0
+  }
+]
+POST /api/Enrollments
+
+
+
+
+{
+  "studentId": "string",
+  "courseId": "string"
+}
+PUT /api/Enrollments/{id}/status
+
+
+
+
+{
+  "id": "string",
+  "status": 1
+}
+GET /api/EventRegistrations/{id}
+
+
+
+
+{
+  "id": "string",
+  "eventId": "string",
+  "userId": "string",
+  "questionText": "string",
+  "status": 1
+}
+DELETE /api/EventRegistrations/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/EventRegistrations/by-event/{eventId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "eventId": "string",
+    "userId": "string",
+    "questionText": "string",
+    "status": 1
+  }
+]
+GET /api/EventRegistrations/by-user/{userId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "eventId": "string",
+    "userId": "string",
+    "questionText": "string",
+    "status": 1
+  }
+]
+POST /api/EventRegistrations
+
+
+
+
+{
+  "eventId": "string",
+  "userId": "string",
+  "questionText": "string"
+}
+PUT /api/EventRegistrations/{id}/status
+
+
+
+
+{
+  "id": "string",
+  "status": 1
+}
+Sources
+
+1 - api.org
+
+2 - cran.r-project.org
+
+3 - api.org
+
+4 - www.api.co
+
+4 more…
+Improved answer searching for "give me all apis bodies in ". Learn more
+
+
+
+
+
+Qwen 14B
+continue
+GET /api/Events
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "title": "string",
+      "description": "string",
+      "speakerName": "string",
+      "imageUrl": "string",
+      "startDateTime": "2025-12-05T22:14:56.849Z",
+      "endDateTime": "2025-12-05T22:14:56.849Z",
+      "meetingLink": "string",
+      "isPublished": true
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/Events
+
+
+
+
+{
+  "title": "string",
+  "description": "string",
+  "speakerName": "string",
+  "imageUrl": "string",
+  "startDateTime": "2025-12-05T22:14:56.854Z",
+  "endDateTime": "2025-12-05T22:14:56.854Z",
+  "meetingLink": "string",
+  "isPublished": true
+}
+GET /api/Events/{id}
+
+
+
+
+{
+  "id": "string",
+  "title": "string",
+  "description": "string",
+  "speakerName": "string",
+  "imageUrl": "string",
+  "startDateTime": "2025-12-05T22:14:56.859Z",
+  "endDateTime": "2025-12-05T22:14:56.859Z",
+  "meetingLink": "string",
+  "isPublished": true
+}
+PUT /api/Events/{id}
+
+
+
+
+{
+  "id": "string",
+  "title": "string",
+  "description": "string",
+  "speakerName": "string",
+  "imageUrl": "string",
+  "startDateTime": "2025-12-05T22:14:56.865Z",
+  "endDateTime": "2025-12-05T22:14:56.865Z",
+  "meetingLink": "string",
+  "isPublished": true
+}
+DELETE /api/Events/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/InquiryRequests/{id}
+
+
+
+
+{
+  "id": "string",
+  "requesterId": "string",
+  "scholarId": "string",
+  "topic": 1,
+  "message": "string",
+  "languages": [
+    1
+  ],
+  "status": 1,
+  "response": "string",
+  "created": "2025-12-05T22:14:56.871Z"
+}
+GET /api/InquiryRequests/by-requester/{requesterId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "requesterId": "string",
+    "scholarId": "string",
+    "topic": 1,
+    "message": "string",
+    "languages": [
+      1
+    ],
+    "status": 1,
+    "response": "string",
+    "created": "2025-12-05T22:14:56.878Z"
+  }
+]
+GET /api/InquiryRequests/by-scholar/{scholarId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "requesterId": "string",
+    "scholarId": "string",
+    "topic": 1,
+    "message": "string",
+    "languages": [
+      1
+    ],
+    "status": 1,
+    "response": "string",
+    "created": "2025-12-05T22:14:56.883Z"
+  }
+]
+POST /api/InquiryRequests
+
+
+
+
+{
+  "topic": 1,
+  "message": "string",
+  "languages": [
+    1
+  ]
+}
+PUT /api/InquiryRequests/{id}/status
+
+
+
+
+{
+  "id": "string",
+  "status": 1
+}
+PUT /api/InquiryRequests/{id}/response
+
+
+
+
+{
+  "id": "string",
+  "response": "string"
+}
+GET /api/Instructors/me
+
+
+
+
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "isVerified": true,
+  "isActive": true,
+  "joinedDate": "2025-12-05T22:14:56.904Z",
+  "rating": 0,
+  "totalReviews": 0,
+  "totalCourses": 0
+}
+PUT /api/Instructors/me
+
+
+
+
+{
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0
+}
+GET /api/Instructors/{userId}
+
+
+
+
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "isVerified": true,
+  "isActive": true,
+  "joinedDate": "2025-12-05T22:14:56.924Z",
+  "rating": 0,
+  "totalReviews": 0,
+  "totalCourses": 0
+}
+GET /api/Instructors
+
+
+
+
+[
+  {
+    "id": "string",
+    "userId": "string",
+    "email": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "bio": "string",
+    "specialization": "string",
+    "phoneNumber": "string",
+    "website": "string",
+    "linkedInProfile": "string",
+    "yearsOfExperience": 0,
+    "isVerified": true,
+    "isActive": true,
+    "joinedDate": "2025-12-05T22:14:56.927Z",
+    "rating": 0,
+    "totalReviews": 0,
+    "totalCourses": 0
+  }
+]
+GET /api/Lessons
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "courseId": "string",
+      "title": "string",
+      "type": 1,
+      "order": 0,
+      "thumbnailUrl": "string",
+      "contentUrl": "string"
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/Lessons
+
+
+
+
+{
+  "courseId": "string",
+  "title": "string",
+  "description": "string",
+  "type": 1,
+  "contentUrl": "string",
+  "transcript": "string",
+  "thumbnailUrl": "string",
+  "order": 0
+}
+GET /api/Lessons/{id}
+
+
+
+
+{
+  "id": "string",
+  "courseId": "string",
+  "title": "string",
+  "type": 1,
+  "order": 0,
+  "thumbnailUrl": "string",
+  "contentUrl": "string"
+}
+PUT /api/Lessons/{id}
+
+
+
+
+{
+  "id": "string",
+  "courseId": "string",
+  "title": "string",
+  "description": "string",
+  "type": 1,
+  "contentUrl": "string",
+  "transcript": "string",
+  "thumbnailUrl": "string",
+  "order": 0
+}
+DELETE /api/Lessons/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Levels
+
+
+
+
+[
+  {
+    "id": "string",
+    "title": "string",
+    "description": "string",
+    "order": 0,
+    "difficulty": 1
+  }
+]
+POST /api/Levels
+
+
+
+
+{
+  "title": "string",
+  "description": "string",
+  "order": 0,
+  "difficulty": 1
+}
+GET /api/Levels/{id}
+
+
+
+
+{
+  "id": "string",
+  "title": "string",
+  "description": "string",
+  "order": 0,
+  "difficulty": 1
+}
+PUT /api/Levels/{id}
+
+
+
+
+{
+  "id": "string",
+  "title": "string",
+  "description": "string",
+  "order": 0,
+  "difficulty": 1
+}
+DELETE /api/Levels/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/MeetingRequests/{id}
+
+
+
+
+{
+  "id": "string",
+  "requesterId": "string",
+  "scholarId": "string",
+  "topic": 1,
+  "message": "string",
+  "languages": [
+    1
+  ],
+  "scheduledAt": "2025-12-05T22:14:56.969Z",
+  "status": 1,
+  "response": "string"
+}
+GET /api/MeetingRequests/by-requester/{requesterId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "requesterId": "string",
+    "scholarId": "string",
+    "topic": 1,
+    "message": "string",
+    "languages": [
+      1
+    ],
+    "scheduledAt": "2025-12-05T22:14:56.975Z",
+    "status": 1,
+    "response": "string"
+  }
+]
+GET /api/MeetingRequests/by-scholar/{scholarId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "requesterId": "string",
+    "scholarId": "string",
+    "topic": 1,
+    "message": "string",
+    "languages": [
+      1
+    ],
+    "scheduledAt": "2025-12-05T22:14:56.979Z",
+    "status": 1,
+    "response": "string"
+  }
+]
+POST /api/MeetingRequests
+
+
+
+
+{
+  "topic": 1,
+  "message": "string",
+  "languages": [
+    1
+  ],
+  "scheduledAt": "2025-12-05T22:14:56.984Z"
+}
+PUT /api/MeetingRequests/{id}/status
+
+
+
+
+{
+  "id": "string",
+  "status": 1
+}
+PUT /api/MeetingRequests/{id}/response
+
+
+
+
+{
+  "id": "string",
+  "response": "string"
+}
+
+
+
+
+
+Qwen 14B
+continue
+GET /api/MuslimTube/channels
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "youTubeChannelId": "string",
+      "name": "string",
+      "description": "string",
+      "thumbnailDefaultUrl": "string",
+      "thumbnailMediumUrl": "string",
+      "thumbnailHighUrl": "string"
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/MuslimTube/channels
+
+
+
+
+{
+  "channelUrlOrId": "string",
+  "fetchVideosImmediately": true,
+  "initialVideoLimit": 0
+}
+GET /api/MuslimTube/videos
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "youTubeVideoId": "string",
+      "muslimTubeChannelId": "string",
+      "title": "string",
+      "description": "string",
+      "thumbnailDefaultUrl": "string",
+      "thumbnailMediumUrl": "string",
+      "thumbnailHighUrl": "string",
+      "publishedAt": "2025-12-05T22:14:57.013Z",
+      "videoUrl": "string"
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+GET /api/MuslimTube/videos/{id}
+
+
+
+
+{
+  "id": "string",
+  "youTubeVideoId": "string",
+  "muslimTubeChannelId": "string",
+  "title": "string",
+  "description": "string",
+  "thumbnailDefaultUrl": "string",
+  "thumbnailMediumUrl": "string",
+  "thumbnailHighUrl": "string",
+  "publishedAt": "2025-12-05T22:14:57.017Z",
+  "videoUrl": "string"
+}
+GET /api/MuslimTube/channels/{channelId}/videos
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "youTubeVideoId": "string",
+      "muslimTubeChannelId": "string",
+      "title": "string",
+      "description": "string",
+      "thumbnailDefaultUrl": "string",
+      "thumbnailMediumUrl": "string",
+      "thumbnailHighUrl": "string",
+      "publishedAt": "2025-12-05T22:14:57.027Z",
+      "videoUrl": "string"
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/MuslimTube/channels/{channelId}/resync
+
+
+
+
+{
+  "channelId": "string",
+  "maxVideos": 20
+}
+DELETE /api/MuslimTube/channels/{channelId}
+
+
+
+
+{
+  "channelId": "string"
+}
+GET /api/Notifications/{userId}
+
+
+
+
+{
+  "userId": "string",
+  "userId": "string",
+  "unreadOnly": true
+}
+POST /api/Notifications/send
+
+
+
+
+{
+  "userId": "string",
+  "title": "string",
+  "message": "string"
+}
+PUT /api/Notifications/{notificationId}/mark-read
+
+
+
+
+{
+  "notificationId": "string"
+}
+GET /api/Options/by-question/{questionId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "text": "string",
+    "isCorrect": true
+  }
+]
+POST /api/Options
+
+
+
+
+{
+  "questionId": "string",
+  "text": "string",
+  "isCorrect": true
+}
+PUT /api/Options/{id}
+
+
+
+
+{
+  "id": "string",
+  "text": "string",
+  "isCorrect": true
+}
+DELETE /api/Options/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Preachers/me
+
+
+
+
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "certifications": "string",
+  "organization": "string"
+}
+PUT /api/Preachers/me
+
+
+
+
+{
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "certifications": "string",
+  "organization": "string"
+}
+GET /api/Preachers/{userId}
+
+
+
+
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "certifications": "string",
+  "organization": "string"
+}
+GET /api/Preachers
+
+
+
+
+[
+  {
+    "id": "string",
+    "userId": "string",
+    "email": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "bio": "string",
+    "specialization": "string",
+    "phoneNumber": "string",
+    "website": "string",
+    "linkedInProfile": "string",
+    "yearsOfExperience": 0,
+    "certifications": "string",
+    "organization": "string"
+  }
+]
+GET /api/QAs
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "questionText": "string",
+      "answerText": "string",
+      "tags": [
+        "string"
+      ]
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/QAs
+
+
+
+
+{
+  "imageUrl": "string",
+  "videoUrl": "string",
+  "isPublished": true,
+  "translations": [
+    {
+      "language": 1,
+      "questionText": "string",
+      "answerText": "string"
+    }
+  ],
+  "tagIds": [
+    "string"
+  ]
+}
+GET /api/QAs/{id}
+
+
+
+
+{
+  "id": "string",
+  "imageUrl": "string",
+  "videoUrl": "string",
+  "isPublished": true,
+  "translations": [
+    {
+      "id": "string",
+      "language": 1,
+      "questionText": "string",
+      "answerText": "string"
+    }
+  ],
+  "tagIds": [
+    "string"
+  ]
+}
+PUT /api/QAs/{id}
+
+
+
+
+{
+  "id": "string",
+  "imageUrl": "string",
+  "videoUrl": "string",
+  "isPublished": true,
+  "translations": [
+    {
+      "id": "string",
+      "language": 1,
+      "questionText": "string",
+      "answerText": "string",
+      "isDeleted": true
+    }
+  ],
+  "tagIds": [
+    "string"
+  ]
+}
+DELETE /api/QAs/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Questions
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "text": "string",
+      "optionsCount": 0
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/Questions
+
+
+
+
+{
+  "quizId": "string",
+  "text": "string"
+}
+GET /api/Questions/{id}
+
+
+
+
+{
+  "id": "string",
+  "text": "string",
+  "optionsCount": 0
+}
+PUT /api/Questions/{id}
+
+
+
+
+{
+  "id": "string",
+  "text": "string"
+}
+DELETE /api/Questions/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/QuizAttempts/by-quiz/{quizId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "quizId": "string",
+    "studentId": "string",
+    "score": 0,
+    "isPassed": true,
+    "startedAt": "2025-12-05T22:14:57.139Z",
+    "completedAt": "2025-12-05T22:14:57.139Z",
+    "attemptNumber": 0
+  }
+]
+GET /api/QuizAttempts/by-student/{studentId}
+
+
+
+
+[
+  {
+    "id": "string",
+    "quizId": "string",
+    "studentId": "string",
+    "score": 0,
+    "isPassed": true,
+    "startedAt": "2025-12-05T22:14:57.143Z",
+    "completedAt": "2025-12-05T22:14:57.143Z",
+    "attemptNumber": 0
+  }
+]
+POST /api/QuizAttempts
+
+
+
+
+{
+  "quizId": "string",
+  "studentId": "string"
+}
+PUT /api/QuizAttempts/complete/{attemptId}
+
+
+
+
+{
+  "attemptId": "string",
+  "score": 0,
+  "isPassed": true
+}
+
+
+
+
+
+Qwen 14B
+continue
+GET /api/Quizzes
+
+
+
+
+{
+  "items": [
+    {
+      "id": "string",
+      "levelId": "string",
+      "courseId": "string",
+      "lessonId": "string",
+      "targetType": 1,
+      "title": "string",
+      "totalMarks": 0,
+      "questionsCount": 0
+    }
+  ],
+  "pageNumber": 0,
+  "totalPages": 0,
+  "totalCount": 0,
+  "hasPreviousPage": true,
+  "hasNextPage": true
+}
+POST /api/Quizzes
+
+
+
+
+{
+  "levelId": "string",
+  "courseId": "string",
+  "lessonId": "string",
+  "targetType": 1,
+  "title": "string",
+  "totalMarks": 0
+}
+GET /api/Quizzes/{id}
+
+
+
+
+{
+  "id": "string",
+  "levelId": "string",
+  "courseId": "string",
+  "lessonId": "string",
+  "targetType": 1,
+  "title": "string",
+  "totalMarks": 0,
+  "questionsCount": 0
+}
+PUT /api/Quizzes/{id}
+
+
+
+
+{
+  "id": "string",
+  "levelId": "string",
+  "courseId": "string",
+  "lessonId": "string",
+  "targetType": 1,
+  "title": "string",
+  "totalMarks": 0
+}
+DELETE /api/Quizzes/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Students
+
+
+
+
+[
+  {
+    "id": "string",
+    "userId": "string",
+    "email": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "bio": "string",
+    "specialization": "string",
+    "phoneNumber": "string",
+    "website": "string",
+    "linkedInProfile": "string",
+    "yearsOfExperience": 0,
+    "certifications": "string",
+    "organization": "string"
+  }
+]
+GET /api/Students/{id}
+
+
+
+
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "certifications": "string",
+  "organization": "string"
+}
+POST /api/Students
+
+
+
+
+{
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "certifications": "string",
+  "organization": "string"
+}
+PUT /api/Students/{id}
+
+
+
+
+{
+  "id": "string",
+  "userId": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "bio": "string",
+  "specialization": "string",
+  "phoneNumber": "string",
+  "website": "string",
+  "linkedInProfile": "string",
+  "yearsOfExperience": 0,
+  "certifications": "string",
+  "organization": "string"
+}
+DELETE /api/Students/{id}
+
+
+
+
+{
+  "id": "string"
+}
+GET /api/Tags
+
+
+
+
+[
+  {
+    "id": "string",
+    "name": "string",
+    "slug": "string",
+    "color": "string"
+  }
+]
+GET /api/Tags/{id}
+
+
+
+
+{
+  "id": "string",
+  "name": "string",
+  "slug": "string",
+  "color": "string"
+}
+POST /api/Tags
+
+
+
+
+{
+  "name": "string",
+  "slug": "string",
+  "color": "string"
+}
+PUT /api/Tags/{id}
+
+
+
+
+{
+  "id": "string",
+  "name": "string",
+  "slug": "string",
+  "color": "string"
+}
+DELETE /api/Tags/{id}
+
