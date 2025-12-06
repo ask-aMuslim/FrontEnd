@@ -1,1 +1,120 @@
-<p>register works!</p>
+<div class="register-page">
+    <!-- <div class="register-container"> -->
+    <div class="register-left">
+        <div class="logo-section">
+            <img src="footer/footer logo big.svg" alt="Ask A Muslim Logo"
+                class="logo" />
+            <p class="stat-text">
+                <span class="stat-number">1,700,556,000+</span> Muslim
+                brothers & sisters around the world
+            </p>
+        </div>
+    </div>
+
+    <div class="register-right">
+        <div class="register-card">
+            <h1 class="register-title">Create an Account</h1>
+
+            <div class="social-buttons">
+                <button type="button" class="social-btn social-btn--google">
+                    <img
+                        src="/icons/icons social apps/material-icon-theme_google.svg"
+                        alt="Google" />
+                    <span>Sign up with Google</span>
+                </button>
+                <button type="button"
+                    class="social-btn social-btn--facebook">
+                    <img src="/icons/icons social apps/Property 1=facebook.svg"
+                        alt="Facebook" />
+                    <span>Sign up with Facebook</span>
+                </button>
+            </div>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <form class="register-form" [formGroup]="registerForm"
+                (ngSubmit)="onSubmit()">
+                <div class="form-group">
+                    <input
+                        type="text"
+                        id="fullName"
+                        formControlName="fullName"
+                        placeholder="Full Name"
+                        class="form-input" />
+                </div>
+
+                <div class="form-group">
+                    <input
+                        type="email"
+                        id="email"
+                        formControlName="email"
+                        placeholder="email@example.com"
+                        class="form-input" />
+                </div>
+
+                <div class="form-group">
+                    <div class="password-wrapper">
+                        <input
+                            [type]="showPassword ? 'text' : 'password'"
+                            id="password"
+                            formControlName="password"
+                            placeholder="Password"
+                            class="form-input" />
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            (click)="togglePassword()"
+                            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                            <img
+                                [src]="showPassword ? '/icons/icons 24/select=eye off.svg' : '/icons/icons 24/select=eye.svg'"
+                                alt="Toggle password visibility" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="password-requirements">
+                    <div class="requirement" [class.met]="hasMinLength">
+                        <span class="requirement-icon">
+                            <ng-container
+                                *ngIf="hasMinLength; else cautionIcon">✓</ng-container>
+                        </span>
+                        <ng-template #cautionIcon>
+                            <img class="requirement-icon-img"
+                                src="/icons/icons 24/select=caution.svg"
+                                alt="Caution" />
+                        </ng-template>
+                        <span>Be at least 8 Characters long</span>
+                    </div>
+                    <div class="requirement" [class.met]="hasNumber">
+                        <span class="requirement-icon">
+                            <ng-container
+                                *ngIf="hasNumber; else cautionIcon2">✓</ng-container>
+                        </span>
+                        <ng-template #cautionIcon2>
+                            <img class="requirement-icon-img"
+                                src="/icons/icons 24/select=caution.svg"
+                                alt="Caution" />
+                        </ng-template>
+                        <span>Contain at least one numerical character</span>
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    class="submit-btn"
+                    [disabled]="!registerForm.valid || isSubmitting">
+                    {{ isSubmitting ? 'Creating Account...' :
+                    'Create Account' }}
+                </button>
+            </form>
+
+            <p class="signin-link">
+                Already have an Account?
+                <a [routerLink]="'/auth/login'">Sign in</a>
+            </p>
+        </div>
+    </div>
+    <!-- </div> -->
+</div>

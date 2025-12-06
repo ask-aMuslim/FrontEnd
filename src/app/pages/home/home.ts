@@ -197,69 +197,69 @@ export class Home implements AfterViewInit, OnDestroy {
     }
 
     void import('gsap').then(({ gsap }) => {
-      const heroSection = this.host.nativeElement.querySelector<HTMLElement>('.hero-section');
-      if (!heroSection) {
-        return;
-      }
+      // const heroSection = this.host.nativeElement.querySelector<HTMLElement>('.hero-section');
+      // if (!heroSection) {
+      //   return;
+      // }
 
-      const bubbles = Array.from(heroSection.querySelectorAll<HTMLElement>('.hero-bubble'));
-      if (bubbles.length === 0) {
-        return;
-      }
+      // const bubbles = Array.from(heroSection.querySelectorAll<HTMLElement>('.hero-bubble'));
+      // if (bubbles.length === 0) {
+      //   return;
+      // }
 
-      const magnet = (event: MouseEvent) => {
-        const heroRect = heroSection.getBoundingClientRect();
-        const { clientX, clientY } = event;
+      // const magnet = (event: MouseEvent) => {
+      //   const heroRect = heroSection.getBoundingClientRect();
+      //   const { clientX, clientY } = event;
 
-        // Only apply effect when mouse is within hero section bounds
-        if (
-          clientX < heroRect.left ||
-          clientX > heroRect.right ||
-          clientY < heroRect.top ||
-          clientY > heroRect.bottom
-        ) {
-          return;
-        }
+      //   // Only apply effect when mouse is within hero section bounds
+      //   if (
+      //     clientX < heroRect.left ||
+      //     clientX > heroRect.right ||
+      //     clientY < heroRect.top ||
+      //     clientY > heroRect.bottom
+      //   ) {
+      //     return;
+      //   }
 
-        for (const [index, bubble] of bubbles.entries()) {
-          const rect = bubble.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          const deltaX = clientX - centerX;
-          const deltaY = clientY - centerY;
-          const distance = Math.hypot(deltaX, deltaY) || 1;
-          const strength = Math.min(120 / distance, 1);
-          const offsetX = deltaX * strength * 0.35;
-          const offsetY = deltaY * strength * 0.35;
+      //   for (const [index, bubble] of bubbles.entries()) {
+      //     const rect = bubble.getBoundingClientRect();
+      //     const centerX = rect.left + rect.width / 2;
+      //     const centerY = rect.top + rect.height / 2;
+      //     const deltaX = clientX - centerX;
+      //     const deltaY = clientY - centerY;
+      //     const distance = Math.hypot(deltaX, deltaY) || 1;
+      //     const strength = Math.min(120 / distance, 1);
+      //     const offsetX = deltaX * strength * 0.35;
+      //     const offsetY = deltaY * strength * 0.35;
 
-          gsap.to(bubble, {
-            x: offsetX,
-            y: offsetY,
-            duration: 0.5,
-            ease: 'power2.out',
-            overwrite: 'auto',
-          });
-        }
-      };
+      //     gsap.to(bubble, {
+      //       x: offsetX,
+      //       y: offsetY,
+      //       duration: 0.5,
+      //       ease: 'power2.out',
+      //       overwrite: 'auto',
+      //     });
+      //   }
+      // };
 
-      const reset = () => {
-        gsap.to(bubbles, {
-          x: 0,
-          y: 0,
-          duration: 1,
-          ease: 'elastic.out(1, 0.5)',
-          overwrite: 'auto',
-        });
-      };
+      // const reset = () => {
+      //   gsap.to(bubbles, {
+      //     x: 0,
+      //     y: 0,
+      //     duration: 1,
+      //     ease: 'elastic.out(1, 0.5)',
+      //     overwrite: 'auto',
+      //   });
+      // };
 
-      // Listen on document to capture mouse events even over pointer-events: none areas
-      document.addEventListener('mousemove', magnet);
-      heroSection.addEventListener('mouseleave', reset);
+      // // Listen on document to capture mouse events even over pointer-events: none areas
+      // document.addEventListener('mousemove', magnet);
+      // heroSection.addEventListener('mouseleave', reset);
 
-      this.cleanupFns.push(() => {
-        document.removeEventListener('mousemove', magnet);
-        heroSection.removeEventListener('mouseleave', reset);
-      });
+      // this.cleanupFns.push(() => {
+      //   document.removeEventListener('mousemove', magnet);
+      //   heroSection.removeEventListener('mouseleave', reset);
+      // });
     });
   }
 

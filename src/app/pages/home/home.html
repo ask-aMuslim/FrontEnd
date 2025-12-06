@@ -59,18 +59,19 @@
     </section>
 
     <section class="section-block what-section">
-        <div class="section-shell section-shell--soft">
+        <div class="section-shell">
             <div class="section-heading">
-                <p class="eyebrow">What is "Ask a Muslim"</p>
-                <h2>A trusted platform to answer questions and guide Muslims
-                    &amp; non-Muslims</h2>
+                <h2 class="eyebrow">What is "Ask a Muslim"</h2>
+                <p>A trusted platform to answer questions and guide Muslims
+                    &amp; non-Muslims</p>
 
             </div>
 
             <div class="feature-grid">
-                <article
-                    *ngFor="let feature of featureCards; trackBy: trackByIndex"
-                    class="feature-card">
+                <a *ngFor="let feature of featureCards; trackBy: trackByIndex"
+                    class="feature-card"
+                    [routerLink]="feature.href"
+                    [class.feature-card--disabled]="feature.status === 'soon'">
                     <div class="feature-icon">
                         <img [src]="feature.icon"
                             [alt]="feature.title + ' icon'" loading="lazy" />
@@ -80,16 +81,15 @@
                         <p>{{ feature.description }}</p>
                     </div>
                     <div class="feature-cta">
-                        <a *ngIf="!feature.status" [routerLink]="feature.href"
-                            class="feature-link">
+                        <span *ngIf="!feature.status" class="feature-link">
                             {{ feature.cta }}
                             <img src="/icons/icons 24/select=arrow right.svg"
                                 alt="Go" />
-                        </a>
+                        </span>
                         <span *ngIf="feature.status === 'soon'"
-                            class="feature-soon">{{ feature.cta }}</span>
+                            class="feature-soon">{{ feature.cta }}..</span>
                     </div>
-                </article>
+                </a>
             </div>
         </div>
     </section>

@@ -46,4 +46,8 @@
 
   /* Shadows --------------------- */
   --shadow-base: var(--shadows-shadow-md);
+
+  /* Effects */
+  --hero-saturation: 2;
+
 }

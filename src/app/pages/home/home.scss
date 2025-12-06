@@ -16,7 +16,6 @@
 }
 
 .hero-surface {
-    /* Fill the hero area and sit behind content */
     position: absolute;
     width: 100%;
     height: 100%;
@@ -27,7 +26,6 @@
     background-position: center center;
     background-attachment: scroll;
     pointer-events: none;
-    /* Allow a configurable boost to saturation (default 1.25 = 25% more saturated) */
     --hero-saturation: 2;
     background-blend-mode: normal;
     mix-blend-mode: normal;
@@ -215,6 +213,18 @@
     margin-top: 0.5rem;
 }
 
+.what-section {
+    border-top: 5rem solid white;
+    border-top-left-radius: 5rem;
+    border-top-right-radius: 5rem;
+    transform: translateY(-5rem);
+
+    .section-shell {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+}
+
 .eyebrow {
     font-size: clamp(1.5rem, 4vw, 2.5rem);
     color: var(--special-secondary);
@@ -236,8 +246,8 @@
 
 .feature-card {
     background: #fff;
-    border-radius: 1rem;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: var(--border-radius-default);
+    border: 1px solid var(--special-primary);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -245,12 +255,28 @@
     min-height: auto;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .feature-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-    border-color: rgba(21, 107, 64, 0.15);
+    background-color: var(--color-selected-surface-secondary);
+    border-color: var(--special-secondary);
+}
+
+.feature-card--disabled {
+    pointer-events: none;
+    cursor: default;
+}
+
+.feature-card--disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    background-color: #fff;
+    border-color: var(--special-primary);
 }
 
 .feature-icon img {
@@ -291,7 +317,7 @@
 }
 
 .feature-soon {
-    color: #c58b1f;
+    color: var(--special-primary);
     font-weight: 600;
 }
 
@@ -343,6 +369,7 @@
 
 .event-card:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    background-color: var(--color-surface-secondary-hover);
 }
 
 .event-image {
