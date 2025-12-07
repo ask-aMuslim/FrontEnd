@@ -28,8 +28,43 @@
   /* Text Colors */
   --color-text-body: #343A40;
   --color-text-caption: #6C757D;
+  --color-text-base: #2196F3;
   --color-text-placeholder: #ADB5BD;
   --color-text-title: #000401;
+
+  /* Border Colors */
+  --color-border-default: #D1D5DB;
+  --color-border-light: #E5E7EB;
+  --color-border-hover: #9CA3AF;
+
+  /* Background Colors */
+  --color-background-white: #FFFFFF;
+  --color-background-light: #F9FAFB;
+  --color-background-surface: #F8F9FA;
+
+  /* State Colors */
+  --color-error: #EF4444;
+  --color-error-light: rgba(239, 68, 68, 0.02);
+  --color-error-bg: #FEF2F2;
+  --color-success: #10B981;
+  --color-success-light: rgba(16, 185, 129, 0.1);
+
+  /* Opacity Values */
+  --opacity-disabled: 0.5;
+  --opacity-hover: 0.8;
+
+  /* Shadow Colors */
+  --shadow-color-sm: rgba(0, 0, 0, 0.04);
+  --shadow-color-md: rgba(0, 0, 0, 0.08);
+  --shadow-color-lg: rgba(0, 0, 0, 0.1);
+
+  /* Auth Page Colors */
+  --auth-left-bg-start: rgba(232, 245, 232, 0.95);
+  --auth-left-bg-end: rgba(248, 249, 250, 0.85);
+  --auth-left-divider: rgba(21, 107, 64, 0.10);
+  --auth-right-bg: rgba(255, 255, 255, 0.85);
+  --auth-logo-shadow: rgba(21, 107, 64, 0.1);
+  --auth-stat-bg: rgba(255, 255, 255, 0.6);
 
   /* End Colors ---------------------*/
 

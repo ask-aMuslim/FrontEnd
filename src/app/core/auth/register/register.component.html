@@ -12,6 +12,17 @@
     </div>
 
     <div class="register-right">
+        <div class="register-header">
+            <a [routerLink]="'/home'" class="guest-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <span class="guest-link__text">Continue as Guest</span>
+            </a>
+        </div>
         <div class="register-card">
             <h1 class="register-title">Create an Account</h1>
 
@@ -35,42 +46,80 @@
             </div>
 
             <form class="register-form" [formGroup]="registerForm"
-                (ngSubmit)="onSubmit()">
-                <div class="form-group">
-                    <input
-                        type="text"
-                        id="fullName"
-                        formControlName="fullName"
-                        placeholder="Full Name"
-                        class="form-input" />
-                </div>
-
-                <div class="form-group">
-                    <input
-                        type="email"
-                        id="email"
-                        formControlName="email"
-                        placeholder="email@example.com"
-                        class="form-input" />
-                </div>
-
-                <div class="form-group">
-                    <div class="password-wrapper">
+                (ngSubmit)="onSubmit()" novalidate>
+                <div class="form-group"
+                    [class.form-group--error]="isFieldInvalid('fullName')"
+                    [class.form-group--focused]="fieldFocused['fullName']">
+                    <label for="fullName" class="form-label">Full Name</label>
+                    <div class="input-wrapper">
                         <input
-                            [type]="showPassword ? 'text' : 'password'"
-                            id="password"
-                            formControlName="password"
-                            placeholder="Password"
-                            class="form-input" />
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            (click)="togglePassword()"
-                            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-                            <img
-                                [src]="showPassword ? '/icons/icons 24/select=eye off.svg' : '/icons/icons 24/select=eye.svg'"
-                                alt="Toggle password visibility" />
-                        </button>
+                            type="text"
+                            id="fullName"
+                            formControlName="fullName"
+                            placeholder="John Doe"
+                            class="form-input"
+                            (focus)="onFieldFocus('fullName')"
+                            (blur)="onFieldBlur('fullName')"
+                            autocomplete="name" />
+                        <span class="form-error-tooltip"
+                            *ngIf="isFieldInvalid('fullName')">
+                            {{ getFieldError('fullName') }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group"
+                    [class.form-group--error]="isFieldInvalid('email')"
+                    [class.form-group--focused]="fieldFocused['email']">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-wrapper">
+                        <input
+                            type="email"
+                            id="email"
+                            formControlName="email"
+                            placeholder="your@email.com"
+                            class="form-input"
+                            (focus)="onFieldFocus('email')"
+                            (blur)="onFieldBlur('email')"
+                            autocomplete="email" />
+                        <span class="form-error-tooltip"
+                            *ngIf="isFieldInvalid('email')">
+                            {{ getFieldError('email') }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group"
+                    [class.form-group--error]="isFieldInvalid('password')"
+                    [class.form-group--focused]="fieldFocused['password']">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <div class="password-wrapper">
+                            <input
+                                [type]="showPassword ? 'text' : 'password'"
+                                id="password"
+                                formControlName="password"
+                                placeholder="Enter your password"
+                                class="form-input"
+                                (focus)="onFieldFocus('password')"
+                                (blur)="onFieldBlur('password')"
+                                autocomplete="new-password"
+                                [attr.autocomplete]="'new-password'" />
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                (click)="togglePassword()"
+                                tabindex="-1"
+                                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                                <img
+                                    [src]="showPassword ? '/icons/icons 24/select=eye.svg' : '/icons/icons 24/select=eye off.svg'"
+                                    alt />
+                            </button>
+                        </div>
+                        <span class="form-error-tooltip"
+                            *ngIf="isFieldInvalid('password')">
+                            {{ getFieldError('password') }}
+                        </span>
                     </div>
                 </div>
 
@@ -104,15 +153,27 @@
                 <button
                     type="submit"
                     class="submit-btn"
-                    [disabled]="!registerForm.valid || isSubmitting">
-                    {{ isSubmitting ? 'Creating Account...' :
-                    'Create Account' }}
+                    [class.submit-btn--loading]="isSubmitting"
+                    [class.submit-btn--success]="submitSuccess"
+                    [disabled]="isSubmitting">
+                    <span class="submit-btn__text"
+                        *ngIf="!isSubmitting && !submitSuccess">Create
+                        Account</span>
+                    <span class="submit-btn__loading" *ngIf="isSubmitting">
+                        <span class="spinner"></span>
+                        Creating Account...
+                    </span>
+                    <span class="submit-btn__success" *ngIf="submitSuccess">
+                        <span class="success-icon">✓</span>
+                        Account Created!
+                    </span>
                 </button>
             </form>
 
             <p class="signin-link">
                 Already have an Account?
-                <a [routerLink]="'/auth/login'">Sign in</a>
+                <a [routerLink]="'/login'" class="signin-link__cta">Sign
+                    in</a>
             </p>
         </div>
     </div>

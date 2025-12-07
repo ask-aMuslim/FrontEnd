@@ -1,11 +1,15 @@
 <header class="site-header">
+    <!-- User Card Template (for authenticated users) -->
     <ng-template #userCardTemplate>
-        <div class="user-card " routerLink="/account" (click)="closeNav()">
+        <div class="user-card" routerLink="/account" (click)="closeNav()">
             <img src="/Images/profile picture navbar.png"
-                alt="{{ userName }}" class="user-avatar" />
+                alt="{{ authService.currentUser()?.name }}"
+                class="user-avatar" />
             <div class="user-text">
-                <span class="user-name">{{ userName }}</span>
-                <span class="user-meta">{{ userMeta }}</span>
+                <span class="user-name">{{ authService.currentUser()?.name
+                    }}</span>
+                <span class="user-meta">{{ authService.currentUser()?.meta
+                    }}</span>
             </div>
             <button class="user-alert" type="button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -29,7 +33,19 @@
         </div>
     </ng-template>
 
-    <!-- removed duplicate mobile template; will reuse desktop userCardTemplate in drawer -->
+    <!-- Auth Buttons Template (for guest users) -->
+    <ng-template #authButtonsTemplate>
+        <div class="auth-buttons">
+            <a [routerLink]="'/login'" class="auth-btn auth-btn--signin"
+                (click)="closeNav()">
+                Sign In
+            </a>
+            <a [routerLink]="'/register'"
+                class="auth-btn auth-btn--register" (click)="closeNav()">
+                Get Started
+            </a>
+        </div>
+    </ng-template>
 
     <div class="nav-shell">
         <a class="brand" routerLink="/home" aria-label="Ask A Muslim home">
@@ -61,13 +77,23 @@
                 }
             </ul>
             <div class="mobile-user-card">
+                @if (authService.isAuthenticated()) {
                 <ng-container
                     *ngTemplateOutlet="userCardTemplate"></ng-container>
+                } @else {
+                <ng-container
+                    *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+                }
             </div>
         </nav>
 
         <div class="header-right">
+            @if (authService.isAuthenticated()) {
             <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+            } @else {
+            <ng-container
+                *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+            }
 
             <button
                 class="mobile-toggle"

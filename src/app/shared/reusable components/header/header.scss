@@ -151,6 +151,49 @@
     display: none;
 }
 
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.auth-btn {
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &--signin {
+        color: var(--special-primary);
+        border: 1.5px solid var(--special-primary);
+        background: transparent;
+
+        &:hover {
+            background: var(--special-primary-6);
+            border-color: var(--special-primary-hovering);
+            color: var(--special-primary-hovering);
+        }
+    }
+
+    &--register {
+        color: white;
+        background: var(--special-primary);
+        border: 1.5px solid var(--special-primary);
+        box-shadow: 0 2px 8px rgba(0, 128, 0, 0.15);
+
+        &:hover {
+            background: var(--special-primary-hovering);
+            border-color: var(--special-primary-hovering);
+            box-shadow: 0 4px 12px rgba(0, 128, 0, 0.25);
+            transform: translateY(-1px);
+        }
+    }
+}
+
 .sr-only {
     position: absolute;
     width: 1px;
@@ -262,6 +305,18 @@
 
     .mobile-user-card .user-card {
         width: 100%;
+    }
+
+    .mobile-user-card .auth-buttons {
+        flex-direction: column;
+        width: 100%;
+
+        .auth-btn {
+            width: 100%;
+            text-align: center;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+        }
     }
 
     .nav-overlay {

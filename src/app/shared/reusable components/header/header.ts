@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface NavLink {
   label: string;
@@ -15,6 +16,8 @@ interface NavLink {
   styleUrl: './header.scss',
 })
 export class Header {
+  protected readonly authService = inject(AuthService);
+
   protected readonly navLinks: NavLink[] = [
     { label: 'Home', path: '/home' },
     { label: 'Roadmap', path: '/roadmap' },
@@ -22,9 +25,6 @@ export class Header {
     { label: 'Events', path: '/events' },
     { label: 'MuslimTube', path: '/muslim-tube' },
   ];
-
-  protected readonly userName = 'Noah Michael';
-  protected readonly userMeta = 'Course A2 - lesson 2';
 
   protected navOpen = false;
 
@@ -38,6 +38,11 @@ export class Header {
 
   protected trackByLabel(index: number, item: NavLink): string {
     return item.label;
+  }
+
+  protected handleLogout(): void {
+    this.authService.logout();
+    this.closeNav();
   }
 
 }

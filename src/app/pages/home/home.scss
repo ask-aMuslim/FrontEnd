@@ -467,7 +467,6 @@
     gap: 0.4rem;
     font-size: 0.7rem;
     font-weight: 500;
-    color: var(--special-primary);
 }
 
 @media (min-width: 768px) {
@@ -486,6 +485,9 @@
     width: 12px;
     height: 12px;
     flex-shrink: 0;
+    /* ensure SVG stroke uses the container color */
+    color: inherit;
+    margin-bottom: 4px;
 }
 
 @media (min-width: 768px) {

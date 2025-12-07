@@ -72,10 +72,8 @@
                     class="feature-card"
                     [routerLink]="feature.href"
                     [class.feature-card--disabled]="feature.status === 'soon'">
-                    <div class="feature-icon">
-                        <img [src]="feature.icon"
-                            [alt]="feature.title + ' icon'" loading="lazy" />
-                    </div>
+                    <div class="feature-icon"
+                        [innerHTML]="getSanitizedIcon(feature)"></div>
                     <div class="feature-copy">
                         <h3>{{ feature.title }}</h3>
                         <p>{{ feature.description }}</p>
@@ -83,8 +81,14 @@
                     <div class="feature-cta">
                         <span *ngIf="!feature.status" class="feature-link">
                             {{ feature.cta }}
-                            <img src="/icons/icons 24/select=arrow right.svg"
-                                alt="Go" />
+                            <svg width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 20L16 12L8 4"
+                                    stroke="var(--special-primary)"
+                                    stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+
                         </span>
                         <span *ngIf="feature.status === 'soon'"
                             class="feature-soon">{{ feature.cta }}..</span>
@@ -131,7 +135,8 @@
                     </div>
                     <div class="divider"></div>
                     <div class="event-body">
-                        <div class="event-date">
+                        <div class="event-date"
+                            [style.color]="isUpcoming(event.date) ? 'var(--color-text-base)' : 'var(--color-text-caption)'">
                             <svg class="event-calendar-icon" width="14"
                                 height="14" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
