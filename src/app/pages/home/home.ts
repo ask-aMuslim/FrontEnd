@@ -338,13 +338,22 @@ export class Home implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Scroll the bubbles slider left or right
+   * Scroll the bubbles slider left or right by one bubble
    */
   protected scrollBubbles(direction: 'left' | 'right'): void {
     const container = this.bubblesContainer?.nativeElement;
     if (!container) return;
 
-    const scrollAmount = 250; // pixels to scroll
+    // Get the first bubble element to calculate its width
+    const firstBubble = container.querySelector('.hero-bubble-slide') as HTMLElement;
+    if (!firstBubble) return;
+
+    // Calculate scroll amount: bubble width + gap
+    const bubbleWidth = firstBubble.offsetWidth;
+    const computedStyle = window.getComputedStyle(container);
+    const gap = parseFloat(computedStyle.gap) || 0;
+    const scrollAmount = bubbleWidth + gap;
+
     const currentScroll = container.scrollLeft;
     const targetScroll = direction === 'left'
       ? currentScroll - scrollAmount
