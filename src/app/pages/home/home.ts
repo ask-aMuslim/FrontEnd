@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -43,6 +43,8 @@ interface PillarItem {
   styleUrl: './home.scss',
 })
 export class Home implements AfterViewInit, OnDestroy {
+  @ViewChild('bubblesContainer') bubblesContainer?: ElementRef<HTMLDivElement>;
+
   protected readonly Math = Math;
   protected searchQuery = '';
   protected readonly heroStats: HeroStat[] = [
@@ -333,5 +335,24 @@ export class Home implements AfterViewInit, OnDestroy {
       cleanup();
     }
     this.cleanupFns = [];
+  }
+
+  /**
+   * Scroll the bubbles slider left or right
+   */
+  protected scrollBubbles(direction: 'left' | 'right'): void {
+    const container = this.bubblesContainer?.nativeElement;
+    if (!container) return;
+
+    const scrollAmount = 250; // pixels to scroll
+    const currentScroll = container.scrollLeft;
+    const targetScroll = direction === 'left'
+      ? currentScroll - scrollAmount
+      : currentScroll + scrollAmount;
+
+    container.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth'
+    });
   }
 }
