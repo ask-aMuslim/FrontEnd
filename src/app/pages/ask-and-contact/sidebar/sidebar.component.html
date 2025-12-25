@@ -1,0 +1,56 @@
+<!-- Sidebar Component -->
+<aside
+  [ngClass]="
+    'flex w-full flex-col items-start gap-8 rounded-lg bg-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] transition-all duration-200 ease-in-out ' +
+    (isCollapsed ? 'p-4 lg:w-20 lg:min-w-20' : 'p-6 lg:w-64 lg:min-w-64')
+  "
+>
+  <button
+    type="button"
+    class="p-2 bg-orange-50 rounded-lg cursor-pointer"
+    (click)="toggleCollapsed()"
+    [attr.aria-expanded]="!isCollapsed"
+    aria-controls="ask-contact-sidebar-nav"
+  >
+    <img
+      src="/icons/icons%2024/select=collapse.svg"
+      alt="Collapse"
+      class="h-6 w-6 min-h-6 min-w-6 shrink-0 transition-transform duration-200 ease-in-out"
+      [class.rotate-180]="!isCollapsed"
+      [class.rotate-0]="isCollapsed"
+    />
+  </button>
+
+  <nav id="ask-contact-sidebar-nav" class="flex w-full flex-col items-start gap-4">
+    <a
+      *ngFor="let item of menuItems"
+      [routerLink]="item.href"
+      routerLinkActive="secondary-button border-r-3 border-[var(--special-primary)] rounded-r-none"
+      [routerLinkActiveOptions]="{ exact: false }"
+      #rla="routerLinkActive"
+      [attr.aria-label]="item.label"
+      [ngClass]="
+        'sidebar-item flex h-13 w-full items-center rounded-lg transition-colors hover:bg-(--special-primary-6) hover:text-(--special-primary) ' +
+        (isCollapsed ? 'justify-center p-2' : 'gap-3 p-3')
+      "
+    >
+      <span
+        class="sidebar-icon h-6 w-6 min-h-6 min-w-6 shrink-0"
+        [class.is-active]="rla.isActive"
+        [style.webkitMaskImage]="'url(' + item.icon + ')'"
+        [style.maskImage]="'url(' + item.icon + ')'"
+        role="img"
+        [attr.aria-label]="item.label + ' Icon'"
+      ></span>
+      <span
+        class="text-lg font-bold whitespace-nowrap overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out"
+        [class.text-primary]="rla.isActive"
+        [class.text-text-title]="!rla.isActive"
+        [ngClass]="isCollapsed ? 'max-w-0 opacity-0' : 'max-w-full opacity-100'"
+        [attr.aria-hidden]="isCollapsed ? 'true' : null"
+      >
+        {{ item.label }}
+      </span>
+    </a>
+  </nav>
+</aside>

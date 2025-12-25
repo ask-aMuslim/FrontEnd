@@ -1,0 +1,68 @@
+<div class="flex flex-col gap-10">
+  <div>
+    <span class="text-(--color-text-placeholder)">Ask “Q&A” / </span>
+    <span class="text-(--special-secondary)">{{ id }}</span>
+  </div>
+
+  <div>
+    <h1 class="question flex-1">
+      {{ title }}
+    </h1>
+
+    <div class="flex justify-between w-full">
+      <a
+        href="#"
+        class="text-sm font-medium text-(--color-text-caption) underline whitespace-nowrap"
+      >
+        same question(s)
+      </a>
+
+      <div class="flex gap-8">
+        <button class="flex items-center gap-2 cursor-pointer" (click)="toggleSave()">
+          <img [src]="isSaved ? savedIcon : saveIcon" />
+          <span class="label">Save</span>
+        </button>
+
+        <button class="flex items-center gap-2 cursor-pointer">
+          <img [src]="shareIcon" />
+          <span class="label">Share</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="paragraph">
+    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">{{ description }}</p>
+  </div>
+
+  <div class="overflow-hidden rounded-lg">
+    <img [src]="eventImage" alt="" loading="lazy" />
+  </div>
+
+  <div class="paragraph">
+    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">
+      {{ description }}<br /><br />{{ description }}<br /><br />{{ description }}
+    </p>
+  </div>
+
+  <div class="flex justify-end mb-4">
+    <div
+      class="flex justify-center items-center w-[200px] h-14 border-[1.5px] border-(--color-text-placeholder) rounded-lg px-8 cursor-pointer hover:bg-(--color-surface-secondary) transition-colors"
+    >
+      <img [src]="downloadIcon" class="inline-block mr-2 w-6 h-6" />
+      Download
+    </div>
+  </div>
+
+  <div class="relative right-90 w-screen bg-(--color-surface-secondary-hover) px-6 py-12">
+    <div class="flex h-full items-center justify-center gap-x-10">
+      <div>
+        <h2 class="text-(length:--font-size-24) font-semibold">Want to learn more?</h2>
+        <p>Check the roadmap for easier understanding the whole picture.</p>
+      </div>
+      <button class="button">
+        <span class="text-sm font-semibold">Ask a Question</span>
+      </button>
+    </div>
+  </div>
+</div>

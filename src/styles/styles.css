@@ -1,79 +1,84 @@
 /* You can add global styles to this file, and also import other style files */
 
-@import "tailwindcss";
+@import 'tailwindcss';
 @tailwind utilities;
-@import "flowbite/src/themes/default";
+@import 'flowbite/src/themes/default';
 @plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
-
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 * {
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif !important;
-    scroll-behavior: smooth;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif !important;
+  scroll-behavior: smooth;
 }
 
 /* Default Buttons */
 
 .button {
-    border: none;
-    border-radius: var(--border-radius-default);
-    color: #fff;
-    background: var(--special-primary);
-    font-weight: 600;
-    padding: 0.65rem 2rem;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+  border: none;
+  border-radius: var(--border-radius-default);
+  color: #fff;
+  background: var(--special-primary);
+  font-weight: 600;
+  padding: 0.65rem 2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .button:hover {
-    transform: translateY(-1px);
-    color: #fff;
-    box-shadow: 0 5px 25px rgba(21, 107, 64, 0.25);
+  transform: translateY(-1px);
+  color: #fff;
+  box-shadow: 0 5px 25px rgba(21, 107, 64, 0.25);
 }
 
 .button:active {
-    transform: translateY(0);
-    box-shadow: none;
-    color: #fff;
-    background-color: var(--special-primary-clicked);
+  transform: translateY(0);
+  box-shadow: none;
+  color: #fff;
+  background-color: var(--special-primary-clicked);
 }
 
 .button-light {
-    border: none;
-    border-radius: var(--border-radius-default);
-    background: #fff;
-    color: var(--special-primary);
-    font-weight: 600;
-    padding: 0.65rem 2rem;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+  border: none;
+  border-radius: var(--border-radius-default);
+  background: #fff;
+  color: var(--special-primary);
+  font-weight: 600;
+  padding: 0.65rem 2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .button-light:hover {
-    transform: translateY(-1px);
-    color: var(--special-primary-hovering);
-    background-color: var(--color-surface-primary);
-    box-shadow: 0 5px 25px var(--special-primary-hovering);
-    transform: translateY(-2px);
-
+  transform: translateY(-1px);
+  color: var(--special-primary-hovering);
+  background-color: var(--color-surface-primary);
+  box-shadow: 0 5px 25px var(--special-primary-hovering);
+  transform: translateY(-2px);
 }
 
 .button:disabled,
 .button-light:disabled {
-    background: var(--colors-gray-200);
-    color: var(--colors-gray-400);
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
+  background: var(--colors-gray-200);
+  color: var(--colors-gray-400);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.secondary-button {
+  color: var(--special-primary);
+  background: var(--color-surface-primary);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 p {
-    color: var(--color-text-body);
+  color: var(--color-text-body);
 }
