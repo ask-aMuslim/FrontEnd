@@ -149,6 +149,23 @@
 
 .nav-overlay {
     display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+
+    &.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 .auth-buttons {
@@ -239,7 +256,7 @@
         box-shadow: -4px 0 30px rgba(5, 22, 10, 0.12);
         transform: translateX(100%);
         transition: transform 0.3s ease;
-        z-index: 100;
+        z-index: 101;
         display: flex;
         flex-direction: column;
         height: 100%;

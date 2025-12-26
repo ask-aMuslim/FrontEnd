@@ -36,13 +36,9 @@
     <!-- Auth Buttons Template (for guest users) -->
     <ng-template #authButtonsTemplate>
         <div class="auth-buttons">
-            <a [routerLink]="'/login'" class="auth-btn auth-btn--signin"
-                (click)="closeNav()">
-                Sign In
-            </a>
             <a [routerLink]="'/register'"
                 class="auth-btn auth-btn--register" (click)="closeNav()">
-                Get Started
+                Start Your Journey
             </a>
         </div>
     </ng-template>
@@ -111,6 +107,6 @@
         </div>
     </div>
 
-    <div class="nav-overlay" [class.show]="navOpen" (click)="closeNav()"
+    <div class="nav-overlay" [class.active]="navOpen" (click)="closeNav()"
         aria-hidden="true"></div>
 </header>

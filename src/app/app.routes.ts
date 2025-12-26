@@ -10,6 +10,7 @@ import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';
 import { EventsComponent } from './pages/events/events.component';
 import { AccountComponent } from './pages/account/account.component';
+import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
 
 export const routes: Routes = [
     // default route
@@ -22,6 +23,7 @@ export const routes: Routes = [
         children: [
             { path: 'login', component: LoginComponent, title: 'Login' },
             { path: 'register', component: RegisterComponent, title: 'Register' },
+            { path: 'reset-password', component: ResetPasswordComponent, title: 'Reset Password' },
         ],
     },
 

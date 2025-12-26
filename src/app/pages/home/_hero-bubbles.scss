@@ -1,395 +1,262 @@
-// Hero bubbles – positions, animations, and responsive overrides
+// Hero suggestion bubbles - scrollable horizontal layout
 
-.hero-bubbles {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 50;
+.suggestion-bubbles {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 1.25rem 0 0;
+    position: relative;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+
+    // Hide scrollbar on mobile and tablet
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
-.hero-bubble {
-    position: absolute;
+.suggestion-bubbles-track {
+    display: flex;
+    gap: 0.75rem;
+    width: fit-content;
+    padding-bottom: 0.5rem;
+    animation: autoScrollBubbles 30s linear infinite;
+
+    // Pause animation on hover to allow manual scrolling
+    &:hover {
+        animation-play-state: paused;
+    }
+}
+
+@keyframes autoScrollBubbles {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(calc(-100% / 2));
+    }
+}
+
+.suggestion-bubble {
+    flex-shrink: 0;
     font-size: 0.85rem;
     color: var(--color-text-placeholder);
     background: var(--color-selected-surface-secondary);
     border-radius: 999px;
-    padding: 0.45rem 1rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    /* use per-bubble duration via --anim-dur; keep equal delays (0s) for all */
-    animation: float-rotate var(--anim-dur, 8s) ease-in-out infinite;
+    padding: 0.5rem 1.1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     text-decoration: none;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-    z-index: 50;
-    pointer-events: auto;
-    display: flex;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    text-align: center;
-}
-
-.hero-bubble:hover,
-.hero-bubble:focus-visible {
-    background: var(--color-surface-primary);
-    color: var(--special-primary);
-    transform: translateY(-4px) scale(1.01);
     cursor: pointer;
-}
 
-/* per-bubble positions (without static transform) */
-.hero-bubble--1 {
-    top: 20%;
-    left: 22%;
-    --start-rotate: -6deg;
-    --anim-dur: 7.6s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--2 {
-    top: 20%;
-    right: 22%;
-    --start-rotate: -12deg;
-    --anim-dur: 8.2s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--3 {
-    top: 32%;
-    left: 18%;
-    --start-rotate: 6deg;
-    --anim-dur: 7.9s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--4 {
-    top: 40%;
-    right: 18%;
-    --start-rotate: 0deg;
-    --anim-dur: 8.4s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--5 {
-    top: 48%;
-    left: 18%;
-    --start-rotate: -6deg;
-    --anim-dur: 7.7s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--6 {
-    top: 52%;
-    right: 18%;
-    --start-rotate: 12deg;
-    --anim-dur: 8.1s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--7 {
-    top: 62%;
-    left: 22%;
-    --start-rotate: 6deg;
-    --anim-dur: 8.3s;
-    animation-delay: 0s;
-}
-
-.hero-bubble--8 {
-    top: 66%;
-    right: 20%;
-    --start-rotate: -12deg;
-    --anim-dur: 7.85s;
-    animation-delay: 0s;
-}
-
-/* keyframe variants */
-@keyframes float {
-    0% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-8px) rotate(calc(var(--start-rotate, 0deg) + 6deg));
-    }
-
-    100% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-@keyframes float-slow {
-    0% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-14px) rotate(calc(var(--start-rotate, 0deg) + 6deg));
-    }
-
-    100% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-@keyframes float-side {
-    0% {
-        transform: translateX(0) translateY(0) rotate(var(--start-rotate, 0deg));
-    }
-
-    25% {
-        transform: translateX(8px) translateY(-4px) rotate(calc(var(--start-rotate, 0deg) + 4deg));
-    }
-
-    50% {
-        transform: translateX(0) translateY(-8px) rotate(calc(var(--start-rotate, 0deg) + 8deg));
-    }
-
-    75% {
-        transform: translateX(-8px) translateY(-4px) rotate(calc(var(--start-rotate, 0deg) + 4deg));
-    }
-
-    100% {
-        transform: translateX(0) translateY(0) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-@keyframes float-rotate {
-    0% {
-        transform: translateY(0) rotate(var(--start-rotate, -5deg));
-    }
-
-    50% {
-        transform: translateY(-6px) rotate(calc(var(--start-rotate, -5deg) + 11deg));
-    }
-
-    100% {
-        transform: translateY(0) rotate(var(--start-rotate, -5deg));
-    }
-}
-
-@keyframes float-scale {
-    0% {
-        transform: translateY(0) scale(1) rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-6px) scale(1.06) rotate(calc(var(--start-rotate, 0deg) + 6deg));
-    }
-
-    100% {
-        transform: translateY(0) scale(1) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-// Accessibility: disable animations for users who prefer reduced motion
-@media (prefers-reduced-motion: reduce) {
-    .hero-bubble {
-        animation: none !important;
-    }
-}
-
-/* Large screens: spread bubbles nicely around the hero content */
-@media (min-width: 1201px) {
-    .hero-bubble--1 {
-        top: 18%;
-        left: 18%;
-    }
-
-    .hero-bubble--2 {
-        top: 16%;
-        right: 18%;
-    }
-
-    .hero-bubble--3 {
-        top: 34%;
-        left: 12%;
-    }
-
-    .hero-bubble--4 {
-        top: 38%;
-        right: 12%;
-    }
-
-    .hero-bubble--5 {
-        top: 50%;
-        left: 14%;
-    }
-
-    .hero-bubble--6 {
-        top: 54%;
-        right: 14%;
-    }
-
-    .hero-bubble--7 {
-        top: 68%;
-        left: 18%;
-    }
-
-    .hero-bubble--8 {
-        top: 72%;
-        right: 16%;
-    }
-}
-
-/* On smaller desktops / large tablets push bubbles further from center */
-@media (min-width: 961px) and (max-width: 1200px) {
-    .hero-bubble--1 {
-        left: 8%;
-    }
-
-    .hero-bubble--2 {
-        right: 8%;
-    }
-
-    .hero-bubble--3 {
-        left: 4%;
-    }
-
-    .hero-bubble--4 {
-        right: 4%;
-    }
-
-    .hero-bubble--5 {
-        left: 4%;
-    }
-
-    .hero-bubble--6 {
-        right: 4%;
-    }
-
-    .hero-bubble--7 {
-        left: 8%;
-    }
-
-    .hero-bubble--8 {
-        right: 6%;
-    }
-}
-
-@media (max-width: 960px) {
-    .hero-bubbles {
-        display: none;
-    }
-
-    /* Horizontal slider for tablet/mobile */
-    .hero-bubbles-slider {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        max-width: 100%;
-        position: relative;
-        border: 1px solid var(--color-border-default);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.5);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        margin: 0 1.5em 1rem;
-        padding: 0.3rem 0.5rem;
-
-        &:hover {
-            background: var(--color-surface-secondary);
-        }
-    }
-
-    .bubbles-scroll-container {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        flex: 1;
-
-        /* Hide scrollbar */
-        scrollbar-width: none;
-        /* Firefox */
-        -ms-overflow-style: none;
-        /* IE and Edge */
-
-        &::-webkit-scrollbar {
-            display: none;
-            /* Chrome, Safari, Opera */
-        }
-    }
-
-    .hero-bubble-slide {
-        flex-shrink: 0;
-        font-size: 0.75rem;
-        color: var(--color-text-placeholder);
-        background: var(--color-selected-surface-secondary);
-        border-radius: 999px;
-        padding: 0.4rem 0.9rem;
-        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-        text-decoration: none;
-        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
-
-    .hero-bubble-slide:hover,
-    .hero-bubble-slide:focus-visible {
+    &:hover,
+    &:focus-visible {
         background: var(--color-surface-primary);
         color: var(--special-primary);
-        transform: translateY(-2px) scale(1.02);
-    }
-
-    .slider-arrow {
-        flex-shrink: 0;
-        width: 2rem;
-        height: 2rem;
-        color: var(--special-primary);
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .slider-arrow:hover {
-        color: var(--special-secondary);
-        transform: scale(1.05);
-    }
-
-    .slider-arrow:active {
-        transform: scale(0.95);
-    }
-
-    .slider-arrow svg {
-        width: 16px;
-        height: 16px;
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
     }
 }
 
-/* Show slider only on tablet and below, hide on desktop */
-@media (min-width: 961px) {
-    .hero-bubbles-slider {
-        display: none;
+// Desktop only: Scattered bubbles with rotation animations - 4 left, 4 right
+@media (min-width: 1024px) {
+    .suggestion-bubbles {
+        position: absolute;
+        width: 100%;
+        height: 500px;
+        overflow: visible;
+        margin: 0;
+        pointer-events: none;
+        top: -150px;
+        left: 0;
+    }
+
+    .suggestion-bubbles-track {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        animation: none; // Disable auto-scroll on desktop
+    }
+
+    .suggestion-bubble {
+        position: absolute;
+        pointer-events: all;
+        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+        // Left side bubbles (4) - centered vertically and spread out
+        &:nth-child(1) {
+            top: 20%;
+            left: 1%;
+            animation: rotateClockwise1 6s;
+        }
+
+        &:nth-child(2) {
+            top: 40%;
+            left: 6%;
+            animation: rotateAntiClockwise1 7s;
+        }
+
+        &:nth-child(3) {
+            top: 60%;
+            left: 2%;
+            animation: rotateClockwise2 6.5s;
+        }
+
+        &:nth-child(4) {
+            top: 80%;
+            left: 8%;
+            animation: rotateAntiClockwise2 7.5s;
+        }
+
+        // Right side bubbles (4) - centered vertically and spread out
+        &:nth-child(5) {
+            top: 25%;
+            right: 1%;
+            animation: rotateAntiClockwise1 5.5s;
+        }
+
+        &:nth-child(6) {
+            top: 45%;
+            right: 7%;
+            animation: rotateClockwise1 8s;
+        }
+
+        &:nth-child(7) {
+            top: 65%;
+            right: 3%;
+            animation: rotateAntiClockwise2 7s;
+        }
+
+        &:nth-child(8) {
+            top: 85%;
+            right: 9%;
+            animation: rotateClockwise2 6.5s;
+        }
+
+        // Hide duplicated bubbles on desktop
+        &:nth-child(n+9) {
+            display: none;
+        }
     }
 }
 
-/* Mobile-specific smaller slider */
-@media (max-width: 640px) {
-    .hero-bubbles-slider {
-        margin: 0 1em 1rem;
-        padding: 0.3rem 0.5rem;
+// Larger desktop screens - more spread out
+@media (min-width: 1440px) {
+    .suggestion-bubble {
+        &:nth-child(1) {
+            left: 3%;
+        }
+
+        &:nth-child(2) {
+            left: 10%;
+        }
+
+        &:nth-child(3) {
+            left: 5%;
+        }
+
+        &:nth-child(4) {
+            left: 12%;
+        }
+
+        &:nth-child(5) {
+            right: 3%;
+        }
+
+        &:nth-child(6) {
+            right: 11%;
+        }
+
+        &:nth-child(7) {
+            right: 6%;
+        }
+
+        &:nth-child(8) {
+            right: 13%;
+        }
+    }
+}
+
+// Rotation animations for desktop - smooth continuous rotation
+@keyframes rotateClockwise1 {
+    0% {
+        transform: rotate(0deg) translateY(0px);
+    }
+
+    100% {
+        transform: rotate(15deg) translateY(-12px);
+    }
+}
+
+@keyframes rotateClockwise2 {
+    0% {
+        transform: rotate(0deg) translateY(0px);
+    }
+
+    100% {
+        transform: rotate(18deg) translateY(-15px);
+    }
+}
+
+@keyframes rotateAntiClockwise1 {
+    0% {
+        transform: rotate(0deg) translateY(0px);
+    }
+
+    100% {
+        transform: rotate(-16deg) translateY(-14px);
+    }
+}
+
+@keyframes rotateAntiClockwise2 {
+    0% {
+        transform: rotate(0deg) translateY(0px);
+    }
+
+    100% {
+        transform: rotate(-20deg) translateY(-10px);
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .suggestion-bubbles {
+        margin: 1rem 0 0;
+    }
+
+    .suggestion-bubble {
+        font-size: 0.8rem;
+        padding: 0.45rem 1rem;
+    }
+
+    .suggestion-bubbles-track {
+        gap: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .suggestion-bubbles {
+        margin: 0.875rem 0 0;
+    }
+
+    .suggestion-bubble {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.875rem;
+    }
+
+    .suggestion-bubbles-track {
         gap: 0.5rem;
-    }
-
-    .bubbles-scroll-container {
-        gap: 0.4rem;
-        padding: 0.2rem 0.4rem;
-    }
-
-    .hero-bubble-slide {
-        font-size: 0.7rem;
-        padding: 0.35rem 0.75rem;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    }
-
-    .slider-arrow {
-        width: 1.75rem;
-        height: 1.75rem;
-    }
-
-    .slider-arrow svg {
-        width: 14px;
-        height: 14px;
     }
 }

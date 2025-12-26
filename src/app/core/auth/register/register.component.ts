@@ -16,6 +16,7 @@ export class RegisterComponent implements OnInit {
   isSubmitting = false;
   hasMinLength = false;
   hasNumber = false;
+  religionType: 'muslim' | 'non-muslim' | null = null;
 
   // Field interaction states
   fieldTouched = {
@@ -37,6 +38,7 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.registerForm = this.fb.group({
+      religionType: ['', [Validators.required]],
       fullName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/.*\d.*/)]],
@@ -51,6 +53,10 @@ export class RegisterComponent implements OnInit {
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
+  }
+
+  onReligionChange(type: 'muslim' | 'non-muslim'): void {
+    this.religionType = type;
   }
 
   onFieldFocus(field: 'fullName' | 'email' | 'password'): void {

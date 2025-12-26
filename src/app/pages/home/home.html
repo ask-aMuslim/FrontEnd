@@ -1,54 +1,6 @@
 <div class="home-page">
     <section id="hero" class="hero-section py-30">
 
-        <div class="hero-bubbles">
-            <a
-                *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
-                class="hero-bubble"
-                [ngClass]="'hero-bubble--' + (i + 1)"
-                [routerLink]="'/ask-and-contact'"
-                [queryParams]="{ question: bubble }">
-                {{ bubble }}
-            </a>
-        </div>
-
-        <!-- Mobile/Tablet Slider -->
-        <div class="hero-bubbles-slider">
-            <button
-                class="slider-arrow slider-arrow--left"
-                (click)="scrollBubbles('left')"
-                aria-label="Previous questions">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 18L9 12L15 6" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                </svg>
-            </button>
-
-            <div class="bubbles-scroll-container" #bubblesContainer>
-                <a
-                    *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
-                    class="hero-bubble-slide"
-                    [routerLink]="'/ask-and-contact'"
-                    [queryParams]="{ question: bubble }">
-                    {{ bubble }}
-                </a>
-            </div>
-
-            <button
-                class="slider-arrow slider-arrow--right"
-                (click)="scrollBubbles('right')"
-                aria-label="Next questions">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 18L15 12L9 6" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                </svg>
-            </button>
-        </div>
-
         <div class="hero-surface" aria-hidden="true"></div>
 
         <div class="hero-content">
@@ -76,6 +28,29 @@
                         placeholder="Do you have a religious question in mind?"
                         [(ngModel)]="searchQuery" />
                 </div>
+
+                <!-- Auto-scrolling suggestion bubbles -->
+                <div class="suggestion-bubbles">
+                    <div class="suggestion-bubbles-track">
+                        <a
+                            *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
+                            class="suggestion-bubble"
+                            [routerLink]="'/ask-and-contact'"
+                            [queryParams]="{ question: bubble }">
+                            {{ bubble }}
+                        </a>
+                        <!-- Duplicate for seamless infinite scroll -->
+                        <a
+                            *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
+                            class="suggestion-bubble"
+                            [routerLink]="'/ask-and-contact'"
+                            [queryParams]="{ question: bubble }"
+                            aria-hidden="true">
+                            {{ bubble }}
+                        </a>
+                    </div>
+                </div>
+
                 <div class="mt-6">
                     <button type="submit" class="button">
                         Search

@@ -1,0 +1,99 @@
+// Global SCSS Mixins for Responsive Design
+
+// Landscape orientation mixin for mobile devices
+// Usage: @include landscape-mobile { ... }
+@mixin landscape-mobile {
+    @media (max-height: 600px) and (orientation: landscape) {
+        @content;
+    }
+}
+
+// Landscape orientation mixin for tablets
+// Usage: @include landscape-tablet { ... }
+@mixin landscape-tablet {
+    @media (max-height: 800px) and (orientation: landscape) and (min-width: 768px) {
+        @content;
+    }
+}
+
+// Combined landscape mixin for all devices
+// Usage: @include landscape { ... }
+@mixin landscape {
+    @media (orientation: landscape) and (max-height: 800px) {
+        @content;
+    }
+}
+
+// Responsive breakpoint mixins
+@mixin mobile {
+    @media (max-width: 480px) {
+        @content;
+    }
+}
+
+@mixin mobile-large {
+    @media (max-width: 550px) {
+        @content;
+    }
+}
+
+@mixin tablet {
+    @media (max-width: 768px) {
+        @content;
+    }
+}
+
+@mixin tablet-large {
+    @media (max-width: 960px) {
+        @content;
+    }
+}
+
+@mixin desktop-small {
+    @media (max-width: 1024px) {
+        @content;
+    }
+}
+
+@mixin desktop {
+    @media (max-width: 1220px) {
+        @content;
+    }
+}
+
+@mixin desktop-large {
+    @media (max-width: 1440px) {
+        @content;
+    }
+}
+
+// Landscape-specific spacing adjustments
+@mixin landscape-spacing {
+    @include landscape {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+}
+
+// Landscape-specific height adjustments
+@mixin landscape-compact {
+    @include landscape {
+        min-height: auto;
+        height: auto;
+        max-height: none;
+    }
+}
+
+// Landscape-specific gap/spacing reduction
+@mixin landscape-reduced-gaps {
+    @include landscape {
+        gap: 0.5rem;
+
+        &>* {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+    }
+}
