@@ -1,6 +1,6 @@
 export const QA_CATEGORIES = [
   'All Categories',
-  'Player & Worship',
+  'Prayer & Worship',
   'Quran & Hadith',
   'Islamic History',
   'Family & Relationships',

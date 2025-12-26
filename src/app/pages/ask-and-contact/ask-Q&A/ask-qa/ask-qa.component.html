@@ -14,11 +14,15 @@
           type="text"
           placeholder="Write your question here .."
           class="min-w-0 flex-1 border-none text-base leading-[160%] focus:ring-0"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
         />
       </div>
 
       <button
+        type="button"
         class="button flex h-14 w-full items-center justify-center gap-1 rounded-lg px-8 md:w-auto"
+        (click)="onSearch()"
       >
         <span class="text-lg font-semibold text-white">Search</span>
       </button>
@@ -27,7 +31,7 @@
     <div class="category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto">
       <button
         *ngFor="let category of categories; let i = index; trackBy: trackByIndex"
-        (click)="selectedCategory = i"
+        (click)="selectCategory(i)"
         [ngClass]="selectedCategory === i ? 'secondary-button' : 'text-text-body'"
         class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-6 py-3 transition-colors capitalize cursor-pointer"
       >
@@ -36,64 +40,79 @@
     </div>
   </div>
 
-  <div class="flex flex-col items-start gap-6 w-full">
-    <ng-container *ngFor="let question of questions; let isLast = last; trackBy: trackByQuestionId">
-      <app-qa-card [question]="question" />
-      <div *ngIf="!isLast" class="w-full h-[1.5px] bg-border-brand"></div>
+  <ng-container *ngIf="isShowingResults; else defaultQuestions">
+    <app-question-search-result
+      class="w-full"
+      [query]="searchQuery"
+      [results]="searchResults"
+      (clearSearch)="clearSearch()"
+    />
+  </ng-container>
+
+  <ng-template #defaultQuestions>
+    <ng-container>
+      <div class="flex flex-col items-start gap-6 w-full">
+        <ng-container
+          *ngFor="let question of filteredQuestions; let isLast = last; trackBy: trackByQuestionId"
+        >
+          <app-qa-card [question]="question" />
+          <div *ngIf="!isLast" class="w-full h-[1.5px] bg-border-brand"></div>
+        </ng-container>
+      </div>
+
+      <div
+        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap"
+      >
+        <button
+          type="button"
+          (click)="prevPage()"
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
+        >
+          <img
+            src="/icons/icons%2024/select=arrow%20left.svg"
+            alt="Previous page"
+            class="h-6 w-6 object-contain"
+          />
+        </button>
+
+        <button
+          *ngFor="let page of pages; trackBy: trackByIndex"
+          type="button"
+          (click)="goToPage(page)"
+          [ngClass]="
+            page === currentPage
+              ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
+              : 'text-text-title'
+          "
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer"
+        >
+          <span class="text-sm font-medium">{{ page }}</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="nextPage()"
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
+        >
+          <img
+            src="/icons/icons%2024/select=arrow%20right.svg"
+            alt="Next page"
+            class="h-6 w-6 object-contain"
+          />
+        </button>
+      </div>
+
+      <div
+        class="relative right-30 ml-[-50vw] mr-[-50vw] w-screen h-[262px] bg-(--color-surface-secondary-hover)"
+      >
+        <div class="flex flex-col h-full items-center justify-center gap-6">
+          <h2 class="text-(length:--font-size-24) font-semibold">Don’t see your question?</h2>
+          <p>Submit your own question and receive an answer from our knowledgeable scholars.</p>
+          <button class="ask-question-btn">
+            <span class="ask-question-btn__text text-sm font-semibold">Ask a Question</span>
+          </button>
+        </div>
+      </div>
     </ng-container>
-  </div>
-
-  <div
-    class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap"
-  >
-    <button
-      type="button"
-      (click)="prevPage()"
-      class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
-    >
-      <img
-        src="/icons/icons%2024/select=arrow%20left.svg"
-        alt="Previous page"
-        class="h-6 w-6 object-contain"
-      />
-    </button>
-
-    <button
-      *ngFor="let page of pages; trackBy: trackByIndex"
-      type="button"
-      (click)="goToPage(page)"
-      [ngClass]="
-        page === currentPage
-          ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
-          : 'text-text-title'
-      "
-      class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer"
-    >
-      <span class="text-sm font-medium">{{ page }}</span>
-    </button>
-
-    <button
-      type="button"
-      (click)="nextPage()"
-      class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
-    >
-      <img
-        src="/icons/icons%2024/select=arrow%20right.svg"
-        alt="Next page"
-        class="h-6 w-6 object-contain"
-      />
-    </button>
-  </div>
-
-  <div
-    class="relative right-30 ml-[-50vw] mr-[-50vw] w-screen h-[262px] bg-(--color-surface-secondary-hover)"
-  >
-    <div class="flex flex-col h-full items-center justify-center gap-6">
-      <h2 class="text-(length:--font-size-24) font-semibold">Don’t see your question?</h2>
-      <p>Submit your own question and receive an answer from our knowledgeable scholars.</p>
-      <button class="ask-question-btn">
-        <span class="ask-question-btn__text text-sm font-semibold">Ask a Question</span>
-      </button>
-    </div>
-  </div>
+  </ng-template>
 </div>

@@ -1,0 +1,30 @@
+<div class="search-results">
+  <div class="search-results__header">
+    <div class="search-results__title">
+      <p class="search-results__eyebrow">Search results</p>
+      <h2 class="search-results__summary">
+        Showing {{ results.length }} result{{ results.length === 1 ? '' : 's' }} for “{{ query }}”
+      </h2>
+    </div>
+
+    <button type="button" class="clear-btn" (click)="onClear()">Clear search</button>
+  </div>
+
+  <div *ngIf="hasResults; else emptyState" class="search-results__list">
+    <ng-container *ngFor="let question of results; let isLast = last; trackBy: trackByQuestionId">
+      <app-qa-card [question]="question" />
+      <div *ngIf="!isLast" class="search-results__divider"></div>
+    </ng-container>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="search-results__empty">
+      <h3 class="search-results__empty-title">No results found</h3>
+      <p class="search-results__empty-description">
+        We couldn't find any questions that match “{{ query }}”. Try another keyword or browse all
+        questions.
+      </p>
+      <button type="button" class="browse-btn" (click)="onClear()">Back to Q&A</button>
+    </div>
+  </ng-template>
+</div>
