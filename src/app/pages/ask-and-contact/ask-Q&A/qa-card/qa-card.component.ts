@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -16,19 +16,20 @@ export interface QuestionCard {
   imports: [CommonModule],
   templateUrl: './qa-card.component.html',
   styleUrl: './qa-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QaCardComponent {
-  @Input() question!: QuestionCard;
+  @Input({ required: true }) question!: QuestionCard;
 
-  constructor(private router: Router) {}
+  constructor(private readonly router: Router) {}
 
-  openQuestion() {
-    const qp = {
+  openQuestion(): void {
+    const queryParams = {
       id: this.question.id,
       title: this.question.title,
       description: this.question.description,
       categories: JSON.stringify(this.question.categories ?? []),
     };
-    void this.router.navigate(['/ask-and-contact/ask-qa/question'], { queryParams: qp });
+    void this.router.navigate(['/ask-and-contact/ask-qa/question'], { queryParams });
   }
 }

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { MenuItem } from '../models';
 
 @Component({
   selector: 'app-sidebar',
@@ -8,15 +9,12 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, RouterModule],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
   isCollapsed = false;
 
-  toggleCollapsed(): void {
-    this.isCollapsed = !this.isCollapsed;
-  }
-
-  menuItems = [
+  readonly menuItems: MenuItem[] = [
     {
       key: 'ask-qa',
       label: 'Ask "Q&A"',
@@ -42,4 +40,12 @@ export class SidebarComponent {
       icon: '/icons/icons%2024/select=send%20email.svg',
     },
   ];
+
+  toggleCollapsed(): void {
+    this.isCollapsed = !this.isCollapsed;
+  }
+
+  trackByKey(index: number, item: MenuItem): string {
+    return item.key;
+  }
 }

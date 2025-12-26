@@ -1,8 +1,8 @@
 <!-- Sidebar Component -->
 <aside
   [ngClass]="
-    'flex w-full flex-col items-start gap-8 rounded-lg bg-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] transition-all duration-200 ease-in-out ' +
-    (isCollapsed ? 'p-4 lg:w-20 lg:min-w-20' : 'p-6 lg:w-64 lg:min-w-64')
+    'flex w-full flex-col items-start px-4 gap-8 rounded-lg bg-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] py-6 transition-[width,padding-left,padding-right] duration-200 ease-in-out ' +
+    (isCollapsed ? 'lg:w-20 lg:min-w-20' : 'lg:w-64 lg:min-w-64')
   "
 >
   <button
@@ -23,7 +23,7 @@
 
   <nav id="ask-contact-sidebar-nav" class="flex w-full flex-col items-start gap-4">
     <a
-      *ngFor="let item of menuItems"
+      *ngFor="let item of menuItems; trackBy: trackByKey"
       [routerLink]="item.href"
       routerLinkActive="secondary-button border-r-3 border-[var(--special-primary)] rounded-r-none"
       [routerLinkActiveOptions]="{ exact: false }"
@@ -31,7 +31,8 @@
       [attr.aria-label]="item.label"
       [ngClass]="
         'sidebar-item flex h-13 w-full items-center rounded-lg transition-colors hover:bg-(--special-primary-6) hover:text-(--special-primary) ' +
-        (isCollapsed ? 'justify-center p-2' : 'gap-3 p-3')
+        'px-3 py-3 ' +
+        (isCollapsed ? 'gap-0' : 'gap-3')
       "
     >
       <span

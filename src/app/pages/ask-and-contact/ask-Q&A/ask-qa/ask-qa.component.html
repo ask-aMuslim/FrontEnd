@@ -26,7 +26,7 @@
 
     <div class="category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto">
       <button
-        *ngFor="let category of categories; let i = index"
+        *ngFor="let category of categories; let i = index; trackBy: trackByIndex"
         (click)="selectedCategory = i"
         [ngClass]="selectedCategory === i ? 'secondary-button' : 'text-text-body'"
         class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-6 py-3 transition-colors capitalize cursor-pointer"
@@ -37,7 +37,7 @@
   </div>
 
   <div class="flex flex-col items-start gap-6 w-full">
-    <ng-container *ngFor="let question of questions; let isLast = last">
+    <ng-container *ngFor="let question of questions; let isLast = last; trackBy: trackByQuestionId">
       <app-qa-card [question]="question" />
       <div *ngIf="!isLast" class="w-full h-[1.5px] bg-border-brand"></div>
     </ng-container>
@@ -59,7 +59,7 @@
     </button>
 
     <button
-      *ngFor="let page of pages"
+      *ngFor="let page of pages; trackBy: trackByIndex"
       type="button"
       (click)="goToPage(page)"
       [ngClass]="

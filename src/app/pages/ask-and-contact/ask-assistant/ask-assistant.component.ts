@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'app-ask-assistant',
@@ -7,5 +7,6 @@ import { Component } from '@angular/core';
   imports: [CommonModule],
   templateUrl: './ask-assistant.component.html',
   styleUrl: './ask-assistant.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AskAssistantComponent {}
