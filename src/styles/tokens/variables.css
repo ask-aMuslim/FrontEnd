@@ -1,35 +1,38 @@
-@import "./colors.css";
-@import "./typography.css";
-@import "./spacing.css";
-@import "./borders.css";
-@import "./shadows.css";
-@import "./breakpoints.css";
+@import './colors.css';
+@import './typography.css';
+@import './spacing.css';
+@import './borders.css';
+@import './shadows.css';
+@import './breakpoints.css';
 
 :root {
   /* Start Colors--------------------- */
 
   /* Main Color and Surface */
-  --color-surface-primary: #E8F5E8;
-  --color-selected-surface: #156B401A;
+  --color-surface-primary: #e8f5e8;
+  --color-selected-surface: #156b401a;
   --special-primary: #156b40;
-  --special-primary-hovering: #115C36;
-  --special-primary-clicked: #0C4E2D;
+  --special-primary-hovering: #115c36;
+  --special-primary-clicked: #0c4e2d;
   --special-primary-6: rgba(21, 107, 64, 0.06);
-  --special-primary-10: rgba(21, 107, 64, 0.10);
+  --special-primary-10: rgba(21, 107, 64, 0.1);
 
   /* Secondary Color and Surface */
   --special-secondary: #cda736;
   --special-secondary-6: #cda7360f;
   --special-secondary-10: #cda7361a;
-  --color-surface-secondary: #F8F9FA;
-  --color-surface-secondary-hover: #FDF9EE;
-  --color-selected-surface-secondary: #ECC1401A;
+  --color-surface-secondary: #f8f9fa;
+  --color-surface-secondary-hover: #fdf9ee;
+  --color-selected-surface-secondary: #ecc1401a;
 
   /* Text Colors */
-  --color-text-body: #343A40;
-  --color-text-caption: #6C757D;
-  --color-text-placeholder: #ADB5BD;
+  --color-text-body: #343a40;
+  --color-text-caption: #6c757d;
+  --color-text-placeholder: #adb5bd;
   --color-text-title: #000401;
+
+  /* Borders Colors */
+  --color-border-default: #bbd1c2;
 
   /* End Colors ---------------------*/
 
