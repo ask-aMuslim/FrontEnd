@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
 import { NotFound } from './pages/not-found/not-found';
 import { Home } from './pages/home/home';
-import { AuthLayoutComponent } from './core/Layouts/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
 import { LoginComponent } from './core/auth/login/login.component';
 import { RegisterComponent } from './core/auth/register/register.component';
-import { AppLayoutComponent } from './core/Layouts/app-layout/app-layout.component';
+import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.component';
 import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
 import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';

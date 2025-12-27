@@ -24,8 +24,8 @@ export class AskAssistantComponent {
   @ViewChild('askInput') askInput?: ElementRef<HTMLInputElement>;
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bottomAnchor') bottomAnchor?: ElementRef<HTMLDivElement>;
-  arrow = '/icons/icons%2024/select=arrow%20right.svg';
-  logo = '/AskAMuslimLogo.png';
+  arrow = '/icons/icons-24/arrow-right.svg';
+  logo = '/ask-a-muslim-logo.png';
 
   inputValue = '';
   isSuggestionsOpen = false;

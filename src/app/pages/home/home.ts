@@ -62,44 +62,50 @@ export class Home implements AfterViewInit, OnDestroy {
 
   protected readonly featureCards: FeatureCard[] = [
     {
-      icon: '/icons/icons 40/Property 1=articles.svg',
+      icon: '/icons/icons-40/articles.svg',
       title: 'Categorized Q&A',
-      description: 'Browse thousands of carefully answered questions, filtered by topic, scholar, and language so you find guidance faster.',
+      description:
+        'Browse thousands of carefully answered questions, filtered by topic, scholar, and language so you find guidance faster.',
       cta: 'Explore',
       href: '/ask-and-contact',
     },
     {
-      icon: '/icons/icons 40/Property 1=roadmap.svg',
+      icon: '/icons/icons-40/roadmap.svg',
       title: 'Courses Roadmap',
-      description: 'Structured learning paths for new Muslims and lifelong students to strengthen faith step-by-step.',
+      description:
+        'Structured learning paths for new Muslims and lifelong students to strengthen faith step-by-step.',
       cta: 'Start',
       href: '/roadmap',
     },
     {
-      icon: '/icons/icons 40/Property 1=calendar.svg',
+      icon: '/icons/icons-40/calendar.svg',
       title: 'Events',
-      description: 'Join online & offline sessions with scholars worldwide, covering hot topics, fiqh, and community building.',
+      description:
+        'Join online & offline sessions with scholars worldwide, covering hot topics, fiqh, and community building.',
       cta: 'Join a session',
       href: '/events',
     },
     {
-      icon: '/icons/icons 40/Property 1=articles.svg',
+      icon: '/icons/icons-40/articles.svg',
       title: 'Articles & Resources',
-      description: 'Curated articles, e-books, and toolkits reviewed by our research team to deepen your understanding.',
+      description:
+        'Curated articles, e-books, and toolkits reviewed by our research team to deepen your understanding.',
       cta: 'Read',
       href: '/ask-and-contact',
     },
     {
-      icon: '/icons/icons 40/Property 1=ai.svg',
+      icon: '/icons/icons-40/ai.svg',
       title: 'AI Assistant',
-      description: 'Ask faith-related questions 24/7 and get verified summaries backed by authentic sources.',
+      description:
+        'Ask faith-related questions 24/7 and get verified summaries backed by authentic sources.',
       cta: 'Ask AI',
       href: '/ask-and-contact',
     },
     {
-      icon: '/icons/icons 40/Property 1=community.svg',
+      icon: '/icons/icons-40/community.svg',
       title: 'Community',
-      description: 'Connect with vibrant global circles, group studies, and mentorship programs launching soon.',
+      description:
+        'Connect with vibrant global circles, group studies, and mentorship programs launching soon.',
       cta: 'Soon',
       status: 'soon',
     },
@@ -115,7 +121,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example2',
@@ -129,7 +135,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example3',
@@ -143,7 +149,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example1',
@@ -157,7 +163,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example4',
@@ -165,15 +171,35 @@ export class Home implements AfterViewInit, OnDestroy {
   ];
 
   protected readonly pillars: PillarItem[] = [
-    { number: '1', title: 'Shahada – Testimony of Faith', description: 'Declaring there is no god but Allah, and Muhammad is His messenger.' },
-    { number: '2', title: 'Salah – Prayer', description: 'Performing five daily prayers to stay connected with Allah.' },
-    { number: '3', title: 'Zakat – Charity', description: 'Purifying wealth by giving a share to those in need.' },
-    { number: '4', title: 'Sawm – Fasting', description: 'Fasting during Ramadan to develop gratitude and self-discipline.' },
-    { number: '5', title: 'Hajj – Pilgrimage', description: 'The pilgrimage to Makkah once in a lifetime if financially and physically able.' },
+    {
+      number: '1',
+      title: 'Shahada – Testimony of Faith',
+      description: 'Declaring there is no god but Allah, and Muhammad is His messenger.',
+    },
+    {
+      number: '2',
+      title: 'Salah – Prayer',
+      description: 'Performing five daily prayers to stay connected with Allah.',
+    },
+    {
+      number: '3',
+      title: 'Zakat – Charity',
+      description: 'Purifying wealth by giving a share to those in need.',
+    },
+    {
+      number: '4',
+      title: 'Sawm – Fasting',
+      description: 'Fasting during Ramadan to develop gratitude and self-discipline.',
+    },
+    {
+      number: '5',
+      title: 'Hajj – Pilgrimage',
+      description:
+        'The pilgrimage to Makkah once in a lifetime if financially and physically able.',
+    },
   ];
 
-  protected readonly adviceQuote =
-    `“Grab a pen & paper, and list down whatever questions you thought of.
+  protected readonly adviceQuote = `“Grab a pen & paper, and list down whatever questions you thought of.
     After that, go to the scholars of your religion and get the answers of your list, then go to the nearest mosque and ask for a scholar to answer your same list.”`;
   protected trackByIndex(index: number): number {
     return index;
@@ -181,7 +207,10 @@ export class Home implements AfterViewInit, OnDestroy {
 
   private cleanupFns: (() => void)[] = [];
 
-  constructor(private readonly host: ElementRef<HTMLElement>, private readonly router: Router) { }
+  constructor(
+    private readonly host: ElementRef<HTMLElement>,
+    private readonly router: Router,
+  ) {}
 
   protected onSearch(): void {
     const q = (this.searchQuery || '').trim();

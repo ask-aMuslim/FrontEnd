@@ -1,12 +1,13 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-app-layout',
-  imports: [RouterOutlet],
+  standalone: true,
+  imports: [CommonModule, RouterOutlet],
   templateUrl: './app-layout.component.html',
-  styleUrl: './app-layout.component.scss',
+  styleUrls: ['./app-layout.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppLayoutComponent {
-
-}
+export class AppLayoutComponent {}

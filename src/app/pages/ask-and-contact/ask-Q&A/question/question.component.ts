@@ -21,11 +21,11 @@ export class QuestionComponent implements OnDestroy {
   categories: string[] = [];
   isSaved = false;
 
-  readonly saveIcon = '/icons/icons%2024/select=save.svg';
-  readonly savedIcon = '/icons/icons%2024/select=saved.svg';
-  readonly shareIcon = '/icons/icons%2024/select=share.svg';
-  readonly eventImage = '/Images/placeholder.png';
-  readonly downloadIcon = '/icons/icons%2024/select=download.svg';
+  readonly saveIcon = '/icons/icons-24/save.svg';
+  readonly savedIcon = '/icons/icons-24/saved.svg';
+  readonly shareIcon = '/icons/icons-24/share.svg';
+  readonly eventImage = '/images/placeholder.png';
+  readonly downloadIcon = '/icons/icons-24/download.svg';
 
   constructor(
     private readonly route: ActivatedRoute,

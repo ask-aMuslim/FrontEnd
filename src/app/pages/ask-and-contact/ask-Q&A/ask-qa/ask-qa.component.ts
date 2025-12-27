@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -9,7 +9,7 @@ import { QaCardComponent, QuestionCard } from '../qa-card/qa-card.component';
 @Component({
   selector: 'app-ask-qa',
   standalone: true,
-  imports: [CommonModule, FormsModule, QaCardComponent, QuestionSearchResultComponent],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, QaCardComponent, QuestionSearchResultComponent],
   templateUrl: './ask-qa.component.html',
   styleUrl: './ask-qa.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
