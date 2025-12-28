@@ -15,34 +15,3 @@
   background-color: var(--special-primary);
   border-radius: 9999px;
 }
-
-.ask-question-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  width: 233.5px;
-  height: 56px;
-  border-radius: 0.5rem;
-  border: 2px solid var(--special-primary);
-  background: transparent;
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.ask-question-btn__text {
-  color: var(--special-primary);
-  font-size: 18px;
-}
-
-.ask-question-btn:hover {
-  background-color: var(--special-primary);
-  border-color: var(--special-primary);
-}
-
-.ask-question-btn:hover .ask-question-btn__text {
-  color: var(--colors-rare-grays-0);
-}

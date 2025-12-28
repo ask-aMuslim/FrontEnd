@@ -7,4 +7,25 @@
       <router-outlet />
     </div>
   </div>
+
+  <div *ngIf="isAskQa$ | async" class="h-[262px] px-8 py-12 bg-(--color-surface-secondary-hover)">
+    <div class="flex flex-col h-full items-center justify-center gap-6">
+      <ng-container *ngIf="isQuestion$ | async; else askQaContent">
+        <h2 class="text-2xl font-semibold">Want to learn more?</h2>
+        <p class="text-center">Check the roadmap for easier understanding the whole picture.</p>
+        <button class="ask-question-btn" (click)="navigateToRoadmap()">
+          <span class="ask-question-btn__text text-sm font-semibold">Check the Roadmap</span>
+        </button>
+      </ng-container>
+      <ng-template #askQaContent>
+        <h2 class="text-2xl font-semibold">Don't see your question?</h2>
+        <p class="text-center">
+          Submit your own question and receive an answer from our knowledgeable scholars.
+        </p>
+        <button class="ask-question-btn" (click)="navigateToSendInquiry()">
+          <span class="ask-question-btn__text text-sm font-semibold">Ask a Question</span>
+        </button>
+      </ng-template>
+    </div>
+  </div>
 </div>
