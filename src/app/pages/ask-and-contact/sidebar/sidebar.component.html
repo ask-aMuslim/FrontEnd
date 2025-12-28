@@ -1,13 +1,13 @@
 <!-- Sidebar Component -->
 <aside
   [ngClass]="
-    'flex w-full flex-col items-start px-4 gap-8 rounded-lg bg-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] py-6 transition-[width,padding-left,padding-right] duration-200 ease-in-out ' +
+    'flex w-full flex-row items-center px-4 py-6 gap-3 sm:gap-4 md:gap-6 rounded-lg bg-white shadow-[0_0_4px_2px_rgba(0,0,0,0.15)] transition-[width,padding-left,padding-right] duration-200 ease-in-out lg:flex-col lg:items-start lg:gap-8 ' +
     (isCollapsed ? 'lg:w-20 lg:min-w-20' : 'lg:w-64 lg:min-w-64')
   "
 >
   <button
     type="button"
-    class="p-2 bg-orange-50 rounded-lg cursor-pointer"
+    class="hidden lg:block p-2 bg-orange-50 rounded-lg cursor-pointer"
     (click)="toggleCollapsed()"
     [attr.aria-expanded]="!isCollapsed"
     aria-controls="ask-contact-sidebar-nav"
@@ -21,22 +21,26 @@
     />
   </button>
 
-  <nav id="ask-contact-sidebar-nav" class="flex w-full flex-col items-start gap-4">
+  <nav
+    id="ask-contact-sidebar-nav"
+    class="flex w-full flex-row items-center justify-evenly gap-2 sm:gap-3 md:gap-4 lg:flex-col lg:items-start lg:justify-start lg:gap-4"
+  >
     <a
       *ngFor="let item of menuItems; trackBy: trackByKey"
       [routerLink]="item.href"
-      routerLinkActive="secondary-button border-r-3 border-[var(--special-primary)] rounded-r-none"
+      routerLinkActive="secondary-button border-b-3 lg:border-b-0 lg:border-r-3 border-[var(--special-primary)] rounded-b-none lg:rounded-r-none"
       [routerLinkActiveOptions]="{ exact: false }"
       #rla="routerLinkActive"
       [attr.aria-label]="item.label"
+      [class.is-active]="rla.isActive"
       [ngClass]="
-        'sidebar-item flex h-13 w-full items-center rounded-lg transition-colors hover:bg-(--special-primary-6) hover:text-(--special-primary) ' +
-        'px-3 py-3 ' +
-        (isCollapsed ? 'gap-0' : 'gap-3')
+        'sidebar-item flex h-13 w-auto lg:w-full items-center justify-center lg:justify-start rounded-lg transition-colors hover:bg-(--special-primary-6) hover:text-(--special-primary) flex-1 lg:flex-none ' +
+        'px-3 py-3 gap-0 ' +
+        (isCollapsed ? 'lg:gap-0' : 'lg:gap-3')
       "
     >
       <span
-        class="sidebar-icon h-6 w-6 min-h-6 min-w-6 shrink-0"
+        class="sidebar-icon h-6 w-6 min-h-6 min-w-6 shrink-0 mx-auto lg:mx-0"
         [class.is-active]="rla.isActive"
         [style.webkitMaskImage]="'url(' + item.icon + ')'"
         [style.maskImage]="'url(' + item.icon + ')'"
@@ -44,10 +48,10 @@
         [attr.aria-label]="item.label + ' Icon'"
       ></span>
       <span
-        class="text-lg font-bold whitespace-nowrap overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out"
+        class="text-lg font-bold whitespace-nowrap overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out max-w-0 opacity-0 lg:max-w-full lg:opacity-100"
         [class.text-primary]="rla.isActive"
         [class.text-text-title]="!rla.isActive"
-        [ngClass]="isCollapsed ? 'max-w-0 opacity-0' : 'max-w-full opacity-100'"
+        [ngClass]="isCollapsed ? 'lg:max-w-0 lg:opacity-0' : 'lg:max-w-full lg:opacity-100'"
         [attr.aria-hidden]="isCollapsed ? 'true' : null"
       >
         {{ item.label }}

@@ -18,3 +18,16 @@
 .sidebar-item:hover .sidebar-icon {
   background-color: var(--special-primary);
 }
+
+/* Rounded border edges for first/last active items */
+.sidebar-item.is-active:first-child {
+  /* Mobile/Tablet: bottom border has rounded left end */
+  border-bottom-left-radius: 0.5rem;
+}
+
+.sidebar-item.is-active:last-child {
+  /* Mobile/Tablet: bottom border has rounded right end */
+  border-bottom-right-radius: 0.5rem;
+}
+
+/* No desktop-specific rounding; mobile/tablet only */

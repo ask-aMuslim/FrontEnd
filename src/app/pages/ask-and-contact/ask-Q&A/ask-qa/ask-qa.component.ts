@@ -105,6 +105,8 @@ export class AskQaComponent {
       sameQuestions: 2,
     },
   ];
+  arrowRightIcon = '/icons/icons-24/arrow-right.svg';
+  arrowLeftIcon = '/icons/icons-24/arrow-left.svg';
 
   constructor(
     private readonly route: ActivatedRoute,

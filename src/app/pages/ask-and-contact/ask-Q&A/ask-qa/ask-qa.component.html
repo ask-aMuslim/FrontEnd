@@ -1,8 +1,8 @@
-<div class="flex w-full flex-1 flex-col items-center justify-center gap-8 lg:gap-10 lg:pr-0.5">
+<div class="flex w-full flex-1 flex-col justify-center gap-8 lg:gap-10">
   <div class="flex flex-col items-start gap-6 w-full">
     <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
       <div
-        class="flex h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-border-normal bg-white px-4 sm:px-6"
+        class="flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6"
       >
         <img src="/icons/icons-24/search.svg" alt="search icon" class="h-5 w-5 object-contain" />
         <input
@@ -16,7 +16,7 @@
 
       <button
         type="button"
-        class="button flex h-14 w-full items-center justify-center gap-1 rounded-lg px-8 md:w-auto"
+        class="button flex h-16 sm:h-14 w-full items-center justify-center rounded-lg px-8 md:w-auto"
         (click)="onSearch()"
       >
         <span class="text-lg font-semibold text-white">Search</span>
@@ -63,11 +63,7 @@
           (click)="prevPage()"
           class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
         >
-          <img
-            src="/icons/icons-24/arrow left.svg"
-            alt="Previous page"
-            class="h-6 w-6 object-contain"
-          />
+          <img [src]="arrowLeftIcon" alt="Previous page" class="h-6 w-6 object-contain" />
         </button>
 
         <button
@@ -89,11 +85,7 @@
           (click)="nextPage()"
           class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
         >
-          <img
-            src="/icons/icons-24/arrow right.svg"
-            alt="Next page"
-            class="h-6 w-6 object-contain"
-          />
+          <img [src]="arrowRightIcon" alt="Next page" class="h-6 w-6 object-contain" />
         </button>
       </div>
 
