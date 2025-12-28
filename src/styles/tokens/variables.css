@@ -24,15 +24,19 @@
   --color-surface-secondary: #f8f9fa;
   --color-surface-secondary-hover: #fdf9ee;
   --color-selected-surface-secondary: #ecc1401a;
+  --color-surface-secondary-2: #e9ecef;
 
   /* Text Colors */
   --color-text-body: #343a40;
   --color-text-caption: #6c757d;
   --color-text-placeholder: #adb5bd;
-  --color-text-title: #000401;
+  --color-text-title: #010d05;
+  --color-text-info: #2196f3;
 
   /* Borders Colors */
   --color-border-default: #bbd1c2;
+  --color-border-medium: #8fb39b;
+  --color-error: #ef4444;
 
   /* End Colors ---------------------*/
 

@@ -106,3 +106,9 @@
 p {
   color: var(--color-text-body);
 }
+
+h1 {
+  color: var(--color-text-title);
+  font-size: 40px;
+  font-weight: 700;
+}

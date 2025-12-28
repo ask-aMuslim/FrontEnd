@@ -70,6 +70,14 @@ export const routes: Routes = [
             title: 'Meet Scholar',
           },
           {
+            path: 'meet-scholar/success',
+            loadComponent: () =>
+              import(
+                './pages/ask-and-contact/meet-scholar/success/meet-scholar-success.component'
+              ).then((m) => m.MeetScholarSuccessComponent),
+            title: 'Meeting Request Submitted',
+          },
+          {
             path: 'send-inquiry',
             loadComponent: () =>
               import('./pages/ask-and-contact/send-inquiry/send-inquiry.component').then(
