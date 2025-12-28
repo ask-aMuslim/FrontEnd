@@ -29,6 +29,12 @@ export class MeetScholarSuccessComponent {
       confirmationEmail?: string;
     };
 
+    // Redirect if accessed directly without form submission
+    if (!state.scheduledDateTime && !state.confirmationEmail) {
+      this.router.navigate(['/ask-and-contact/meet-scholar']);
+      return;
+    }
+
     if (state.scheduledDateTime) {
       this.scheduledDateTime =
         typeof state.scheduledDateTime === 'string'

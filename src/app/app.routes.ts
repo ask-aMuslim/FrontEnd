@@ -78,6 +78,14 @@ export const routes: Routes = [
             title: 'Meeting Request Submitted',
           },
           {
+            path: 'send-inquiry/success',
+            loadComponent: () =>
+              import(
+                './pages/ask-and-contact/send-inquiry/success/send-inquiry-success.component'
+              ).then((m) => m.SendInquirySuccessComponent),
+            title: 'Inquiry Sent',
+          },
+          {
             path: 'send-inquiry',
             loadComponent: () =>
               import('./pages/ask-and-contact/send-inquiry/send-inquiry.component').then(

@@ -1,0 +1,33 @@
+<div class="px-4 py-24 space-y-6">
+  <div class="flex justify-center">
+    <span class="icon-circle">
+      <span
+        class="done-icon"
+        [style.maskImage]="'url(' + doneIcon + ')'"
+        [style.webkitMaskImage]="'url(' + doneIcon + ')'"
+      ></span>
+    </span>
+  </div>
+
+  <div class="text-center mt-2 space-y-2">
+    <h1 class="text-[40px] font-bold text-(--color-text-title)">
+      Your inquiry was sent successfully!
+    </h1>
+    <p class="text-base font-normal text-(--color-text-body)">
+      Thanks for Contacting Us. We will respond to your email as soon as possible.
+    </p>
+  </div>
+
+  <div class="bg-(--color-surface-secondary) rounded-lg px-6 py-5 sm:p-6 space-y-6">
+    <h2 class="text-xl font-medium text-(--color-text-title)">Subject:</h2>
+
+    <div *ngIf="hasDetails()" class="space-y-2">
+      <p class="text-sm text-(--color-text-title)" *ngIf="message">{{ message }}</p>
+      <p class="text-sm text-(--color-text-body)" *ngIf="details">{{ details }}</p>
+    </div>
+  </div>
+
+  <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+    <button type="button" class="button" (click)="goToAccount()">Go to Profile</button>
+  </div>
+</div>
