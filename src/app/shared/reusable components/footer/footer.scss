@@ -236,6 +236,15 @@
     cursor: pointer;
 }
 
+// Mobile: Smaller font size for store badges
+@media (max-width: 767px) {
+    .store-badge {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.7rem;
+        min-width: 120px;
+    }
+}
+
 .store-badge img {
     width: clamp(28px, 8vw, 44px);
     height: clamp(28px, 8vw, 44px);

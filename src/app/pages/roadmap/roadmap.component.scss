@@ -5,7 +5,7 @@
 }
 
 .roadmap-content {
-  max-width: 1248px;
+  max-width: fit-content;
   margin: 0 auto;
   padding: var(--spacing-2xl) var(--spacing-lg);
 
@@ -71,6 +71,7 @@
 
   .emoji {
     font-size: 16px;
+    color: var(--special-secondary)
   }
 
   .completion-text {
@@ -106,7 +107,7 @@
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
-  background: linear-gradient(135deg, #156B40 0%, #0C4E2D 100%);
+  // background: linear-gradient(135deg, #156B40 0%, #0C4E2D 100%);
 
   @media (min-width: 768px) {
     width: 260px;
@@ -377,13 +378,14 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--spacing-2xl);
+  align-items: flex-start;
 
   @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   @media (min-width: 1024px) {
-    grid-template-columns: repeat(3, 1fr);
+
     gap: var(--spacing-2xl);
   }
 }
@@ -392,6 +394,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-lg);
 }
 
@@ -408,7 +411,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-xl);
 }
 
 .course-card {
@@ -616,8 +619,40 @@
   }
 }
 
+.course-connector {
+  position: relative;
+  width: 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-md) 0;
+
+  .connector-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 100%;
+    border-left: 1px solid var(--colors-rare-grays-50);
+  }
+}
+
 @media (min-width: 768px) and (max-width: 1023px) {
   .courses-grid {
+    .course-column:nth-child(3) {
+      grid-column: 1 / -1;
+      max-width: 50%;
+      margin: 0 auto;
+    }
+  }
+}
+
+@media (max-width: 1300px) {
+  .courses-grid {
+    grid-template-columns: repeat(2, 1fr);
+
     .course-column:nth-child(3) {
       grid-column: 1 / -1;
       max-width: 50%;

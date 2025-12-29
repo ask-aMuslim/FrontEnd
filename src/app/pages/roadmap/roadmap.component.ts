@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 
 interface Course {
   id: string;
@@ -43,11 +44,16 @@ interface RecentLesson {
   styleUrls: ['./roadmap.component.scss']
 })
 export class RoadmapComponent {
+  constructor(private router: Router, private route: ActivatedRoute) { }
+
+  // Fallback image for broken thumbnails
+  readonly fallbackImage = '/AskAMuslimLogo.png';
+
   recentLesson: RecentLesson = {
     stageNumber: 1,
     courseName: 'Prayer (Salah)',
     lessonNumber: 2,
-    thumbnailUrl: 'https://api.builder.io/api/v1/image/assets/TEMP/441a117073f0c3911df8ecc8c6651341d4206320?width=520',
+    thumbnailUrl: '/Images/recent-lesson-thumbnail.jpg', // Use local asset instead of external CDN
     progress: 20,
     currentTime: '00:00',
     totalTime: '12:00',
@@ -56,7 +62,7 @@ export class RoadmapComponent {
   };
 
   importantNote = 'The roadmap consists of three stages. Each stage includes a list of courses covering the meaning of belief, true Islamic values from the prophet Mohamed (peace be upon him) and his companions, and important topics we face every day. Each course consists of lessons that will guide you step by step. You can take notes while learning and share them with your scholar. This roadmap for new Muslims, and it was created by 40+ scholars from the Islamic Center of America and is endorsed by the International Union of Muslim Scholars.';
-  
+
   showFullNote = false;
 
   stages: Stage[] = [
@@ -417,12 +423,44 @@ export class RoadmapComponent {
   }
 
   continueLearning(): void {
-    console.log('Continue learning clicked');
+    // Navigate to the recent lesson
+    this.router.navigate(['course', 'course-a2', 'lesson', '2'], { relativeTo: this.route });
   }
 
   onCourseClick(course: Course): void {
     if (course.status !== 'locked') {
-      console.log('Course clicked:', course);
+      this.router.navigate(['course', course.id], { relativeTo: this.route });
     }
+  }
+
+  /**
+   * TrackBy functions for performance optimization
+   */
+  trackByStageNumber(index: number, stage: Stage): number {
+    return stage.number;
+  }
+
+  trackByCourseId(index: number, course: Course): string {
+    return course.id;
+  }
+
+  /**
+   * Handle image load errors with fallback
+   */
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img.src !== this.fallbackImage) {
+      img.src = this.fallbackImage;
+    }
+  }
+
+  /**
+   * Get aria-label for course card
+   */
+  getCourseAriaLabel(course: Course): string {
+    const status = course.status === 'locked' ? 'Locked' :
+      course.status === 'completed' ? 'Completed' :
+        course.status === 'in-progress' ? 'In Progress' : 'Available';
+    return `${course.title}, ${course.lessons} lessons, ${course.duration}, ${status}, ${course.progress}% complete`;
   }
 }

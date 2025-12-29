@@ -164,7 +164,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 1.5rem 2.5rem;
+    padding: 1.5rem;
     position: relative;
     overflow: visible;
     background: var(--color-background-white);
@@ -176,7 +176,7 @@
     height: fit-content;
     max-height: fit-content;
     max-width: 700px;
-    width: 100%;
+    width: calc(100% - 3rem);
     align-self: center;
 }
 
@@ -221,43 +221,55 @@
     }
 
     .auth-right {
-        padding: 2rem 1.5rem;
-        margin: 2rem auto;
-        border-radius: 0.5rem;
-        border: 1px solid var(--color-border-default);
-        box-shadow: 0 4px 20px var(--shadow-color-md);
+        padding: 2rem 1.5rem 1.5rem;
+        /* keep top spacing, smaller bottom */
+        padding-top: calc(2rem + env(safe-area-inset-top));
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        align-items: flex-start;
+        /* ensure content starts at top on short viewports */
+        justify-content: flex-start;
         flex: 1;
         max-height: none;
-        height: fit-content;
-        overflow: visible;
+        min-height: 100vh;
+        height: auto;
+        overflow-y: auto;
+        /* allow vertical scrolling when content exceeds viewport */
         max-width: 100%;
+        width: 100%;
     }
 }
 
 @media (max-width: 768px) {
     .auth-right {
-        margin: 1.5rem 1rem;
+        margin: 0;
         padding: 1.5rem;
-        border-radius: 0.5rem;
-        border: 1px solid var(--color-border-default);
-        box-shadow: 0 4px 20px var(--shadow-color-md);
-        max-width: calc(100% - 2rem);
-        height: fit-content;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        max-width: 100%;
+        width: 100%;
+        min-height: 100vh;
+        height: auto;
+        overflow-y: auto;
     }
 }
 
 @media (max-width: 480px) {
     .auth-right {
-        margin: 1rem 0.75rem;
+        margin: 0;
         padding: 1rem 1.25rem;
-        max-width: calc(100% - 1.5rem);
-        border: 1px solid var(--color-border-default);
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 20px var(--shadow-color-md);
-        height: fit-content;
+        max-width: 100%;
+        width: 100%;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        min-height: 100vh;
+        height: auto;
+        overflow-y: auto;
     }
 }
 
@@ -284,11 +296,15 @@
 
     .auth-right {
         padding: 1rem 1.5rem;
-        margin: 1rem auto;
+        margin: 0;
         max-height: none;
-        height: fit-content;
-        border: 1px solid var(--color-border-default);
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 20px var(--shadow-color-md);
+        min-height: 100vh;
+        height: auto;
+        overflow-y: auto;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        width: 100%;
+        max-width: 100%;
     }
 }

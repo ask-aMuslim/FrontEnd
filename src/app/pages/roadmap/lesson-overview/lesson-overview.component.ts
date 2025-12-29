@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 interface Lesson {
   id: string;
@@ -111,26 +111,28 @@ export class LessonOverviewComponent implements OnInit {
     }
   ];
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     // Could fetch course data based on route params
   }
 
   onBegin(): void {
-    console.log('Begin course');
-    // Navigate to first lesson or current lesson
+    // Navigate to first lesson
+    this.router.navigate(['../lesson', '1'], { relativeTo: this.route });
   }
 
   onTakeQuiz(): void {
-    console.log('Take quiz');
-    // Navigate to quiz
+    // Navigate to quiz lesson
+    this.router.navigate(['../lesson', '7'], { relativeTo: this.route });
   }
 
   onLessonClick(lesson: Lesson): void {
     if (lesson.status !== 'pending') {
-      console.log('Navigate to lesson:', lesson.id);
-      // Navigate to lesson detail
+      this.router.navigate(['../lesson', lesson.id], { relativeTo: this.route });
     }
   }
 

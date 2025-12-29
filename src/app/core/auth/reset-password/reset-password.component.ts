@@ -250,4 +250,10 @@ export class ResetPasswordComponent implements OnDestroy {
   protected trackByIndex(index: number): number {
     return index;
   }
+
+  protected goToPreviousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep = (this.currentStep - 1) as 1 | 2 | 3;
+    }
+  }
 }

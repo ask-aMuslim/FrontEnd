@@ -30,22 +30,13 @@
                 </div>
 
                 <!-- Auto-scrolling suggestion bubbles -->
-                <div class="suggestion-bubbles">
-                    <div class="suggestion-bubbles-track">
+                <div class="suggestion-bubbles" #bubblesContainer>
+                    <div class="suggestion-bubbles-track" #bubblesTrack>
                         <a
                             *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
                             class="suggestion-bubble"
                             [routerLink]="'/ask-and-contact'"
                             [queryParams]="{ question: bubble }">
-                            {{ bubble }}
-                        </a>
-                        <!-- Duplicate for seamless infinite scroll -->
-                        <a
-                            *ngFor="let bubble of heroBubbles; let i = index; trackBy: trackByIndex"
-                            class="suggestion-bubble"
-                            [routerLink]="'/ask-and-contact'"
-                            [queryParams]="{ question: bubble }"
-                            aria-hidden="true">
                             {{ bubble }}
                         </a>
                     </div>

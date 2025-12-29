@@ -44,6 +44,7 @@ interface PillarItem {
 })
 export class Home implements AfterViewInit, OnDestroy {
   @ViewChild('bubblesContainer') bubblesContainer?: ElementRef<HTMLDivElement>;
+  @ViewChild('bubblesTrack') bubblesTrack?: ElementRef<HTMLDivElement>;
 
   protected readonly Math = Math;
   protected searchQuery = '';
@@ -212,6 +213,8 @@ export class Home implements AfterViewInit, OnDestroy {
   }
 
   private cleanupFns: (() => void)[] = [];
+  private bubbleMarqueeId?: number;
+  private lastFrameTime = 0;
 
   constructor(
     private readonly host: ElementRef<HTMLElement>,

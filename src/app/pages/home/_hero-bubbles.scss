@@ -1,5 +1,30 @@
 // Hero suggestion bubbles - scrollable horizontal layout
 
+// Bubble positions table for desktop layout
+$bubble-positions: (
+    1: (top: 30%, left: 10%, animation: float 6s ease-in-out infinite, start-rotate: -3deg),
+    2: (top: 50%, left: 8%, animation: float-slow 7s ease-in-out infinite, start-rotate: 5deg),
+    3: (top: 70%, left: 4%, animation: float-side 8s ease-in-out infinite, start-rotate: -4deg),
+    4: (top: 90%, left: 8%, animation: float-rotate 6.5s ease-in-out infinite, start-rotate: -5deg),
+
+    5: (top: 30%, right: 20%, animation: float-scale 5.5s ease-in-out infinite, start-rotate: 4deg),
+    6: (top: 50%, right: 10%, animation: float 8s ease-in-out infinite, start-rotate: -6deg),
+    7: (top: 70%, right: 4%, animation: float-slow 7s ease-in-out infinite, start-rotate: 3deg),
+    8: (top: 90%, right: 10%, animation: float-rotate 6.5s ease-in-out infinite, start-rotate: -4deg)
+);
+
+// Larger desktop adjustments table
+$large-screen-adjustments: (
+    1: (left: 6%),
+    2: (left: 2%),
+    3: (left: 1%),
+    4: (left: 6%),
+    5: (right: 6%),
+    6: (right: 2%),
+    7: (right: 2%),
+    8: (right: 8%)
+);
+
 .suggestion-bubbles {
     width: 100%;
     overflow-x: auto;
@@ -23,22 +48,8 @@
     gap: 0.75rem;
     width: fit-content;
     padding-bottom: 0.5rem;
-    animation: autoScrollBubbles 30s linear infinite;
-
-    // Pause animation on hover to allow manual scrolling
-    &:hover {
-        animation-play-state: paused;
-    }
-}
-
-@keyframes autoScrollBubbles {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(calc(-100% / 2));
-    }
+    will-change: transform;
+    animation: none; // JS-driven marquee controls motion
 }
 
 .suggestion-bubble {
@@ -93,60 +104,30 @@
         animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
         animation-iteration-count: infinite;
         animation-direction: alternate;
+        animation-play-state: running;
+        transform-origin: center center;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-        // Left side bubbles (4) - centered vertically and spread out
-        &:nth-child(1) {
-            top: 20%;
-            left: 1%;
-            animation: rotateClockwise1 6s;
-        }
+        // Generate bubble positions from table
+        @each $index, $position in $bubble-positions {
+            &:nth-child(#{$index}) {
+                top: map-get($position, top);
+                --start-rotate: map-get($position, start-rotate);
 
-        &:nth-child(2) {
-            top: 40%;
-            left: 6%;
-            animation: rotateAntiClockwise1 7s;
-        }
+                @if map-has-key($position, left) {
+                    left: map-get($position, left);
+                }
 
-        &:nth-child(3) {
-            top: 60%;
-            left: 2%;
-            animation: rotateClockwise2 6.5s;
-        }
+                @else {
+                    right: map-get($position, right);
+                }
 
-        &:nth-child(4) {
-            top: 80%;
-            left: 8%;
-            animation: rotateAntiClockwise2 7.5s;
-        }
-
-        // Right side bubbles (4) - centered vertically and spread out
-        &:nth-child(5) {
-            top: 25%;
-            right: 1%;
-            animation: rotateAntiClockwise1 5.5s;
-        }
-
-        &:nth-child(6) {
-            top: 45%;
-            right: 7%;
-            animation: rotateClockwise1 8s;
-        }
-
-        &:nth-child(7) {
-            top: 65%;
-            right: 3%;
-            animation: rotateAntiClockwise2 7s;
-        }
-
-        &:nth-child(8) {
-            top: 85%;
-            right: 9%;
-            animation: rotateClockwise2 6.5s;
+                animation: map-get($position, animation);
+            }
         }
 
         // Hide duplicated bubbles on desktop
-        &:nth-child(n+9) {
+        &:nth-child(n + 9) {
             display: none;
         }
     }
@@ -155,78 +136,94 @@
 // Larger desktop screens - more spread out
 @media (min-width: 1440px) {
     .suggestion-bubble {
-        &:nth-child(1) {
-            left: 3%;
-        }
 
-        &:nth-child(2) {
-            left: 10%;
-        }
-
-        &:nth-child(3) {
-            left: 5%;
-        }
-
-        &:nth-child(4) {
-            left: 12%;
-        }
-
-        &:nth-child(5) {
-            right: 3%;
-        }
-
-        &:nth-child(6) {
-            right: 11%;
-        }
-
-        &:nth-child(7) {
-            right: 6%;
-        }
-
-        &:nth-child(8) {
-            right: 13%;
+        // Apply adjustments from table
+        @each $index, $adjustment in $large-screen-adjustments {
+            &:nth-child(#{$index}) {
+                @each $property, $value in $adjustment {
+                    #{$property}: $value;
+                }
+            }
         }
     }
 }
 
-// Rotation animations for desktop - smooth continuous rotation
-@keyframes rotateClockwise1 {
+// Keyframe variants - continuous smooth rotation animations
+@keyframes float {
     0% {
-        transform: rotate(0deg) translateY(0px);
+        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(calc(var(--start-rotate, 0deg) + 6deg));
     }
 
     100% {
-        transform: rotate(15deg) translateY(-12px);
+        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
     }
 }
 
-@keyframes rotateClockwise2 {
+@keyframes float-slow {
     0% {
-        transform: rotate(0deg) translateY(0px);
+        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
+    }
+
+    50% {
+        transform: translateY(-14px) rotate(calc(var(--start-rotate, 0deg) + 6deg));
     }
 
     100% {
-        transform: rotate(18deg) translateY(-15px);
+        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
     }
 }
 
-@keyframes rotateAntiClockwise1 {
+@keyframes float-side {
     0% {
-        transform: rotate(0deg) translateY(0px);
+        transform: translateX(0) translateY(0) rotate(var(--start-rotate, 0deg));
+    }
+
+    25% {
+        transform: translateX(8px) translateY(-4px) rotate(calc(var(--start-rotate, 0deg) + 4deg));
+    }
+
+    50% {
+        transform: translateX(0) translateY(-8px) rotate(calc(var(--start-rotate, 0deg) + 8deg));
+    }
+
+    75% {
+        transform: translateX(-8px) translateY(-4px) rotate(calc(var(--start-rotate, 0deg) + 4deg));
     }
 
     100% {
-        transform: rotate(-16deg) translateY(-14px);
+        transform: translateX(0) translateY(0) rotate(var(--start-rotate, 0deg));
     }
 }
 
-@keyframes rotateAntiClockwise2 {
+@keyframes float-rotate {
     0% {
-        transform: rotate(0deg) translateY(0px);
+        transform: translateY(0) rotate(var(--start-rotate, -5deg));
+    }
+
+    50% {
+        transform: translateY(-6px) rotate(calc(var(--start-rotate, -5deg) + 11deg));
     }
 
     100% {
-        transform: rotate(-20deg) translateY(-10px);
+        transform: translateY(0) rotate(var(--start-rotate, -5deg));
+    }
+}
+
+@keyframes float-scale {
+    0% {
+        transform: translateY(0) scale(1) rotate(var(--start-rotate, 0deg));
+    }
+
+    50% {
+        transform: translateY(-6px) scale(1.06) rotate(calc(var(--start-rotate, 0deg) + 6deg));
+    }
+
+    100% {
+        transform: translateY(0) scale(1) rotate(var(--start-rotate, 0deg));
     }
 }
 

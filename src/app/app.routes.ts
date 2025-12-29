@@ -8,9 +8,12 @@ import { AppLayoutComponent } from './core/Layouts/app-layout/app-layout.compone
 import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
 import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';
+import { CourseComponent } from './pages/roadmap/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
 import { AccountComponent } from './pages/account/account.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
+import { LessonOverviewComponent } from './pages/roadmap/lesson-overview/lesson-overview.component';
+import { LessonPlayerComponent } from './pages/roadmap/lesson-player/lesson-player.component';
 
 export const routes: Routes = [
     // default route
@@ -35,9 +38,17 @@ export const routes: Routes = [
             { path: 'home', component: Home, title: 'Home' },
             { path: 'ask-and-contact', component: AskAndContactComponent, title: 'Ask & Contact' },
             { path: 'muslim-tube', component: MuslimTubeComponent, title: 'Muslim Tube' },
-            { path: 'roadmap', component: RoadmapComponent, title: 'Roadmap' },
+            {
+                path: 'roadmap',
+                children: [
+                    { path: '', component: RoadmapComponent, title: 'Roadmap' },
+                    { path: 'course/:id', component: CourseComponent, title: 'Course' },
+                    { path: 'course/:courseId/lesson/:lessonId', component: LessonPlayerComponent, title: 'Lesson Player' },
+                    { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' }
+                ]
+            },
             { path: 'events', component: EventsComponent, title: 'Events' },
-            { path: 'account', component: AccountComponent, title: 'Account' },
+            { path: 'account', component: AccountComponent, title: 'Account' }
         ],
     },
 
