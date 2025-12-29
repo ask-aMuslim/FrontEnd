@@ -1,25 +1,25 @@
-<div class="space-y-6">
-  <div class="bg-(--color-surface-secondary) rounded-lg px-6 py-5 space-y-4">
+<div class="space-y-5 md:space-y-6 px-2 md:px-0">
+  <div class="bg-(--color-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4">
     <h2>Booking Details</h2>
 
     <div class="space-y-2">
       <div class="booking-item-row">
         <span class="booking-label">Name:</span>
-        <p class="booking-value text-var(--color-text-title)">
+        <p class="booking-value text-(--color-text-title)">
           {{ form().get('name')?.value || '-' }}
         </p>
       </div>
 
       <div class="booking-item-row">
         <span class="booking-label">Email:</span>
-        <p class="booking-value text-var(--color-text-title)">
+        <p class="booking-value text-(--color-text-title)">
           {{ form().get('email')?.value || '-' }}
         </p>
       </div>
 
       <div class="booking-item-row">
         <span class="booking-label">Subject:</span>
-        <p class="booking-value text-var(--color-text-title)">
+        <p class="booking-value text-(--color-text-title)">
           {{ getTopicLabel(form().get('topic')?.value) }}
         </p>
       </div>
@@ -57,18 +57,22 @@
     </div>
   </div>
 
-  <div class="mt-6 mb-10 bg-(--color-surface-secondary) rounded-lg px-6 py-5 space-y-4">
+  <div
+    class="mt-4 md:mt-6 mb-8 md:mb-10 bg-(--color-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4"
+  >
     <h2>Your Message</h2>
-    <p class="mt-6 mb-10 text-(--color-text-title) text-[14px] font-normal">
+    <p
+      class="mt-4 md:mt-6 mb-6 md:mb-10 text-(--color-text-title) text-sm md:text-[14px] font-normal"
+    >
       {{ form().get('message')?.value }}
     </p>
   </div>
 
-  <div class="flex justify-between">
+  <div class="flex flex-col sm:flex-row gap-3 justify-between mb-5">
     <button
       type="button"
       (click)="onBack()"
-      class="px-8 py-3 border border-gray-300 text-text-body font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 cursor-pointer"
+      class="px-6 md:px-8 py-3 border border-gray-300 text-text-body font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 cursor-pointer justify-center"
     >
       <img [src]="leftArrowIcon" alt="Back" />
       Back
@@ -77,7 +81,7 @@
       type="button"
       (click)="onSubmit()"
       [disabled]="isSubmitting()"
-      class="button disabled:opacity-50 disabled:cursor-not-allowed"
+      class="button w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <span *ngIf="!isSubmitting()">Confirm Booking</span>
       <span *ngIf="isSubmitting()">Submitting...</span>

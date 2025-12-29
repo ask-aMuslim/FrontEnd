@@ -1,12 +1,14 @@
 // Inputs base
-textarea {
+textarea,
+input {
   color: var(--color-text-body);
   border-width: 1.5px;
   border-color: var(--color-text-placeholder);
   border-radius: 8px;
 }
 
-textarea:hover {
+textarea:hover,
+input:hover {
   border-color: var(--special-primary);
   box-shadow: var(--shadow-base);
 }
