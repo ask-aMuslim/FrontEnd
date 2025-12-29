@@ -98,309 +98,328 @@
         *ngFor="let stage of stages; let i = index; let isLast = last; trackBy: trackByStageNumber">
         <div class="stage-wrapper">
           <div class="stage-container" [class.locked]="stage.isLocked">
-          <h3 class="stage-title">{{ stage.title }}</h3>
+            <h3 class="stage-title">{{ stage.title }}</h3>
 
-          <div class="courses-grid">
-            <div class="course-column">
-              <span class="column-label">B: Models & Stories</span>
-              <div class="courses-stack">
-                <div *ngFor="let course of stage.courses.modelsStories; let i = index; trackBy: trackByCourseId" class="course-wrapper">
-                  <div class="course-connector" *ngIf="i > 0">
-                    <div class="connector-line"></div>
-                  </div>
-                  <div class="course-card"
-                  [class.completed]="course.status === 'completed'"
-                  [class.in-progress]="course.status === 'in-progress'"
-                  [class.locked]="course.status === 'locked'"
-                  (click)="onCourseClick(course)"
-                  [attr.aria-label]="getCourseAriaLabel(course)"
-                  [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
-                  [attr.role]="'button'"
-                  (keydown.enter)="onCourseClick(course)"
-                  (keydown.space)="onCourseClick(course)">
-                <div class="course-overlay"
-                  *ngIf="course.status === 'locked'"></div>
-                <svg class="course-wave" viewBox="0 0 321 169" fill="none"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path opacity="0.8" fill-rule="evenodd" clip-rule="evenodd"
-                    d="M6.25236 0.254879C12.9557 -5.67992 23.4933 -5.36816 29.7887 0.951556C112.847 84.3341 202.308 142.603 303.349 142.603C312.544 142.603 320 149.631 320 158.301C320 166.97 312.544 174 303.349 174C188.112 174 90.3346 107.597 5.51339 22.4443C-0.781968 16.1246 -0.451283 6.18999 6.25236 0.254879Z"
-                    fill="white" stroke="white" stroke-width="2"
-                    stroke-linecap="round" />
-                </svg>
-
-                <h4 class="course-name">{{ course.title }}</h4>
-
-                <div class="course-meta">
-                  <span class="meta-item">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M9.59993 20.3337H14.5999C18.7666 20.3337 20.4333 18.667 20.4333 14.5003V9.50033C20.4333 5.33366 18.7666 3.66699 14.5999 3.66699H9.59993C5.43327 3.66699 3.7666 5.33366 3.7666 9.50033V14.5003C3.7666 18.667 5.43327 20.3337 9.59993 20.3337Z"
-                        stroke="#343A40" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                      <path d="M16.6833 16.2334H15.1416" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M12.9083 16.2334H7.5166" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M16.6826 13.0996H12.0742" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M9.82494 13.0996H7.5166" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                    </svg>
-                    <span>{{ course.lessons }} lessons</span>
-                  </span>
-
-                  <span class="meta-item">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M21.0088 12.0034C21.0088 16.9733 16.9753 21.0068 12.0054 21.0068C7.03548 21.0068 3.00195 16.9733 3.00195 12.0034C3.00195 7.03353 7.03548 3 12.0054 3C16.9753 3 21.0088 7.03353 21.0088 12.0034Z"
-                        stroke="#343A40" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                      <path
-                        d="M15.3453 14.8666L12.5542 13.2009C12.068 12.9128 11.6719 12.2196 11.6719 11.6523V7.96094"
-                        stroke="#343A40" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <span>{{ course.duration }}</span>
-                  </span>
-                </div>
-
-                <div class="course-progress">
-                  <div class="progress-track">
-                    <div class="progress-bar-fill"
-                      [style.width.%]="course.progress"></div>
-                  </div>
-                  <span class="progress-text">{{ course.progress }}%</span>
-                </div>
-
-                <div *ngIf="course.status === 'completed'"
-                  class="completion-badge">
-                  <svg width="24" height="24" viewBox="0 0 16 16" fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M12.1913 6.24899C12.1913 7.1172 11.9339 7.91357 11.4908 8.5782C10.8441 9.53623 9.82022 10.2128 8.62867 10.3865C8.42509 10.4224 8.21552 10.4404 7.99997 10.4404C7.78441 10.4404 7.57484 10.4224 7.37126 10.3865C6.17971 10.2128 5.15582 9.53623 4.50915 8.5782C4.06606 7.91357 3.80859 7.1172 3.80859 6.24899C3.80859 3.93176 5.68274 2.05762 7.99997 2.05762C10.3172 2.05762 12.1913 3.93176 12.1913 6.24899Z"
-                      stroke="#2196F3" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                    <path
-                      d="M13.5386 11.9201L12.5506 12.1536C12.3291 12.2075 12.1554 12.3752 12.1075 12.5967L11.898 13.4769C11.7842 13.9559 11.1735 14.0996 10.8561 13.7224L8 10.4411L5.14388 13.7284C4.82653 14.1056 4.21579 13.9619 4.10202 13.4829L3.89246 12.6027C3.83857 12.3811 3.66492 12.2075 3.44937 12.1596L2.4614 11.9261C2.00634 11.8183 1.84467 11.2495 2.17399 10.9202L4.50919 8.58496C5.15586 9.54299 6.17975 10.2196 7.37129 10.3933C7.57488 10.4292 7.78444 10.4471 8 10.4471C8.21556 10.4471 8.42513 10.4292 8.62871 10.3933C9.82025 10.2196 10.8441 9.54299 11.4908 8.58496L13.826 10.9202C14.1553 11.2435 13.9937 11.8123 13.5386 11.9201Z"
-                      stroke="#2196F3" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                    <path
-                      d="M8.34748 4.44073L8.70075 5.14727C8.74865 5.24307 8.8744 5.33888 8.98816 5.35684L9.62884 5.46462C10.036 5.53048 10.1318 5.82987 9.83841 6.12326L9.34143 6.62023C9.25761 6.70406 9.20971 6.86574 9.23964 6.98549L9.38335 7.60222C9.49711 8.08722 9.23964 8.27882 8.80853 8.02135L8.20976 7.66808C8.10199 7.60221 7.92236 7.60221 7.81458 7.66808L7.21581 8.02135C6.7847 8.27283 6.52723 8.08722 6.64099 7.60222L6.7847 6.98549C6.80865 6.87172 6.76673 6.70406 6.68291 6.62023L6.18593 6.12326C5.89253 5.82987 5.98834 5.53647 6.3955 5.46462L7.03618 5.35684C7.14396 5.33888 7.2697 5.24307 7.3176 5.14727L7.67087 4.44073C7.84452 4.05752 8.15587 4.05752 8.34748 4.44073Z"
-                      stroke="#2196F3" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                  </svg>
-                  <span>Completed</span>
-                </div>
-              </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="course-column">
-              <span class="column-label">A: Main Believes</span>
-              <div class="courses-stack">
-                <div *ngFor="let course of stage.courses.mainBelieves; let i = index; trackBy: trackByCourseId" class="course-wrapper">
-                  <div class="course-connector" *ngIf="i > 0">
-                    <div class="connector-line"></div>
-                  </div>
-                  <div class="course-card"
-                  [class.completed]="course.status === 'completed'"
-                  [class.in-progress]="course.status === 'in-progress'"
-                  [class.locked]="course.status === 'locked'"
-                  (click)="onCourseClick(course)"
-                  [attr.aria-label]="getCourseAriaLabel(course)"
-                  [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
-                  [attr.role]="'button'"
-                  (keydown.enter)="onCourseClick(course)"
-                  (keydown.space)="onCourseClick(course)">
-                <div class="course-overlay"
-                  *ngIf="course.status === 'locked'"></div>
-                <svg class="course-wave" viewBox="0 0 321 169" fill="none"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path opacity="0.8" fill-rule="evenodd" clip-rule="evenodd"
-                    d="M6.25236 0.254879C12.9557 -5.67992 23.4933 -5.36816 29.7887 0.951556C112.847 84.3341 202.308 142.603 303.349 142.603C312.544 142.603 320 149.631 320 158.301C320 166.97 312.544 174 303.349 174C188.112 174 90.3346 107.597 5.51339 22.4443C-0.781968 16.1246 -0.451283 6.18999 6.25236 0.254879Z"
-                    fill="white" stroke="white" stroke-width="2"
-                    stroke-linecap="round" />
-                </svg>
-
-                <h4 class="course-name">{{ course.title }}</h4>
-
-                <div class="course-meta">
-                  <span class="meta-item">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M9.59993 20.3337H14.5999C18.7666 20.3337 20.4333 18.667 20.4333 14.5003V9.50033C20.4333 5.33366 18.7666 3.66699 14.5999 3.66699H9.59993C5.43327 3.66699 3.7666 5.33366 3.7666 9.50033V14.5003C3.7666 18.667 5.43327 20.3337 9.59993 20.3337Z"
-                        stroke="#343A40" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                      <path d="M16.6833 16.2334H15.1416" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M12.9083 16.2334H7.5166" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M16.6826 13.0996H12.0742" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M9.82494 13.0996H7.5166" stroke="#343A40"
-                        stroke-width="1.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                    </svg>
-                    <span>{{ course.lessons }} lessons</span>
-                  </span>
-
-                  <span class="meta-item">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M21.0088 12.0034C21.0088 16.9733 16.9753 21.0068 12.0054 21.0068C7.03548 21.0068 3.00195 16.9733 3.00195 12.0034C3.00195 7.03353 7.03548 3 12.0054 3C16.9753 3 21.0088 7.03353 21.0088 12.0034Z"
-                        stroke="#343A40" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                      <path
-                        d="M15.3453 14.8666L12.5542 13.2009C12.068 12.9128 11.6719 12.2196 11.6719 11.6523V7.96094"
-                        stroke="#343A40" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <span>{{ course.duration }}</span>
-                  </span>
-                </div>
-
-                <div class="course-progress">
-                  <div class="progress-track">
-                    <div class="progress-bar-fill"
-                      [style.width.%]="course.progress"></div>
-                  </div>
-                  <span class="progress-text">{{ course.progress }}%</span>
-                </div>
-
-                <div *ngIf="course.status === 'completed'"
-                  class="completion-badge">
-                  <svg width="24" height="24" viewBox="0 0 16 16" fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M12.1913 6.24899C12.1913 7.1172 11.9339 7.91357 11.4908 8.5782C10.8441 9.53623 9.82022 10.2128 8.62867 10.3865C8.42509 10.4224 8.21552 10.4404 7.99997 10.4404C7.78441 10.4404 7.57484 10.4224 7.37126 10.3865C6.17971 10.2128 5.15582 9.53623 4.50915 8.5782C4.06606 7.91357 3.80859 7.1172 3.80859 6.24899C3.80859 3.93176 5.68274 2.05762 7.99997 2.05762C10.3172 2.05762 12.1913 3.93176 12.1913 6.24899Z"
-                      stroke="#2196F3" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                    <path
-                      d="M13.5386 11.9201L12.5506 12.1536C12.3291 12.2075 12.1554 12.3752 12.1075 12.5967L11.898 13.4769C11.7842 13.9559 11.1735 14.0996 10.8561 13.7224L8 10.4411L5.14388 13.7284C4.82653 14.1056 4.21579 13.9619 4.10202 13.4829L3.89246 12.6027C3.83857 12.3811 3.66492 12.2075 3.44937 12.1596L2.4614 11.9261C2.00634 11.8183 1.84467 11.2495 2.17399 10.9202L4.50919 8.58496C5.15586 9.54299 6.17975 10.2196 7.37129 10.3933C7.57488 10.4292 7.78444 10.4471 8 10.4471C8.21556 10.4471 8.42513 10.4292 8.62871 10.3933C9.82025 10.2196 10.8441 9.54299 11.4908 8.58496L13.826 10.9202C14.1553 11.2435 13.9937 11.8123 13.5386 11.9201Z"
-                      stroke="#2196F3" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                    <path
-                      d="M8.34748 4.44073L8.70075 5.14727C8.74865 5.24307 8.8744 5.33888 8.98816 5.35684L9.62884 5.46462C10.036 5.53048 10.1318 5.82987 9.83841 6.12326L9.34143 6.62023C9.25761 6.70406 9.20971 6.86574 9.23964 6.98549L9.38335 7.60222C9.49711 8.08722 9.23964 8.27882 8.80853 8.02135L8.20976 7.66808C8.10199 7.60221 7.92236 7.60221 7.81458 7.66808L7.21581 8.02135C6.7847 8.27283 6.52723 8.08722 6.64099 7.60222L6.7847 6.98549C6.80865 6.87172 6.76673 6.70406 6.68291 6.62023L6.18593 6.12326C5.89253 5.82987 5.98834 5.53647 6.3955 5.46462L7.03618 5.35684C7.14396 5.33888 7.2697 5.24307 7.3176 5.14727L7.67087 4.44073C7.84452 4.05752 8.15587 4.05752 8.34748 4.44073Z"
-                      stroke="#2196F3" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                  </svg>
-                  <span>Completed</span>
-                </div>
-              </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="course-column">
-              <span class="column-label">C: Social Topics</span>
-              <div class="courses-stack">
-                <div *ngFor="let course of stage.courses.socialTopics; let i = index; trackBy: trackByCourseId" class="course-wrapper">
-                  <div class="course-connector" *ngIf="i > 0">
-                    <div class="connector-line"></div>
-                  </div>
-                  <div class="course-card"
-                  [class.completed]="course.status === 'completed'"
-                  [class.in-progress]="course.status === 'in-progress'"
-                  [class.locked]="course.status === 'locked'"
-                  (click)="onCourseClick(course)"
-                  [attr.aria-label]="getCourseAriaLabel(course)"
-                  [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
-                  [attr.role]="'button'"
-                  (keydown.enter)="onCourseClick(course)"
-                  (keydown.space)="onCourseClick(course)">
-                  <div class="course-overlay"
-                    *ngIf="course.status === 'locked'"></div>
-                  <svg class="course-wave" viewBox="0 0 321 169" fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path opacity="0.8" fill-rule="evenodd" clip-rule="evenodd"
-                      d="M6.25236 0.254879C12.9557 -5.67992 23.4933 -5.36816 29.7887 0.951556C112.847 84.3341 202.308 142.603 303.349 142.603C312.544 142.603 320 149.631 320 158.301C320 166.97 312.544 174 303.349 174C188.112 174 90.3346 107.597 5.51339 22.4443C-0.781968 16.1246 -0.451283 6.18999 6.25236 0.254879Z"
-                      fill="white" stroke="white" stroke-width="2"
-                      stroke-linecap="round" />
-                  </svg>
-
-                  <h4 class="course-name">{{ course.title }}</h4>
-
-                  <div class="course-meta">
-                    <span class="meta-item">
-                      <svg width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M9.59993 20.3337H14.5999C18.7666 20.3337 20.4333 18.667 20.4333 14.5003V9.50033C20.4333 5.33366 18.7666 3.66699 14.5999 3.66699H9.59993C5.43327 3.66699 3.7666 5.33366 3.7666 9.50033V14.5003C3.7666 18.667 5.43327 20.3337 9.59993 20.3337Z"
-                          stroke="#343A40" stroke-width="1.5"
-                          stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M16.6833 16.2334H15.1416" stroke="#343A40"
-                          stroke-width="1.5" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                        <path d="M12.9083 16.2334H7.5166" stroke="#343A40"
-                          stroke-width="1.5" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                        <path d="M16.6826 13.0996H12.0742" stroke="#343A40"
-                          stroke-width="1.5" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                        <path d="M9.82494 13.0996H7.5166" stroke="#343A40"
-                          stroke-width="1.5" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                      </svg>
-                      <span>{{ course.lessons }} lessons</span>
-                    </span>
-
-                    <span class="meta-item">
-                      <svg width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M21.0088 12.0034C21.0088 16.9733 16.9753 21.0068 12.0054 21.0068C7.03548 21.0068 3.00195 16.9733 3.00195 12.0034C3.00195 7.03353 7.03548 3 12.0054 3C16.9753 3 21.0088 7.03353 21.0088 12.0034Z"
-                          stroke="#343A40" stroke-width="1.5"
-                          stroke-linecap="round" stroke-linejoin="round" />
-                        <path
-                          d="M15.3453 14.8666L12.5542 13.2009C12.068 12.9128 11.6719 12.2196 11.6719 11.6523V7.96094"
-                          stroke="#343A40" stroke-width="1.5"
-                          stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                      <span>{{ course.duration }}</span>
-                    </span>
-                  </div>
-
-                  <div class="course-progress">
-                    <div class="progress-track">
-                      <div class="progress-bar-fill"
-                        [style.width.%]="course.progress"></div>
+            <div class="courses-grid">
+              <div class="course-column">
+                <span class="column-label">B: Models & Stories</span>
+                <div class="courses-stack">
+                  <div
+                    *ngFor="let course of stage.courses.modelsStories; let i = index; trackBy: trackByCourseId"
+                    class="course-wrapper">
+                    <div class="course-connector" *ngIf="i > 0">
+                      <div class="connector-line"></div>
                     </div>
-                    <span class="progress-text">{{ course.progress }}%</span>
-                  </div>
+                    <div class="course-card"
+                      [class.completed]="course.status === 'completed'"
+                      [class.in-progress]="course.status === 'in-progress'"
+                      [class.locked]="course.status === 'locked'"
+                      (click)="onCourseClick(course)"
+                      [attr.aria-label]="getCourseAriaLabel(course)"
+                      [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
+                      [attr.role]="'button'"
+                      (keydown.enter)="onCourseClick(course)"
+                      (keydown.space)="onCourseClick(course)">
+                      <div class="course-overlay"
+                        *ngIf="course.status === 'locked'"></div>
+                      <svg class="course-wave" viewBox="0 0 321 169" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path opacity="0.8" fill-rule="evenodd"
+                          clip-rule="evenodd"
+                          d="M6.25236 0.254879C12.9557 -5.67992 23.4933 -5.36816 29.7887 0.951556C112.847 84.3341 202.308 142.603 303.349 142.603C312.544 142.603 320 149.631 320 158.301C320 166.97 312.544 174 303.349 174C188.112 174 90.3346 107.597 5.51339 22.4443C-0.781968 16.1246 -0.451283 6.18999 6.25236 0.254879Z"
+                          fill="white" stroke="white" stroke-width="2"
+                          stroke-linecap="round" />
+                      </svg>
 
-                  <div *ngIf="course.status === 'completed'"
-                    class="completion-badge">
-                    <svg width="24" height="24" viewBox="0 0 16 16" fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M12.1913 6.24899C12.1913 7.1172 11.9339 7.91357 11.4908 8.5782C10.8441 9.53623 9.82022 10.2128 8.62867 10.3865C8.42509 10.4224 8.21552 10.4404 7.99997 10.4404C7.78441 10.4404 7.57484 10.4224 7.37126 10.3865C6.17971 10.2128 5.15582 9.53623 4.50915 8.5782C4.06606 7.91357 3.80859 7.1172 3.80859 6.24899C3.80859 3.93176 5.68274 2.05762 7.99997 2.05762C10.3172 2.05762 12.1913 3.93176 12.1913 6.24899Z"
-                        stroke="#2196F3" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path
-                        d="M13.5386 11.9201L12.5506 12.1536C12.3291 12.2075 12.1554 12.3752 12.1075 12.5967L11.898 13.4769C11.7842 13.9559 11.1735 14.0996 10.8561 13.7224L8 10.4411L5.14388 13.7284C4.82653 14.1056 4.21579 13.9619 4.10202 13.4829L3.89246 12.6027C3.83857 12.3811 3.66492 12.2075 3.44937 12.1596L2.4614 11.9261C2.00634 11.8183 1.84467 11.2495 2.17399 10.9202L4.50919 8.58496C5.15586 9.54299 6.17975 10.2196 7.37129 10.3933C7.57488 10.4292 7.78444 10.4471 8 10.4471C8.21556 10.4471 8.42513 10.4292 8.62871 10.3933C9.82025 10.2196 10.8441 9.54299 11.4908 8.58496L13.826 10.9202C14.1553 11.2435 13.9937 11.8123 13.5386 11.9201Z"
-                        stroke="#2196F3" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path
-                        d="M8.34748 4.44073L8.70075 5.14727C8.74865 5.24307 8.8744 5.33888 8.98816 5.35684L9.62884 5.46462C10.036 5.53048 10.1318 5.82987 9.83841 6.12326L9.34143 6.62023C9.25761 6.70406 9.20971 6.86574 9.23964 6.98549L9.38335 7.60222C9.49711 8.08722 9.23964 8.27882 8.80853 8.02135L8.20976 7.66808C8.10199 7.60221 7.92236 7.60221 7.81458 7.66808L7.21581 8.02135C6.7847 8.27283 6.52723 8.08722 6.64099 7.60222L6.7847 6.98549C6.80865 6.87172 6.76673 6.70406 6.68291 6.62023L6.18593 6.12326C5.89253 5.82987 5.98834 5.53647 6.3955 5.46462L7.03618 5.35684C7.14396 5.33888 7.2697 5.24307 7.3176 5.14727L7.67087 4.44073C7.84452 4.05752 8.15587 4.05752 8.34748 4.44073Z"
-                        stroke="#2196F3" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                    </svg>
-                    <span>Completed</span>
+                      <h4 class="course-name">{{ course.title }}</h4>
+
+                      <div class="course-meta">
+                        <span class="meta-item">
+                          <svg width="24" height="24" viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M9.59993 20.3337H14.5999C18.7666 20.3337 20.4333 18.667 20.4333 14.5003V9.50033C20.4333 5.33366 18.7666 3.66699 14.5999 3.66699H9.59993C5.43327 3.66699 3.7666 5.33366 3.7666 9.50033V14.5003C3.7666 18.667 5.43327 20.3337 9.59993 20.3337Z"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M16.6833 16.2334H15.1416" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M12.9083 16.2334H7.5166" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M16.6826 13.0996H12.0742" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M9.82494 13.0996H7.5166" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
+                          <span>{{ course.lessons }} lessons</span>
+                        </span>
+
+                        <span class="meta-item">
+                          <svg width="24" height="24" viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M21.0088 12.0034C21.0088 16.9733 16.9753 21.0068 12.0054 21.0068C7.03548 21.0068 3.00195 16.9733 3.00195 12.0034C3.00195 7.03353 7.03548 3 12.0054 3C16.9753 3 21.0088 7.03353 21.0088 12.0034Z"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                              d="M15.3453 14.8666L12.5542 13.2009C12.068 12.9128 11.6719 12.2196 11.6719 11.6523V7.96094"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          <span>{{ course.duration }}</span>
+                        </span>
+                      </div>
+
+                      <div class="course-progress">
+                        <div class="progress-track">
+                          <div class="progress-bar-fill"
+                            [style.width.%]="course.progress"></div>
+                        </div>
+                        <span class="progress-text">{{ course.progress
+                          }}%</span>
+                      </div>
+
+                      <div *ngIf="course.status === 'completed'"
+                        class="completion-badge">
+                        <svg width="24" height="24" viewBox="0 0 16 16"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M12.1913 6.24899C12.1913 7.1172 11.9339 7.91357 11.4908 8.5782C10.8441 9.53623 9.82022 10.2128 8.62867 10.3865C8.42509 10.4224 8.21552 10.4404 7.99997 10.4404C7.78441 10.4404 7.57484 10.4224 7.37126 10.3865C6.17971 10.2128 5.15582 9.53623 4.50915 8.5782C4.06606 7.91357 3.80859 7.1172 3.80859 6.24899C3.80859 3.93176 5.68274 2.05762 7.99997 2.05762C10.3172 2.05762 12.1913 3.93176 12.1913 6.24899Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                          <path
+                            d="M13.5386 11.9201L12.5506 12.1536C12.3291 12.2075 12.1554 12.3752 12.1075 12.5967L11.898 13.4769C11.7842 13.9559 11.1735 14.0996 10.8561 13.7224L8 10.4411L5.14388 13.7284C4.82653 14.1056 4.21579 13.9619 4.10202 13.4829L3.89246 12.6027C3.83857 12.3811 3.66492 12.2075 3.44937 12.1596L2.4614 11.9261C2.00634 11.8183 1.84467 11.2495 2.17399 10.9202L4.50919 8.58496C5.15586 9.54299 6.17975 10.2196 7.37129 10.3933C7.57488 10.4292 7.78444 10.4471 8 10.4471C8.21556 10.4471 8.42513 10.4292 8.62871 10.3933C9.82025 10.2196 10.8441 9.54299 11.4908 8.58496L13.826 10.9202C14.1553 11.2435 13.9937 11.8123 13.5386 11.9201Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                          <path
+                            d="M8.34748 4.44073L8.70075 5.14727C8.74865 5.24307 8.8744 5.33888 8.98816 5.35684L9.62884 5.46462C10.036 5.53048 10.1318 5.82987 9.83841 6.12326L9.34143 6.62023C9.25761 6.70406 9.20971 6.86574 9.23964 6.98549L9.38335 7.60222C9.49711 8.08722 9.23964 8.27882 8.80853 8.02135L8.20976 7.66808C8.10199 7.60221 7.92236 7.60221 7.81458 7.66808L7.21581 8.02135C6.7847 8.27283 6.52723 8.08722 6.64099 7.60222L6.7847 6.98549C6.80865 6.87172 6.76673 6.70406 6.68291 6.62023L6.18593 6.12326C5.89253 5.82987 5.98834 5.53647 6.3955 5.46462L7.03618 5.35684C7.14396 5.33888 7.2697 5.24307 7.3176 5.14727L7.67087 4.44073C7.84452 4.05752 8.15587 4.05752 8.34748 4.44073Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        </svg>
+                        <span>Completed</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <div class="course-column">
+                <span class="column-label">A: Main Believes</span>
+                <div class="courses-stack">
+                  <div
+                    *ngFor="let course of stage.courses.mainBelieves; let i = index; trackBy: trackByCourseId"
+                    class="course-wrapper">
+                    <div class="course-connector" *ngIf="i > 0">
+                      <div class="connector-line"></div>
+                    </div>
+                    <div class="course-card"
+                      [class.completed]="course.status === 'completed'"
+                      [class.in-progress]="course.status === 'in-progress'"
+                      [class.locked]="course.status === 'locked'"
+                      (click)="onCourseClick(course)"
+                      [attr.aria-label]="getCourseAriaLabel(course)"
+                      [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
+                      [attr.role]="'button'"
+                      (keydown.enter)="onCourseClick(course)"
+                      (keydown.space)="onCourseClick(course)">
+                      <div class="course-overlay"
+                        *ngIf="course.status === 'locked'"></div>
+                      <svg class="course-wave" viewBox="0 0 321 169" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path opacity="0.8" fill-rule="evenodd"
+                          clip-rule="evenodd"
+                          d="M6.25236 0.254879C12.9557 -5.67992 23.4933 -5.36816 29.7887 0.951556C112.847 84.3341 202.308 142.603 303.349 142.603C312.544 142.603 320 149.631 320 158.301C320 166.97 312.544 174 303.349 174C188.112 174 90.3346 107.597 5.51339 22.4443C-0.781968 16.1246 -0.451283 6.18999 6.25236 0.254879Z"
+                          fill="white" stroke="white" stroke-width="2"
+                          stroke-linecap="round" />
+                      </svg>
+
+                      <h4 class="course-name">{{ course.title }}</h4>
+
+                      <div class="course-meta">
+                        <span class="meta-item">
+                          <svg width="24" height="24" viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M9.59993 20.3337H14.5999C18.7666 20.3337 20.4333 18.667 20.4333 14.5003V9.50033C20.4333 5.33366 18.7666 3.66699 14.5999 3.66699H9.59993C5.43327 3.66699 3.7666 5.33366 3.7666 9.50033V14.5003C3.7666 18.667 5.43327 20.3337 9.59993 20.3337Z"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M16.6833 16.2334H15.1416" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M12.9083 16.2334H7.5166" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M16.6826 13.0996H12.0742" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M9.82494 13.0996H7.5166" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
+                          <span>{{ course.lessons }} lessons</span>
+                        </span>
+
+                        <span class="meta-item">
+                          <svg width="24" height="24" viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M21.0088 12.0034C21.0088 16.9733 16.9753 21.0068 12.0054 21.0068C7.03548 21.0068 3.00195 16.9733 3.00195 12.0034C3.00195 7.03353 7.03548 3 12.0054 3C16.9753 3 21.0088 7.03353 21.0088 12.0034Z"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                              d="M15.3453 14.8666L12.5542 13.2009C12.068 12.9128 11.6719 12.2196 11.6719 11.6523V7.96094"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          <span>{{ course.duration }}</span>
+                        </span>
+                      </div>
+
+                      <div class="course-progress">
+                        <div class="progress-track">
+                          <div class="progress-bar-fill"
+                            [style.width.%]="course.progress"></div>
+                        </div>
+                        <span class="progress-text">{{ course.progress
+                          }}%</span>
+                      </div>
+
+                      <div *ngIf="course.status === 'completed'"
+                        class="completion-badge">
+                        <svg width="24" height="24" viewBox="0 0 16 16"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M12.1913 6.24899C12.1913 7.1172 11.9339 7.91357 11.4908 8.5782C10.8441 9.53623 9.82022 10.2128 8.62867 10.3865C8.42509 10.4224 8.21552 10.4404 7.99997 10.4404C7.78441 10.4404 7.57484 10.4224 7.37126 10.3865C6.17971 10.2128 5.15582 9.53623 4.50915 8.5782C4.06606 7.91357 3.80859 7.1172 3.80859 6.24899C3.80859 3.93176 5.68274 2.05762 7.99997 2.05762C10.3172 2.05762 12.1913 3.93176 12.1913 6.24899Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                          <path
+                            d="M13.5386 11.9201L12.5506 12.1536C12.3291 12.2075 12.1554 12.3752 12.1075 12.5967L11.898 13.4769C11.7842 13.9559 11.1735 14.0996 10.8561 13.7224L8 10.4411L5.14388 13.7284C4.82653 14.1056 4.21579 13.9619 4.10202 13.4829L3.89246 12.6027C3.83857 12.3811 3.66492 12.2075 3.44937 12.1596L2.4614 11.9261C2.00634 11.8183 1.84467 11.2495 2.17399 10.9202L4.50919 8.58496C5.15586 9.54299 6.17975 10.2196 7.37129 10.3933C7.57488 10.4292 7.78444 10.4471 8 10.4471C8.21556 10.4471 8.42513 10.4292 8.62871 10.3933C9.82025 10.2196 10.8441 9.54299 11.4908 8.58496L13.826 10.9202C14.1553 11.2435 13.9937 11.8123 13.5386 11.9201Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                          <path
+                            d="M8.34748 4.44073L8.70075 5.14727C8.74865 5.24307 8.8744 5.33888 8.98816 5.35684L9.62884 5.46462C10.036 5.53048 10.1318 5.82987 9.83841 6.12326L9.34143 6.62023C9.25761 6.70406 9.20971 6.86574 9.23964 6.98549L9.38335 7.60222C9.49711 8.08722 9.23964 8.27882 8.80853 8.02135L8.20976 7.66808C8.10199 7.60221 7.92236 7.60221 7.81458 7.66808L7.21581 8.02135C6.7847 8.27283 6.52723 8.08722 6.64099 7.60222L6.7847 6.98549C6.80865 6.87172 6.76673 6.70406 6.68291 6.62023L6.18593 6.12326C5.89253 5.82987 5.98834 5.53647 6.3955 5.46462L7.03618 5.35684C7.14396 5.33888 7.2697 5.24307 7.3176 5.14727L7.67087 4.44073C7.84452 4.05752 8.15587 4.05752 8.34748 4.44073Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        </svg>
+                        <span>Completed</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="course-column">
+                <span class="column-label">C: Social Topics</span>
+                <div class="courses-stack">
+                  <div
+                    *ngFor="let course of stage.courses.socialTopics; let i = index; trackBy: trackByCourseId"
+                    class="course-wrapper">
+                    <div class="course-connector" *ngIf="i > 0">
+                      <div class="connector-line"></div>
+                    </div>
+                    <div class="course-card"
+                      [class.completed]="course.status === 'completed'"
+                      [class.in-progress]="course.status === 'in-progress'"
+                      [class.locked]="course.status === 'locked'"
+                      (click)="onCourseClick(course)"
+                      [attr.aria-label]="getCourseAriaLabel(course)"
+                      [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
+                      [attr.role]="'button'"
+                      (keydown.enter)="onCourseClick(course)"
+                      (keydown.space)="onCourseClick(course)">
+                      <div class="course-overlay"
+                        *ngIf="course.status === 'locked'"></div>
+                      <svg class="course-wave" viewBox="0 0 321 169" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path opacity="0.8" fill-rule="evenodd"
+                          clip-rule="evenodd"
+                          d="M6.25236 0.254879C12.9557 -5.67992 23.4933 -5.36816 29.7887 0.951556C112.847 84.3341 202.308 142.603 303.349 142.603C312.544 142.603 320 149.631 320 158.301C320 166.97 312.544 174 303.349 174C188.112 174 90.3346 107.597 5.51339 22.4443C-0.781968 16.1246 -0.451283 6.18999 6.25236 0.254879Z"
+                          fill="white" stroke="white" stroke-width="2"
+                          stroke-linecap="round" />
+                      </svg>
+
+                      <h4 class="course-name">{{ course.title }}</h4>
+
+                      <div class="course-meta">
+                        <span class="meta-item">
+                          <svg width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M9.59993 20.3337H14.5999C18.7666 20.3337 20.4333 18.667 20.4333 14.5003V9.50033C20.4333 5.33366 18.7666 3.66699 14.5999 3.66699H9.59993C5.43327 3.66699 3.7666 5.33366 3.7666 9.50033V14.5003C3.7666 18.667 5.43327 20.3337 9.59993 20.3337Z"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M16.6833 16.2334H15.1416" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M12.9083 16.2334H7.5166" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M16.6826 13.0996H12.0742" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M9.82494 13.0996H7.5166" stroke="#343A40"
+                              stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
+                          <span>{{ course.lessons }} lessons</span>
+                        </span>
+
+                        <span class="meta-item">
+                          <svg width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M21.0088 12.0034C21.0088 16.9733 16.9753 21.0068 12.0054 21.0068C7.03548 21.0068 3.00195 16.9733 3.00195 12.0034C3.00195 7.03353 7.03548 3 12.0054 3C16.9753 3 21.0088 7.03353 21.0088 12.0034Z"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                              d="M15.3453 14.8666L12.5542 13.2009C12.068 12.9128 11.6719 12.2196 11.6719 11.6523V7.96094"
+                              stroke="#343A40" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          <span>{{ course.duration }}</span>
+                        </span>
+                      </div>
+
+                      <div class="course-progress">
+                        <div class="progress-track">
+                          <div class="progress-bar-fill"
+                            [style.width.%]="course.progress"></div>
+                        </div>
+                        <span class="progress-text">{{ course.progress
+                          }}%</span>
+                      </div>
+
+                      <div *ngIf="course.status === 'completed'"
+                        class="completion-badge">
+                        <svg width="24" height="24" viewBox="0 0 16 16"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M12.1913 6.24899C12.1913 7.1172 11.9339 7.91357 11.4908 8.5782C10.8441 9.53623 9.82022 10.2128 8.62867 10.3865C8.42509 10.4224 8.21552 10.4404 7.99997 10.4404C7.78441 10.4404 7.57484 10.4224 7.37126 10.3865C6.17971 10.2128 5.15582 9.53623 4.50915 8.5782C4.06606 7.91357 3.80859 7.1172 3.80859 6.24899C3.80859 3.93176 5.68274 2.05762 7.99997 2.05762C10.3172 2.05762 12.1913 3.93176 12.1913 6.24899Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                          <path
+                            d="M13.5386 11.9201L12.5506 12.1536C12.3291 12.2075 12.1554 12.3752 12.1075 12.5967L11.898 13.4769C11.7842 13.9559 11.1735 14.0996 10.8561 13.7224L8 10.4411L5.14388 13.7284C4.82653 14.1056 4.21579 13.9619 4.10202 13.4829L3.89246 12.6027C3.83857 12.3811 3.66492 12.2075 3.44937 12.1596L2.4614 11.9261C2.00634 11.8183 1.84467 11.2495 2.17399 10.9202L4.50919 8.58496C5.15586 9.54299 6.17975 10.2196 7.37129 10.3933C7.57488 10.4292 7.78444 10.4471 8 10.4471C8.21556 10.4471 8.42513 10.4292 8.62871 10.3933C9.82025 10.2196 10.8441 9.54299 11.4908 8.58496L13.826 10.9202C14.1553 11.2435 13.9937 11.8123 13.5386 11.9201Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                          <path
+                            d="M8.34748 4.44073L8.70075 5.14727C8.74865 5.24307 8.8744 5.33888 8.98816 5.35684L9.62884 5.46462C10.036 5.53048 10.1318 5.82987 9.83841 6.12326L9.34143 6.62023C9.25761 6.70406 9.20971 6.86574 9.23964 6.98549L9.38335 7.60222C9.49711 8.08722 9.23964 8.27882 8.80853 8.02135L8.20976 7.66808C8.10199 7.60221 7.92236 7.60221 7.81458 7.66808L7.21581 8.02135C6.7847 8.27283 6.52723 8.08722 6.64099 7.60222L6.7847 6.98549C6.80865 6.87172 6.76673 6.70406 6.68291 6.62023L6.18593 6.12326C5.89253 5.82987 5.98834 5.53647 6.3955 5.46462L7.03618 5.35684C7.14396 5.33888 7.2697 5.24307 7.3176 5.14727L7.67087 4.44073C7.84452 4.05752 8.15587 4.05752 8.34748 4.44073Z"
+                            stroke="#2196F3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        </svg>
+                        <span>Completed</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
