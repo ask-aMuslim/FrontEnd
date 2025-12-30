@@ -45,7 +45,7 @@ export const routes: Routes = [
           {
             path: 'ask-qa',
             loadComponent: () =>
-              import('./pages/ask-and-contact/ask-Q&A/ask-qa/ask-qa.component').then(
+              import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
                 (m) => m.AskQaComponent,
               ),
             title: 'Ask "Q&A"',

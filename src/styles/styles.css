@@ -100,12 +100,19 @@
     transform: none;
 }
 
+.secondary-button {
+  color: var(--special-primary);
+  background: var(--color-surface-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 p {
     color: var(--color-text-body);
 }
 
 h1 {
-    color: var(--color-text-title);
-    font-size: 40px;
-    font-weight: 700;
+  color: var(--color-text-title);
+  font-size: 40px;
+  font-weight: 700;
 }

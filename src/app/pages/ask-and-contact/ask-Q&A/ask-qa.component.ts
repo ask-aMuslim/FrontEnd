@@ -2,9 +2,9 @@ import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { QA_CATEGORIES, PAGINATION } from '../../constants/ask-qa.constants';
-import { QuestionSearchResultComponent } from '../question-search-result/question-search-result.component';
-import { QaCardComponent, QuestionCard } from '../qa-card/qa-card.component';
+import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
+import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
+import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
 
 @Component({
   selector: 'app-ask-qa',
