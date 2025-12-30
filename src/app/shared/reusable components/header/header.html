@@ -2,7 +2,7 @@
     <!-- User Card Template (for authenticated users) -->
     <ng-template #userCardTemplate>
         <div class="user-card" routerLink="/account" (click)="closeNav()">
-            <img src="/Images/profile picture navbar.png"
+            <img src="/images/profile-picture-navbar.png"
                 alt="{{ authService.currentUser()?.name }}"
                 class="user-avatar" />
             <div class="user-text">
@@ -45,7 +45,7 @@
 
     <div class="nav-shell">
         <a class="brand" routerLink="/home" aria-label="Ask A Muslim home">
-            <img src="/AskAMuslimLogo.png" alt="Ask A Muslim logo" />
+            <img src="/ask-a-muslim-logo.png" alt="Ask A Muslim logo" />
         </a>
 
         <nav class="primary-nav ms-auto" [class.open]="navOpen"

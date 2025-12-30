@@ -2,15 +2,15 @@
 
 // Bubble positions table for desktop layout
 $bubble-positions: (
-    1: (top: 15%, left: 6%, animation-name: float-rotate, animation-duration: 6s, start-rotate: -3deg),
-    2: (top: 35%, left: 2%, animation-name: float-rotate, animation-duration: 7s, start-rotate: 5deg),
-    3: (top: 55%, left: 1%, animation-name: float-rotate, animation-duration: 8s, start-rotate: -4deg),
-    4: (top: 75%, left: 6%, animation-name: float-rotate, animation-duration: 6.5s, start-rotate: -5deg),
+    1: (top: 15%, left: 6%, start-rotate: -8deg, animation-duration: 7.6s),
+    2: (top: 35%, left: 2%, start-rotate: 12deg, animation-duration: 8.2s),
+    3: (top: 55%, left: 1%, start-rotate: -15deg, animation-duration: 7.9s),
+    4: (top: 75%, left: 6%, start-rotate: 6deg, animation-duration: 8.4s),
 
-    5: (top: 15%, right: 6%, animation-name: float-rotate, animation-duration: 7.5s, start-rotate: 4deg),
-    6: (top: 35%, right: 2%, animation-name: float-rotate, animation-duration: 8.5s, start-rotate: -6deg),
-    7: (top: 55%, right: 2%, animation-name: float-rotate, animation-duration: 7s, start-rotate: 3deg),
-    8: (top: 75%, right: 4%, animation-name: float-rotate, animation-duration: 8s, start-rotate: -4deg)
+    5: (top: 15%, right: 6%, start-rotate: 10deg, animation-duration: 7.7s),
+    6: (top: 35%, right: 2%, start-rotate: -12deg, animation-duration: 8.1s),
+    7: (top: 55%, right: 2%, start-rotate: 14deg, animation-duration: 8.3s),
+    8: (top: 75%, right: 4%, start-rotate: -10deg, animation-duration: 7.85s)
 );
 
 // Larger desktop adjustments table
@@ -102,14 +102,13 @@ $large-screen-adjustments: (
         position: absolute;
         pointer-events: all;
         transform-origin: center center;
-        transition: none !important;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
         will-change: transform;
 
-        // Generate bubble positions from table
+        // Generate bubble positions and animations from table
         @each $index, $position in $bubble-positions {
             &:nth-child(#{$index}) {
                 top: map-get($position, top);
-                --start-rotate: map-get($position, start-rotate);
 
                 @if map-has-key($position, left) {
                     left: map-get($position, left);
@@ -119,10 +118,26 @@ $large-screen-adjustments: (
                     right: map-get($position, right);
                 }
 
-                $anim-name: map-get($position, animation-name);
-                $anim-duration: map-get($position, animation-duration);
-                animation: $anim-name $anim-duration ease-in-out infinite;
-                animation-fill-mode: both;
+                $start-rotate: map-get($position, start-rotate);
+                $duration: map-get($position, animation-duration);
+
+                // Create unique animation for each bubble with actual values
+                animation: float-rotate-#{$index} $duration ease-in-out infinite;
+
+                // Generate unique keyframe for this bubble
+                @keyframes float-rotate-#{$index} {
+                    0% {
+                        transform: translateY(0) rotate($start-rotate);
+                    }
+
+                    50% {
+                        transform: translateY(-6px) rotate(calc(#{$start-rotate} + 11deg));
+                    }
+
+                    100% {
+                        transform: translateY(0) rotate($start-rotate);
+                    }
+                }
             }
         }
 
@@ -136,8 +151,16 @@ $large-screen-adjustments: (
             animation-play-state: paused;
             background: var(--color-surface-primary);
             color: var(--special-primary);
+            transform: translateY(-4px) scale(1.01);
             box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
         }
+    }
+}
+
+// Accessibility: disable animations for users who prefer reduced motion
+@media (prefers-reduced-motion: reduce) {
+    .suggestion-bubble {
+        animation: none !important;
     }
 }
 
@@ -156,28 +179,6 @@ $large-screen-adjustments: (
     }
 }
 
-// Keyframe variant - smooth pendulum rotation
-@keyframes float-rotate {
-    0% {
-        transform: rotate(calc(var(--start-rotate, 0deg) - 8deg));
-    }
-
-    25% {
-        transform: rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: rotate(calc(var(--start-rotate, 0deg) + 8deg));
-    }
-
-    75% {
-        transform: rotate(var(--start-rotate, 0deg));
-    }
-
-    100% {
-        transform: rotate(calc(var(--start-rotate, 0deg) - 8deg));
-    }
-}
 
 // Responsive adjustments
 @media (max-width: 768px) {

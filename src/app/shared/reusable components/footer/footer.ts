@@ -56,20 +56,20 @@ export class Footer {
   ];
 
   protected readonly socialLinks: SocialLink[] = [
-    { icon: '/icons/icons social apps/Property 1=facebook.svg', label: 'Facebook', href: 'https://www.facebook.com/askamuslimofficial/' },
-    { icon: '/icons/icons social apps/Property 1=youtube.svg', label: 'YouTube', href: 'https://www.youtube.com/AskAMuslim' },
-    { icon: '/icons/icons social apps/Property 1=instagram.svg', label: 'Instagram', href: 'https://www.instagram.com/askamuslim/' },
+    { icon: '/icons/icons-social-apps/facebook.svg', label: 'Facebook', href: 'https://www.facebook.com/askamuslimofficial/' },
+    { icon: '/icons/icons-social-apps/youtube.svg', label: 'YouTube', href: 'https://www.youtube.com/AskAMuslim' },
+    { icon: '/icons/icons-social-apps/instagram.svg', label: 'Instagram', href: 'https://www.instagram.com/askamuslim/' },
   ];
 
   protected readonly storeBadges: StoreBadge[] = [
     {
-      icon: '/icons/icons social apps/Property 1=apple.svg',
+      icon: '/icons/icons-social-apps/apple.svg',
       title: 'Download on the',
       subtitle: 'App Store',
       href: '#',
     },
     {
-      icon: '/icons/icons social apps/Property 1=google play.svg',
+      icon: '/icons/icons-social-apps/google-play.svg',
       title: 'Get it on',
       subtitle: 'Google Play',
       href: '#',

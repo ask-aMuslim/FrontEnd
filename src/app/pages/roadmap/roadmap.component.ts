@@ -47,13 +47,13 @@ export class RoadmapComponent {
   constructor(private router: Router, private route: ActivatedRoute) { }
 
   // Fallback image for broken thumbnails
-  readonly fallbackImage = '/AskAMuslimLogo.png';
+  readonly fallbackImage = '/ask-a-muslim-logo.png';
 
   recentLesson: RecentLesson = {
     stageNumber: 1,
     courseName: 'Prayer (Salah)',
     lessonNumber: 2,
-    thumbnailUrl: '/Images/recent-lesson-thumbnail.jpg', // Use local asset instead of external CDN
+    thumbnailUrl: '/images/recent-lesson-thumbnail.jpg', // Use local asset instead of external CDN
     progress: 20,
     currentTime: '00:00',
     totalTime: '12:00',
@@ -449,7 +449,8 @@ export class RoadmapComponent {
    */
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    if (img.src !== this.fallbackImage) {
+    // Check if the image src doesn't already end with the fallback image path
+    if (!img.src.endsWith(this.fallbackImage)) {
       img.src = this.fallbackImage;
     }
   }

@@ -129,7 +129,7 @@ export class Home implements AfterViewInit, OnDestroy {
     },
     {
       icon: `
-      <img src="icons/icons 40/icons 40_40.png" style="width:64px; height:64px;" alt="Community icon" /> 
+      <img src="icons/icons-40/icons-40x40.png" style="width:64px; height:64px;" alt="Community icon" /> 
 `,
       title: 'Community',
       description: 'Connect with vibrant global circles, group studies, and mentorship programs launching soon.',
@@ -148,7 +148,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example2',
@@ -162,7 +162,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example3',
@@ -176,7 +176,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example1',
@@ -190,7 +190,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example4',

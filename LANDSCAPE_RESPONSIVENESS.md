@@ -151,7 +151,7 @@ The authentication components demonstrate proper landscape handling:
 - [login.component.scss](../app/core/auth/login/login.component.scss)
 - [register.component.scss](../app/core/auth/register/register.component.scss)
 - [reset-password.component.scss](../app/core/auth/reset-password/reset-password.component.scss)
-- [auth-layout.component.scss](../app/core/Layouts/auth-layout/auth-layout.component.scss)
+- [auth-layout.component.scss](../app/core/layouts/auth-layout/auth-layout.component.scss)
 
 Key features:
 - Reduced vertical margins and padding

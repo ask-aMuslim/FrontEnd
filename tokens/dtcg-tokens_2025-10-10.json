@@ -39,7 +39,7 @@
         }
       }
     },
-    "Backgrounds": {
+    "backgrounds": {
       "base": {
         "$value": "{colors.rare-grays.0}"
       },

@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
 import { NotFound } from './pages/not-found/not-found';
 import { Home } from './pages/home/home';
-import { AuthLayoutComponent } from './core/Layouts/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
 import { LoginComponent } from './core/auth/login/login.component';
 import { RegisterComponent } from './core/auth/register/register.component';
-import { AppLayoutComponent } from './core/Layouts/app-layout/app-layout.component';
+import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.component';
 import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
 import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';
@@ -38,15 +38,10 @@ export const routes: Routes = [
             { path: 'home', component: Home, title: 'Home' },
             { path: 'ask-and-contact', component: AskAndContactComponent, title: 'Ask & Contact' },
             { path: 'muslim-tube', component: MuslimTubeComponent, title: 'Muslim Tube' },
-            {
-                path: 'roadmap',
-                children: [
-                    { path: '', component: RoadmapComponent, title: 'Roadmap' },
-                    { path: 'course/:id', component: CourseComponent, title: 'Course' },
-                    { path: 'course/:courseId/lesson/:lessonId', component: LessonPlayerComponent, title: 'Lesson Player' },
-                    { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' }
-                ]
-            },
+            { path: 'roadmap', component: RoadmapComponent, title: 'Roadmap' },
+            { path: 'roadmap/course/:id', component: CourseComponent, title: 'Course' },
+            { path: 'roadmap/course/:courseId/lesson/:lessonId', component: LessonPlayerComponent, title: 'Lesson Player' },
+            { path: 'roadmap/lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
             { path: 'events', component: EventsComponent, title: 'Events' },
             { path: 'account', component: AccountComponent, title: 'Account' }
         ],
