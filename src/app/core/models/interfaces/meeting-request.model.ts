@@ -3,11 +3,14 @@ import { Id, ISODate } from './base.model';
 export interface MeetingRequestDto {
   id: Id;
   requesterId?: Id;
+  requesterName?: string | null;
+  requesterEmail?: string | null;
   scholarId?: Id;
   topic?: number;
   message?: string | null;
   languages?: number[];
   scheduledAt?: ISODate | null;
+  durationMinutes?: number | null;
   status?: number;
   response?: string | null;
 }

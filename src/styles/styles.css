@@ -15,6 +15,32 @@
     scroll-behavior: smooth;
 }
 
+/* Scrollbar Styles */
+:root {
+  scrollbar-color: var(--special-primary) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--special-primary);
+  border-radius: var(--border-radius-default);
+  border: 2px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--special-primary-hovering);
+}
+
+
 /* Default Buttons */
 
 .button {
@@ -76,4 +102,10 @@
 
 p {
     color: var(--color-text-body);
+}
+
+h1 {
+    color: var(--color-text-title);
+    font-size: 40px;
+    font-weight: 700;
 }
