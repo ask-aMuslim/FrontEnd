@@ -57,7 +57,7 @@ export class RoadmapComponent {
     stageNumber: 1,
     courseName: 'Prayer (Salah)',
     lessonNumber: 2,
-    thumbnailUrl: '/Images/recent-lesson-thumbnail.jpg', // Use local asset instead of external CDN
+    thumbnailUrl: '/images/recent-lesson-thumbnail.jpg', // Use local asset instead of external CDN
     progress: 20,
     currentTime: '00:00',
     totalTime: '12:00',

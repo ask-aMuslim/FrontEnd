@@ -73,7 +73,8 @@ export class Home implements AfterViewInit, OnDestroy {
             </svg>
             `,
       title: 'Categorized Q&A',
-      description: 'Browse thousands of carefully answered questions, filtered by topic, scholar, and language so you find guidance faster.',
+      description:
+        'Browse thousands of carefully answered questions, filtered by topic, scholar, and language so you find guidance faster.',
       cta: 'Explore',
       href: '/ask-and-contact',
     },
@@ -86,7 +87,8 @@ export class Home implements AfterViewInit, OnDestroy {
 </svg>
 `,
       title: 'Courses Roadmap',
-      description: 'Structured learning paths for new Muslims and lifelong students to strengthen faith step-by-step.',
+      description:
+        'Structured learning paths for new Muslims and lifelong students to strengthen faith step-by-step.',
       cta: 'Start',
       href: '/roadmap',
     },
@@ -99,7 +101,8 @@ export class Home implements AfterViewInit, OnDestroy {
 </svg>
 `,
       title: 'Events',
-      description: 'Join online & offline sessions with scholars worldwide, covering hot topics, fiqh, and community building.',
+      description:
+        'Join online & offline sessions with scholars worldwide, covering hot topics, fiqh, and community building.',
       cta: 'Join a session',
       href: '/events',
     },
@@ -109,7 +112,8 @@ export class Home implements AfterViewInit, OnDestroy {
 <path d="M8.00696 47.9953C7.29992 47.9953 6.62184 47.7144 6.12189 47.2144C5.62193 46.7145 5.34106 46.0364 5.34106 45.3294V10.6727C5.34106 9.96569 5.62193 9.28761 6.12189 8.78766C6.62184 8.28771 7.29992 8.00684 8.00696 8.00684H21.3364C24.1646 8.00684 26.8769 9.13032 28.8767 11.1301C30.8765 13.1299 32 15.8423 32 18.6704C32 15.8423 33.1235 13.1299 35.1233 11.1301C37.1231 9.13032 39.8354 8.00684 42.6636 8.00684H55.9931C56.7001 8.00684 57.3782 8.28771 57.8782 8.78766C58.3781 9.28761 58.659 9.96569 58.659 10.6727V45.3294C58.659 46.0364 58.3781 46.7145 57.8782 47.2144C57.3782 47.7144 56.7001 47.9953 55.9931 47.9953H39.9977C37.8766 47.9953 35.8423 48.8379 34.3425 50.3377C32.8426 51.8376 32 53.8718 32 55.9929C32 53.8718 31.1574 51.8376 29.6576 50.3377C28.1577 48.8379 26.1235 47.9953 24.0023 47.9953H8.00696Z" stroke="var(--special-primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
       title: 'Articles & Resources',
-      description: 'Curated articles, e-books, and toolkits reviewed by our research team to deepen your understanding.',
+      description:
+        'Curated articles, e-books, and toolkits reviewed by our research team to deepen your understanding.',
       cta: 'Read',
       href: '/ask-and-contact',
     },
@@ -123,16 +127,18 @@ export class Home implements AfterViewInit, OnDestroy {
 <path d="M24.002 34.666V39.9993" stroke="var(--special-primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
       title: 'AI Assistant',
-      description: 'Ask faith-related questions 24/7 and get verified summaries backed by authentic sources.',
+      description:
+        'Ask faith-related questions 24/7 and get verified summaries backed by authentic sources.',
       cta: 'Ask AI',
       href: '/ask-and-contact',
     },
     {
       icon: `
-      <img src="icons/icons 40/icons 40_40.png" style="width:64px; height:64px;" alt="Community icon" /> 
+      <img src="/icons/icons-40/icons-40-40.png" style="width:64px; height:64px;" alt="Community icon" />
 `,
       title: 'Community',
-      description: 'Connect with vibrant global circles, group studies, and mentorship programs launching soon.',
+      description:
+        'Connect with vibrant global circles, group studies, and mentorship programs launching soon.',
       cta: 'Soon',
       status: 'soon',
     },
@@ -148,7 +154,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example2',
@@ -162,7 +168,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example3',
@@ -176,7 +182,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example1',
@@ -190,7 +196,7 @@ export class Home implements AfterViewInit, OnDestroy {
         'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
         'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
       ],
-      image: '/Images/Events Picture.png',
+      image: '/images/events-picture.png',
       speaker: 'Mehdi Hasan',
       speakerRole: 'Indian-American broadcas...',
       videoUrl: 'https://www.youtube.com/watch?v=example4',
@@ -198,15 +204,35 @@ export class Home implements AfterViewInit, OnDestroy {
   ];
 
   protected readonly pillars: PillarItem[] = [
-    { number: '1', title: 'Shahada – Testimony of Faith', description: 'Declaring there is no god but Allah, and Muhammad is His messenger.' },
-    { number: '2', title: 'Salah – Prayer', description: 'Performing five daily prayers to stay connected with Allah.' },
-    { number: '3', title: 'Zakat – Charity', description: 'Purifying wealth by giving a share to those in need.' },
-    { number: '4', title: 'Sawm – Fasting', description: 'Fasting during Ramadan to develop gratitude and self-discipline.' },
-    { number: '5', title: 'Hajj – Pilgrimage', description: 'The pilgrimage to Makkah once in a lifetime if financially and physically able.' },
+    {
+      number: '1',
+      title: 'Shahada – Testimony of Faith',
+      description: 'Declaring there is no god but Allah, and Muhammad is His messenger.',
+    },
+    {
+      number: '2',
+      title: 'Salah – Prayer',
+      description: 'Performing five daily prayers to stay connected with Allah.',
+    },
+    {
+      number: '3',
+      title: 'Zakat – Charity',
+      description: 'Purifying wealth by giving a share to those in need.',
+    },
+    {
+      number: '4',
+      title: 'Sawm – Fasting',
+      description: 'Fasting during Ramadan to develop gratitude and self-discipline.',
+    },
+    {
+      number: '5',
+      title: 'Hajj – Pilgrimage',
+      description:
+        'The pilgrimage to Makkah once in a lifetime if financially and physically able.',
+    },
   ];
 
-  protected readonly adviceQuote =
-    `“Grab a pen & paper, and list down whatever questions you thought of.
+  protected readonly adviceQuote = `“Grab a pen & paper, and list down whatever questions you thought of.
     After that, go to the scholars of your religion and get the answers of your list, then go to the nearest mosque and ask for a scholar to answer your same list.”`;
   protected trackByIndex(index: number): number {
     return index;
@@ -220,7 +246,7 @@ export class Home implements AfterViewInit, OnDestroy {
     private readonly host: ElementRef<HTMLElement>,
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
-  ) { }
+  ) {}
 
   protected isSvgIcon(feature: FeatureCard): boolean {
     return typeof feature.icon === 'string' && feature.icon.trim().startsWith('<svg');
@@ -233,7 +259,11 @@ export class Home implements AfterViewInit, OnDestroy {
     }
 
     // Special-case: allow the 'Community' card to provide an inline <img> markup
-    if (feature.title === 'Community' && typeof feature.icon === 'string' && feature.icon.trim().startsWith('<img')) {
+    if (
+      feature.title === 'Community' &&
+      typeof feature.icon === 'string' &&
+      feature.icon.trim().startsWith('<img')
+    ) {
       return this.sanitizer.bypassSecurityTrustHtml(feature.icon as string);
     }
 
@@ -271,16 +301,13 @@ export class Home implements AfterViewInit, OnDestroy {
       // if (!heroSection) {
       //   return;
       // }
-
       // const bubbles = Array.from(heroSection.querySelectorAll<HTMLElement>('.hero-bubble'));
       // if (bubbles.length === 0) {
       //   return;
       // }
-
       // const magnet = (event: MouseEvent) => {
       //   const heroRect = heroSection.getBoundingClientRect();
       //   const { clientX, clientY } = event;
-
       //   // Only apply effect when mouse is within hero section bounds
       //   if (
       //     clientX < heroRect.left ||
@@ -290,7 +317,6 @@ export class Home implements AfterViewInit, OnDestroy {
       //   ) {
       //     return;
       //   }
-
       //   for (const [index, bubble] of bubbles.entries()) {
       //     const rect = bubble.getBoundingClientRect();
       //     const centerX = rect.left + rect.width / 2;
@@ -301,7 +327,6 @@ export class Home implements AfterViewInit, OnDestroy {
       //     const strength = Math.min(120 / distance, 1);
       //     const offsetX = deltaX * strength * 0.35;
       //     const offsetY = deltaY * strength * 0.35;
-
       //     gsap.to(bubble, {
       //       x: offsetX,
       //       y: offsetY,
@@ -311,7 +336,6 @@ export class Home implements AfterViewInit, OnDestroy {
       //     });
       //   }
       // };
-
       // const reset = () => {
       //   gsap.to(bubbles, {
       //     x: 0,
@@ -321,11 +345,9 @@ export class Home implements AfterViewInit, OnDestroy {
       //     overwrite: 'auto',
       //   });
       // };
-
       // // Listen on document to capture mouse events even over pointer-events: none areas
       // document.addEventListener('mousemove', magnet);
       // heroSection.addEventListener('mouseleave', reset);
-
       // this.cleanupFns.push(() => {
       //   document.removeEventListener('mousemove', magnet);
       //   heroSection.removeEventListener('mouseleave', reset);
@@ -358,13 +380,12 @@ export class Home implements AfterViewInit, OnDestroy {
     const scrollAmount = bubbleWidth + gap;
 
     const currentScroll = container.scrollLeft;
-    const targetScroll = direction === 'left'
-      ? currentScroll - scrollAmount
-      : currentScroll + scrollAmount;
+    const targetScroll =
+      direction === 'left' ? currentScroll - scrollAmount : currentScroll + scrollAmount;
 
     container.scrollTo({
       left: targetScroll,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 }
