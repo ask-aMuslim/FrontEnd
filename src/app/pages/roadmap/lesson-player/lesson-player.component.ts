@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-lesson-player',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './lesson-player.component.html',
   styleUrls: ['./lesson-player.component.scss']
 })
@@ -68,12 +69,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
   feedbackText: string = '';
 
   // Cleanup
-  private destroy$ = new Subject<void>();
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private lessonContentService: LessonContentService
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly lessonContentService: LessonContentService
   ) { }
 
   ngOnInit(): void {
@@ -215,11 +216,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
       navigator.share({
         title: this.lessonContent.title,
         text: this.lessonContent.description,
-        url: window.location.href
+        url: globalThis.location.href
       }).catch(err => console.error('Error sharing:', err));
     } else {
       // Fallback: Copy URL to clipboard
-      navigator.clipboard.writeText(window.location.href).then(() => {
+      navigator.clipboard.writeText(globalThis.location.href).then(() => {
         console.log('Link copied to clipboard');
       });
     }

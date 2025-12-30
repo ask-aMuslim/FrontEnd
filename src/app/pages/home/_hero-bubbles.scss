@@ -2,15 +2,15 @@
 
 // Bubble positions table for desktop layout
 $bubble-positions: (
-    1: (top: 30%, left: 10%, animation: float 6s ease-in-out infinite, start-rotate: -3deg),
-    2: (top: 50%, left: 8%, animation: float-slow 7s ease-in-out infinite, start-rotate: 5deg),
-    3: (top: 70%, left: 4%, animation: float-side 8s ease-in-out infinite, start-rotate: -4deg),
-    4: (top: 90%, left: 8%, animation: float-rotate 6.5s ease-in-out infinite, start-rotate: -5deg),
+    1: (top: 15%, left: 6%, animation-name: float-rotate, animation-duration: 6s, start-rotate: -3deg),
+    2: (top: 35%, left: 2%, animation-name: float-rotate, animation-duration: 7s, start-rotate: 5deg),
+    3: (top: 55%, left: 1%, animation-name: float-rotate, animation-duration: 8s, start-rotate: -4deg),
+    4: (top: 75%, left: 6%, animation-name: float-rotate, animation-duration: 6.5s, start-rotate: -5deg),
 
-    5: (top: 30%, right: 20%, animation: float-scale 5.5s ease-in-out infinite, start-rotate: 4deg),
-    6: (top: 50%, right: 10%, animation: float 8s ease-in-out infinite, start-rotate: -6deg),
-    7: (top: 70%, right: 4%, animation: float-slow 7s ease-in-out infinite, start-rotate: 3deg),
-    8: (top: 90%, right: 10%, animation: float-rotate 6.5s ease-in-out infinite, start-rotate: -4deg)
+    5: (top: 15%, right: 6%, animation-name: float-rotate, animation-duration: 7.5s, start-rotate: 4deg),
+    6: (top: 35%, right: 2%, animation-name: float-rotate, animation-duration: 8.5s, start-rotate: -6deg),
+    7: (top: 55%, right: 2%, animation-name: float-rotate, animation-duration: 7s, start-rotate: 3deg),
+    8: (top: 75%, right: 4%, animation-name: float-rotate, animation-duration: 8s, start-rotate: -4deg)
 );
 
 // Larger desktop adjustments table
@@ -22,7 +22,7 @@ $large-screen-adjustments: (
     5: (right: 6%),
     6: (right: 2%),
     7: (right: 2%),
-    8: (right: 8%)
+    8: (right: 4%)
 );
 
 .suggestion-bubbles {
@@ -101,12 +101,9 @@ $large-screen-adjustments: (
     .suggestion-bubble {
         position: absolute;
         pointer-events: all;
-        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
-        animation-iteration-count: infinite;
-        animation-direction: alternate;
-        animation-play-state: running;
         transform-origin: center center;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: none !important;
+        will-change: transform;
 
         // Generate bubble positions from table
         @each $index, $position in $bubble-positions {
@@ -122,13 +119,24 @@ $large-screen-adjustments: (
                     right: map-get($position, right);
                 }
 
-                animation: map-get($position, animation);
+                $anim-name: map-get($position, animation-name);
+                $anim-duration: map-get($position, animation-duration);
+                animation: $anim-name $anim-duration ease-in-out infinite;
+                animation-fill-mode: both;
             }
         }
 
         // Hide duplicated bubbles on desktop
         &:nth-child(n + 9) {
             display: none;
+        }
+
+        &:hover,
+        &:focus-visible {
+            animation-play-state: paused;
+            background: var(--color-surface-primary);
+            color: var(--special-primary);
+            box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
         }
     }
 }
@@ -141,89 +149,33 @@ $large-screen-adjustments: (
         @each $index, $adjustment in $large-screen-adjustments {
             &:nth-child(#{$index}) {
                 @each $property, $value in $adjustment {
-                    #{$property}: $value;
+                    #{$property}: $value !important;
                 }
             }
         }
     }
 }
 
-// Keyframe variants - continuous smooth rotation animations
-@keyframes float {
+// Keyframe variant - smooth pendulum rotation
+@keyframes float-rotate {
     0% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-8px) rotate(calc(var(--start-rotate, 0deg) + 6deg));
-    }
-
-    100% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-@keyframes float-slow {
-    0% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-14px) rotate(calc(var(--start-rotate, 0deg) + 6deg));
-    }
-
-    100% {
-        transform: translateY(0px) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-@keyframes float-side {
-    0% {
-        transform: translateX(0) translateY(0) rotate(var(--start-rotate, 0deg));
+        transform: rotate(calc(var(--start-rotate, 0deg) - 8deg));
     }
 
     25% {
-        transform: translateX(8px) translateY(-4px) rotate(calc(var(--start-rotate, 0deg) + 4deg));
+        transform: rotate(var(--start-rotate, 0deg));
     }
 
     50% {
-        transform: translateX(0) translateY(-8px) rotate(calc(var(--start-rotate, 0deg) + 8deg));
+        transform: rotate(calc(var(--start-rotate, 0deg) + 8deg));
     }
 
     75% {
-        transform: translateX(-8px) translateY(-4px) rotate(calc(var(--start-rotate, 0deg) + 4deg));
+        transform: rotate(var(--start-rotate, 0deg));
     }
 
     100% {
-        transform: translateX(0) translateY(0) rotate(var(--start-rotate, 0deg));
-    }
-}
-
-@keyframes float-rotate {
-    0% {
-        transform: translateY(0) rotate(var(--start-rotate, -5deg));
-    }
-
-    50% {
-        transform: translateY(-6px) rotate(calc(var(--start-rotate, -5deg) + 11deg));
-    }
-
-    100% {
-        transform: translateY(0) rotate(var(--start-rotate, -5deg));
-    }
-}
-
-@keyframes float-scale {
-    0% {
-        transform: translateY(0) scale(1) rotate(var(--start-rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-6px) scale(1.06) rotate(calc(var(--start-rotate, 0deg) + 6deg));
-    }
-
-    100% {
-        transform: translateY(0) scale(1) rotate(var(--start-rotate, 0deg));
+        transform: rotate(calc(var(--start-rotate, 0deg) - 8deg));
     }
 }
 

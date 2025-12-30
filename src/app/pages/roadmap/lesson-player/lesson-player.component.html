@@ -43,6 +43,7 @@
             class="video-player"
             [poster]="videoContent?.thumbnailUrl">
             <source [src]="videoContent?.videoUrl" type="video/mp4" />
+            <track kind="captions" srclang="en" label="English" />
             Your browser does not support the video tag.
           </video>
 
@@ -245,9 +246,11 @@
                     [disabled]="!noteText.trim()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                       xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 12H20" stroke="currentColor" stroke-width="1.5"
+                      <path d="M4 12H20" stroke="currentColor"
+                        stroke-width="1.5"
                         stroke-linecap="round" />
-                      <path d="M12 4V20" stroke="currentColor" stroke-width="1.5"
+                      <path d="M12 4V20" stroke="currentColor"
+                        stroke-width="1.5"
                         stroke-linecap="round" />
                     </svg>
                     <span>Add</span>
@@ -294,15 +297,19 @@
                         class="btn-more"
                         (click)="deleteNote(i)"
                         title="Delete note">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        <svg width="24" height="24" viewBox="0 0 24 24"
+                          fill="none"
                           xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19.0555 14.0176C20.1642 14.0176 21.0713 13.1094 21.0713 11.9995C21.0713 10.8896 20.1642 9.98142 19.0555 9.98142C17.9468 9.98142 17.0397 10.8896 17.0397 11.9995C17.0397 13.1094 17.9468 14.0176 19.0555 14.0176Z"
+                          <path
+                            d="M19.0555 14.0176C20.1642 14.0176 21.0713 13.1094 21.0713 11.9995C21.0713 10.8896 20.1642 9.98142 19.0555 9.98142C17.9468 9.98142 17.0397 10.8896 17.0397 11.9995C17.0397 13.1094 17.9468 14.0176 19.0555 14.0176Z"
                             stroke="#343A40"
                             stroke-width="1.5" />
-                          <path d="M4.94516 14.0176C6.05384 14.0176 6.96094 13.1094 6.96094 11.9995C6.96094 10.8896 6.05384 9.98142 4.94516 9.98142C3.83648 9.98142 2.92938 10.8896 2.92938 11.9995C2.92938 13.1094 3.83648 14.0176 4.94516 14.0176Z"
+                          <path
+                            d="M4.94516 14.0176C6.05384 14.0176 6.96094 13.1094 6.96094 11.9995C6.96094 10.8896 6.05384 9.98142 4.94516 9.98142C3.83648 9.98142 2.92938 10.8896 2.92938 11.9995C2.92938 13.1094 3.83648 14.0176 4.94516 14.0176Z"
                             stroke="#343A40"
                             stroke-width="1.5" />
-                          <path d="M12.0003 14.0176C13.109 14.0176 14.0161 13.1094 14.0161 11.9995C14.0161 10.8896 13.109 9.98142 12.0003 9.98142C10.8917 9.98142 9.98455 10.8896 9.98455 11.9995C9.98455 13.1094 10.8917 14.0176 12.0003 14.0176Z"
+                          <path
+                            d="M12.0003 14.0176C13.109 14.0176 14.0161 13.1094 14.0161 11.9995C14.0161 10.8896 13.109 9.98142 12.0003 9.98142C10.8917 9.98142 9.98455 10.8896 9.98455 11.9995C9.98455 13.1094 10.8917 14.0176 12.0003 14.0176Z"
                             stroke="#343A40"
                             stroke-width="1.5" />
                         </svg>
@@ -356,7 +363,8 @@
             </div>
 
             <!-- Feedback Tab -->
-            <div *ngIf="activeTab === 'feedback'" class="tab-pane feedback-pane">
+            <div *ngIf="activeTab === 'feedback'"
+              class="tab-pane feedback-pane">
               <!-- Rating -->
               <div class="feedback-section">
                 <h3 class="feedback-title">Rate the lesson's content</h3>
@@ -396,9 +404,11 @@
                     [disabled]="lessonRating === 0 && !feedbackText.trim()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                       xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 12H20" stroke="currentColor" stroke-width="1.5"
+                      <path d="M4 12H20" stroke="currentColor"
+                        stroke-width="1.5"
                         stroke-linecap="round" />
-                      <path d="M12 4V20" stroke="currentColor" stroke-width="1.5"
+                      <path d="M12 4V20" stroke="currentColor"
+                        stroke-width="1.5"
                         stroke-linecap="round" />
                     </svg>
                     <span>Add</span>
