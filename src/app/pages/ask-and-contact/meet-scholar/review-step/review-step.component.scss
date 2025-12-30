@@ -1,0 +1,32 @@
+// Booking item styles
+.booking-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.booking-label {
+  font-size: 0.875rem; // text-sm
+  font-weight: 500; // font-medium
+  color: var(--color-text-body, #6c757d);
+
+  &:first-child {
+    font-weight: 400; // font-normal for Subject
+  }
+}
+
+.booking-value {
+  font-size: 0.875rem; // text-sm
+  color: var(--color-text-title, #212529);
+
+  &.whitespace-pre-wrap {
+    white-space: pre-wrap;
+  }
+}
+
+h2 {
+  font-size: 1.25rem; // text-xl
+  font-weight: 500; // font-medium
+  color: var(--color-text-title, #212529);
+  margin-bottom: 1.5rem; // mb-6
+}

@@ -1,0 +1,111 @@
+<div class="px-4 md:px-6 py-12 md:py-24 space-y-5 md:space-y-6">
+  <div class="flex justify-center">
+    <span class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-[#DCFCE7]">
+      <span
+        class="done-icon"
+        [style.maskImage]="'url(' + doneIcon + ')'"
+        [style.webkitMaskImage]="'url(' + doneIcon + ')'"
+      ></span>
+    </span>
+  </div>
+
+  <div class="text-center mt-2">
+    <h1 class="text-2xl md:text-3xl lg:text-[40px] font-bold text-(--color-text-title)">
+      Your meet scheduled successfully!
+    </h1>
+    <p class="text-text-body text-sm md:text-base font-normal text-(--color-text-body)">
+      A calendar invite and meeting link have been sent to your email. You'll receive a reminder 24
+      hours before your meet.
+    </p>
+  </div>
+
+  <div class="bg-(--color-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 sm:p-6">
+    <h2 class="text-lg md:text-xl font-medium text-(--color-text-title) mb-4 md:mb-6">
+      Booking Details
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+      <!-- Date & Time -->
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 items-center justify-center">
+          <span
+            class="calendar-icon"
+            [style.maskImage]="'url(' + calendarIcon + ')'"
+            [style.webkitMaskImage]="'url(' + calendarIcon + ')'"
+          ></span>
+        </span>
+        <div class="flex flex-col">
+          <span class="text-xs md:text-sm font-normal text-(--color-text-caption)"
+            >Date &amp; Time</span
+          >
+          <span class="text-sm md:text-[16px] font-medium text-(--color-text-title)">
+            {{ scheduledDateTime ? (scheduledDateTime | date: 'yyyy-MM-dd') : '' }}
+            @if (scheduledTime) {
+              <span> at {{ scheduledTime }}</span>
+            }
+          </span>
+        </div>
+      </div>
+
+      <!-- Duration -->
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 items-center justify-center">
+          <span
+            class="time-icon"
+            [style.maskImage]="'url(' + timeIcon + ')'"
+            [style.webkitMaskImage]="'url(' + timeIcon + ')'"
+          ></span>
+        </span>
+        <div class="flex flex-col">
+          <span class="text-xs md:text-sm font-normal text-(--color-text-caption)">Duration</span>
+          <span class="text-sm md:text-[16px] font-medium text-(--color-text-title)">
+            {{ durationMinutes || 30 }} minutes
+          </span>
+        </div>
+      </div>
+
+      <!-- Confirmation Email -->
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 items-center justify-center">
+          <span
+            class="mail-icon"
+            [style.maskImage]="'url(' + mailIcon + ')'"
+            [style.webkitMaskImage]="'url(' + mailIcon + ')'"
+          ></span>
+        </span>
+        <div class="flex flex-col">
+          <span class="text-xs md:text-sm font-normal text-(--color-text-caption)"
+            >Confirmation sent to</span
+          >
+          <span class="text-sm md:text-[16px] font-medium text-(--color-text-title)">{{
+            confirmationEmail
+          }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-center">
+    <a
+      routerLink="/account"
+      class="px-6 md:px-8 py-3 rounded-lg text-base md:text-[18px] font-semibold border border-(--special-primary) text-(--special-primary) hover:bg-(--special-primary) hover:text-white transition-colors w-full sm:w-auto text-center"
+      >Go to Profile</a
+    >
+  </div>
+
+  <div
+    class="flex items-start justify-center gap-2 text-[12px] md:text-[13px] text-text-body px-1 md:px-0"
+  >
+    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full">
+      <span
+        class="caution-icon"
+        [style.maskImage]="'url(' + cautionIcon + ')'"
+        [style.webkitMaskImage]="'url(' + cautionIcon + ')'"
+      ></span>
+    </span>
+    <span class="text-(--color-text-info) text-[16px] font-normal">
+      You will be able to schedule a new meet after 48 hours from now.
+    </span>
+  </div>
+</div>
+<div></div>

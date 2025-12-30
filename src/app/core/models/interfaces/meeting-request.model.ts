@@ -13,10 +13,13 @@ export interface MeetingRequestDto {
 }
 
 export interface CreateMeetingRequest {
+  name: string;
+  email: string;
   topic: number;
   message: string;
   languages: number[];
   scheduledAt?: ISODate | null;
+  durationMinutes?: number;
 }
 
 export interface UpdateMeetingStatusRequest {

@@ -1,0 +1,93 @@
+<div class="flex w-full flex-1 flex-col justify-center gap-8 lg:gap-10">
+  <div class="flex flex-col items-start gap-6 w-full">
+    <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+      <div
+        class="flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6"
+      >
+        <img src="/icons/icons-24/search.svg" alt="search icon" class="h-5 w-5 object-contain" />
+        <input
+          type="text"
+          placeholder="Write your question here .."
+          class="min-w-0 flex-1 border-none text-base leading-[160%] focus:ring-0"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="button flex h-16 sm:h-14 w-full items-center justify-center rounded-lg px-8 md:w-auto"
+        (click)="onSearch()"
+      >
+        <span class="text-lg font-semibold text-white">Search</span>
+      </button>
+    </div>
+
+    <div class="category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto">
+      <button
+        *ngFor="let category of categories; let i = index; trackBy: trackByIndex"
+        (click)="selectCategory(i)"
+        [ngClass]="selectedCategory === i ? 'secondary-button' : 'text-text-body'"
+        class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-6 py-3 transition-colors capitalize cursor-pointer"
+      >
+        <span class="text-lg font-medium">{{ category }}</span>
+      </button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="isShowingResults; else defaultQuestions">
+    <app-question-search-result
+      class="w-full"
+      [query]="searchQuery"
+      [results]="searchResults"
+      (clearSearch)="clearSearch()"
+    />
+  </ng-container>
+
+  <ng-template #defaultQuestions>
+    <ng-container>
+      <div class="flex flex-col items-start gap-6 w-full">
+        <ng-container
+          *ngFor="let question of filteredQuestions; let isLast = last; trackBy: trackByQuestionId"
+        >
+          <app-qa-card [question]="question" />
+          <div *ngIf="!isLast" class="w-full h-[1.5px] bg-border-brand"></div>
+        </ng-container>
+      </div>
+
+      <div
+        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap"
+      >
+        <button
+          type="button"
+          (click)="prevPage()"
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
+        >
+          <img [src]="arrowLeftIcon" alt="Previous page" class="h-6 w-6 object-contain" />
+        </button>
+
+        <button
+          *ngFor="let page of pages; trackBy: trackByIndex"
+          type="button"
+          (click)="goToPage(page)"
+          [ngClass]="
+            page === currentPage
+              ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
+              : 'text-text-title'
+          "
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer"
+        >
+          <span class="text-sm font-medium">{{ page }}</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="nextPage()"
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
+        >
+          <img [src]="arrowRightIcon" alt="Next page" class="h-6 w-6 object-contain" />
+        </button>
+      </div>
+    </ng-container>
+  </ng-template>
+</div>

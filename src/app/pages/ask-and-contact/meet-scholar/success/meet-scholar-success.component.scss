@@ -1,0 +1,40 @@
+@mixin flex-center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin icon-mask($size, $color) {
+  display: inline-block;
+  width: $size;
+  height: $size;
+  background-color: $color;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.button {
+  @include flex-center;
+}
+
+.button-light {
+  @include flex-center;
+}
+
+.done-icon {
+  @include icon-mask(5rem, #16a34a);
+}
+
+.calendar-icon,
+.time-icon,
+.mail-icon {
+  @include icon-mask(24px, var(--special-primary));
+}
+
+.caution-icon {
+  @include icon-mask(24px, var(--color-text-info));
+}
