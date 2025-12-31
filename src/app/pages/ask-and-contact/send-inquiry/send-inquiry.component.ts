@@ -10,8 +10,8 @@ import {
   signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ChipsMultiselectComponent } from '../../../shared/reusable components/chips-multiselect/chips-multiselect.component';
-import { SelectDropdownComponent } from '../../../shared/reusable components/select-dropdown/select-dropdown.component';
+import { ChipsMultiselectComponent } from '../../../shared/reusable-components/chips-multiselect/chips-multiselect.component';
+import { SelectDropdownComponent } from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
 import { Router } from '@angular/router';
 

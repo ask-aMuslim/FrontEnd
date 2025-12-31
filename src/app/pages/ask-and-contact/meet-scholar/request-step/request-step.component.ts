@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ChipsMultiselectComponent } from '../../../../shared/reusable components/chips-multiselect/chips-multiselect.component';
-import { SelectDropdownComponent } from '../../../../shared/reusable components/select-dropdown/select-dropdown.component';
+import { ChipsMultiselectComponent } from '../../../../shared/reusable-components/chips-multiselect/chips-multiselect.component';
+import { SelectDropdownComponent } from '../../../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { Language, MeetingInquiryTopic } from '../../../../core/models/interfaces/enums.model';
 
 interface TopicOption {
