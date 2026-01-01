@@ -14,6 +14,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'roadmap/lesson/:id',
     renderMode: RenderMode.Server,
   },
+  // Events route with dynamic parameters - use server-side rendering
+  {
+    path: 'events/:id',
+    renderMode: RenderMode.Server,
+  },
   // Prerender all other routes (static pages like home, about, etc.)
   {
     path: '**',
