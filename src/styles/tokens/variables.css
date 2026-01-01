@@ -39,6 +39,7 @@
   --color-border-light: #e5e7eb;
   --color-border-hover: #9ca3af;
   --color-border-medium: #adb5bd;
+  --color-border-brand-medium: #f6e1aa;
 
   /* Background Colors */
   --color-background-white: #ffffff;
@@ -51,6 +52,8 @@
   --color-error-bg: #fef2f2;
   --color-success: #10b981;
   --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-success-base: #4caf50;
+  --warning: #ff9800;
 
   /* Opacity Values */
   --opacity-disabled: 0.5;
@@ -69,6 +72,10 @@
   --auth-logo-shadow: rgba(21, 107, 64, 0.1);
   --auth-stat-bg: rgba(255, 255, 255, 0.6);
 
+  /* Chips Colors */
+  --chips-data-2: #ecc140;
+  --chips-selected-data-surface: rgba(236, 193, 64, 0.06);
+
   /* End Colors ---------------------*/
 
   /* Typography --------------------- */
@@ -84,6 +91,9 @@
 
   /* Shadows --------------------- */
   --shadow-base: var(--shadows-shadow-md);
+  --shadow-15: 0px 0px 4px 2px rgba(0, 0, 0, 0.15);
+  --shadow-4-green: 0px 0px 4px 2px rgba(21, 107, 64, 0.04);
+  --shadow-big: 0px 0px 8px 2px rgba(21, 107, 64, 0.5);
 
   /* Effects */
   --hero-saturation: 2;

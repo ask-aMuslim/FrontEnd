@@ -10,6 +10,7 @@ import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';
 import { CourseComponent } from './pages/roadmap/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
+import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
 import { AccountComponent } from './pages/account/account.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
 import { LessonOverviewComponent } from './pages/roadmap/lesson-overview/lesson-overview.component';
@@ -114,7 +115,13 @@ export const routes: Routes = [
           { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
         ],
       },
-      { path: 'events', component: EventsComponent, title: 'Events' },
+      {
+        path: 'events',
+        children: [
+          { path: '', component: EventsComponent, title: 'Events' },
+          { path: ':id', component: EventDetailComponent, title: 'Event Details' },
+        ],
+      },
       { path: 'account', component: AccountComponent, title: 'Account' },
     ],
   },
