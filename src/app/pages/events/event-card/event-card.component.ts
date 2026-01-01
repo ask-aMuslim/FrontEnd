@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { EventService } from '../event.service';
+import { InlineSVGModule } from 'ng-inline-svg';
 
 export interface EventCard {
   id: number | string;
@@ -19,7 +20,7 @@ export interface EventCard {
 
 @Component({
   selector: 'app-event-card',
-  imports: [CommonModule],
+  imports: [CommonModule, InlineSVGModule],
   templateUrl: './event-card.component.html',
   styleUrl: './event-card.component.scss',
 })

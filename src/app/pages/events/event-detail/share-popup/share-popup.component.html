@@ -26,7 +26,10 @@
       <div
         class="bg-(--color-surface-primary) rounded-full p-4 transition-all duration-500 hover:scale-110 hover:shadow-lg hover:rotate-12 cursor-pointer"
       >
-        <img src="/icons/icons-24/done.svg" alt="Done" class="w-12 h-12" />
+        <div
+          [inlineSVG]="'/icons/icons-24/done.svg'"
+          class="[&_path]:stroke-(--color-success-base) [&>svg]:w-12 [&>svg]:h-12"
+        ></div>
       </div>
     </div>
 

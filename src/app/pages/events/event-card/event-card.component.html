@@ -37,7 +37,10 @@
         </span>
       </div>
       <div class="flex gap-1 h-6 items-center">
-        <img src="/icons/icons-16/calendar.svg" alt="Calendar" />
+        <div
+          [inlineSVG]="'/icons/icons-16/calendar.svg'"
+          class="[&_path]:stroke-(--color-text-body)"
+        ></div>
         <span class="text-(--color-text-body) text-left leading-[160%]">
           {{ event.date }}
         </span>

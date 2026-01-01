@@ -6,6 +6,4 @@ import { Component } from '@angular/core';
   templateUrl: './muslim-tube.component.html',
   styleUrl: './muslim-tube.component.scss',
 })
-export class MuslimTubeComponent {
-
-}
+export class MuslimTubeComponent {}

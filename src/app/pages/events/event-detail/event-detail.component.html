@@ -72,11 +72,11 @@
                     *ngFor="let item of event.agenda"
                     class="flex gap-3 group cursor-pointer transition-all duration-300 hover:translate-x-2"
                   >
-                    <img
-                      src="/icons/icons-16/point.svg"
+                    <div
+                      [inlineSVG]="'/icons/icons-16/point.svg'"
                       alt="point"
-                      class="w-4 h-4 mt-1 shrink-0 transition-transform duration-300 group-hover:scale-125"
-                    />
+                      class="[&_path]:stroke-(--special-primary) mt-1 shrink-0 transition-transform duration-300 group-hover:scale-125"
+                    ></div>
                     <span class="group-hover:text-(--special-primary)">{{ item }}</span>
                   </li>
                 </ul>
@@ -120,7 +120,10 @@
           class="bg-(--color-surface-primary) rounded-lg p-6 space-y-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
         >
           <div class="flex gap-2 items-center">
-            <img src="/icons/icons-24/ask.svg" alt="" />
+            <div
+              [inlineSVG]="'/icons/icons-24/ask.svg'"
+              class="[&_path]:stroke-(--special-primary)"
+            ></div>
             <h2 class="text-[20px] font-medium text-(--special-primary)">Park your Questions</h2>
           </div>
 
@@ -168,11 +171,10 @@
             <div
               class="flex items-start gap-2 group cursor-pointer transition-all duration-300 hover:translate-x-2"
             >
-              <img
-                src="/icons/icons-24/calendar.svg"
-                alt="Calendar"
-                class="text-(--special-primary) transition-transform duration-300 group-hover:scale-110"
-              />
+              <div
+                [inlineSVG]="'/icons/icons-24/calendar.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:scale-110"
+              ></div>
               <div class="flex flex-col items-start justify-center">
                 <span class="text-(--special-primary) text-[14px]">Date</span>
                 <span>{{ event.date }}</span>
@@ -181,11 +183,10 @@
             <div
               class="flex items-start gap-2 group cursor-pointer transition-all duration-300 hover:translate-x-2"
             >
-              <img
-                src="/icons/icons-24/time.svg"
-                alt="Time"
-                class="text-(--special-primary) transition-transform duration-300 group-hover:scale-110"
-              />
+              <div
+                [inlineSVG]="'/icons/icons-24/time.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:scale-110"
+              ></div>
               <div class="flex flex-col items-start justify-center">
                 <span class="text-(--special-primary) text-[14px]">Time</span>
                 <span>{{ event.time }}</span>
@@ -195,11 +196,10 @@
               [ngClass]="event.isRecorded ? 'flex items-center gap-2' : 'flex items-start gap-2'"
               class="group cursor-pointer transition-all duration-300 hover:translate-x-2"
             >
-              <img
-                src="/icons/icons-24/live.svg"
-                alt="Live"
-                class="text-(--special-primary) transition-transform duration-300 group-hover:scale-110"
-              />
+              <div
+                [inlineSVG]="'/icons/icons-24/live.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:scale-110"
+              ></div>
               <div class="flex flex-col items-start justify-center">
                 <span class="text-(--special-primary) text-[14px]">{{
                   event.isRecorded ? 'Recorded' : 'Live'
@@ -214,11 +214,10 @@
               class="w-full border border-(--special-primary) text-(--special-primary) py-2 rounded-lg hover:bg-(--special-primary-light) transition-all duration-300 hover:scale-110 hover:shadow-xl hover:-translate-y-1 group cursor-pointer"
             >
               <span class="flex items-center justify-center gap-2 text-[18px] font-semibold">
-                <img
-                  src="/icons/icons-24/share.svg"
-                  alt="Share"
-                  class="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
-                />
+                <div
+                  [inlineSVG]="'/icons/icons-24/share.svg'"
+                  class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                ></div>
                 Share
               </span>
             </button>

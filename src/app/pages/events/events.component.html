@@ -69,11 +69,10 @@
               <span class="text-(--special-primary) text-center font-semibold text-[18px]">
                 Register Now
               </span>
-              <img
-                src="/icons/icons-24/arrow-right.svg"
-                alt="Right Arrow"
-                class="transition-transform duration-300 group-hover:translate-x-2"
-              />
+              <div
+                [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:translate-x-2"
+              ></div>
             </button>
             <button
               class="flex gap-2 h-8 items-center rounded-lg justify-center cursor-pointer transition-all duration-300 hover:scale-110 group w-full sm:w-auto"
@@ -112,11 +111,10 @@
           <div
             class="flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6 transition-all duration-300 hover:border-(--special-primary) focus-within:border-(--special-primary) focus-within:shadow-lg"
           >
-            <img
-              src="/icons/icons-24/search.svg"
-              alt="search icon"
-              class="transition-transform duration-300 hover:scale-110"
-            />
+            <div
+              [inlineSVG]="'/icons/icons-24/search.svg'"
+              class="[&_path]:stroke-(--color-text-caption) transition-transform duration-300 hover:scale-110"
+            ></div>
             <input
               type="text"
               placeholder="Search for events .."
@@ -144,18 +142,22 @@
       </div>
 
       <div
-        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap"
+        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap mb-5"
       >
         <button
           type="button"
           (click)="prevPage()"
           class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-(--color-surface-primary) hover:scale-110 group"
         >
-          <img
-            src="/icons/icons-24/arrow-left.svg"
-            alt="Previous page"
-            class="h-6 w-6 object-contain transition-transform duration-300 group-hover:-translate-x-1"
-          />
+          <div
+            [inlineSVG]="'/icons/icons-24/arrow-left.svg'"
+            [ngClass]="
+              isFirstPage
+                ? '[&_path]:stroke-(--color-text-placeholder)'
+                : '[&_path]:stroke-(--color-text-body)'
+            "
+            class="h-6 w-6 transition-transform duration-300 group-hover:-translate-x-1"
+          ></div>
         </button>
 
         <button
@@ -177,11 +179,15 @@
           (click)="nextPage()"
           class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-(--color-surface-primary) hover:scale-110 group"
         >
-          <img
-            src="/icons/icons-24/arrow-right.svg"
-            alt="Next page"
-            class="h-6 w-6 object-contain transition-transform duration-300 group-hover:translate-x-1"
-          />
+          <div
+            [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+            [ngClass]="
+              isLastPage
+                ? '[&_path]:stroke-(--color-text-placeholder)'
+                : '[&_path]:stroke-(--color-text-body)'
+            "
+            class="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1"
+          ></div>
         </button>
       </div>
     </div>

@@ -2,10 +2,11 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventCardComponent } from './event-card/event-card.component';
 import type { EventCard } from './event-card/event-card.component';
+import { InlineSVGModule } from 'ng-inline-svg';
 
 @Component({
   selector: 'app-events',
-  imports: [EventCardComponent, CommonModule],
+  imports: [EventCardComponent, CommonModule, InlineSVGModule],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss',
 })
@@ -269,6 +270,14 @@ export class EventsComponent {
 
   trackByIndex(index: number): number {
     return index;
+  }
+
+  get isFirstPage(): boolean {
+    return this.currentPage === 1;
+  }
+
+  get isLastPage(): boolean {
+    return this.currentPage === this.pages.length;
   }
 
   get paginatedEventCards(): EventCard[] {

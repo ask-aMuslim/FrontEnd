@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../event.service';
 import { ProfilePopupComponent } from './profile-popup/profile-popup.component';
 import { SharePopupComponent } from './share-popup/share-popup.component';
+import { InlineSVGModule } from 'ng-inline-svg';
 
 export interface EventDetail {
   id: number | string;
@@ -30,7 +31,7 @@ export interface EventDetail {
 
 @Component({
   selector: 'app-event-detail',
-  imports: [CommonModule, ProfilePopupComponent, SharePopupComponent],
+  imports: [CommonModule, ProfilePopupComponent, SharePopupComponent, InlineSVGModule],
   templateUrl: './event-detail.component.html',
   styleUrl: './event-detail.component.scss',
 })
