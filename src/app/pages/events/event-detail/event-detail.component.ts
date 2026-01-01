@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../event.service';
 import { ProfilePopupComponent } from './profile-popup/profile-popup.component';
 import { SharePopupComponent } from './share-popup/share-popup.component';
-import { InlineSVGModule } from 'ng-inline-svg';
+import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 
 export interface EventDetail {
   id: number | string;
@@ -31,7 +31,7 @@ export interface EventDetail {
 
 @Component({
   selector: 'app-event-detail',
-  imports: [CommonModule, ProfilePopupComponent, SharePopupComponent, InlineSVGModule],
+  imports: [CommonModule, ProfilePopupComponent, SharePopupComponent, InlineSvgDirective],
   templateUrl: './event-detail.component.html',
   styleUrl: './event-detail.component.scss',
 })
@@ -44,7 +44,7 @@ export class EventDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private eventService: EventService,
+    private eventService: EventService
   ) {}
 
   ngOnInit(): void {

@@ -2,11 +2,11 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventCardComponent } from './event-card/event-card.component';
 import type { EventCard } from './event-card/event-card.component';
-import { InlineSVGModule } from 'ng-inline-svg';
+import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
 
 @Component({
   selector: 'app-events',
-  imports: [EventCardComponent, CommonModule, InlineSVGModule],
+  imports: [EventCardComponent, CommonModule, InlineSvgDirective],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss',
 })

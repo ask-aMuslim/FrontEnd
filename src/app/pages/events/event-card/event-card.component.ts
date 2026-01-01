@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { EventService } from '../event.service';
-import { InlineSVGModule } from 'ng-inline-svg';
+import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 
 export interface EventCard {
   id: number | string;
@@ -20,17 +20,14 @@ export interface EventCard {
 
 @Component({
   selector: 'app-event-card',
-  imports: [CommonModule, InlineSVGModule],
+  imports: [CommonModule, InlineSvgDirective],
   templateUrl: './event-card.component.html',
   styleUrl: './event-card.component.scss',
 })
 export class EventCardComponent {
   @Input() event!: EventCard;
 
-  constructor(
-    private router: Router,
-    private eventService: EventService,
-  ) {}
+  constructor(private router: Router, private eventService: EventService) {}
 
   onCardClick(): void {
     this.eventService.setSelectedEvent(this.event);
