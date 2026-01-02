@@ -1,1 +1,69 @@
-<!-- Channels component HTML (blank placeholder) -->
+<div class="channels-container">
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="search-wrapper">
+      <div class="search-input-container">
+        <img src="/icons/icons-24/search.svg" alt="Search" class="search-icon" />
+        <input
+          type="text"
+          placeholder="Search channels..."
+          class="search-input"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+
+      <app-select-dropdown
+        class="language-select"
+        [options]="languageOptions"
+        [value]="selectedLanguage()"
+        [placeholder]="'Language'"
+        (select)="onLanguageSelect($event)"
+      />
+
+      <button class="search-button" (click)="onSearch()">
+        <img src="/icons/icons-24/search.svg" alt="Search" />
+        <span>Search</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Category Scroll -->
+  <div class="category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto mb-5">
+    <button
+      *ngFor="let category of categories; let i = index; trackBy: trackByIndex"
+      (click)="selectCategory(i)"
+      [ngClass]="selectedCategory() === i ? 'secondary-button' : 'text-text-body'"
+      class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-6 py-3 transition-colors capitalize cursor-pointer"
+    >
+      <span class="text-lg font-medium">{{ category }}</span>
+    </button>
+  </div>
+
+  <!-- Channels Grid -->
+  <div class="channels-grid">
+    @for (channel of channels; track channel.id) {
+      <div class="channel-card">
+        <div class="channel-image-wrapper">
+          <img [src]="channel.image" [alt]="channel.title" class="channel-image" />
+        </div>
+
+        <div class="channel-content">
+          <h3 class="channel-title">{{ channel.title }}</h3>
+          <p class="channel-description">{{ channel.description }}</p>
+
+          <div class="channel-stats">
+            <div class="stat-item">
+              <img src="/icons/icons-24/profile-two-user.svg" alt="Followers" class="stat-icon" />
+              <span>{{ formatNumber(channel.followers) }} followers</span>
+            </div>
+            <div class="stat-item">
+              <img src="/icons/icons-24/video-square.svg" alt="Videos" class="stat-icon" />
+              <span>{{ formatNumber(channel.videosCount) }} videos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
