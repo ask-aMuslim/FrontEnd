@@ -1,0 +1,67 @@
+<div class="space-y-4">
+  <div class="flex gap-2 pb-3 mb-4 sm:mb-6 border-b border-(--color-border-medium)">
+    <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">
+      Edit Personal Information
+    </h2>
+    <div
+      [inlineSVG]="'/icons/icons-24/user-edit.svg'"
+      class="[&_path]:stroke-(--color-text-body)"
+    ></div>
+  </div>
+
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-2">
+      <label class="text-sm text-(--color-text-placeholder)">Name</label>
+      <input
+        type="text"
+        [(ngModel)]="name"
+        class="px-4 py-3 rounded-lg border border-(--color-border-medium) text-base font-medium text-(--color-text-body) focus:outline-none focus:border-(--special-primary)"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="text-sm text-(--color-text-placeholder)">Gender</label>
+      <app-select-dropdown
+        [options]="genderOptions"
+        [value]="gender"
+        [placeholder]="'Select Gender'"
+        (select)="onGenderSelect($event)"
+      ></app-select-dropdown>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="text-sm text-(--color-text-placeholder)">Date of Birth</label>
+      <input
+        type="date"
+        [(ngModel)]="dateOfBirth"
+        class="px-4 py-3 rounded-lg border border-(--color-border-medium) text-base font-medium text-(--color-text-body) focus:outline-none focus:border-(--special-primary)"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="text-sm text-(--color-text-placeholder)">Languages Speaks</label>
+      <app-chips-multiselect
+        [options]="languageOptions"
+        [selected]="selectedLanguages"
+        [placeholder]="'Select languages'"
+        (add)="onLanguageAdd($event)"
+        (remove)="onLanguageRemove($event)"
+      ></app-chips-multiselect>
+    </div>
+  </div>
+
+  <div class="flex flex-col sm:flex-row gap-3 justify-end pt-4">
+    <button
+      (click)="onCancel()"
+      class="px-6 sm:px-8 py-3 rounded-lg border border-(--color-border-medium) text-(--color-text-body) cursor-pointer hover:bg-(--color-surface-secondary) w-full sm:w-auto"
+    >
+      Cancel
+    </button>
+    <button
+      (click)="onSave()"
+      class="px-6 sm:px-8 py-3 rounded-lg bg-(--special-primary) text-white cursor-pointer hover:opacity-90 w-full sm:w-auto"
+    >
+      Save
+    </button>
+  </div>
+</div>

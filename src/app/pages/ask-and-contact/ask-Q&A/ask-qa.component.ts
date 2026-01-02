@@ -5,11 +5,20 @@ import { ActivatedRoute } from '@angular/router';
 import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
 import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
 import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
+import { PaginationComponent } from '../../../shared/reusable-components/pagination/pagination.component';
 
 @Component({
   selector: 'app-ask-qa',
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, FormsModule, QaCardComponent, QuestionSearchResultComponent],
+  imports: [
+    CommonModule,
+    NgIf,
+    NgFor,
+    FormsModule,
+    QaCardComponent,
+    QuestionSearchResultComponent,
+    PaginationComponent,
+  ],
   templateUrl: './ask-qa.component.html',
   styleUrl: './ask-qa.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

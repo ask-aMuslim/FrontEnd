@@ -55,39 +55,15 @@
         </ng-container>
       </div>
 
-      <div
-        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap"
-      >
-        <button
-          type="button"
-          (click)="prevPage()"
-          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
-        >
-          <img [src]="arrowLeftIcon" alt="Previous page" class="h-6 w-6 object-contain" />
-        </button>
-
-        <button
-          *ngFor="let page of pages; trackBy: trackByIndex"
-          type="button"
-          (click)="goToPage(page)"
-          [ngClass]="
-            page === currentPage
-              ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
-              : 'text-text-title'
-          "
-          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer"
-        >
-          <span class="text-sm font-medium">{{ page }}</span>
-        </button>
-
-        <button
-          type="button"
-          (click)="nextPage()"
-          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
-        >
-          <img [src]="arrowRightIcon" alt="Next page" class="h-6 w-6 object-contain" />
-        </button>
-      </div>
+      <app-pagination
+        [pages]="pages"
+        [currentPage]="currentPage"
+        [arrowLeftIcon]="arrowLeftIcon"
+        [arrowRightIcon]="arrowRightIcon"
+        (prevPage)="prevPage()"
+        (nextPage)="nextPage()"
+        (goToPage)="goToPage($event)"
+      ></app-pagination>
     </ng-container>
   </ng-template>
 </div>

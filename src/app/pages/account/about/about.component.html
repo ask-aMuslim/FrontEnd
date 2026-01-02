@@ -1,0 +1,172 @@
+<div class="flex flex-col gap-8">
+  <!-- Main Information -->
+  <div class="space-y-4">
+    <div *ngIf="!isEditingMain" class="animate-fade-in">
+      <div class="flex gap-2 pb-3 mb-4 sm:mb-6 border-b border-(--color-border-medium)">
+        <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">Main Information</h2>
+        <div
+          [inlineSVG]="'/icons/icons-24/user-edit.svg'"
+          (click)="editMainInfo()"
+          class="[&_path]:stroke-(--color-text-body) cursor-pointer"
+        ></div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Religion</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.religion }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Reason of your Religion</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.reasonOfReligion }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Your Life Goal (Bio)</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.bio }}</p>
+        </div>
+      </div>
+    </div>
+
+    <app-edit-main-information
+      *ngIf="isEditingMain"
+      class="animate-fade-in"
+      [religion]="about.religion"
+      [reasonOfReligion]="about.reasonOfReligion"
+      [bio]="about.bio"
+      (save)="saveMainInfo($event)"
+      (cancel)="cancelMainEdit()"
+    ></app-edit-main-information>
+  </div>
+
+  <!-- Personal Information -->
+  <div class="space-y-4">
+    <div *ngIf="!isEditingPersonal" class="animate-fade-in">
+      <div class="flex gap-2 pb-3 mb-4 sm:mb-6 border-b border-(--color-border-medium)">
+        <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">
+          Personal Information
+        </h2>
+        <div
+          [inlineSVG]="'/icons/icons-24/user-edit.svg'"
+          (click)="editPersonalInfo()"
+          class="[&_path]:stroke-(--color-text-body) cursor-pointer"
+        ></div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Name</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.name }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Gender</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.gender }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Date of Birth</span>
+          <p class="text-base font-medium text-(--color-text-body)">
+            {{ about.dateOfBirth }} ({{ about.age }} years old)
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Languages Speaks</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.languagesSpeaks }}</p>
+        </div>
+      </div>
+    </div>
+
+    <app-edit-personal-information
+      *ngIf="isEditingPersonal"
+      class="animate-fade-in"
+      [name]="about.name"
+      [gender]="about.gender"
+      [dateOfBirth]="about.dateOfBirth"
+      [languagesSpeaks]="about.languagesSpeaks"
+      (save)="savePersonalInfo($event)"
+      (cancel)="cancelPersonalEdit()"
+    ></app-edit-personal-information>
+  </div>
+
+  <!-- Contact Information -->
+  <div class="space-y-4">
+    <div *ngIf="!isEditingContact" class="animate-fade-in">
+      <div class="flex gap-2 pb-3 mb-4 sm:mb-6 border-b border-(--color-border-medium)">
+        <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">
+          Contact Information
+        </h2>
+        <div
+          [inlineSVG]="'/icons/icons-24/user-edit.svg'"
+          (click)="editContactInfo()"
+          class="[&_path]:stroke-(--color-text-body) cursor-pointer"
+        ></div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">City / Country</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.city }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Phone Number</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.phoneNumber }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-(--color-text-placeholder)">Email</span>
+          <p class="text-base font-medium text-(--color-text-body)">{{ about.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    <app-edit-contact-information
+      *ngIf="isEditingContact"
+      class="animate-fade-in"
+      [city]="about.city"
+      [phoneNumber]="about.phoneNumber"
+      [email]="about.email"
+      (save)="saveContactInfo($event)"
+      (cancel)="cancelContactEdit()"
+    ></app-edit-contact-information>
+  </div>
+
+  <!-- Action Buttons -->
+  <div>
+    <div
+      class="flex flex-col sm:flex-row gap-3 pt-4 items-start sm:items-center justify-between border-t border-(--color-border-medium)"
+    >
+      <div class="flex gap-2 items-center">
+        <div
+          [inlineSVG]="'/icons/icons-social-apps/google.svg'"
+          class="[&_path]:stroke-(--special-secondary)"
+        ></div>
+        <span class="text-sm sm:text-base text-(--color-text-body)">Connected with Google</span>
+      </div>
+      <button
+        class="px-6 sm:px-8 py-3 w-full sm:w-40 rounded-lg bg-(--color-critical) text-white cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105"
+        (click)="logout()"
+      >
+        Logout
+      </button>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3 pt-4 items-start sm:items-center justify-between">
+      <div class="flex gap-2 items-center">
+        <div
+          [inlineSVG]="'/icons/icons-social-apps/facebook.svg'"
+          class="[&_path]:stroke-(--special-secondary)"
+        ></div>
+        <span class="text-sm sm:text-base text-(--color-text-body)">Connected with Facebook</span>
+      </div>
+      <button
+        class="px-6 sm:px-8 py-3 w-full sm:w-40 rounded-lg bg-(--color-critical) text-white cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105"
+        (click)="logout()"
+      >
+        Logout
+      </button>
+    </div>
+  </div>
+</div>

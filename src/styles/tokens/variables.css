@@ -40,6 +40,7 @@
   --color-border-hover: #9ca3af;
   --color-border-medium: #adb5bd;
   --color-border-brand-medium: #f6e1aa;
+  --color-border-low: #bbd1c2;
 
   /* Background Colors */
   --color-background-white: #ffffff;
@@ -50,6 +51,7 @@
   --color-error: #ef4444;
   --color-error-light: rgba(239, 68, 68, 0.02);
   --color-error-bg: #fef2f2;
+  --color-critical: #b71c1c;
   --color-success: #10b981;
   --color-success-light: rgba(16, 185, 129, 0.1);
   --color-success-base: #4caf50;
@@ -75,6 +77,10 @@
   /* Chips Colors */
   --chips-data-2: #ecc140;
   --chips-selected-data-surface: rgba(236, 193, 64, 0.06);
+
+  /* Gender Colors */
+  --gender-male: #009edb;
+  --gender-female: #f0627b;
 
   /* End Colors ---------------------*/
 
