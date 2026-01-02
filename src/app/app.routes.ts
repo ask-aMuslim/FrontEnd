@@ -101,7 +101,54 @@ export const routes: Routes = [
           },
         ],
       },
-      { path: 'muslim-tube', component: MuslimTubeComponent, title: 'Muslim Tube' },
+      {
+        path: 'muslim-tube',
+        component: MuslimTubeComponent,
+        title: 'Muslim Tube',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'channels' },
+          {
+            path: 'channels',
+            loadComponent: () =>
+              import('./pages/muslim-tube/channels/channels.component').then(
+                (m) => m.ChannelsComponent,
+              ),
+            title: 'Channels',
+          },
+          {
+            path: 'videos',
+            loadComponent: () =>
+              import('./pages/muslim-tube/videos/videos.component').then((m) => m.VideosComponent),
+            title: 'Videos',
+          },
+          {
+            path: 'shorts',
+            loadComponent: () =>
+              import('./pages/muslim-tube/shorts/shorts.component').then((m) => m.ShortsComponent),
+            title: 'Shorts',
+          },
+          {
+            path: 'saved',
+            loadComponent: () =>
+              import('./pages/muslim-tube/saved/saved.component').then((m) => m.SavedComponent),
+            title: 'Saved',
+          },
+          {
+            path: 'history',
+            loadComponent: () =>
+              import('./pages/muslim-tube/history/history.component').then(
+                (m) => m.HistoryComponent,
+              ),
+            title: 'History',
+          },
+          {
+            path: 'liked',
+            loadComponent: () =>
+              import('./pages/muslim-tube/liked/liked.component').then((m) => m.LikedComponent),
+            title: 'Liked',
+          },
+        ],
+      },
       {
         path: 'roadmap',
         children: [
