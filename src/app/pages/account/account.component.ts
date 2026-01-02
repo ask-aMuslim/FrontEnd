@@ -11,6 +11,7 @@ interface UserProfile {
   bio: string;
   profileImage: string;
   gender: string;
+  religion: string;
 }
 
 interface UpcomingEvent {
@@ -51,7 +52,8 @@ export class AccountComponent implements OnInit {
     name: 'Maher Zain',
     bio: 'Bio',
     profileImage: '/images/profile-picture-navbar.png',
-    gender: 'Muslim',
+    gender: 'Male',
+    religion: 'Muslim',
   };
 
   currentVerse: Verse = {

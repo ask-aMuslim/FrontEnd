@@ -24,13 +24,24 @@
                   {{ userProfile.name }}
                 </h2>
                 <span
+                  *ngIf="userProfile.gender === 'Male'"
                   class="inline-flex items-center gap-2 rounded-full bg-(--gender-male)/8 px-3 py-1 text-sm font-semibold text-(--gender-male)"
                 >
                   <div
                     [inlineSVG]="'/icons/icons-24/male.svg'"
                     class="[&_path]:stroke-(--gender-male) transition-transform duration-300 group-hover:translate-x-2"
                   ></div>
-                  {{ userProfile.gender }}
+                  {{ userProfile.religion }}
+                </span>
+                <span
+                  *ngIf="userProfile.gender === 'Female'"
+                  class="inline-flex items-center gap-2 rounded-full bg-(--gender-female)/8 px-3 py-1 text-sm font-semibold text-(--gender-female)"
+                >
+                  <div
+                    [inlineSVG]="'/icons/icons-24/female.svg'"
+                    class="[&_path]:stroke-(--gender-female) transition-transform duration-300 group-hover:translate-x-2"
+                  ></div>
+                  {{ userProfile.religion }}
                 </span>
               </div>
               <span class="text-sm text-(--color-text-caption)">{{ userProfile.bio }}</span>
