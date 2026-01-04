@@ -1,1 +1,36 @@
-<!-- Videos component HTML (blank placeholder) -->
+<!-- Videos component HTML -->
+<div class="videos-container">
+  <!-- videos Grid -->
+  <div class="videos-grid">
+    @for (video of videos; track video.id) {
+      <div class="video-card">
+        <div class="video-image-wrapper">
+          <img [src]="video.image" [alt]="video.title" class="video-image" />
+          <span class="video-duration">{{ video.duration }}</span>
+        </div>
+
+        <div class="video-content">
+          <h3 class="video-title">{{ video.title }}</h3>
+
+          <div class="channel-info">
+            <img [src]="video.channelLogo" [alt]="video.channelTitle" class="channel-logo" />
+            <p class="channel-title">{{ video.channelTitle }}</p>
+          </div>
+
+          <div class="video-divider"></div>
+
+          <div class="video-stats">
+            <div class="stat-item">
+              <img src="/icons/icons-24/clock.svg" alt="Date" class="stat-icon" />
+              <span>{{ video.date }}</span>
+            </div>
+            <div class="stat-item">
+              <img src="/icons/icons-24/liked.svg" alt="Likes" class="stat-icon" />
+              <span>{{ video.likes }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
