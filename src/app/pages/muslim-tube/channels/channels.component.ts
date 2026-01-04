@@ -1,10 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import {
-  SelectDropdownComponent,
-  SelectOption,
-} from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
 
 interface Channel {
   id: number;
@@ -18,40 +14,12 @@ interface Channel {
 @Component({
   standalone: true,
   selector: 'app-mt-channels',
-  imports: [CommonModule, SelectDropdownComponent],
+  imports: [CommonModule],
   templateUrl: './channels.component.html',
   styleUrls: ['./channels.component.scss'],
 })
 export class ChannelsComponent {
-  searchQuery = signal('');
-  selectedLanguage = signal<string>('all');
-  selectedCategory = signal<number>(0);
-
   constructor(private readonly router: Router) {}
-
-  languageOptions: SelectOption<string>[] = [
-    { value: 'all', label: 'All Languages' },
-    { value: 'ar', label: 'العربية' },
-    { value: 'en', label: 'English' },
-    { value: 'fr', label: 'Français' },
-    { value: 'ur', label: 'اردو' },
-  ];
-
-  categories: string[] = [
-    'All',
-    'Quran',
-    'Hadith',
-    'Fiqh',
-    'Seerah',
-    'Aqeedah',
-    'Dawa',
-    'Family',
-    'History',
-    'Science',
-    'Podcasts',
-    'Children',
-    'Tajwid',
-  ];
 
   channels: Channel[] = [
     {
@@ -127,27 +95,6 @@ export class ChannelsComponent {
       videosCount: 198,
     },
   ];
-
-  onSearchInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
-  }
-
-  onLanguageSelect(language: string): void {
-    this.selectedLanguage.set(language);
-  }
-
-  onSearch(): void {
-    console.log('Searching:', this.searchQuery(), 'Language:', this.selectedLanguage());
-  }
-
-  selectCategory(index: number): void {
-    this.selectedCategory.set(index);
-  }
-
-  trackByIndex(_index: number): number {
-    return _index;
-  }
 
   formatNumber(num: number): string {
     if (num >= 1000000) {
