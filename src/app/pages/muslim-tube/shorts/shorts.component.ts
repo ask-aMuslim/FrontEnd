@@ -1,28 +1,15 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-
-interface Short {
-  id: number;
-  image: string;
-  duration: string;
-  title: string;
-  channelLogo: string;
-  channelTitle: string;
-  date: string;
-  likes: number;
-}
+import { ShortCardComponent, Short } from '../short-card/short-card.component';
 
 @Component({
   standalone: true,
   selector: 'app-mt-shorts',
-  imports: [CommonModule],
+  imports: [CommonModule, ShortCardComponent],
   templateUrl: './shorts.component.html',
   styleUrls: ['./shorts.component.scss'],
 })
 export class ShortsComponent {
-  constructor(private readonly router: Router) {}
-
   shorts: Short[] = [
     {
       id: 1,
@@ -115,13 +102,4 @@ export class ShortsComponent {
       likes: 14100,
     },
   ];
-
-  formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  }
 }
