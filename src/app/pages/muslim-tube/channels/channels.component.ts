@@ -104,4 +104,8 @@ export class ChannelsComponent {
     }
     return num.toString();
   }
+
+  goToChannel(channelId: number): void {
+    this.router.navigate(['/muslim-tube/channel', channelId]);
+  }
 }

@@ -117,6 +117,14 @@ export const routes: Routes = [
             title: 'Channels',
           },
           {
+            path: 'channel/:id',
+            loadComponent: () =>
+              import('./pages/muslim-tube/channel-detail/channel-detail.component').then(
+                (m) => m.ChannelDetailComponent,
+              ),
+            title: 'Channel Detail',
+          },
+          {
             path: 'videos',
             loadComponent: () =>
               import('./pages/muslim-tube/videos/videos.component').then((m) => m.VideosComponent),
