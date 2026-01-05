@@ -21,7 +21,7 @@ export class InlineSvgDirective implements OnChanges, OnDestroy {
   constructor(
     private elementRef: ElementRef<HTMLElement>,
     private renderer: Renderer2,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -51,10 +51,17 @@ export class InlineSvgDirective implements OnChanges, OnDestroy {
         throw new Error(`Failed to load SVG: ${response.status}`);
       }
 
-      const rawSvg = await response.text();
+      // const rawSvg = await response.text();
+      let rawSvg = await response.text();
+      rawSvg = rawSvg
+        // Replace fill colors EXCEPT "none"
+        .replace(/fill="(?!none)[^"]*"/gi, 'fill="currentColor"')
+        // Replace stroke colors
+        .replace(/stroke="[^"]*"/gi, 'stroke="currentColor"');
+
       const sanitized = this.sanitizer.sanitize(
         SecurityContext.HTML,
-        this.sanitizer.bypassSecurityTrustHtml(rawSvg)
+        this.sanitizer.bypassSecurityTrustHtml(rawSvg),
       );
 
       this.renderer.setProperty(this.elementRef.nativeElement, 'innerHTML', sanitized ?? '');

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { VideoCardComponent } from '../video-card/video-card.component';
 
 interface Video {
   id: number;
@@ -16,12 +17,16 @@ interface Video {
 @Component({
   standalone: true,
   selector: 'app-mt-videos',
-  imports: [CommonModule],
+  imports: [CommonModule, VideoCardComponent],
   templateUrl: './videos.component.html',
   styleUrls: ['./videos.component.scss'],
 })
 export class VideosComponent {
   constructor(private readonly router: Router) {}
+
+  onVideoClick(videoId: number): void {
+    this.router.navigate(['/muslim-tube/video', videoId]);
+  }
 
   videos: Video[] = [
     {

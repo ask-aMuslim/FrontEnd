@@ -7,6 +7,7 @@ import { RegisterComponent } from './core/auth/register/register.component';
 import { AppLayoutComponent } from './core/Layouts/app-layout/app-layout.component';
 import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
 import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
+import { VideoDetailComponent } from './pages/muslim-tube/video-detail/video-detail.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';
 import { CourseComponent } from './pages/roadmap/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
@@ -120,6 +121,11 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./pages/muslim-tube/videos/videos.component').then((m) => m.VideosComponent),
             title: 'Videos',
+          },
+          {
+            path: 'video/:id',
+            component: VideoDetailComponent,
+            title: 'Video',
           },
           {
             path: 'shorts',

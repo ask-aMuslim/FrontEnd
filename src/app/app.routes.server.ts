@@ -19,6 +19,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'events/:id',
     renderMode: RenderMode.Server,
   },
+  // Muslim Tube video detail with params - use server-side rendering
+  {
+    path: 'muslim-tube/video/:id',
+    renderMode: RenderMode.Server,
+  },
   // Prerender all other routes (static pages like home, about, etc.)
   {
     path: '**',
