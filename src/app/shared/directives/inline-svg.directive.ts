@@ -7,8 +7,11 @@ import {
   Renderer2,
   SecurityContext,
   SimpleChanges,
+  inject,
+  PLATFORM_ID,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import { isPlatformBrowser } from '@angular/common';
 
 @Directive({
   selector: '[inlineSVG]',
@@ -17,6 +20,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 export class InlineSvgDirective implements OnChanges, OnDestroy {
   @Input('inlineSVG') src?: string;
   private abortController: AbortController | null = null;
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
   constructor(
     private elementRef: ElementRef<HTMLElement>,
@@ -39,6 +44,11 @@ export class InlineSvgDirective implements OnChanges, OnDestroy {
 
     if (!this.src) {
       this.renderer.setProperty(this.elementRef.nativeElement, 'innerHTML', '');
+      return;
+    }
+
+    // Skip loading SVGs during server-side rendering
+    if (!this.isBrowser) {
       return;
     }
 
