@@ -31,12 +31,9 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at 30% 50%,
-        var(--special-primary-6) 0%,
-        transparent 50%),
-      radial-gradient(circle at 70% 80%,
-        var(--special-secondary-6) 0%,
-        transparent 50%);
+    background:
+      radial-gradient(circle at 30% 50%, var(--special-primary-6) 0%, transparent 50%),
+      radial-gradient(circle at 70% 80%, var(--special-secondary-6) 0%, transparent 50%);
     z-index: -1;
     pointer-events: none;
     animation: ambientGlow 15s ease-in-out infinite alternate;
@@ -117,7 +114,6 @@
 }
 
 @keyframes gentleFloat {
-
   0%,
   100% {
     transform: translateY(0);
