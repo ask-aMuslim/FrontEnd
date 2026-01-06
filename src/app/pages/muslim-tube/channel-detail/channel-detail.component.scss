@@ -5,6 +5,16 @@
   display: flex;
   flex-direction: column;
   gap: calc(var(--spacing-unit) * 3);
+
+  @media (max-width: 768px) {
+    padding: calc(var(--spacing-unit) * 2);
+    gap: calc(var(--spacing-unit) * 2);
+  }
+
+  @media (max-width: 480px) {
+    padding: calc(var(--spacing-unit) * 1.5);
+    gap: calc(var(--spacing-unit) * 1.5);
+  }
 }
 
 .channel-hero {
@@ -17,6 +27,17 @@
   border-radius: var(--border-radius-default);
   box-shadow: var(--shadow-sm);
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: calc(var(--spacing-unit) * 2);
+    gap: calc(var(--spacing-unit) * 2);
+  }
+
+  @media (max-width: 480px) {
+    padding: calc(var(--spacing-unit) * 1.5);
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .channel-logo {
@@ -44,6 +65,14 @@
   font-size: 26px;
   font-weight: 700;
   color: var(--color-text-title);
+
+  @media (max-width: 768px) {
+    font-size: 22px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
 }
 
 .channel-description {
@@ -80,12 +109,25 @@
   gap: calc(var(--spacing-unit) * 1.5);
   align-items: center;
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: calc(var(--spacing-unit));
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .search-input-container {
   position: relative;
   flex: 1;
   min-width: 260px;
+
+  @media (max-width: 480px) {
+    min-width: 100%;
+  }
 }
 
 .search-input-container input {
@@ -135,6 +177,10 @@
   cursor: pointer;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
   white-space: nowrap;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 }
 
 .find-button:hover {
@@ -163,6 +209,16 @@
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: calc(var(--spacing-unit)) calc(var(--spacing-unit) * 1.5);
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.25);
+    font-size: 13px;
+  }
 }
 
 .tab-button.active {
@@ -192,12 +248,24 @@
   justify-content: space-between;
   gap: calc(var(--spacing-unit) * 2);
   flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    gap: calc(var(--spacing-unit));
+  }
 }
 
 .section-header h2 {
   margin: 0;
   font-size: 20px;
   color: var(--color-text-title);
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 }
 
 .section-sub {
@@ -210,12 +278,31 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: calc(var(--spacing-unit) * 2.5);
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: calc(var(--spacing-unit) * 2);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: calc(var(--spacing-unit) * 1.5);
+  }
 }
 
 .shorts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: calc(var(--spacing-unit) * 1.5);
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: calc(var(--spacing-unit));
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .inline-short-card {
@@ -229,6 +316,10 @@
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+  }
 
   &:hover {
     transform: translateY(-2px);
@@ -282,6 +373,10 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 }
 
 .inline-short-channel {
@@ -358,6 +453,16 @@
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease;
   white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: calc(var(--spacing-unit)) calc(var(--spacing-unit) * 1.5);
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.25);
+    font-size: 13px;
+  }
 }
 
 .ghost-button:hover {

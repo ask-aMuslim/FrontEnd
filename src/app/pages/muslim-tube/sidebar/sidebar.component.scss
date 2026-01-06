@@ -18,3 +18,10 @@
 .sidebar-item:hover .sidebar-icon {
     background-color: var(--special-primary);
 }
+
+// Add responsive styles for smaller screens
+@media (max-width: 640px) {
+    .sidebar-item {
+        padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 2) !important;
+    }
+}

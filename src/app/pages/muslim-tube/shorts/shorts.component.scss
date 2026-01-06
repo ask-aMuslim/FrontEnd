@@ -2,6 +2,14 @@
   padding: calc(var(--spacing-unit) * 3);
   max-width: 1400px;
   margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: calc(var(--spacing-unit) * 2);
+  }
+
+  @media (max-width: 480px) {
+    padding: calc(var(--spacing-unit) * 1.5);
+  }
 }
 
 // shorts Grid
@@ -10,11 +18,17 @@
   grid-template-columns: repeat(3, 1fr);
   gap: calc(var(--spacing-unit) * 3);
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: calc(var(--spacing-unit) * 2.5);
   }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: calc(var(--spacing-unit) * 2);
+  }
+
+  @media (max-width: 480px) {
+    gap: calc(var(--spacing-unit) * 1.5);
   }
 }

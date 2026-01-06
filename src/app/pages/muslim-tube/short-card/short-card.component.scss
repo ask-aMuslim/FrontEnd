@@ -19,6 +19,18 @@
   overflow: hidden;
   background-color: var(--color-surface-secondary);
   position: relative;
+
+  @media (max-width: 1024px) {
+    height: 450px;
+  }
+
+  @media (max-width: 768px) {
+    height: 400px;
+  }
+
+  @media (max-width: 480px) {
+    height: 350px;
+  }
 }
 
 .short-image {
@@ -61,6 +73,15 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: calc(var(--spacing-unit));
+  }
 }
 
 .channel-info {
@@ -98,21 +119,33 @@
 
 .short-stats {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
   gap: calc(var(--spacing-unit) * 2);
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    gap: calc(var(--spacing-unit) * 1.5);
+  }
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: calc(var(--spacing-unit) * 0.5);
+  font-size: 13px;
   color: var(--color-text-caption);
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 }
 
 .stat-icon {
   width: 16px;
   height: 16px;
-  color: var(--color-text-caption);
+  opacity: 0.6;
+
+  @media (max-width: 480px) {
+    width: 14px;
+    height: 14px;
+  }
 }
