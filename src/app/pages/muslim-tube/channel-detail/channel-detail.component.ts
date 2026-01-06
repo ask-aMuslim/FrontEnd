@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Short, ShortCardComponent } from '../short-card/short-card.component';
+import { Short } from '../short-card/short-card.component';
 import { VideoCardComponent } from '../video-card/video-card.component';
 
 type Tab = 'home' | 'playlists' | 'videos' | 'shorts' | 'live';
@@ -31,7 +31,7 @@ interface Video {
 @Component({
   standalone: true,
   selector: 'app-channel-detail',
-  imports: [CommonModule, VideoCardComponent, ShortCardComponent],
+  imports: [CommonModule, VideoCardComponent],
   templateUrl: './channel-detail.component.html',
   styleUrls: ['./channel-detail.component.scss'],
 })
