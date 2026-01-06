@@ -24,6 +24,8 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "outputPath": "dist/AskAMuslim",
+            "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "css",
@@ -75,6 +77,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
+            "outputPath": "dist/test",
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "css",
             "assets": [
@@ -83,9 +86,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles/styles.css"
-            ]
+            "styles": ["src/styles/styles.css"]
           }
         }
       }

@@ -1,0 +1,17 @@
+.category-scroll {
+  scrollbar-color: var(--special-primary) transparent;
+  scrollbar-width: thin;
+}
+
+.category-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.category-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.category-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--special-primary);
+  border-radius: 9999px;
+}

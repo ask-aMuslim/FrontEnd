@@ -1,0 +1,9 @@
+<!-- shorts component HTML -->
+<div class="shorts-container">
+  <!-- shorts Grid -->
+  <div class="shorts-grid">
+    @for (short of shorts; track short.id) {
+      <app-short-card [short]="short"></app-short-card>
+    }
+  </div>
+</div>

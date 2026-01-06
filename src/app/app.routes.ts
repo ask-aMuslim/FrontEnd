@@ -7,46 +7,186 @@ import { RegisterComponent } from './core/auth/register/register.component';
 import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.component';
 import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
 import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
+import { VideoDetailComponent } from './pages/muslim-tube/video-detail/video-detail.component';
 import { RoadmapComponent } from './pages/roadmap/roadmap.component';
 import { CourseComponent } from './pages/roadmap/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
+import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
 import { AccountComponent } from './pages/account/account.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
 import { LessonOverviewComponent } from './pages/roadmap/lesson-overview/lesson-overview.component';
 import { LessonPlayerComponent } from './pages/roadmap/lesson-player/lesson-player.component';
 
 export const routes: Routes = [
-    // default route
-    { path: '', redirectTo: '/home', pathMatch: 'full' },
+  // default route
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
 
-    // Auth layout routes
-    {
-        path: '',
-        component: AuthLayoutComponent,
+  // Auth layout routes
+  {
+    path: '',
+    component: AuthLayoutComponent,
+    children: [
+      { path: 'login', component: LoginComponent, title: 'Login' },
+      { path: 'register', component: RegisterComponent, title: 'Register' },
+      { path: 'reset-password', component: ResetPasswordComponent, title: 'Reset Password' },
+    ],
+  },
+
+  // App layout routes
+  {
+    path: '',
+    component: AppLayoutComponent,
+    children: [
+      { path: 'home', component: Home, title: 'Home' },
+      {
+        path: 'ask-and-contact',
+        component: AskAndContactComponent,
+        title: 'Ask & Contact',
         children: [
-            { path: 'login', component: LoginComponent, title: 'Login' },
-            { path: 'register', component: RegisterComponent, title: 'Register' },
-            { path: 'reset-password', component: ResetPasswordComponent, title: 'Reset Password' },
+          { path: '', pathMatch: 'full', redirectTo: 'ask-qa' },
+          {
+            path: 'ask-qa',
+            loadComponent: () =>
+              import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
+                (m) => m.AskQaComponent,
+              ),
+            title: 'Ask "Q&A"',
+          },
+          {
+            path: 'ask-qa/question',
+            loadComponent: () =>
+              import('./pages/ask-and-contact/ask-Q&A/question/question.component').then(
+                (m) => m.QuestionComponent,
+              ),
+            title: 'Question',
+          },
+          {
+            path: 'ask-assistant',
+            loadComponent: () =>
+              import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
+                (m) => m.AskAssistantComponent,
+              ),
+            title: 'Ask Assistant',
+          },
+          {
+            path: 'meet-scholar',
+            loadComponent: () =>
+              import('./pages/ask-and-contact/meet-scholar/meet-scholar.component').then(
+                (m) => m.MeetScholarComponent,
+              ),
+            title: 'Meet Scholar',
+          },
+          {
+            path: 'meet-scholar/success',
+            loadComponent: () =>
+              import(
+                './pages/ask-and-contact/meet-scholar/success/meet-scholar-success.component'
+              ).then((m) => m.MeetScholarSuccessComponent),
+            title: 'Meeting Request Submitted',
+          },
+          {
+            path: 'send-inquiry/success',
+            loadComponent: () =>
+              import(
+                './pages/ask-and-contact/send-inquiry/success/send-inquiry-success.component'
+              ).then((m) => m.SendInquirySuccessComponent),
+            title: 'Inquiry Sent',
+          },
+          {
+            path: 'send-inquiry',
+            loadComponent: () =>
+              import('./pages/ask-and-contact/send-inquiry/send-inquiry.component').then(
+                (m) => m.SendInquiryComponent,
+              ),
+            title: 'Send Inquiry',
+          },
         ],
-    },
-
-    // App layout routes
-    {
-        path: '',
-        component: AppLayoutComponent,
+      },
+      {
+        path: 'muslim-tube',
+        component: MuslimTubeComponent,
+        title: 'Muslim Tube',
         children: [
-            { path: 'home', component: Home, title: 'Home' },
-            { path: 'ask-and-contact', component: AskAndContactComponent, title: 'Ask & Contact' },
-            { path: 'muslim-tube', component: MuslimTubeComponent, title: 'Muslim Tube' },
-            { path: 'roadmap', component: RoadmapComponent, title: 'Roadmap' },
-            { path: 'roadmap/course/:id', component: CourseComponent, title: 'Course' },
-            { path: 'roadmap/course/:courseId/lesson/:lessonId', component: LessonPlayerComponent, title: 'Lesson Player' },
-            { path: 'roadmap/lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
-            { path: 'events', component: EventsComponent, title: 'Events' },
-            { path: 'account', component: AccountComponent, title: 'Account' }
+          { path: '', pathMatch: 'full', redirectTo: 'channels' },
+          {
+            path: 'channels',
+            loadComponent: () =>
+              import('./pages/muslim-tube/channels/channels.component').then(
+                (m) => m.ChannelsComponent,
+              ),
+            title: 'Channels',
+          },
+          {
+            path: 'channel/:id',
+            loadComponent: () =>
+              import('./pages/muslim-tube/channel-detail/channel-detail.component').then(
+                (m) => m.ChannelDetailComponent,
+              ),
+            title: 'Channel Detail',
+          },
+          {
+            path: 'videos',
+            loadComponent: () =>
+              import('./pages/muslim-tube/videos/videos.component').then((m) => m.VideosComponent),
+            title: 'Videos',
+          },
+          {
+            path: 'video/:id',
+            component: VideoDetailComponent,
+            title: 'Video',
+          },
+          {
+            path: 'shorts',
+            loadComponent: () =>
+              import('./pages/muslim-tube/shorts/shorts.component').then((m) => m.ShortsComponent),
+            title: 'Shorts',
+          },
+          {
+            path: 'saved',
+            loadComponent: () =>
+              import('./pages/muslim-tube/saved/saved.component').then((m) => m.SavedComponent),
+            title: 'Saved',
+          },
+          {
+            path: 'history',
+            loadComponent: () =>
+              import('./pages/muslim-tube/history/history.component').then(
+                (m) => m.HistoryComponent,
+              ),
+            title: 'History',
+          },
+          {
+            path: 'liked',
+            loadComponent: () =>
+              import('./pages/muslim-tube/liked/liked.component').then((m) => m.LikedComponent),
+            title: 'Liked',
+          },
         ],
-    },
+      },
+      {
+        path: 'roadmap',
+        children: [
+          { path: '', component: RoadmapComponent, title: 'Roadmap' },
+          { path: 'course/:id', component: CourseComponent, title: 'Course' },
+          {
+            path: 'course/:courseId/lesson/:lessonId',
+            component: LessonPlayerComponent,
+            title: 'Lesson Player',
+          },
+          { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
+        ],
+      },
+      {
+        path: 'events',
+        children: [
+          { path: '', component: EventsComponent, title: 'Events' },
+          { path: ':id', component: EventDetailComponent, title: 'Event Details' },
+        ],
+      },
+      { path: 'account', component: AccountComponent, title: 'Account' },
+    ],
+  },
 
-    // Not Found route
-    { path: '**', component: NotFound, title: 'Page Not Found' },
+  // Not Found route
+  { path: '**', component: NotFound, title: 'Page Not Found' },
 ];

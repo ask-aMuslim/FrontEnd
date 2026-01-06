@@ -1,0 +1,75 @@
+.custom-select {
+  position: relative;
+  width: 100%;
+
+  &.error .select-trigger {
+    border-color: var(--color-error) !important;
+  }
+
+  .select-trigger {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--color-text-placeholder);
+    border-radius: 8px;
+    background-color: white;
+    color: var(--color-text-body);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--special-primary);
+      box-shadow: var(--shadow-base);
+      outline: none;
+    }
+
+    .placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .arrow-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      transition: transform 200ms ease;
+
+      &.open {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .options {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 16rem;
+    overflow: auto;
+    padding: 0.25rem;
+    border: 1px solid var(--color-text-placeholder);
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: var(--shadow-base);
+    z-index: 10;
+  }
+
+  .option {
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    color: var(--color-text-body);
+    cursor: pointer;
+    transition: background-color 100ms ease, color 100ms ease;
+
+    &:hover,
+    &.active {
+      background-color: var(--special-primary);
+      color: white;
+    }
+  }
+}

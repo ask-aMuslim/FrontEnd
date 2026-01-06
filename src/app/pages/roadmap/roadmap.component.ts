@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 
@@ -41,10 +41,14 @@ interface RecentLesson {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './roadmap.component.html',
-  styleUrls: ['./roadmap.component.scss']
+  styleUrls: ['./roadmap.component.scss'],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class RoadmapComponent {
-  constructor(private router: Router, private route: ActivatedRoute) { }
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {}
 
   // Fallback image for broken thumbnails
   readonly fallbackImage = '/ask-a-muslim-logo.png';
@@ -58,10 +62,11 @@ export class RoadmapComponent {
     currentTime: '00:00',
     totalTime: '12:00',
     completedLessons: 2,
-    totalLessons: 5
+    totalLessons: 5,
   };
 
-  importantNote = 'The roadmap consists of three stages. Each stage includes a list of courses covering the meaning of belief, true Islamic values from the prophet Mohamed (peace be upon him) and his companions, and important topics we face every day. Each course consists of lessons that will guide you step by step. You can take notes while learning and share them with your scholar. This roadmap for new Muslims, and it was created by 40+ scholars from the Islamic Center of America and is endorsed by the International Union of Muslim Scholars.';
+  importantNote =
+    'The roadmap consists of three stages. Each stage includes a list of courses covering the meaning of belief, true Islamic values from the prophet Mohamed (peace be upon him) and his companions, and important topics we face every day. Each course consists of lessons that will guide you step by step. You can take notes while learning and share them with your scholar. This roadmap for new Muslims, and it was created by 40+ scholars from the Islamic Center of America and is endorsed by the International Union of Muslim Scholars.';
 
   showFullNote = false;
 
@@ -69,7 +74,8 @@ export class RoadmapComponent {
     {
       number: 1,
       title: 'Stage 1',
-      description: 'Begin your journey by building a strong and informed faith. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "Begin your journey by building a strong and informed faith. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: false,
       courses: {
         modelsStories: [
@@ -80,8 +86,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 100,
-            status: 'completed'
-          }
+            status: 'completed',
+          },
         ],
         mainBelieves: [
           {
@@ -91,8 +97,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 20,
-            status: 'in-progress'
-          }
+            status: 'in-progress',
+          },
         ],
         socialTopics: [
           {
@@ -102,7 +108,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'available'
+            status: 'available',
           },
           {
             id: 's1-st-2',
@@ -111,15 +117,16 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'available'
-          }
-        ]
-      }
+            status: 'available',
+          },
+        ],
+      },
     },
     {
       number: 2,
       title: 'Stage 2',
-      description: 'After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: true,
       courses: {
         modelsStories: [
@@ -130,8 +137,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         mainBelieves: [
           {
@@ -141,8 +148,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         socialTopics: [
           {
@@ -152,7 +159,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
+            status: 'locked',
           },
           {
             id: 's2-st-2',
@@ -161,15 +168,16 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
-        ]
-      }
+            status: 'locked',
+          },
+        ],
+      },
     },
     {
       number: 3,
       title: 'Stage 3',
-      description: 'After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: true,
       courses: {
         modelsStories: [
@@ -180,8 +188,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         mainBelieves: [
           {
@@ -191,8 +199,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         socialTopics: [
           {
@@ -202,7 +210,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
+            status: 'locked',
           },
           {
             id: 's3-st-2',
@@ -211,15 +219,16 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
-        ]
-      }
+            status: 'locked',
+          },
+        ],
+      },
     },
     {
       number: 4,
       title: 'Stage 4',
-      description: 'After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: true,
       courses: {
         modelsStories: [
@@ -230,8 +239,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         mainBelieves: [
           {
@@ -241,8 +250,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         socialTopics: [
           {
@@ -252,7 +261,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
+            status: 'locked',
           },
           {
             id: 's4-st-2',
@@ -261,15 +270,16 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
-        ]
-      }
+            status: 'locked',
+          },
+        ],
+      },
     },
     {
       number: 5,
       title: 'Stage 5',
-      description: 'After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: true,
       courses: {
         modelsStories: [
@@ -280,8 +290,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         mainBelieves: [
           {
@@ -291,8 +301,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         socialTopics: [
           {
@@ -302,7 +312,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
+            status: 'locked',
           },
           {
             id: 's5-st-2',
@@ -311,15 +321,16 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
-        ]
-      }
+            status: 'locked',
+          },
+        ],
+      },
     },
     {
       number: 6,
       title: 'Stage 6',
-      description: 'After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: true,
       courses: {
         modelsStories: [
@@ -330,8 +341,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         mainBelieves: [
           {
@@ -341,8 +352,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         socialTopics: [
           {
@@ -352,7 +363,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
+            status: 'locked',
           },
           {
             id: 's6-st-2',
@@ -361,15 +372,16 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
-        ]
-      }
+            status: 'locked',
+          },
+        ],
+      },
     },
     {
       number: 7,
       title: 'Stage 7',
-      description: 'After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you\'ll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).',
+      description:
+        "After you have learned .. This stage starts with the core of Islam—its compelling doctrine and logical view of life and the hereafter. You will then translate belief into practice by learning the purity of ablution and the serenity of prayer. Finally, you'll tackle vital contemporary topics, gaining an Islamic perspective on equality, the true role of women, and the timeless guidance from the life of Prophet Muhammad (peace be upon him).",
       isLocked: true,
       courses: {
         modelsStories: [
@@ -380,8 +392,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         mainBelieves: [
           {
@@ -391,8 +403,8 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
+            status: 'locked',
+          },
         ],
         socialTopics: [
           {
@@ -402,7 +414,7 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
+            status: 'locked',
           },
           {
             id: 's7-st-2',
@@ -411,11 +423,11 @@ export class RoadmapComponent {
             lessons: 6,
             duration: '4h 10m',
             progress: 0,
-            status: 'locked'
-          }
-        ]
-      }
-    }
+            status: 'locked',
+          },
+        ],
+      },
+    },
   ];
 
   toggleNote(): void {
@@ -459,9 +471,14 @@ export class RoadmapComponent {
    * Get aria-label for course card
    */
   getCourseAriaLabel(course: Course): string {
-    const status = course.status === 'locked' ? 'Locked' :
-      course.status === 'completed' ? 'Completed' :
-        course.status === 'in-progress' ? 'In Progress' : 'Available';
+    const status =
+      course.status === 'locked'
+        ? 'Locked'
+        : course.status === 'completed'
+          ? 'Completed'
+          : course.status === 'in-progress'
+            ? 'In Progress'
+            : 'Available';
     return `${course.title}, ${course.lessons} lessons, ${course.duration}, ${status}, ${course.progress}% complete`;
   }
 }

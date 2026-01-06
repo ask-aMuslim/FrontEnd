@@ -1,0 +1,134 @@
+<div class="flex flex-col gap-6 sm:gap-8 lg:gap-10">
+  <div class="space-y-4">
+    <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">
+      Saved Lessons ({{ savedLessons.length }})
+    </h2>
+
+    <div class="divider w-full h-px bg-(--color-surface-secondary-2) my-5"></div>
+
+    <div
+      class="flex gap-3 sm:gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      <div
+        *ngFor="let lesson of savedLessons"
+        class="flex flex-col gap-3 rounded-xl bg-(--color-background-light) p-3 sm:p-4 ring-1 ring-(--color-border-light) shrink-0 w-56 sm:w-64"
+      >
+        <span class="text-sm font-semibold text-(--special-secondary)">{{ lesson.course }}</span>
+        <div class="flex items-start gap-3">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-(--special-primary-10) text-(--special-primary)"
+          >
+            <div
+              [inlineSVG]="'/icons/icons-24/video-file.svg'"
+              class="[&_path]:stroke-(--color-text-body)"
+            ></div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-base font-semibold text-(--color-text-title)">{{
+              lesson.lesson
+            }}</span>
+            <div class="flex items-center">
+              <div
+                [inlineSVG]="'/icons/icons-16/duration.svg'"
+                class="[&_path]:stroke-(--color-text-caption)"
+              ></div>
+              <span class="text-xs text-(--color-text-caption)">{{ lesson.duration }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-4 sm:space-y-6">
+    <div class="flex items-center justify-between border-b border-(--color-border-light) pb-3">
+      <h2 class="text-base sm:text-lg font-semibold text-(--color-text-title)">
+        Notes ({{ filteredNotes.length }})
+      </h2>
+    </div>
+
+    <div class="flex gap-3 sm:gap-4 items-center flex-col sm:flex-row">
+      <label
+        class="relative flex h-10 sm:h-10 w-full sm:flex-1 sm:min-w-[200px] items-center gap-2 rounded-lg border border-(--color-border-light) bg-(--color-background-light) px-3 shadow-inner"
+      >
+        <div
+          [inlineSVG]="'/icons/icons-24/search.svg'"
+          class="[&_path]:stroke-(--color-text-caption) flex-shrink-0"
+        ></div>
+        <input
+          type="text"
+          placeholder="Search"
+          (input)="onSearchChange($event.target.value)"
+          class="h-full w-full border-0 bg-transparent text-sm text-(--color-text-body) outline-none"
+        />
+      </label>
+      <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
+        <button
+          class="cursor-pointer flex items-center justify-between gap-2 h-10 px-3 sm:px-5 rounded-lg border border-(--color-border-light) bg-(--color-background-white) text-xs sm:text-sm font-semibold text-(--color-text-caption) hover:bg-(--color-background-light) transition flex-1 sm:flex-initial"
+        >
+          <span class="truncate">{{ selectedSortOrder }}</span>
+          <div
+            [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
+            class="[&_path]:stroke-(--color-text-caption) flex-shrink-0"
+          ></div>
+        </button>
+        <button
+          class="cursor-pointer flex items-center justify-between gap-2 h-10 px-3 sm:px-5 rounded-lg border border-(--color-border-light) bg-(--color-background-white) text-xs sm:text-sm font-semibold text-(--color-text-caption) hover:bg-(--color-background-light) transition flex-1 sm:flex-initial"
+        >
+          <span class="truncate">{{ selectedCourseFilter }}</span>
+          <div
+            [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
+            class="[&_path]:stroke-(--color-text-caption)"
+          ></div>
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="flex flex-col gap-4 sm:gap-6"
+      *ngIf="getCoursesWithNotes().length > 0; else noNotesTemplate"
+    >
+      <div *ngFor="let course of getCoursesWithNotes()" class="flex flex-col gap-3 sm:gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h2 class="text-lg sm:text-xl font-medium text-(--color-text-placeholder)">
+            {{ course }}:
+          </h2>
+          <button
+            (click)="goToCourse(course)"
+            class="flex items-center text-base sm:text-lg font-semibold cursor-pointer self-start sm:self-auto"
+          >
+            Go to Course
+            <div
+              [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+              class="[&_path]:stroke-(--color-text-body) inline-block ml-1"
+            ></div>
+          </button>
+        </div>
+        <div
+          *ngFor="let note of getNotesByCourse(course)"
+          class="flex flex-col gap-3 rounded-lg p-3 sm:p-4 shadow-(--shadow-15) border border-(--color-surface-secondary-2)"
+        >
+          <div
+            class="flex items-center justify-between text-xs sm:text-sm font-semibold text-(--special-secondary)"
+          >
+            <span>{{ note.label }}</span>
+            <div
+              [inlineSVG]="'/icons/icons-24/more.svg'"
+              class="[&_path]:stroke-(--color-text-body)"
+            ></div>
+          </div>
+          <p class="text-sm leading-6 text-(--color-text-body)">
+            {{ note.body }}
+            <span [innerHTML]="note.html"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noNotesTemplate>
+      <div class="text-center py-8 text-(--color-text-caption)">
+        <p>No notes found matching your criteria</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

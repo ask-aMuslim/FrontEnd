@@ -1,0 +1,28 @@
+<div class="short-card">
+  <div class="short-image-wrapper">
+    <img [src]="short.image" [alt]="short.title" class="short-image" />
+    <span class="short-duration">{{ short.duration }}</span>
+  </div>
+
+  <div class="short-content">
+    <h3 class="short-title">{{ short.title }}</h3>
+
+    <div class="channel-info">
+      <img [src]="short.channelLogo" [alt]="short.channelTitle" class="channel-logo" />
+      <p class="channel-title">{{ short.channelTitle }}</p>
+    </div>
+
+    <div class="short-divider"></div>
+
+    <div class="short-stats">
+      <div class="stat-item">
+        <img src="/icons/icons-24/clock.svg" alt="Date" class="stat-icon" />
+        <span>{{ short.date }}</span>
+      </div>
+      <div class="stat-item">
+        <img src="/icons/icons-24/liked.svg" alt="Likes" class="stat-icon" />
+        <span>{{ formatNumber(short.likes) }}</span>
+      </div>
+    </div>
+  </div>
+</div>

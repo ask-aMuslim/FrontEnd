@@ -1,0 +1,255 @@
+<div class="mx-4 sm:mx-8 md:mx-12 lg:mx-16 xl:mx-24">
+  <div *ngIf="event" class="max-w-7xl mx-auto px-4 py-6 mb-5">
+    <!-- Back Button -->
+    <button
+      (click)="goBack()"
+      class="flex gap-2 h-10 px-4 items-center mb-6 rounded-lg hover:bg-(--color-surface-primary) transition-all duration-300 group cursor-pointer"
+    >
+      <img
+        src="/icons/icons-24/arrow-left.svg"
+        alt="Back"
+        class="transition-transform duration-300 group-hover:-translate-x-1"
+      />
+      <span class="text-(--color-text-title) font-medium">Back to Events</span>
+    </button>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <!-- LEFT CONTENT -->
+      <div class="lg:col-span-2 space-y-4 md:space-y-6">
+        <div
+          class="px-4 sm:px-6 py-4 sm:py-5 shadow-(--shadow-15) rounded-lg space-y-4 md:space-y-6 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1"
+        >
+          <!-- Event Card -->
+          <div class="bg-white rounded-2xl overflow-hidden">
+            <!-- Image -->
+            <div class="relative">
+              <img
+                [src]="event.imageUrl"
+                [alt]="event.imageAlt"
+                class="w-full h-48 sm:h-64 md:h-80 object-cover transition-transform duration-500 hover:scale-105"
+              />
+
+              <span
+                *ngIf="!event.isRecorded"
+                class="absolute top-4 left-4 bg-(--chips-selected-data-surface) text-(--chips-data-2) text-sm font-medium px-3 py-1 rounded-full animate-pulse"
+              >
+                • Live Event
+              </span>
+              <span
+                *ngIf="event.isRecorded"
+                class="absolute top-4 left-4 bg-(--color-surface-primary) text-(--color-success-base) text-sm font-medium px-3 py-1 rounded-full"
+              >
+                Recorded
+              </span>
+            </div>
+
+            <!-- Content -->
+            <div class="py-4 sm:py-6 space-y-3 sm:space-y-4">
+              <h2 class="text-xl sm:text-2xl font-semibold text-(--special-primary)">
+                {{ event.title }}
+              </h2>
+
+              <p class="text-(--color-text-body) leading-relaxed whitespace-pre-line text-[16px]">
+                {{ event.fullDescription }}
+              </p>
+
+              <!-- Tags -->
+              <div class="flex flex-wrap gap-2">
+                <span
+                  *ngFor="let tag of event.tags"
+                  class="px-3 py-1 text-sm bg-(--color-surface-primary) text-(--color-text-caption) rounded-full transition-all duration-300 hover:bg-(--color-text-caption) hover:text-white hover:scale-110 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+                  >{{ tag }}</span
+                >
+              </div>
+
+              <div class="w-full h-px bg-(--color-surface-secondary-2)"></div>
+
+              <!-- Agenda -->
+              <div class="pt-4" *ngIf="event.agenda && event.agenda.length > 0">
+                <h2 class="text-[20px] font-medium text-lg mb-4">Event Agenda:</h2>
+                <ul class="space-y-3 text-(--color-text-body) pl-4">
+                  <li
+                    *ngFor="let item of event.agenda"
+                    class="flex gap-3 group cursor-pointer transition-all duration-300 hover:translate-x-2"
+                  >
+                    <div
+                      [inlineSVG]="'/icons/icons-16/point.svg'"
+                      alt="point"
+                      class="[&_path]:stroke-(--special-primary) mt-1 shrink-0 transition-transform duration-300 group-hover:scale-125"
+                    ></div>
+                    <span class="group-hover:text-(--special-primary)">{{ item }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="w-full h-px bg-(--color-surface-secondary-2)"></div>
+
+              <!-- Outcomes -->
+              <div class="pt-4" *ngIf="event.outcomes && event.outcomes.length > 0">
+                <h2 class="text-[20px] font-medium text-lg mb-2">
+                  At the end, you will find the answers of:
+                </h2>
+                <ul class="space-y-2 text-(--color-text-body) pl-4 list-disc list-inside">
+                  <li
+                    *ngFor="let outcome of event.outcomes"
+                    class="cursor-pointer transition-all duration-300 hover:translate-x-2 hover:text-(--special-primary)"
+                  >
+                    {{ outcome }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Join/Watch Button -->
+        <button *ngIf="!event.isRecorded" (click)="registerForEvent()" class="button w-full">
+          <span class="flex items-center justify-center gap-2">
+            <img
+              src="/icons/icons-24/scholar-talk.svg"
+              alt="Scholar Talk"
+              class="invert brightness-0 transition-transform duration-300 group-hover:translate-x-2 group-hover:scale-110"
+            />
+            Join Live Event
+          </span>
+        </button>
+
+        <!-- Question Box -->
+        <div
+          *ngIf="!event.isRecorded"
+          class="bg-(--color-surface-primary) rounded-lg p-6 space-y-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        >
+          <div class="flex gap-2 items-center">
+            <div
+              [inlineSVG]="'/icons/icons-24/ask.svg'"
+              class="[&_path]:stroke-(--special-primary)"
+            ></div>
+            <h2 class="text-[20px] font-medium text-(--special-primary)">Park your Questions</h2>
+          </div>
+
+          <p class="text-(--color-text-caption) leading-relaxed">
+            Have a specific question? Submit it now and the Sheikh will address it during the Q&A.
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <input
+              type="text"
+              placeholder="Type your question here ..."
+              class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-(--special-primary) transition-all duration-300 hover:shadow-md hover:border-(--special-primary)"
+            />
+
+            <button
+              class="border-2 border-(--special-primary) hover:bg-(--special-primary) text-(--special-primary) hover:text-white cursor-pointer px-8 w-full sm:w-40 py-3 sm:py-0 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-xl hover:-translate-y-1"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR -->
+      <div class="space-y-4 md:space-y-6">
+        <!-- Speaker Info -->
+        <div
+          class="bg-white rounded-lg shadow-(--shadow-15) p-4 sm:p-6 space-y-4 sm:space-y-6 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1"
+        >
+          <div class="flex items-center gap-4">
+            <img
+              [src]="event.speakerImage"
+              alt="Speaker"
+              class="w-12 h-12 rounded-full object-cover transition-transform duration-300 hover:scale-110 hover:rotate-6"
+            />
+            <div>
+              <h4 class="font-semibold">{{ event.speakerName }}</h4>
+              <p class="text-sm text-gray-600">{{ event.speakerRole }}</p>
+            </div>
+          </div>
+
+          <div class="w-full h-px bg-(--color-surface-secondary-2)"></div>
+
+          <div class="space-y-4">
+            <div
+              class="flex items-start gap-2 group cursor-pointer transition-all duration-300 hover:translate-x-2"
+            >
+              <div
+                [inlineSVG]="'/icons/icons-24/calendar.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:scale-110"
+              ></div>
+              <div class="flex flex-col items-start justify-center">
+                <span class="text-(--special-primary) text-[14px]">Date</span>
+                <span>{{ event.date }}</span>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-2 group cursor-pointer transition-all duration-300 hover:translate-x-2"
+            >
+              <div
+                [inlineSVG]="'/icons/icons-24/time.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:scale-110"
+              ></div>
+              <div class="flex flex-col items-start justify-center">
+                <span class="text-(--special-primary) text-[14px]">Time</span>
+                <span>{{ event.time }}</span>
+              </div>
+            </div>
+            <div
+              [ngClass]="event.isRecorded ? 'flex items-center gap-2' : 'flex items-start gap-2'"
+              class="group cursor-pointer transition-all duration-300 hover:translate-x-2"
+            >
+              <div
+                [inlineSVG]="'/icons/icons-24/live.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:scale-110"
+              ></div>
+              <div class="flex flex-col items-start justify-center">
+                <span class="text-(--special-primary) text-[14px]">{{
+                  event.isRecorded ? 'Recorded' : 'Live'
+                }}</span>
+                <span *ngIf="!event.isRecorded">The meeting link will be sent to your email</span>
+              </div>
+            </div>
+
+            <div class="w-full h-px bg-(--color-surface-secondary-2)"></div>
+
+            <button
+              class="w-full border border-(--special-primary) text-(--special-primary) py-2 rounded-lg hover:bg-(--special-primary-light) transition-all duration-300 hover:scale-110 hover:shadow-xl hover:-translate-y-1 group cursor-pointer"
+            >
+              <span class="flex items-center justify-center gap-2 text-[18px] font-semibold">
+                <div
+                  [inlineSVG]="'/icons/icons-24/share.svg'"
+                  class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                ></div>
+                Share
+              </span>
+            </button>
+          </div>
+        </div>
+        <!-- Important Info -->
+        <div
+          *ngIf="!event.isRecorded"
+          class="bg-(--color-surface-secondary-hover) border border-(--color-border-brand-medium) rounded-[14px] p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        >
+          <h4 class="font-semibold mb-2 text-(--special-primary)">Important Information</h4>
+          <ul class="list-disc list-inside text-(--special-secondary) text-sm leading-relaxed">
+            <li>If you are willing to open the camera, please be covered.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    *ngIf="!event"
+    class="flex items-center justify-center h-screen text-(--color-text-title) text-[20px]"
+  >
+    Loading event details...
+  </div>
+
+  <!-- Profile Popup -->
+  <app-profile-popup *ngIf="showProfilePopup" (close)="closeProfilePopup()"></app-profile-popup>
+
+  <!-- Share Popup -->
+  <app-share-popup
+    *ngIf="showSharePopup"
+    (close)="closeSharePopup()"
+    (confirm)="onShareConfirm()"
+  ></app-share-popup>
+</div>

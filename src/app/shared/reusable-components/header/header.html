@@ -1,0 +1,141 @@
+<header class="site-header">
+  <!-- User Card Template (for authenticated users) -->
+  <ng-template #userCardTemplate>
+    <div class="user-card" routerLink="/account" (click)="closeNav()">
+      <img
+        src="/images/profile-picture-navbar.png"
+        alt="{{ authService.currentUser()?.name }}"
+        class="user-avatar"
+      />
+      <div class="user-text">
+        <span class="user-name">{{ authService.currentUser()?.name }}</span>
+        <span class="user-meta">{{ authService.currentUser()?.meta }}</span>
+      </div>
+      <button class="user-alert" type="button">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          class="user-alert__icon"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12.0247 2.91016C8.71473 2.91016 6.02473 5.60016 6.02473 8.91016V11.8002C6.02473 12.4102 5.76473 13.3402 5.45473 13.8602L4.30473 15.7702C3.59473 16.9502 4.08473 18.2602 5.38473 18.7002C9.69473 20.1402 14.3447 20.1402 18.6547 18.7002C19.8647 18.3002 20.3947 16.8702 19.7347 15.7702L18.5847 13.8602C18.2847 13.3402 18.0247 12.4102 18.0247 11.8002V8.91016C18.0247 5.61016 15.3247 2.91016 12.0247 2.91016Z"
+            stroke-width="1.5"
+            stroke-miterlimit="10"
+            stroke-linecap="round"
+          />
+          <path
+            d="M13.8746 3.19994C13.5646 3.10994 13.2446 3.03994 12.9146 2.99994C11.9546 2.87994 11.0346 2.94994 10.1746 3.19994C10.4646 2.45994 11.1846 1.93994 12.0246 1.93994C12.8646 1.93994 13.5846 2.45994 13.8746 3.19994Z"
+            stroke-width="1.5"
+            stroke-miterlimit="10"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M15.0247 19.0601C15.0247 20.7101 13.6747 22.0601 12.0247 22.0601C11.2047 22.0601 10.4447 21.7201 9.90466 21.1801C9.36466 20.6401 9.02466 19.8801 9.02466 19.0601"
+            stroke-width="1.5"
+            stroke-miterlimit="10"
+          />
+        </svg>
+      </button>
+    </div>
+  </ng-template>
+
+  <!-- Auth Buttons Template (for guest users) -->
+  <ng-template #authButtonsTemplate>
+    <div class="auth-buttons">
+      <a [routerLink]="'/register'" class="auth-btn auth-btn--register" (click)="closeNav()">
+        Start Your Journey
+      </a>
+    </div>
+  </ng-template>
+
+  <div class="nav-shell">
+    <a class="brand" routerLink="/home" aria-label="Ask A Muslim home">
+      <img src="/AskAMuslimLogo.png" alt="Ask A Muslim logo" />
+    </a>
+
+    <nav
+      class="primary-nav ms-auto"
+      [class.open]="navOpen"
+      id="primary-navigation"
+      aria-label="Primary navigation"
+    >
+      <button class="drawer-close" type="button" (click)="closeNav()" aria-label="Close menu">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6L6 18M6 6L18 18"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+      <ul>
+        @for (link of navLinks; track trackByLabel($index, link)) {
+          <li
+            [routerLink]="link.path"
+            routerLinkActive="active"
+            #rla="routerLinkActive"
+            (click)="closeNav()"
+            [attr.aria-current]="rla.isActive ? 'page' : null"
+            class="nav-item"
+          >
+            <a class="nav-link">
+              {{ link.label }}
+            </a>
+          </li>
+        }
+      </ul>
+      <div class="mobile-user-card">
+        @if (authService.isAuthenticated()) {
+          <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+        } @else {
+          <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+        }
+      </div>
+    </nav>
+
+    <div class="header-right">
+      @if (authService.isAuthenticated()) {
+        <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+      } @else {
+        <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+      }
+
+      <button
+        class="mobile-toggle"
+        type="button"
+        (click)="toggleNav()"
+        [attr.aria-expanded]="navOpen"
+        aria-controls="primary-navigation"
+      >
+        <span class="sr-only">Open navigation</span>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M4 6H20M4 12H20M4 18H20"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-overlay" [class.active]="navOpen" (click)="closeNav()" aria-hidden="true"></div>
+</header>

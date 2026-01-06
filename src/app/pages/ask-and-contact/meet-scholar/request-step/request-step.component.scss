@@ -1,0 +1,22 @@
+// Inputs base
+textarea,
+input {
+  color: var(--color-text-body);
+  border-width: 1.5px;
+  border-color: var(--color-text-placeholder);
+  border-radius: 8px;
+}
+
+textarea:hover,
+input:hover {
+  border-color: var(--special-primary);
+  box-shadow: var(--shadow-base);
+}
+
+textarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+textarea.border-red-500 {
+  border-color: rgb(239, 68, 68) !important;
+}

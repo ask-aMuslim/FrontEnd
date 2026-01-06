@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface Lesson {
   id: string;
@@ -27,7 +27,7 @@ interface CourseOverview {
 @Component({
   selector: 'app-lesson-overview',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './lesson-overview.component.html',
   styleUrls: ['./lesson-overview.component.scss']
 })

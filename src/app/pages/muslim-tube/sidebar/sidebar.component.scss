@@ -1,0 +1,27 @@
+.sidebar-icon {
+    display: inline-block;
+    background-color: var(--color-text-title);
+
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+.sidebar-icon.is-active {
+    background-color: var(--special-primary);
+}
+
+.sidebar-item:hover .sidebar-icon {
+    background-color: var(--special-primary);
+}
+
+// Add responsive styles for smaller screens
+@media (max-width: 640px) {
+    .sidebar-item {
+        padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 2) !important;
+    }
+}

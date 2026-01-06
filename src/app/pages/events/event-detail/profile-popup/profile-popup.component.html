@@ -1,0 +1,61 @@
+<div
+  class="fixed inset-0 bg-black/30 flex items-center justify-center z-50 animate-fadeIn"
+  (click)="closePopup()"
+>
+  <div
+    class="bg-white rounded-2xl p-8 w-[571px] max-w-md mx-4 shadow-(--shadow-4-green) transform transition-all duration-300 animate-scaleIn relative"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Close Button -->
+    <button
+      (click)="closePopup()"
+      class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-all duration-200 cursor-pointer hover:scale-110 hover:rotate-90"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        ></path>
+      </svg>
+    </button>
+
+    <!-- Icon -->
+    <div class="flex justify-center mb-6">
+      <div
+        class="bg-(--warning)/10 rounded-full p-4 transition-all duration-500 hover:scale-110 hover:shadow-lg cursor-pointer"
+      >
+        <img src="/icons/icons-24/wait.svg" alt="Wait" class="w-12 h-12 animate-pulse" />
+      </div>
+    </div>
+
+    <div class="w-full h-px bg-(--color-surface-secondary-2) my-6 animate-fadeIn"></div>
+
+    <div class="mb-6 transition-all duration-300 hover:scale-105">
+      <h3 class="text-2xl font-semibold text-(--special-primary) text-center">
+        Complete Your Profile
+      </h3>
+    </div>
+
+    <p class="text-(--color-text-body) text-center mb-8 leading-relaxed">
+      Just complete your profile data, so you can join the "Events" and interact with the scholars
+      live.
+    </p>
+
+    <div class="flex gap-4">
+      <button
+        (click)="closePopup()"
+        class="flex-1 px-6 py-3 border-2 border-(--special-primary) text-(--special-primary) rounded-lg hover:bg-(--color-surface-primary) transition-all duration-300 hover:scale-110 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+      >
+        Later
+      </button>
+      <button
+        (click)="goToProfile()"
+        class="flex-1 px-6 py-3 bg-(--special-primary) text-white rounded-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
+      >
+        Go to Profile
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,1 +1,195 @@
-<p>events works!</p>
+<div class="mx-4 sm:mx-8 md:mx-12 lg:mx-16 xl:mx-24">
+  <div
+    class="flex gap-8 md:gap-14 w-full h-auto items-center flex-col justify-center py-6 md:py-10"
+  >
+    <div
+      class="flex flex-col md:flex-row gap-6 md:gap-10 bg-linear-to-t from-(--special-primary-clicked) to-(--special-primary) items-center rounded-lg justify-center px-6 sm:px-10 md:px-[52px] py-8 md:py-12 w-full transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]"
+    >
+      <div class="flex flex-col gap-6 md:gap-8 grow items-center md:items-start w-full md:w-auto">
+        <div class="flex flex-col gap-4 md:gap-6 self-stretch items-center md:items-start">
+          <div class="flex flex-wrap gap-2 items-center justify-center md:justify-start">
+            <div
+              class="flex gap-1 h-8 px-3 py-1 items-center rounded-full justify-center bg-(--chips-selected-data-surface) transition-all duration-300 hover:scale-105 cursor-pointer animate-pulse"
+            >
+              <span class="text-(--chips-data-2) text-center leading-normal Captionmain">
+                Upcoming Event
+              </span>
+            </div>
+            <div class="text-white">•</div>
+            <div class="flex gap-2 h-6 items-center">
+              <span class="text-white text-center md:text-left leading-[140%] bodynormalM">
+                Free &amp; Open to All
+              </span>
+            </div>
+          </div>
+
+          <span
+            class="text-white text-center md:text-left text-2xl sm:text-3xl md:text-[40px] font-bold leading-[120%] self-stretch"
+          >
+            The Islamic rules in relationships between family members and friends
+          </span>
+        </div>
+
+        <div
+          class="flex flex-wrap gap-4 md:gap-6 self-stretch items-center justify-center md:justify-start"
+        >
+          <div class="flex gap-1 h-6 items-center">
+            <img
+              src="/icons/icons-16/calendar.svg"
+              alt="Calender Icon"
+              class="invert brightness-0"
+            />
+            <span class="text-white text-left">31 Dec, 2025</span>
+          </div>
+
+          <div class="flex gap-1 h-6 items-center">
+            <img src="/icons/icons-16/clock.svg" alt="Clock Icon" class="invert brightness-0" />
+            <span class="text-white text-left">1 pm .. 4 pm</span>
+          </div>
+
+          <div class="flex gap-1 h-6 items-center">
+            <img
+              src="/icons/icons-16/live.svg"
+              alt="Live Session Icon"
+              class="invert brightness-0"
+            />
+            <span class="text-white text-left">Live Session</span>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col sm:flex-row gap-4 md:gap-8 self-stretch items-center justify-center md:justify-between"
+        >
+          <div
+            class="flex flex-col sm:flex-row gap-4 md:gap-8 grow items-center justify-center md:justify-start w-full sm:w-auto"
+          >
+            <button
+              class="flex gap-1 h-12 sm:h-14 px-6 sm:px-8 items-center rounded-lg justify-center bg-white cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl group w-full sm:w-auto"
+            >
+              <span class="text-(--special-primary) text-center font-semibold text-[18px]">
+                Register Now
+              </span>
+              <div
+                [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:translate-x-2"
+              ></div>
+            </button>
+            <button
+              class="flex gap-2 h-8 items-center rounded-lg justify-center cursor-pointer transition-all duration-300 hover:scale-110 group w-full sm:w-auto"
+            >
+              <img
+                src="/icons/icons-24/share.svg"
+                alt="Share Icon"
+                class="invert brightness-0 transition-transform duration-300 group-hover:rotate-12"
+              />
+              <span
+                class="text-white text-center font-semibold text-base sm:text-[18px] transition-all duration-300 group-hover:tracking-wider"
+                >Share</span
+              >
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col gap-[-4px] p-[16px_24px] items-center border border-[#F6E1AA] rounded-lg bg-(--chips-selected-data-surface) transition-all duration-300 hover:scale-110 hover:rotate-3 cursor-pointer shrink-0"
+      >
+        <h1 class="text-(--chips-data-2)! text-center leading-[120%] self-stretch">31</h1>
+        <h2 class="text-white text-center leading-normal self-stretch font-medium">Dec</h2>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-10 self-stretch items-center">
+      <div class="flex flex-col gap-6 self-stretch items-start">
+        <h2
+          class="text-(--color-text-title) text-left leading-normal self-stretch font-medium text-[20px]"
+        >
+          Recorded Events
+        </h2>
+
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+          <div
+            class="flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6 transition-all duration-300 hover:border-(--special-primary) focus-within:border-(--special-primary) focus-within:shadow-lg"
+          >
+            <div
+              [inlineSVG]="'/icons/icons-24/search.svg'"
+              class="[&_path]:stroke-(--color-text-caption) transition-transform duration-300 hover:scale-110"
+            ></div>
+            <input
+              type="text"
+              placeholder="Search for events .."
+              class="min-w-0 flex-1 border-none text-base leading-[160%] focus:ring-0"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="flex h-16 sm:h-14 w-full items-center justify-center rounded-lg px-8 md:w-auto border-2 border-(--special-primary) bg-white transition-all duration-300 hover:bg-(--special-primary) group hover:shadow-lg hover:scale-105 cursor-pointer"
+          >
+            <span
+              class="text-lg font-semibold text-(--special-primary) border-(--special-primary) transition-colors duration-300 group-hover:text-white"
+              >Search</span
+            >
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+          <app-event-card
+            *ngFor="let event of paginatedEventCards"
+            [event]="event"
+          ></app-event-card>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap mb-5"
+      >
+        <button
+          type="button"
+          (click)="prevPage()"
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-(--color-surface-primary) hover:scale-110 group"
+        >
+          <div
+            [inlineSVG]="'/icons/icons-24/arrow-left.svg'"
+            [ngClass]="
+              isFirstPage
+                ? '[&_path]:stroke-(--color-text-placeholder)'
+                : '[&_path]:stroke-(--color-text-body)'
+            "
+            class="h-6 w-6 transition-transform duration-300 group-hover:-translate-x-1"
+          ></div>
+        </button>
+
+        <button
+          *ngFor="let page of pages; trackBy: trackByIndex"
+          type="button"
+          (click)="goToPage(page)"
+          [ngClass]="
+            page === currentPage
+              ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
+              : 'text-text-title'
+          "
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer transition-all duration-300 hover:scale-110 hover:border-(--special-primary) hover:bg-(--color-surface-primary)"
+        >
+          <span class="text-sm font-medium transition-all duration-300">{{ page }}</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="nextPage()"
+          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-(--color-surface-primary) hover:scale-110 group"
+        >
+          <div
+            [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+            [ngClass]="
+              isLastPage
+                ? '[&_path]:stroke-(--color-text-placeholder)'
+                : '[&_path]:stroke-(--color-text-body)'
+            "
+            class="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1"
+          ></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

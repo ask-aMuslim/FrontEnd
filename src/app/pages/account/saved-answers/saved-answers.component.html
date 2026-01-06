@@ -1,0 +1,42 @@
+<div class="flex flex-col items-start gap-4 sm:gap-6 w-full">
+  <div
+    *ngFor="let answer of savedAnswers; let isLast = last"
+    class="flex flex-col items-start w-full"
+  >
+    <div class="flex flex-col items-start gap-2 w-full">
+      <h3 class="flex-1 text-lg sm:text-xl font-medium text-(--color-text-title)">
+        {{ answer.question }}
+      </h3>
+
+      <p class="text-sm sm:text-base leading-[160%] text-(--color-text-body) line-clamp-3 w-full">
+        {{ answer.answer }}
+      </p>
+    </div>
+
+    <button class="learn-more flex h-8 items-center gap-2 rounded-lg group cursor-pointer mt-2">
+      <span class="text-base sm:text-lg font-semibold">Learn more</span>
+      <div class="flex items-center gap-1">
+        <div
+          [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+          class="[&_path]:stroke-(--special-primary)"
+        ></div>
+      </div>
+    </button>
+    <div
+      *ngIf="!isLast"
+      class="divider w-full h-[1.5px] bg-(--color-border-low) my-4 sm:my-6"
+    ></div>
+  </div>
+
+  <div class="flex justify-center w-full">
+    <app-pagination
+      [pages]="pages"
+      [currentPage]="currentPage"
+      [arrowLeftIcon]="arrowLeftIcon"
+      [arrowRightIcon]="arrowRightIcon"
+      (prevPage)="prevPage()"
+      (nextPage)="nextPage()"
+      (goToPage)="goToPage($event)"
+    ></app-pagination>
+  </div>
+</div>

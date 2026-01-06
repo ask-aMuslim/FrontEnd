@@ -1,0 +1,28 @@
+<div class="channels-container">
+  <!-- Channels Grid -->
+  <div class="channels-grid">
+    @for (channel of channels; track channel.id) {
+      <div class="channel-card" (click)="goToChannel(channel.id)">
+        <div class="channel-image-wrapper">
+          <img [src]="channel.image" [alt]="channel.title" class="channel-image" />
+        </div>
+
+        <div class="channel-content">
+          <h3 class="channel-title">{{ channel.title }}</h3>
+          <p class="channel-description">{{ channel.description }}</p>
+
+          <div class="channel-stats">
+            <div class="stat-item">
+              <img src="/icons/icons-24/profile-two-user.svg" alt="Followers" class="stat-icon" />
+              <span>{{ formatNumber(channel.followers) }} followers</span>
+            </div>
+            <div class="stat-item">
+              <img src="/icons/icons-24/video-square.svg" alt="Videos" class="stat-icon" />
+              <span>{{ formatNumber(channel.videosCount) }} videos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

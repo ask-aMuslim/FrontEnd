@@ -1,0 +1,9 @@
+<!-- Videos component HTML -->
+<div class="videos-container">
+  <!-- videos Grid -->
+  <div class="videos-grid">
+    @for (video of videos; track video.id) {
+      <app-video-card [video]="video" (videoClicked)="onVideoClick($event)"></app-video-card>
+    }
+  </div>
+</div>

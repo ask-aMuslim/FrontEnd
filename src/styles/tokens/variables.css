@@ -1,54 +1,61 @@
-@import "./colors.css";
-@import "./typography.css";
-@import "./spacing.css";
-@import "./borders.css";
-@import "./shadows.css";
-@import "./breakpoints.css";
+@import './colors.css';
+@import './typography.css';
+@import './spacing.css';
+@import './borders.css';
+@import './shadows.css';
+@import './breakpoints.css';
 
 :root {
   /* Start Colors--------------------- */
 
   /* Main Color and Surface */
-  --color-surface-primary: #E8F5E8;
-  --color-selected-surface: #156B401A;
+  --color-surface-primary: #e8f5e8;
+  --color-selected-surface: #156b401a;
   --special-primary: #156b40;
-  --special-primary-hovering: #115C36;
-  --special-primary-clicked: #0C4E2D;
+  --special-primary-hovering: #115c36;
+  --special-primary-clicked: #0c4e2d;
   --special-primary-6: rgba(21, 107, 64, 0.06);
-  --special-primary-10: rgba(21, 107, 64, 0.10);
+  --special-primary-10: rgba(21, 107, 64, 0.1);
 
   /* Secondary Color and Surface */
   --special-secondary: #cda736;
   --special-secondary-6: #cda7360f;
   --special-secondary-10: #cda7361a;
-  --color-surface-secondary: #F8F9FA;
-  --color-surface-secondary-hover: #FDF9EE;
-  --color-selected-surface-secondary: #ECC1401A;
+  --color-surface-secondary: #f8f9fa;
+  --color-surface-secondary-hover: #fdf9ee;
+  --color-selected-surface-secondary: #ecc1401a;
+  --color-surface-secondary-2: #e9ecef;
 
   /* Text Colors */
-  --color-text-body: #343A40;
-  --color-text-caption: #6C757D;
-  --color-text-base: #2196F3;
-  --color-text-placeholder: #ADB5BD;
-  --color-text-title: #000401;
+  --color-text-body: #343a40;
+  --color-text-caption: #6c757d;
+  --color-text-base: #2196f3;
+  --color-text-placeholder: #adb5bd;
+  --color-text-title: #010d05;
+  --color-text-info: #2196f3;
 
   /* Border Colors */
-  --color-border-default: #D1D5DB;
-  --color-border-light: #E5E7EB;
-  --color-border-hover: #9CA3AF;
-  --color-border-medium: #ADB5BD;
+  --color-border-default: #d1d5db;
+  --color-border-light: #e5e7eb;
+  --color-border-hover: #9ca3af;
+  --color-border-medium: #adb5bd;
+  --color-border-brand-medium: #f6e1aa;
+  --color-border-low: #bbd1c2;
 
   /* Background Colors */
-  --color-background-white: #FFFFFF;
-  --color-background-light: #F9FAFB;
-  --color-background-surface: #F8F9FA;
+  --color-background-white: #ffffff;
+  --color-background-light: #f9fafb;
+  --color-background-surface: #f8f9fa;
 
   /* State Colors */
-  --color-error: #EF4444;
+  --color-error: #ef4444;
   --color-error-light: rgba(239, 68, 68, 0.02);
-  --color-error-bg: #FEF2F2;
-  --color-success: #10B981;
+  --color-error-bg: #fef2f2;
+  --color-critical: #b71c1c;
+  --color-success: #10b981;
   --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-success-base: #4caf50;
+  --warning: #ff9800;
 
   /* Opacity Values */
   --opacity-disabled: 0.5;
@@ -62,10 +69,18 @@
   /* Auth Page Colors */
   --auth-left-bg-start: rgba(232, 245, 232, 0.95);
   --auth-left-bg-end: rgba(248, 249, 250, 0.85);
-  --auth-left-divider: rgba(21, 107, 64, 0.10);
+  --auth-left-divider: rgba(21, 107, 64, 0.1);
   --auth-right-bg: rgba(255, 255, 255, 0.85);
   --auth-logo-shadow: rgba(21, 107, 64, 0.1);
   --auth-stat-bg: rgba(255, 255, 255, 0.6);
+
+  /* Chips Colors */
+  --chips-data-2: #ecc140;
+  --chips-selected-data-surface: rgba(236, 193, 64, 0.06);
+
+  /* Gender Colors */
+  --gender-male: #009edb;
+  --gender-female: #f0627b;
 
   /* End Colors ---------------------*/
 
@@ -82,8 +97,10 @@
 
   /* Shadows --------------------- */
   --shadow-base: var(--shadows-shadow-md);
+  --shadow-15: 0px 0px 4px 2px rgba(0, 0, 0, 0.15);
+  --shadow-4-green: 0px 0px 4px 2px rgba(21, 107, 64, 0.04);
+  --shadow-big: 0px 0px 8px 2px rgba(21, 107, 64, 0.5);
 
   /* Effects */
   --hero-saturation: 2;
-
 }
