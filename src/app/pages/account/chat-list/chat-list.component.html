@@ -1,36 +1,23 @@
-<div class="flex flex-col gap-4 sm:gap-6">
-  <div class="flex items-center justify-between border-b border-(--color-border-light) pb-3">
-    <h2 class="text-base sm:text-lg font-semibold text-(--color-text-title)">
-      Chats ({{ chats.length }})
-    </h2>
+<div class="chat-list">
+  <div class="chat-list__header">
+    <h2 class="chat-list__title">Chats ({{ chats.length }})</h2>
   </div>
 
-  <div class="space-y-4 sm:space-y-6">
-    <div
-      *ngFor="let chat of chats"
-      (click)="selectChat(chat)"
-      class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-(--color-border-low) hover:bg-(--color-background-light) cursor-pointer transition"
-    >
-      <div
-        [inlineSVG]="'/icons/icons-24/ai-talk.svg'"
-        class="[&_path]:stroke-(--color-text-title) flex-shrink-0"
-      ></div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between gap-2 mb-1">
-          <h2
-            class="text-base sm:text-lg lg:text-[20px] font-medium text-(--color-text-title) truncate"
-          >
-            {{ chat.name }}
-          </h2>
-          <div
-            [inlineSVG]="'/icons/icons-24/go-for-more.svg'"
-            class="[&_path]:stroke-(--color-text-title) flex-shrink-0"
-          ></div>
+  <div class="chat-list__items">
+    @for (chat of chats; track chat) {
+      <div (click)="selectChat(chat)" class="chat-list__item">
+        <div [inlineSVG]="'/icons/icons-24/ai-talk.svg'" class="chat-list__item-icon"></div>
+        <div class="chat-list__item-content">
+          <div class="chat-list__item-top">
+            <h2 class="chat-list__item-name">{{ chat.name }}</h2>
+            <div
+              [inlineSVG]="'/icons/icons-24/go-for-more.svg'"
+              class="chat-list__item-go-icon"
+            ></div>
+          </div>
+          <p class="chat-list__item-meta">Last response: {{ chat.timestamp }}</p>
         </div>
-        <p class="text-xs sm:text-sm text-(--color-text-caption) truncate">
-          Last response: {{ chat.timestamp }}
-        </p>
       </div>
-    </div>
+    }
   </div>
 </div>

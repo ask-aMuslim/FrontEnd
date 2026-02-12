@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { PaginationComponent } from '../../../shared/reusable-components/pagination/pagination.component';
 @Component({
   selector: 'app-saved-answers',
-  imports: [CommonModule, InlineSvgDirective, PaginationComponent],
+  imports: [InlineSvgDirective, PaginationComponent],
   templateUrl: './saved-answers.component.html',
-  styleUrl: './saved-answers.component.scss',
+  styleUrls: ['./saved-answers.component.scss'],
 })
 export class SavedAnswersComponent {
   currentPage = 1;

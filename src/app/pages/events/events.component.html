@@ -1,195 +1,147 @@
-<div class="mx-4 sm:mx-8 md:mx-12 lg:mx-16 xl:mx-24">
-  <div
-    class="flex gap-8 md:gap-14 w-full h-auto items-center flex-col justify-center py-6 md:py-10"
-  >
-    <div
-      class="flex flex-col md:flex-row gap-6 md:gap-10 bg-linear-to-t from-(--special-primary-clicked) to-(--special-primary) items-center rounded-lg justify-center px-6 sm:px-10 md:px-[52px] py-8 md:py-12 w-full transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]"
-    >
-      <div class="flex flex-col gap-6 md:gap-8 grow items-center md:items-start w-full md:w-auto">
-        <div class="flex flex-col gap-4 md:gap-6 self-stretch items-center md:items-start">
-          <div class="flex flex-wrap gap-2 items-center justify-center md:justify-start">
-            <div
-              class="flex gap-1 h-8 px-3 py-1 items-center rounded-full justify-center bg-(--chips-selected-data-surface) transition-all duration-300 hover:scale-105 cursor-pointer animate-pulse"
-            >
-              <span class="text-(--chips-data-2) text-center leading-normal Captionmain">
-                Upcoming Event
-              </span>
+<section class="section-container">
+  <div class="section-block py-6 md:py-10">
+    <!-- Featured Event Hero -->
+    <div class="events-hero">
+      <div class="events-hero__content">
+        <div class="events-hero__meta">
+          <div class="events-hero__badges">
+            <div class="events-hero__badge">
+              <span class="events-hero__badge-text">Upcoming Event</span>
             </div>
-            <div class="text-white">•</div>
-            <div class="flex gap-2 h-6 items-center">
-              <span class="text-white text-center md:text-left leading-[140%] bodynormalM">
-                Free &amp; Open to All
-              </span>
+            <div class="events-hero__dot">&bull;</div>
+            <div class="events-hero__open-label">
+              <span class="events-hero__open-text">Free &amp; Open to All</span>
             </div>
           </div>
 
-          <span
-            class="text-white text-center md:text-left text-2xl sm:text-3xl md:text-[40px] font-bold leading-[120%] self-stretch"
-          >
+          <span class="events-hero__title">
             The Islamic rules in relationships between family members and friends
           </span>
         </div>
 
-        <div
-          class="flex flex-wrap gap-4 md:gap-6 self-stretch items-center justify-center md:justify-start"
-        >
-          <div class="flex gap-1 h-6 items-center">
+        <div class="events-hero__details">
+          <div class="events-hero__detail-item">
             <img
               src="/icons/icons-16/calendar.svg"
-              alt="Calender Icon"
-              class="invert brightness-0"
+              alt="Calendar Icon"
+              class="events-hero__detail-icon"
             />
-            <span class="text-white text-left">31 Dec, 2025</span>
+            <span class="events-hero__detail-text">31 Dec, 2025</span>
           </div>
 
-          <div class="flex gap-1 h-6 items-center">
-            <img src="/icons/icons-16/clock.svg" alt="Clock Icon" class="invert brightness-0" />
-            <span class="text-white text-left">1 pm .. 4 pm</span>
+          <div class="events-hero__detail-item">
+            <img
+              src="/icons/icons-16/clock.svg"
+              alt="Clock Icon"
+              class="events-hero__detail-icon"
+            />
+            <span class="events-hero__detail-text">1 pm .. 4 pm</span>
           </div>
 
-          <div class="flex gap-1 h-6 items-center">
+          <div class="events-hero__detail-item">
             <img
               src="/icons/icons-16/live.svg"
               alt="Live Session Icon"
-              class="invert brightness-0"
+              class="events-hero__detail-icon"
             />
-            <span class="text-white text-left">Live Session</span>
+            <span class="events-hero__detail-text">Live Session</span>
           </div>
         </div>
 
-        <div
-          class="flex flex-col sm:flex-row gap-4 md:gap-8 self-stretch items-center justify-center md:justify-between"
-        >
-          <div
-            class="flex flex-col sm:flex-row gap-4 md:gap-8 grow items-center justify-center md:justify-start w-full sm:w-auto"
-          >
-            <button
-              class="flex gap-1 h-12 sm:h-14 px-6 sm:px-8 items-center rounded-lg justify-center bg-white cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl group w-full sm:w-auto"
-            >
-              <span class="text-(--special-primary) text-center font-semibold text-[18px]">
-                Register Now
-              </span>
-              <div
-                [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
-                class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:translate-x-2"
-              ></div>
+        <div class="events-hero__actions">
+          <div class="events-hero__actions-inner">
+            <button class="events-hero__register-btn">
+              <span class="events-hero__register-text">Register Now</span>
+              <div class="events-hero__register-icon">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 20L16 12L8 4"
+                    stroke="var(--color-button-primary-normal)"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
             </button>
-            <button
-              class="flex gap-2 h-8 items-center rounded-lg justify-center cursor-pointer transition-all duration-300 hover:scale-110 group w-full sm:w-auto"
-            >
+            <button class="events-hero__share-btn">
               <img
                 src="/icons/icons-24/share.svg"
                 alt="Share Icon"
-                class="invert brightness-0 transition-transform duration-300 group-hover:rotate-12"
+                class="events-hero__share-icon"
               />
-              <span
-                class="text-white text-center font-semibold text-base sm:text-[18px] transition-all duration-300 group-hover:tracking-wider"
-                >Share</span
-              >
+              <span class="events-hero__share-text">Share</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div
-        class="flex flex-col gap-[-4px] p-[16px_24px] items-center border border-[#F6E1AA] rounded-lg bg-(--chips-selected-data-surface) transition-all duration-300 hover:scale-110 hover:rotate-3 cursor-pointer shrink-0"
-      >
-        <h1 class="text-(--chips-data-2)! text-center leading-[120%] self-stretch">31</h1>
-        <h2 class="text-white text-center leading-normal self-stretch font-medium">Dec</h2>
+      <div class="events-hero__date-box">
+        <h1 class="events-hero__date-day">31</h1>
+        <h2 class="events-hero__date-month">Dec</h2>
       </div>
     </div>
 
-    <div class="flex flex-col gap-10 self-stretch items-center">
-      <div class="flex flex-col gap-6 self-stretch items-start">
-        <h2
-          class="text-(--color-text-title) text-left leading-normal self-stretch font-medium text-[20px]"
-        >
-          Recorded Events
-        </h2>
+    <!-- Recorded Events Section -->
+    <div class="events-recorded">
+      <div class="events-recorded__header">
+        <h2 class="events-recorded__title">Recorded Events</h2>
 
-        <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
-          <div
-            class="flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6 transition-all duration-300 hover:border-(--special-primary) focus-within:border-(--special-primary) focus-within:shadow-lg"
-          >
-            <div
-              [inlineSVG]="'/icons/icons-24/search.svg'"
-              class="[&_path]:stroke-(--color-text-caption) transition-transform duration-300 hover:scale-110"
-            ></div>
-            <input
-              type="text"
-              placeholder="Search for events .."
-              class="min-w-0 flex-1 border-none text-base leading-[160%] focus:ring-0"
-            />
+        <div class="events-search">
+          <div class="events-search__input-wrapper">
+            <div [inlineSVG]="'/icons/icons-24/search.svg'" class="events-search__icon"></div>
+            <input type="text" placeholder="Search for events .." class="events-search__input" />
           </div>
 
-          <button
-            type="button"
-            class="flex h-16 sm:h-14 w-full items-center justify-center rounded-lg px-8 md:w-auto border-2 border-(--special-primary) bg-white transition-all duration-300 hover:bg-(--special-primary) group hover:shadow-lg hover:scale-105 cursor-pointer"
-          >
-            <span
-              class="text-lg font-semibold text-(--special-primary) border-(--special-primary) transition-colors duration-300 group-hover:text-white"
-              >Search</span
-            >
+          <button type="button" class="events-search__btn">
+            <span class="events-search__btn-text">Search</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-          <app-event-card
-            *ngFor="let event of paginatedEventCards"
-            [event]="event"
-          ></app-event-card>
+        <div class="events-grid">
+          @for (event of paginatedEventCards; track event) {
+            <app-event-card [event]="event"></app-event-card>
+          }
         </div>
       </div>
 
-      <div
-        class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap mb-5"
-      >
-        <button
-          type="button"
-          (click)="prevPage()"
-          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-(--color-surface-primary) hover:scale-110 group"
-        >
+      <!-- Pagination -->
+      <div class="events-pagination">
+        <button type="button" (click)="prevPage()" class="events-pagination__arrow">
           <div
             [inlineSVG]="'/icons/icons-24/arrow-left.svg'"
-            [ngClass]="
-              isFirstPage
-                ? '[&_path]:stroke-(--color-text-placeholder)'
-                : '[&_path]:stroke-(--color-text-body)'
-            "
-            class="h-6 w-6 transition-transform duration-300 group-hover:-translate-x-1"
+            [class.events-pagination__arrow-icon--disabled]="isFirstPage"
+            [class.events-pagination__arrow-icon--active]="!isFirstPage"
+            class="events-pagination__arrow-icon"
           ></div>
         </button>
 
-        <button
-          *ngFor="let page of pages; trackBy: trackByIndex"
-          type="button"
-          (click)="goToPage(page)"
-          [ngClass]="
-            page === currentPage
-              ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
-              : 'text-text-title'
-          "
-          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer transition-all duration-300 hover:scale-110 hover:border-(--special-primary) hover:bg-(--color-surface-primary)"
-        >
-          <span class="text-sm font-medium transition-all duration-300">{{ page }}</span>
-        </button>
+        @for (page of pages; track $index) {
+          <button
+            type="button"
+            (click)="goToPage(page)"
+            class="events-pagination__page"
+            [class.events-pagination__page--active]="page === currentPage"
+          >
+            <span class="events-pagination__page-text">{{ page }}</span>
+          </button>
+        }
 
-        <button
-          type="button"
-          (click)="nextPage()"
-          class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-(--color-surface-primary) hover:scale-110 group"
-        >
+        <button type="button" (click)="nextPage()" class="events-pagination__arrow">
           <div
             [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
-            [ngClass]="
-              isLastPage
-                ? '[&_path]:stroke-(--color-text-placeholder)'
-                : '[&_path]:stroke-(--color-text-body)'
-            "
-            class="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1"
+            [class.events-pagination__arrow-icon--disabled]="isLastPage"
+            [class.events-pagination__arrow-icon--active]="!isLastPage"
+            class="events-pagination__arrow-icon"
           ></div>
         </button>
       </div>
     </div>
   </div>
-</div>
+</section>

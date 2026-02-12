@@ -1,6 +1,21 @@
 import { LessonType } from './enums.model';
 
 /**
+ * Intro Lesson Content
+ * Represents an introduction/overview lesson for a course
+ */
+export interface IntroLessonContent {
+  id: string;
+  type: 'intro';
+  title: string;
+  description: string;
+  courseOverview: string;
+  objectives: string[];
+  duration: string;
+  thumbnailUrl?: string;
+}
+
+/**
  * Video Lesson Content
  * Represents a lesson with video media content
  */
@@ -57,7 +72,7 @@ export interface ArticleSection {
 /**
  * Union type representing any lesson content
  */
-export type LessonContent = VideoLessonContent | AudioLessonContent | ArticleLessonContent;
+export type LessonContent = IntroLessonContent | VideoLessonContent | AudioLessonContent | ArticleLessonContent;
 
 /**
  * Tab types for lesson player
@@ -91,6 +106,10 @@ export interface LessonData {
 /**
  * Type guards for content types
  */
+export function isIntroContent(content: LessonContent): content is IntroLessonContent {
+  return content.type === 'intro';
+}
+
 export function isVideoContent(content: LessonContent): content is VideoLessonContent {
   return content.type === LessonType.Video;
 }

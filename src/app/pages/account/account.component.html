@@ -1,258 +1,203 @@
-<div>
-  <div class="relative w-full">
-    <img
-      src="/backgrounds/profile-background.png"
-      alt="Profile picture"
-      class="block h-48 w-full object-cover sm:h-60 lg:h-72"
-    />
-    <div class="absolute inset-0 flex items-end">
-      <div class="mx-auto flex w-full max-w-7xl justify-start px-4 sm:px-6 lg:px-10">
-        <div
-          class="flex flex-col sm:flex-row translate-y-1/2 items-center sm:items-end gap-3 sm:gap-4 w-full"
-        >
-          <img
-            [src]="userProfile.profileImage"
-            alt="Profile image"
-            class="h-32 w-32 sm:h-40 sm:w-40 lg:h-50 lg:w-50 rounded-2xl object-cover"
-          />
-          <div
-            class="flex flex-col sm:flex-row justify-between items-center sm:items-center w-full gap-3"
-          >
-            <div class="flex flex-col gap-2 pb-2 text-center sm:text-left">
-              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-                <h2 class="text-xl sm:text-2xl leading-tight text-(--color-text-title)">
-                  {{ userProfile.name }}
-                </h2>
-                <span
-                  *ngIf="userProfile.gender === 'Male'"
-                  class="inline-flex items-center gap-2 rounded-full bg-(--gender-male)/8 px-3 py-1 text-sm font-semibold text-(--gender-male)"
-                >
+<section class="section-container profile-header">
+  <img src="/backgrounds/profile-background.png" alt="Profile background" class="profile-cover" />
+  <div class="profile-header__overlay">
+    <div class="section-block profile-header__block">
+      <div class="profile-header__info">
+        <img [src]="userProfile.profileImage" alt="Profile image" class="profile-avatar" />
+        <div class="profile-details">
+          <div class="profile-name-section">
+            <div class="profile-name-row">
+              <h2 class="profile-name">{{ userProfile.name }}</h2>
+              @if (userProfile.gender === 'Male') {
+                <span class="profile-gender-badge profile-gender-badge--male">
                   <div
                     [inlineSVG]="'/icons/icons-24/male.svg'"
-                    class="[&_path]:stroke-(--gender-male) transition-transform duration-300 group-hover:translate-x-2"
+                    class="profile-gender-icon profile-gender-icon--male"
                   ></div>
                   {{ userProfile.religion }}
                 </span>
-                <span
-                  *ngIf="userProfile.gender === 'Female'"
-                  class="inline-flex items-center gap-2 rounded-full bg-(--gender-female)/8 px-3 py-1 text-sm font-semibold text-(--gender-female)"
-                >
+              }
+              @if (userProfile.gender === 'Female') {
+                <span class="profile-gender-badge profile-gender-badge--female">
                   <div
                     [inlineSVG]="'/icons/icons-24/female.svg'"
-                    class="[&_path]:stroke-(--gender-female) transition-transform duration-300 group-hover:translate-x-2"
+                    class="profile-gender-icon profile-gender-icon--female"
                   ></div>
                   {{ userProfile.religion }}
                 </span>
-              </div>
-              <span class="text-sm text-(--color-text-caption)">{{ userProfile.bio }}</span>
+              }
             </div>
-            <button
-              (click)="continueLearnig()"
-              class="button group h-12 sm:h-14 inline-flex items-center justify-center gap-2 text-sm sm:text-base w-full sm:w-auto px-4"
+            <span class="profile-bio">{{ userProfile.bio }}</span>
+          </div>
+          <button (click)="continueLearnig()" class="button profile-continue-btn">
+            <span class="profile-continue-btn__label profile-continue-btn__label--desktop">
+              Continue Learning
+            </span>
+            <span class="profile-continue-btn__label profile-continue-btn__label--mobile">
+              Continue
+            </span>
+            <div
+              [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+              class="profile-continue-btn__icon"
+            ></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-container profile-content">
+  <div class="section-block">
+    <div class="profile-content__layout">
+      <!-- Verse of the Day -->
+      <div class="verse-card">
+        <div class="verse-card__header">
+          <div [inlineSVG]="'/icons/icons-24/bookmark.svg'" class="verse-card__icon"></div>
+          <h2 class="verse-card__label">Verse of the Day</h2>
+          <h2 class="verse-card__reference">
+            &#123;Sura: {{ currentVerse.sura }}, Aya: {{ currentVerse.aya }}&#125;
+          </h2>
+        </div>
+        <h2 class="verse-card__arabic">{{ currentVerse.text }}</h2>
+        <h2 class="verse-card__translation">{{ currentVerse.textEnglish }}</h2>
+        <div class="verse-card__action">
+          <button class="verse-card__btn">
+            Understand More
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="verse-card__btn-icon"
             >
-              <span class="hidden sm:inline">Continue Learning</span>
-              <span class="sm:hidden">Continue</span>
-              <div
-                [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
-                class="[&_path]:stroke-(--color-background-white) transition-transform duration-300 group-hover:translate-x-2"
-              ></div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-grid">
+        <!-- Left Side - Dynamic Tab Content -->
+        <div class="profile-main">
+          <div class="profile-tabs">
+            @for (tab of tabs; track tab; let i = $index) {
+              <button
+                (click)="selectTab(i)"
+                class="profile-tab"
+                [class.profile-tab--active]="i === activeTabIndex"
+              >
+                {{ tab }}
+              </button>
+            }
+          </div>
+
+          <!-- My Learning Tab -->
+          @if (activeTabIndex === 0) {
+            <app-my-learning></app-my-learning>
+          }
+
+          <!-- Saved Answers Tab -->
+          @if (activeTabIndex === 1) {
+            <app-saved-answers></app-saved-answers>
+          }
+
+          <!-- Chat List Tab -->
+          @if (activeTabIndex === 2) {
+            <app-chat-list></app-chat-list>
+          }
+
+          <!-- About Tab -->
+          @if (activeTabIndex === 3) {
+            <app-about></app-about>
+          }
+        </div>
+
+        <!-- Right Side -->
+        <div class="profile-sidebar">
+          <div class="upcoming-event-widget">
+            <h2 class="upcoming-event-widget__title">Upcoming Event</h2>
+            <div class="upcoming-event-card">
+              <div class="upcoming-event-card__meta">
+                <div class="upcoming-event-card__meta-item">
+                  <div
+                    [inlineSVG]="'/icons/icons-16/calendar.svg'"
+                    class="upcoming-event-card__meta-icon"
+                  ></div>
+                  <span class="upcoming-event-card__meta-text">{{ upcomingEvent.date }}</span>
+                </div>
+                <div class="upcoming-event-card__meta-item">
+                  <div
+                    [inlineSVG]="'/icons/icons-16/clock.svg'"
+                    class="upcoming-event-card__meta-icon"
+                  ></div>
+                  <span class="upcoming-event-card__meta-text">{{ upcomingEvent.time }}</span>
+                </div>
+              </div>
+              <h2 class="upcoming-event-card__title">{{ upcomingEvent.title }}</h2>
+              <div class="upcoming-event-card__speaker">
+                <img
+                  [src]="upcomingEvent.speakerImage"
+                  alt="speaker"
+                  class="upcoming-event-card__speaker-image"
+                />
+                <div class="upcoming-event-card__speaker-info">
+                  <span class="upcoming-event-card__speaker-name">{{ upcomingEvent.speaker }}</span>
+                  <span class="upcoming-event-card__speaker-role">{{
+                    upcomingEvent.speakerRole
+                  }}</span>
+                </div>
+              </div>
+              <div class="upcoming-event-card__divider"></div>
+              <div class="upcoming-event-card__footer">
+                <button (click)="viewEventDetails()" class="upcoming-event-card__details-btn">
+                  View Details
+                </button>
+                <div class="upcoming-event-card__status">
+                  <div
+                    [inlineSVG]="'/icons/icons-24/done.svg'"
+                    class="upcoming-event-card__status-icon"
+                  ></div>
+                  <span class="upcoming-event-card__status-text">
+                    {{ upcomingEvent.isRegistered ? 'Registered' : 'Not Registered' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mosque-widget">
+            <h2 class="mosque-widget__title">Looking for a near Mosque?</h2>
+            <div class="mosque-widget__selects">
+              <button class="mosque-widget__select">
+                Select your city
+                <div
+                  [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
+                  class="mosque-widget__select-icon"
+                ></div>
+              </button>
+              <button class="mosque-widget__select">
+                Select your area
+                <div
+                  [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
+                  class="mosque-widget__select-icon"
+                ></div>
+              </button>
+            </div>
+            <button class="mosque-widget__btn">
+              Get on Map
+              <div class="mosque-widget__btn-icon">
+                <div [inlineSVG]="'/icons/icons-24/arrow-right.svg'"></div>
+              </div>
             </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <main
-    class="mx-auto flex w-full max-w-7xl flex-col gap-6 sm:gap-8 lg:gap-10 px-4 sm:px-6 pb-12 pt-24 sm:pt-28 lg:pt-20 mt-16 sm:mt-20 lg:px-10"
-  >
-    <div
-      class="flex flex-col gap-4 rounded-lg border border-(--color-border-brand-medium) bg-(--color-surface-secondary-hover) px-4 sm:px-5 py-4 shadow-sm ring-1 ring-(--color-border-brand-medium)"
-    >
-      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-        <div
-          [inlineSVG]="'/icons/icons-24/bookmark.svg'"
-          class="[&_path]:stroke-(--special-primary) transition-transform duration-300 group-hover:translate-x-2"
-        ></div>
-        <h2
-          class="text-base sm:text-[20px] font-medium uppercase tracking-wide text-(--special-primary)"
-        >
-          Verse of the Day
-        </h2>
-        <h2 class="text-base sm:text-[20px] font-medium text-(--special-secondary)">
-          &#123;Sura: {{ currentVerse.sura }}, Aya: {{ currentVerse.aya }}&#125;
-        </h2>
-      </div>
-      <h2
-        class="text-right text-base sm:text-lg font-medium leading-relaxed text-(--color-text-body)"
-      >
-        {{ currentVerse.text }}
-      </h2>
-      <h2 class="text-base sm:text-[20px] font-medium leading-6 text-(--color-text-body)">
-        {{ currentVerse.textEnglish }}
-      </h2>
-      <div class="flex items-center justify-end">
-        <button
-          class="inline-flex items-center gap-2 rounded-xl bg-(--color-background-white) px-4 py-2 text-sm font-semibold text-(--special-secondary) ring-1 ring-(--color-border-brand-medium) transition hover:bg-(--color-surface-secondary-hover) cursor-pointer"
-        >
-          Understand More
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            class="h-4 w-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.6"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <section class="grid gap-6 lg:gap-8 grid-cols-1 lg:grid-cols-3">
-      <!-- Left Side - Dynamic Tab Content -->
-      <div class="flex flex-col gap-6 sm:gap-8 lg:gap-10 lg:col-span-2">
-        <div
-          class="w-full flex overflow-x-auto items-center gap-2 rounded-lg border border-(--color-border-light) bg-(--color-background-white) p-2 text-sm sm:text-base lg:text-lg font-medium text-(--color-text-body) shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <button
-            *ngFor="let tab of tabs; let i = index"
-            (click)="selectTab(i)"
-            class="rounded-lg px-3 sm:px-4 lg:px-6 py-2 sm:py-3 transition cursor-pointer whitespace-nowrap flex-shrink-0"
-            [ngClass]="
-              i === activeTabIndex
-                ? 'bg-(--color-surface-primary) text-(--special-primary)'
-                : 'hover:bg-(--color-background-light)'
-            "
-          >
-            {{ tab }}
-          </button>
-        </div>
-
-        <!-- My Learning Tab -->
-        <app-my-learning *ngIf="activeTabIndex === 0"></app-my-learning>
-
-        <!-- Saved Answers Tab -->
-        <app-saved-answers *ngIf="activeTabIndex === 1"></app-saved-answers>
-
-        <!-- Chat List Tab -->
-        <app-chat-list *ngIf="activeTabIndex === 2"></app-chat-list>
-
-        <!-- About Tab -->
-        <app-about *ngIf="activeTabIndex === 3"></app-about>
-      </div>
-
-      <!-- Right Side -->
-      <div class="flex flex-col gap-6 lg:col-span-1">
-        <div class="space-y-4 rounded-lg bg-(--color-background-surface) p-4 sm:p-6 shadow-sm">
-          <h2 class="text-lg sm:text-xl font-medium text-(--color-text-body) mb-4 sm:mb-6">
-            Upcoming Event
-          </h2>
-          <div class="bg-white border-[0.5px] border-(--color-text-placeholder) p-5 rounded-lg">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-1">
-                <div
-                  [inlineSVG]="'/icons/icons-16/calendar.svg'"
-                  class="[&_path]:stroke-(--special-secondary)"
-                ></div>
-                <span class="text-sm text-(--special-secondary)">{{ upcomingEvent.date }}</span>
-              </div>
-              <div class="flex items-center gap-1">
-                <div
-                  [inlineSVG]="'/icons/icons-16/clock.svg'"
-                  class="[&_path]:stroke-(--special-secondary)"
-                ></div>
-                <span class="text-sm text-(--special-secondary)">{{ upcomingEvent.time }}</span>
-              </div>
-            </div>
-            <h2 class="text-xl sm:text-2xl font-semibold text-(--special-primary) my-3">
-              {{ upcomingEvent.title }}
-            </h2>
-            <div class="flex gap-3 self-stretch items-center">
-              <img
-                [src]="upcomingEvent.speakerImage"
-                alt="speaker"
-                class="w-12 h-12 rounded-full object-cover transition-transform duration-300 hover:scale-110 hover:rotate-6"
-              />
-              <div class="flex items-start flex-col">
-                <div class="flex self-stretch items-start">
-                  <span
-                    class="text-(--color-text-title) text-left leading-normal text-[14px] font-medium"
-                  >
-                    {{ upcomingEvent.speaker }}
-                  </span>
-                </div>
-                <div class="flex self-stretch items-start">
-                  <span
-                    class="text-(--color-text-caption) grow text-left leading-normal text-[14px] font-normal"
-                  >
-                    {{ upcomingEvent.speakerRole }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="divider w-full h-px bg-(--color-surface-secondary-2) my-5"></div>
-            <div class="flex items-center justify-between">
-              <button
-                (click)="viewEventDetails()"
-                class="cursor-pointer underline font-medium text-(--color-text-body)"
-              >
-                View Details
-              </button>
-              <div class="flex items-center gap-1">
-                <div
-                  [inlineSVG]="'/icons/icons-24/done.svg'"
-                  class="[&_path]:stroke-(--special-primary) [&>svg]:w-4 [&>svg]:h-4"
-                ></div>
-                <span class="text-sm text-(--special-primary)">{{
-                  upcomingEvent.isRegistered ? 'Registered' : 'Not Registered'
-                }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-4 rounded-lg p-4 sm:p-6 shadow-sm">
-          <h2 class="text-lg sm:text-xl font-medium text-(--color-text-body) mb-4 sm:mb-6">
-            Looking for a near Mosque?
-          </h2>
-          <div class="flex flex-col gap-3">
-            <button
-              class="cursor-pointer flex items-center justify-between gap-2 px-4 sm:px-6 h-12 sm:h-14 rounded-lg border border-(--color-border-light) bg-(--color-background-white) text-sm sm:text-[16px] text-(--color-text-placeholder)"
-            >
-              Select your city
-              <div
-                [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
-                class="[&_path]:stroke-(--color-text-caption)"
-              ></div>
-            </button>
-            <button
-              class="cursor-pointer flex items-center justify-between gap-2 px-4 sm:px-6 h-12 sm:h-14 rounded-lg border border-(--color-border-light) bg-(--color-background-white) text-sm sm:text-[16px] text-(--color-text-placeholder)"
-            >
-              Select your area
-              <div
-                [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
-                class="[&_path]:stroke-(--color-text-caption)"
-              ></div>
-            </button>
-          </div>
-          <button
-            class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-(--special-primary) text-(--special-primary) px-5 py-3 text-sm font-semibold mt-3 cursor-pointer"
-          >
-            Get on Map
-            <div class="flex items-center gap-1">
-              <div
-                [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
-                class="[&_path]:stroke-(--special-primary)"
-              ></div>
-            </div>
-          </button>
-        </div>
-      </div>
-    </section>
-  </main>
-</div>
+</section>

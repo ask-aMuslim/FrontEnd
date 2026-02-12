@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import type { EventCard } from './event-card/event-card.component';
 import type { EventDetail } from './event-detail/event-detail.component';
+import { EventsService } from '../../core/services/events.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ export class EventService {
   private selectedEventSubject = new BehaviorSubject<EventCard | null>(null);
   selectedEvent$ = this.selectedEventSubject.asObservable();
 
-  constructor() {}
+  constructor(private readonly eventsService: EventsService) { }
 
   setSelectedEvent(event: EventCard): void {
     this.selectedEventSubject.next(event);
@@ -55,5 +56,67 @@ export class EventService {
         'Build connections with like-minded attendees',
       ],
     };
+  }
+
+  getEventById(id: string): Observable<EventDetail | null> {
+    return this.eventsService.getById(id).pipe(
+      map((response) => this.mapEventDetail(response))
+    );
+  }
+
+  private mapEventDetail(response: unknown): EventDetail | null {
+    const record = this.asRecord(response);
+    if (!record) {
+      return null;
+    }
+
+    const title = this.asString(record['title']) ?? 'Event';
+    const description = this.asString(record['description']) ?? '';
+    const tags = this.asStringArray(record['tags']);
+
+    return {
+      id: this.asString(record['id']) ?? 'event',
+      title,
+      description,
+      fullDescription:
+        this.asString(record['fullDescription']) ??
+        (description ? `${description}` : 'Details will be available soon.'),
+      imageUrl: this.asString(record['imageUrl']) ?? '/images/events-picture.png',
+      imageAlt: this.asString(record['imageAlt']) ?? title,
+      speakerName: this.asString(record['speakerName']) ?? 'Ask A Muslim',
+      speakerImage:
+        this.asString(record['speakerImage']) ?? '/images/profile-picture-navbar.png',
+      speakerRole: this.asString(record['speakerRole']) ?? 'Islamic Scholar',
+      speakerBio:
+        this.asString(record['speakerBio']) ??
+        'A trusted scholar dedicated to guiding the community with clarity and compassion.',
+      date: this.asString(record['date']) ?? 'TBD',
+      time: this.asString(record['time']) ?? 'TBD',
+      location: this.asString(record['location']) ?? 'TBD',
+      tags: tags.length > 0 ? tags : ['#Event'],
+      isRecorded: record['isRecorded'] === true,
+      registrationDeadline: this.asString(record['registrationDeadline']),
+      maxAttendees: this.asNumber(record['maxAttendees']),
+      currentAttendees: this.asNumber(record['currentAttendees']),
+      agenda: this.asStringArray(record['agenda']),
+      outcomes: this.asStringArray(record['outcomes']),
+    };
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+  }
+
+  private asString(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+  }
+
+  private asStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+  }
+
+  private asNumber(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   }
 }

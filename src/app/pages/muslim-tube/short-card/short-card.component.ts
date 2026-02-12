@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 export interface Short {
   id: number;
@@ -15,7 +15,7 @@ export interface Short {
 @Component({
   standalone: true,
   selector: 'app-short-card',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './short-card.component.html',
   styleUrls: ['./short-card.component.scss'],
 })

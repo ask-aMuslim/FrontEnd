@@ -8,14 +8,15 @@ import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.compone
 import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
 import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
 import { VideoDetailComponent } from './pages/muslim-tube/video-detail/video-detail.component';
-import { RoadmapComponent } from './pages/roadmap/roadmap.component';
-import { CourseComponent } from './pages/roadmap/course/course.component';
+import { AcademyComponent } from './pages/academy/academy.component';
+import { CourseComponent } from './pages/academy/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
 import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
 import { AccountComponent } from './pages/account/account.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
-import { LessonOverviewComponent } from './pages/roadmap/lesson-overview/lesson-overview.component';
-import { LessonPlayerComponent } from './pages/roadmap/lesson-player/lesson-player.component';
+import { LessonOverviewComponent } from './pages/academy/lesson-overview/lesson-overview.component';
+import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
+import { QuizComponent } from './pages/academy/quiz/quiz.component';
 
 export const routes: Routes = [
   // default route
@@ -60,14 +61,14 @@ export const routes: Routes = [
               ),
             title: 'Question',
           },
-          {
-            path: 'ask-assistant',
-            loadComponent: () =>
-              import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
-                (m) => m.AskAssistantComponent,
-              ),
-            title: 'Ask Assistant',
-          },
+          // {
+          //   path: 'ask-assistant',
+          //   loadComponent: () =>
+          //     import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
+          //       (m) => m.AskAssistantComponent,
+          //     ),
+          //   title: 'Ask Assistant',
+          // },
           {
             path: 'meet-scholar',
             loadComponent: () =>
@@ -164,14 +165,19 @@ export const routes: Routes = [
         ],
       },
       {
-        path: 'roadmap',
+        path: 'academy',
         children: [
-          { path: '', component: RoadmapComponent, title: 'Roadmap' },
+          { path: '', component: AcademyComponent, title: 'Academy' },
           { path: 'course/:id', component: CourseComponent, title: 'Course' },
           {
             path: 'course/:courseId/lesson/:lessonId',
             component: LessonPlayerComponent,
             title: 'Lesson Player',
+          },
+          {
+            path: 'course/:courseId/quiz',
+            component: QuizComponent,
+            title: 'Quiz',
           },
           { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
         ],

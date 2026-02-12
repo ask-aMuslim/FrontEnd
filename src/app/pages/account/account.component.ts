@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
 import { MyLearningComponent } from './my-learning/my-learning.component';
 import { SavedAnswersComponent } from './saved-answers/saved-answers.component';
@@ -34,7 +34,6 @@ interface Verse {
 @Component({
   selector: 'app-account',
   imports: [
-    CommonModule,
     InlineSvgDirective,
     MyLearningComponent,
     SavedAnswersComponent,
@@ -42,9 +41,10 @@ interface Verse {
     AboutComponent,
   ],
   templateUrl: './account.component.html',
-  styleUrl: './account.component.scss',
+  styleUrls: ['./account.component.scss'],
 })
 export class AccountComponent implements OnInit {
+  private readonly router = inject(Router);
   tabs = ['My Learning', 'Saved Answers', 'Chat List', 'About'];
   activeTabIndex = 0;
 
@@ -74,18 +74,18 @@ export class AccountComponent implements OnInit {
     isRegistered: true,
   };
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   selectTab(index: number): void {
     this.activeTabIndex = index;
   }
 
   continueLearnig(): void {
-    console.log('Continue learning clicked');
+    this.router.navigate(['/academy/course', 'course-a', 'lesson', 'lesson-1']);
   }
 
   viewEventDetails(): void {
-    console.log('View event details:', this.upcomingEvent);
+    this.router.navigate(['/events']);
   }
 
   toggleEventRegistration(): void {

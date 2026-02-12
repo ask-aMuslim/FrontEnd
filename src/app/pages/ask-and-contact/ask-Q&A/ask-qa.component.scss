@@ -1,5 +1,5 @@
 .category-scroll {
-  scrollbar-color: var(--special-primary) transparent;
+  scrollbar-color: var(--color-button-primary-normal) transparent;
   scrollbar-width: thin;
 }
 
@@ -12,6 +12,6 @@
 }
 
 .category-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--special-primary);
+  background-color: var(--color-button-primary-normal);
   border-radius: 9999px;
 }

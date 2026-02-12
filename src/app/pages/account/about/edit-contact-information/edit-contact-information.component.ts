@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { InlineSvgDirective } from '../../../../shared/directives/inline-svg.directive';
 
 @Component({
   selector: 'app-edit-contact-information',
   standalone: true,
-  imports: [CommonModule, FormsModule, InlineSvgDirective],
+  imports: [FormsModule, InlineSvgDirective],
   templateUrl: './edit-contact-information.component.html',
   styleUrls: ['./edit-contact-information.component.scss'],
 })

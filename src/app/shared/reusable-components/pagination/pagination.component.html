@@ -1,11 +1,11 @@
 <div
   class="flex flex-wrap items-center justify-center gap-1 rounded border-0 border-gray-300 sm:flex-nowrap"
->
+  >
   <button
     type="button"
     (click)="onPrevPage()"
     class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
-  >
+    >
     <div
       [inlineSVG]="arrowLeftIcon"
       [ngClass]="
@@ -17,25 +17,26 @@
     ></div>
   </button>
 
-  <button
-    *ngFor="let page of pages; trackBy: trackByIndex"
-    type="button"
-    (click)="onGoToPage(page)"
+  @for (page of pages; track $index) {
+    <button
+      type="button"
+      (click)="onGoToPage(page)"
     [ngClass]="
       page === currentPage
-        ? 'bg-(--color-surface-primary) border-(--special-primary) text-(--special-primary)'
+        ? 'bg-(--color-card-surface-primary) border-(--color-button-primary-normal) text-(--color-button-primary-normal)'
         : 'text-text-title'
     "
-    class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer"
-  >
-    <span class="text-sm font-medium">{{ page }}</span>
-  </button>
+      class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg border-2 border-transparent cursor-pointer"
+      >
+      <span class="text-sm font-medium">{{ page }}</span>
+    </button>
+  }
 
   <button
     type="button"
     (click)="onNextPage()"
     class="flex h-10 w-10 items-center justify-center gap-2 rounded-lg cursor-pointer"
-  >
+    >
     <div
       [inlineSVG]="arrowRightIcon"
       [ngClass]="

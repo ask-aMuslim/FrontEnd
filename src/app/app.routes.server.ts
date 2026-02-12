@@ -1,22 +1,38 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
-  // Roadmap routes with dynamic parameters - use server-side rendering
+  // Academy routes with dynamic parameters - use server-side rendering
   {
-    path: 'roadmap/course/:id',
+    path: 'academy/course/:id',
     renderMode: RenderMode.Server,
   },
   {
-    path: 'roadmap/course/:courseId/lesson/:lessonId',
+    path: 'academy/course/:courseId/lesson/:lessonId',
     renderMode: RenderMode.Server,
   },
   {
-    path: 'roadmap/lesson/:id',
+    path: 'academy/course/:courseId/quiz',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'academy/lesson/:id',
     renderMode: RenderMode.Server,
   },
   // Events route with dynamic parameters - use server-side rendering
   {
     path: 'events/:id',
+    renderMode: RenderMode.Server,
+  },  // Academy main page - use server-side rendering
+  {
+    path: 'academy',
+    renderMode: RenderMode.Server,
+  },  // Routes that rely on client-only behavior or long-running calls - avoid prerender timeouts
+  {
+    path: 'events',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'ask-and-contact/ask-qa',
     renderMode: RenderMode.Server,
   },
   // Muslim Tube video detail with params - use server-side rendering

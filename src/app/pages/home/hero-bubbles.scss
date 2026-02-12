@@ -1,212 +1,263 @@
+@use 'sass:map';
+
 // Hero suggestion bubbles - scrollable horizontal layout
 
 // Bubble positions table for desktop layout
 $bubble-positions: (
-    1: (top: 15%, left: 6%, start-rotate: -8deg, animation-duration: 7.6s),
-    2: (top: 35%, left: 2%, start-rotate: 12deg, animation-duration: 8.2s),
-    3: (top: 55%, left: 1%, start-rotate: -15deg, animation-duration: 7.9s),
-    4: (top: 75%, left: 6%, start-rotate: 6deg, animation-duration: 8.4s),
-
-    5: (top: 15%, right: 6%, start-rotate: 10deg, animation-duration: 7.7s),
-    6: (top: 35%, right: 2%, start-rotate: -12deg, animation-duration: 8.1s),
-    7: (top: 55%, right: 2%, start-rotate: 14deg, animation-duration: 8.3s),
-    8: (top: 75%, right: 4%, start-rotate: -10deg, animation-duration: 7.85s)
+  1: (
+    top: 28%,
+    left: 6%,
+    start-rotate: -8deg,
+    animation-duration: 7.6s,
+  ),
+  2: (
+    top: 48%,
+    left: 2%,
+    start-rotate: 12deg,
+    animation-duration: 8.2s,
+  ),
+  3: (
+    top: 68%,
+    left: 1%,
+    start-rotate: -15deg,
+    animation-duration: 7.9s,
+  ),
+  4: (
+    top: 88%,
+    left: 6%,
+    start-rotate: 6deg,
+    animation-duration: 8.4s,
+  ),
+  5: (
+    top: 28%,
+    right: 6%,
+    start-rotate: 10deg,
+    animation-duration: 7.7s,
+  ),
+  6: (
+    top: 48%,
+    right: 2%,
+    start-rotate: -12deg,
+    animation-duration: 8.1s,
+  ),
+  7: (
+    top: 68%,
+    right: 2%,
+    start-rotate: 14deg,
+    animation-duration: 8.3s,
+  ),
+  8: (
+    top: 88%,
+    right: 4%,
+    start-rotate: -10deg,
+    animation-duration: 7.85s,
+  ),
 );
 
 // Larger desktop adjustments table
 $large-screen-adjustments: (
-    1: (left: 6%),
-    2: (left: 2%),
-    3: (left: 1%),
-    4: (left: 6%),
-    5: (right: 6%),
-    6: (right: 2%),
-    7: (right: 2%),
-    8: (right: 4%)
+  1: (
+    left: 6%,
+  ),
+  2: (
+    left: 2%,
+  ),
+  3: (
+    left: 1%,
+  ),
+  4: (
+    left: 6%,
+  ),
+  5: (
+    right: 6%,
+  ),
+  6: (
+    right: 2%,
+  ),
+  7: (
+    right: 2%,
+  ),
+  8: (
+    right: 4%,
+  ),
 );
 
 .suggestion-bubbles {
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    margin: 1.25rem 0 0;
-    position: relative;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+  width: 100%;
+  overflow: hidden;
+  margin: 1.25rem 0 0;
+  position: relative;
 
-    // Hide scrollbar on mobile and tablet
-    &::-webkit-scrollbar {
-        display: none;
-    }
+  // Hide scrollbar on mobile and tablet
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .suggestion-bubbles-track {
-    display: flex;
-    gap: 0.75rem;
-    width: fit-content;
-    padding-bottom: 0.5rem;
-    will-change: transform;
-    animation: none; // JS-driven marquee controls motion
+  display: flex;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  will-change: transform;
 }
 
 .suggestion-bubble {
-    flex-shrink: 0;
-    font-size: 0.85rem;
-    color: var(--color-text-placeholder);
-    background: var(--color-selected-surface-secondary);
-    border-radius: 999px;
-    padding: 0.5rem 1.1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    text-decoration: none;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-placeholder);
+  background: var(--color-selected-surface-secondary);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 
-    &:hover,
-    &:focus-visible {
-        background: var(--color-surface-primary);
-        color: var(--special-primary);
-        transform: translateY(-2px) scale(1.03);
-        box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
-    }
+  &:hover,
+  &:focus-visible {
+    background: var(--color-card-surface-primary);
+    color: var(--color-button-primary-normal);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
+  }
 }
 
 // Desktop only: Scattered bubbles with rotation animations - 4 left, 4 right
 @media (min-width: 1024px) {
-    .suggestion-bubbles {
-        position: absolute;
-        width: 100%;
-        height: 500px;
-        overflow: visible;
-        margin: 0;
-        pointer-events: none;
-        top: -150px;
-        left: 0;
-    }
+  .suggestion-bubbles {
+    position: absolute;
+    width: 100%;
+    height: 500px;
+    overflow: visible;
+    margin: 0;
+    pointer-events: none;
+    top: -150px;
+    left: 0;
+  }
 
-    .suggestion-bubbles-track {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        animation: none; // Disable auto-scroll on desktop
-    }
+  .suggestion-bubbles-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    animation: none; // Disable auto-scroll on desktop
+  }
 
-    .suggestion-bubble {
-        position: absolute;
-        pointer-events: all;
-        transform-origin: center center;
-        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-        will-change: transform;
+  .suggestion-bubble {
+    position: absolute;
+    pointer-events: all;
+    transform-origin: center center;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+    will-change: transform;
 
-        // Generate bubble positions and animations from table
-        @each $index, $position in $bubble-positions {
-            &:nth-child(#{$index}) {
-                top: map-get($position, top);
+    // Generate bubble positions and animations from table
+    @each $index, $position in $bubble-positions {
+      &:nth-child(#{$index}) {
+        top: map.get($position, top);
 
-                @if map-has-key($position, left) {
-                    left: map-get($position, left);
-                }
-
-                @else {
-                    right: map-get($position, right);
-                }
-
-                $start-rotate: map-get($position, start-rotate);
-                $duration: map-get($position, animation-duration);
-
-                // Create unique animation for each bubble with actual values
-                animation: float-rotate-#{$index} $duration ease-in-out infinite;
-
-                // Generate unique keyframe for this bubble
-                @keyframes float-rotate-#{$index} {
-                    0% {
-                        transform: translateY(0) rotate($start-rotate);
-                    }
-
-                    50% {
-                        transform: translateY(-6px) rotate(calc(#{$start-rotate} + 11deg));
-                    }
-
-                    100% {
-                        transform: translateY(0) rotate($start-rotate);
-                    }
-                }
-            }
+        @if map.has-key($position, left) {
+          left: map.get($position, left);
+        } @else {
+          right: map.get($position, right);
         }
 
-        // Hide duplicated bubbles on desktop
-        &:nth-child(n + 9) {
-            display: none;
-        }
+        $start-rotate: map.get($position, start-rotate);
+        $duration: map.get($position, animation-duration);
 
-        &:hover,
-        &:focus-visible {
-            animation-play-state: paused;
-            background: var(--color-surface-primary);
-            color: var(--special-primary);
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
+        // Create unique animation for each bubble with actual values
+        animation: float-rotate-#{$index} $duration ease-in-out infinite;
+
+        // Generate unique keyframe for this bubble
+        @keyframes float-rotate-#{$index} {
+          0% {
+            transform: translateY(0) rotate($start-rotate);
+          }
+
+          50% {
+            transform: translateY(-6px) rotate(calc(#{$start-rotate} + 11deg));
+          }
+
+          100% {
+            transform: translateY(0) rotate($start-rotate);
+          }
         }
+      }
     }
+
+    // Hide duplicated bubbles on desktop
+    &:nth-child(n + 9) {
+      display: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+      animation-play-state: paused;
+      background: var(--color-card-surface-primary);
+      color: var(--color-button-primary-normal);
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
+    }
+  }
 }
 
 // Accessibility: disable animations for users who prefer reduced motion
 @media (prefers-reduced-motion: reduce) {
-    .suggestion-bubble {
-        animation: none !important;
-    }
+  .suggestion-bubble {
+    animation: none !important;
+  }
 }
 
 // Larger desktop screens - more spread out
 @media (min-width: 1440px) {
-    .suggestion-bubble {
-
-        // Apply adjustments from table
-        @each $index, $adjustment in $large-screen-adjustments {
-            &:nth-child(#{$index}) {
-                @each $property, $value in $adjustment {
-                    #{$property}: $value !important;
-                }
-            }
+  .suggestion-bubble {
+    // Apply adjustments from table
+    @each $index, $adjustment in $large-screen-adjustments {
+      &:nth-child(#{$index}) {
+        @each $property, $value in $adjustment {
+          #{$property}: $value !important;
         }
+      }
     }
+  }
 }
-
 
 // Responsive adjustments
 @media (max-width: 768px) {
-    .suggestion-bubbles {
-        margin: 1rem 0 0;
-    }
+  .suggestion-bubbles {
+    margin: 1rem 0 0;
+  }
 
-    .suggestion-bubble {
-        font-size: 0.8rem;
-        padding: 0.45rem 1rem;
-    }
+  .suggestion-bubble {
+    font-size: 0.8rem;
+    padding: 0.45rem 1rem;
+  }
 
-    .suggestion-bubbles-track {
-        gap: 0.6rem;
-    }
+  .suggestion-bubbles-track {
+    gap: 0.6rem;
+  }
 }
 
 @media (max-width: 480px) {
-    .suggestion-bubbles {
-        margin: 0.875rem 0 0;
-    }
+  .suggestion-bubbles {
+    margin: 0.875rem 0 0;
+  }
 
-    .suggestion-bubble {
-        font-size: 0.75rem;
-        padding: 0.4rem 0.875rem;
-    }
+  .suggestion-bubble {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.875rem;
+  }
 
-    .suggestion-bubbles-track {
-        gap: 0.5rem;
-    }
+  .suggestion-bubbles-track {
+    gap: 0.5rem;
+  }
 }

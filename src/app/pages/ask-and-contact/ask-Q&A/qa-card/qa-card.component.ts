@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { CommonModule, NgFor, NgIf } from '@angular/common';
+
 import { Router } from '@angular/router';
 
 export interface QuestionCard {
@@ -13,9 +13,9 @@ export interface QuestionCard {
 @Component({
   selector: 'app-qa-card',
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor],
+  imports: [],
   templateUrl: './qa-card.component.html',
-  styleUrl: './qa-card.component.scss',
+  styleUrls: ['./qa-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QaCardComponent {

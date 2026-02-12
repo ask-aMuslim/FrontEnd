@@ -15,7 +15,7 @@ import { AskAssistantService } from './ask-assistant.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './ask-assistant.component.html',
-  styleUrl: './ask-assistant.component.scss',
+  styleUrls: ['./ask-assistant.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AskAssistantComponent {

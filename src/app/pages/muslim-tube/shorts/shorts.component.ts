@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ShortCardComponent, Short } from '../short-card/short-card.component';
 
 @Component({
   standalone: true,
   selector: 'app-mt-shorts',
-  imports: [CommonModule, ShortCardComponent],
+  imports: [ShortCardComponent],
   templateUrl: './shorts.component.html',
   styleUrls: ['./shorts.component.scss'],
 })

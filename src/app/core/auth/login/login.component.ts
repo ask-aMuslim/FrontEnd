@@ -1,17 +1,22 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+
+import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
+import { LoginViewModel } from '../../api/generated/models';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected loginForm: FormGroup;
   protected showPassword = false;
@@ -76,17 +81,23 @@ export class LoginComponent {
   protected onSubmit(): void {
     if (this.loginForm.valid && !this.isSubmitting) {
       this.isSubmitting = true;
+      const payload: LoginViewModel = {
+        email: String(this.loginForm.value.email).trim(),
+        password: String(this.loginForm.value.password),
+      };
 
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        this.submitSuccess = true;
-        console.log('Login form submitted:', this.loginForm.value);
-
-        setTimeout(() => {
-          this.submitSuccess = false;
-        }, 2000);
-      }, 1500);
+      this.authService
+        .login(payload)
+        .pipe(finalize(() => (this.isSubmitting = false)))
+        .subscribe({
+          next: () => {
+            this.submitSuccess = true;
+            void this.router.navigate(['/home']);
+          },
+          error: () => {
+            this.submitSuccess = false;
+          },
+        });
     } else {
       Object.keys(this.loginForm.controls).forEach(key => {
         this.loginForm.get(key)?.markAsTouched();

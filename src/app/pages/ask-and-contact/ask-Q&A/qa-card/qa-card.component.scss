@@ -1,5 +1,5 @@
 .learn-more span {
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
 }
 
 .learn-more {
@@ -13,7 +13,7 @@
   bottom: -2px;
   width: 0;
   height: 1px;
-  background: var(--special-primary);
+  background: var(--color-button-primary-normal);
   transition: width 0.3s ease;
 }
 
@@ -22,7 +22,7 @@
 }
 
 .learn-more-icon {
-  background-color: var(--special-primary);
+  background-color: var(--color-button-primary-normal);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;

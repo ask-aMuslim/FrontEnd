@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -17,7 +17,7 @@ interface TimeOption {
 @Component({
   selector: 'app-datetime-step',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './datetime-step.component.html',
   styleUrl: './datetime-step.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,52 @@
+<div
+  class="academy-page-shell"
+  [class.variant-course]="variant === 'course'"
+  [class.variant-lesson]="variant === 'lesson'"
+  [class.variant-quiz]="variant === 'quiz'"
+  >
+  @if (showBanner && hasBanner) {
+    <div class="academy-page-banner">
+      <img class="academy-banner-image" [src]="bannerImageUrl" [alt]="bannerAlt" />
+    </div>
+  }
+
+  <div class="academy-page-body">
+    @if (hasBreadcrumbs) {
+      <nav class="academy-breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          @for (item of breadcrumbs; track item; let last = $last) {
+            <li>
+              @if (item.link) {
+                <a [routerLink]="item.link">{{ item.label }}</a>
+              } @else {
+                <span>{{ item.label }}</span>
+              }
+              @if (!last || currentBreadcrumb) {
+                <span class="separator">/</span>
+              }
+            </li>
+          }
+          @if (currentBreadcrumb) {
+            <li class="current">{{ currentBreadcrumb }}</li>
+          }
+        </ol>
+      </nav>
+    }
+
+    <div
+      class="academy-page-layout"
+      [class.layout-quiz-progress]="layoutMode === 'quiz-progress'"
+      [class.sidebar-collapsed]="isSidebarCollapsed"
+      [class.sidebar-left]="sidebarPosition === 'left'"
+      >
+      <main class="academy-page-main">
+        <ng-content select="[academy-page-main]"></ng-content>
+      </main>
+      @if (showSidebar) {
+        <aside class="academy-page-sidebar" aria-label="Page sidebar">
+          <ng-content select="[academy-page-sidebar]"></ng-content>
+        </aside>
+      }
+    </div>
+  </div>
+</div>

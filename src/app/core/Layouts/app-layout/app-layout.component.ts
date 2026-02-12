@@ -9,7 +9,7 @@ import { AnnouncementBar } from '../../../shared/reusable-components/announcemen
   standalone: true,
   imports: [RouterOutlet, Header, Footer, AnnouncementBar],
   templateUrl: './app-layout.component.html',
-  styleUrl: './app-layout.component.scss',
+  styleUrls: ['./app-layout.component.scss'],
 })
 export class AppLayoutComponent {
 

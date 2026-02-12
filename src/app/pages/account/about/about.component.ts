@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
@@ -9,17 +9,16 @@ import { EditContactInformationComponent } from './edit-contact-information/edit
 @Component({
   selector: 'app-about',
   imports: [
-    CommonModule,
     InlineSvgDirective,
     EditMainInformationComponent,
     EditPersonalInformationComponent,
-    EditContactInformationComponent,
-  ],
+    EditContactInformationComponent
+],
   templateUrl: './about.component.html',
-  styleUrl: './about.component.scss',
+  styleUrls: ['./about.component.scss'],
 })
 export class AboutComponent {
-  constructor(private router: Router) {}
+  constructor(private readonly router: Router) { }
 
   about = {
     religion: 'Islam',

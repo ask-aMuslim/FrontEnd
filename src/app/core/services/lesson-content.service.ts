@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { LessonType } from '../models/interfaces/enums.model';
 import {
   LessonContent,
@@ -7,93 +8,257 @@ import {
   LessonMetadata,
   VideoLessonContent,
   AudioLessonContent,
-  ArticleLessonContent
+  ArticleLessonContent,
+  IntroLessonContent
 } from '../models/interfaces/lesson-content.model';
+import { LessonsService } from './lessons.service';
+import { LessonReadDto } from '../api/generated/models';
+import { Id } from '../models/interfaces/base.model';
+import { AcademyMockDataService } from './mock-data/academy-mock-data.service';
 
 /**
  * Service to manage lesson content and metadata
  * Handles fetching, structuring, and navigating between lessons
+ * Integrates with LessonsService for API calls and AcademyMockDataService for mock data
  */
 @Injectable({
   providedIn: 'root'
 })
 export class LessonContentService {
 
-  constructor() {}
+  constructor(
+    private readonly lessonsService: LessonsService,
+    private readonly mockDataService: AcademyMockDataService
+  ) { }
 
   /**
    * Get lesson content and metadata by lesson ID
-   * @param lessonId The ID of the lesson to fetch
-   * @returns Observable of LessonData with content and metadata
+   * Uses mock data service as primary source for development
    */
-  getLesson(lessonId: string): Observable<LessonData> {
-    // Mock data - Replace with API call
-    const mockLessonData = this.getMockLessonData(lessonId);
-    return of(mockLessonData);
+  getLesson(lessonId: Id): Observable<LessonData> {
+    // Extract courseId from lessonId (format: s1-mb-1-lesson-1)
+    const parts = String(lessonId).split('-lesson-');
+    const courseId = parts[0];
+
+    // Use mock data service as primary source
+    return this.mockDataService.getLessonData(String(lessonId), courseId).pipe(
+      map(data => {
+        if (!data) {
+          throw new Error('Lesson not found');
+        }
+        return data;
+      }),
+      catchError(() => {
+        // Fallback to API if mock service fails
+        return this.lessonsService.getById(lessonId).pipe(
+          map(lessonDto => this.mapLessonDtoToLessonData(lessonDto as LessonReadDto & { order?: number })),
+          catchError(() => of(this.getMockLessonData(String(lessonId))))
+        );
+      })
+    );
   }
 
   /**
    * Get lesson content by lesson ID
-   * @param lessonId The ID of the lesson
-   * @returns Observable of LessonContent
+   * Uses mock data service as primary source
    */
-  getLessonContent(lessonId: string): Observable<LessonContent> {
-    return new Observable(observer => {
-      const lessonData = this.getMockLessonData(lessonId);
-      observer.next(lessonData.content);
-      observer.complete();
-    });
+  getLessonContent(lessonId: Id): Observable<LessonContent> {
+    return this.mockDataService.getLessonContent(String(lessonId)).pipe(
+      map(content => {
+        if (!content) {
+          throw new Error('Lesson content not found');
+        }
+        return content;
+      }),
+      catchError(() => {
+        return this.lessonsService.getById(lessonId).pipe(
+          map(lessonDto => this.mapLessonDtoToContent(lessonDto as LessonReadDto & { order?: number })),
+          catchError(() => of(this.getMockLessonContent(String(lessonId))))
+        );
+      })
+    );
   }
 
   /**
    * Get next lesson in sequence
-   * @param courseId The course ID
-   * @param currentLessonId The current lesson ID
-   * @returns Observable of next LessonMetadata or undefined
    */
-  getNextLesson(courseId: string, currentLessonId: string): Observable<LessonMetadata | undefined> {
-    const mockLessons = this.getMockLessonsList(courseId);
-    const currentIndex = mockLessons.findIndex(l => l.id === currentLessonId);
-    const nextLesson = currentIndex < mockLessons.length - 1 ? mockLessons[currentIndex + 1] : undefined;
-    return of(nextLesson);
+  getNextLesson(courseId: Id, currentLessonId: Id): Observable<LessonMetadata | undefined> {
+    return this.getCourseLessons(courseId).pipe(
+      map(lessons => {
+        const currentIndex = lessons.findIndex(l => l.id === currentLessonId);
+        return currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : undefined;
+      })
+    );
   }
 
   /**
    * Get previous lesson in sequence
-   * @param courseId The course ID
-   * @param currentLessonId The current lesson ID
-   * @returns Observable of previous LessonMetadata or undefined
    */
-  getPreviousLesson(courseId: string, currentLessonId: string): Observable<LessonMetadata | undefined> {
-    const mockLessons = this.getMockLessonsList(courseId);
-    const currentIndex = mockLessons.findIndex(l => l.id === currentLessonId);
-    const previousLesson = currentIndex > 0 ? mockLessons[currentIndex - 1] : undefined;
-    return of(previousLesson);
+  getPreviousLesson(courseId: Id, currentLessonId: Id): Observable<LessonMetadata | undefined> {
+    return this.getCourseLessons(courseId).pipe(
+      map(lessons => {
+        const currentIndex = lessons.findIndex(l => l.id === currentLessonId);
+        return currentIndex > 0 ? lessons[currentIndex - 1] : undefined;
+      })
+    );
   }
 
   /**
    * Get all lessons in a course for sidebar display
-   * @param courseId The course ID
-   * @returns Observable of LessonMetadata array
+   * Uses mock data service as primary source
    */
-  getCourseLessons(courseId: string): Observable<LessonMetadata[]> {
-    const mockLessons = this.getMockLessonsList(courseId);
-    return of(mockLessons);
+  getCourseLessons(courseId: Id): Observable<LessonMetadata[]> {
+    return this.mockDataService.getCourseLessonsMetadata(String(courseId)).pipe(
+      catchError(() => {
+        return this.lessonsService.getByCourseId(courseId).pipe(
+          map(lessons => {
+            const withOrder = lessons as (LessonReadDto & { order?: number })[];
+            const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            return sortedLessons.map(lesson => this.mapLessonDtoToMetadata(lesson));
+          }),
+          catchError(() => of(this.getMockLessonsList(String(courseId))))
+        );
+      })
+    );
   }
 
   /**
-   * Mark lesson as saved
-   * @param lessonId The lesson ID
-   * @returns Observable of success status
+   * Mark lesson as saved / update progress
    */
-  saveLessonProgress(lessonId: string): Observable<boolean> {
-    // API call to save progress
-    console.log(`Saving lesson progress for: ${lessonId}`);
+  saveLessonProgress(lessonId: Id, completed: boolean = false): Observable<boolean> {
+    return this.lessonsService.saveProgress(lessonId, { completed }).pipe(
+      map(() => true),
+      catchError(error => {
+        console.error('Error saving lesson progress:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * Submit lesson feedback
+   */
+  submitLessonFeedback(lessonId: Id, rating: number, feedback?: string): Observable<boolean> {
+    console.log(`Submitting feedback for lesson ${lessonId}:`, { rating, feedback });
     return of(true);
   }
 
   /**
-   * Mock data generators for development/testing
+   * Get user notes for a lesson
+   */
+  getLessonNotes(lessonId: Id): Observable<Array<{ timestamp: string; text: string }>> {
+    return this.lessonsService.getNotes(lessonId).pipe(
+      map(notes => notes.map(note => ({
+        timestamp: note.timestamp,
+        text: note.text
+      }))),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Add a note to a lesson
+   */
+  addLessonNote(lessonId: Id, note: string, timestamp: string): Observable<{ timestamp: string; text: string }> {
+    return this.lessonsService.addNote(lessonId, { timestamp, text: note }).pipe(
+      map(createdNote => ({
+        timestamp: createdNote.timestamp,
+        text: createdNote.text
+      })),
+      catchError(error => {
+        console.error('Error adding note:', error);
+        return of({ timestamp, text: note });
+      })
+    );
+  }
+
+  /**
+   * Map LessonReadDto to LessonData
+   */
+  private mapLessonDtoToLessonData(lessonDto: LessonReadDto & { order?: number }): LessonData {
+    const content = this.mapLessonDtoToContent(lessonDto);
+    const metadata = this.mapLessonDtoToMetadata(lessonDto);
+
+    return {
+      content,
+      metadata,
+      nextLesson: undefined,
+      previousLesson: undefined
+    };
+  }
+
+  /**
+   * Map LessonReadDto to LessonContent based on type
+   */
+  private mapLessonDtoToContent(lessonDto: LessonReadDto & { order?: number }): LessonContent {
+    const lessonType = (lessonDto as { type?: number }).type as LessonType;
+
+    switch (lessonType) {
+      case LessonType.Video:
+        return {
+          id: String(lessonDto.id ?? ''),
+          type: LessonType.Video,
+          title: lessonDto.title ?? '',
+          description: (lessonDto as { description?: string }).description || '',
+          videoUrl: lessonDto.externalVideoUrl || lessonDto.videoUrl || '',
+          thumbnailUrl: lessonDto.thumbnailUrl ?? undefined,
+          duration: '0:00',
+          transcript: ''
+        } as VideoLessonContent;
+
+      case LessonType.Audio:
+        return {
+          id: String(lessonDto.id ?? ''),
+          type: LessonType.Audio,
+          title: lessonDto.title ?? '',
+          description: (lessonDto as { description?: string }).description || '',
+          audioUrl: lessonDto.videoUrl || lessonDto.externalVideoUrl || '',
+          duration: '0:00',
+          transcript: ''
+        } as AudioLessonContent;
+
+      case LessonType.Article:
+      case LessonType.Document:
+        return {
+          id: String(lessonDto.id ?? ''),
+          type: LessonType.Article,
+          title: lessonDto.title ?? '',
+          description: (lessonDto as { description?: string }).description || '',
+          sections: [],
+          language: 'English'
+        } as ArticleLessonContent;
+
+      default:
+        return {
+          id: String(lessonDto.id ?? ''),
+          type: 'intro',
+          title: lessonDto.title ?? '',
+          description: (lessonDto as { description?: string }).description || '',
+          courseOverview: '',
+          objectives: [],
+          duration: '0:00'
+        } as IntroLessonContent;
+    }
+  }
+
+  /**
+   * Map LessonReadDto to LessonMetadata
+   */
+  private mapLessonDtoToMetadata(lessonDto: LessonReadDto & { order?: number }): LessonMetadata {
+    return {
+      id: String(lessonDto.id ?? ''),
+      courseId: String(lessonDto.courseId ?? ''),
+      title: lessonDto.title ?? '',
+      type: ((lessonDto as { type?: number }).type as LessonType) || LessonType.Video,
+      status: 'pending',
+      duration: '0:00',
+      order: lessonDto.order ?? 0,
+      hasFeedback: false
+    };
+  }
+
+  /**
+   * Mock data generators for fallback when API fails
    */
   private getMockLessonData(lessonId: string): LessonData {
     const mockContent = this.getMockLessonContent(lessonId);
@@ -124,8 +289,9 @@ export class LessonContentService {
   }
 
   private getMockLessonContent(lessonId: string): LessonContent {
-    // Return different content types based on lessonId
-    if (lessonId.includes('video')) {
+    if (lessonId.includes('lesson-1') || lessonId.includes('intro')) {
+      return this.createMockIntroContent(lessonId);
+    } else if (lessonId.includes('video')) {
       return this.createMockVideoContent(lessonId);
     } else if (lessonId.includes('audio')) {
       return this.createMockAudioContent(lessonId);
@@ -229,6 +395,23 @@ export class LessonContentService {
     };
   }
 
+  private createMockIntroContent(lessonId: string): IntroLessonContent {
+    return {
+      id: lessonId,
+      type: 'intro',
+      title: 'Course Introduction',
+      description: 'Welcome to this comprehensive course on Islamic teachings.',
+      courseOverview: 'This course is designed to provide you with a solid foundation in Islamic teachings and practices.',
+      objectives: [
+        'Understand the fundamental principles of Islamic faith',
+        'Learn the proper way to perform prayer (Salah)',
+        'Gain knowledge about the five pillars of Islam'
+      ],
+      duration: '5 min',
+      thumbnailUrl: 'https://api.builder.io/api/v1/image/assets/TEMP/98e741733a4ff78c0a93a200a7ab2b126de36fb0?width=400'
+    };
+  }
+
   private createMockAudioContent(lessonId: string): AudioLessonContent {
     return {
       id: lessonId,
@@ -237,9 +420,7 @@ export class LessonContentService {
       description: 'Audio lesson on prayer techniques and practices.',
       audioUrl: 'https://example.com/audio/lesson-audio.mp3',
       duration: '5:10',
-      transcript: `According to the Hanafi Madhhab, there are several actions that break wudu (ablution), and it's important for every Muslim to know them to maintain purity before prayer. The first and most common nullifier is anything that exits from the front or back private parts, such as urine, stool, or wind. This is agreed upon by all scholars and clearly stated in Hanafi references such as SeekersGuidance – "Could You Please List All the Nullifiers of Ablution According to the Hanafi School."
-
-Another act that breaks wudu is flowing blood or pus that leaves the surface of the skin. If blood merely appears but doesn't flow, wudu remains valid. This ruling is supported by IslamQA and SeekersGuidance under the section "Why Does Bleeding Break One's Wudu According to the Hanafi School." Similarly, vomiting a mouthful or more invalidates wudu, while small amounts do not. This is mentioned in Questions on Islam and IslamQA's discussion on nullifiers of wudu.`,
+      transcript: 'According to the Hanafi Madhhab, there are several actions that break wudu...',
       language: 'English',
       subtitles: 'English, Arabic'
     };
@@ -253,12 +434,8 @@ Another act that breaks wudu is flowing blood or pus that leaves the surface of 
       description: 'Comprehensive guide to understanding prayer in Islam.',
       sections: [
         {
-          header: 'Header',
-          content: 'According to the Hanafi Madhhab, there are several actions that break wudu (ablution), and it\'s important for every Muslim to know them to maintain purity before prayer. The first and most common nullifier is anything that exits from the front or back private parts, such as urine, stool, or wind. This is agreed upon by all scholars and clearly stated in Hanafi references such as SeekersGuidance – "Could You Please List All the Nullifiers of Ablution According to the Hanafi School."\n\nAnother act that breaks wudu is flowing blood or pus that leaves the surface of the skin. If blood merely appears but doesn\'t flow, wudu remains valid. This ruling is supported by IslamQA and SeekersGuidance under the section "Why Does Bleeding Break One\'s Wudu According to the Hanafi School." Similarly, vomiting a mouthful or more invalidates wudu, while small amounts do not. This is mentioned in Questions on Islam and IslamQA\'s discussion on nullifiers of wudu.'
-        },
-        {
-          header: 'Header',
-          content: 'According to the Hanafi Madhhab, there are several actions that break wudu (ablution), and it\'s important for every Muslim to know them to maintain purity before prayer. The first and most common nullifier is anything that exits from the front or back private parts, such as urine, stool, or wind. This is agreed upon by all scholars and clearly stated in Hanafi references such as SeekersGuidance – "Could You Please List All the Nullifiers of Ablution According to the Hanafi School."\n\nAnother act that breaks wudu is flowing blood or pus that leaves the surface of the skin. If blood merely appears but doesn\'t flow, wudu remains valid. This ruling is supported by IslamQA and SeekersGuidance under the section "Why Does Bleeding Break One\'s Wudu According to the Hanafi School." Similarly, vomiting a mouthful or more invalidates wudu, while small amounts do not. This is mentioned in Questions on Islam and IslamQA\'s discussion on nullifiers of wudu.'
+          header: 'Introduction',
+          content: 'According to the Hanafi Madhhab, there are several actions that break wudu...'
         }
       ],
       language: 'English',

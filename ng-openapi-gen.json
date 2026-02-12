@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
+  "input": "https://ask-a-muslim.runasp.net/swagger/v1/swagger.json",
+  "output": "src/app/core/api/generated",
+  "ignoreUnusedModels": false,
+  "modelIndex": true,
+  "serviceIndex": true,
+  "enumWithValues": false,
+  "dateFormat": "string"
+}

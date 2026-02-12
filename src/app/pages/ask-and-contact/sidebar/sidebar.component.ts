@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { MenuItem } from '../models';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
+  styleUrls: ['./sidebar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
@@ -21,12 +21,12 @@ export class SidebarComponent {
       href: '/ask-and-contact/ask-qa',
       icon: '/icons/icons-24/found.svg',
     },
-    {
-      key: 'ask-assistant',
-      label: 'Ask Assistant',
-      href: '/ask-and-contact/ask-assistant',
-      icon: '/icons/icons-24/ai-talk.svg',
-    },
+    // {
+    //   key: 'ask-assistant',
+    //   label: 'Ask Assistant',
+    //   href: '/ask-and-contact/ask-assistant',
+    //   icon: '/icons/icons-24/ai-talk.svg',
+    // },
     {
       key: 'meet-scholar',
       label: 'Meet Scholar',

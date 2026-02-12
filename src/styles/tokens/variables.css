@@ -8,54 +8,161 @@
 :root {
   /* Start Colors--------------------- */
 
-  /* Main Color and Surface */
-  --color-surface-primary: #e8f5e8;
-  --color-selected-surface: #156b401a;
-  --special-primary: #156b40;
-  --special-primary-hovering: #115c36;
-  --special-primary-clicked: #0c4e2d;
-  --special-primary-6: rgba(21, 107, 64, 0.06);
-  --special-primary-10: rgba(21, 107, 64, 0.1);
+  /* ============================================ */
+  /* BUTTON COLORS - Based on Figma Design Tokens */
+  /* ============================================ */
 
-  /* Secondary Color and Surface */
-  --special-secondary: #cda736;
-  --special-secondary-6: #cda7360f;
-  --special-secondary-10: #cda7361a;
-  --color-surface-secondary: #f8f9fa;
-  --color-surface-secondary-hover: #fdf9ee;
-  --color-selected-surface-secondary: #ecc1401a;
-  --color-surface-secondary-2: #e9ecef;
+  /* Buttons/Primary */
+  --color-button-primary-normal: #156b40;
+  --color-button-primary-hovering: #115c36;
+  --color-button-primary-clicked: #0c4e2d;
+  --color-button-primary-disabled: #ced4da;
+  --color-button-primary-soft: rgba(21, 107, 64, 0.06);
+  --color-button-primary-soft-10: rgba(21, 107, 64, 0.1);
+  --color-button-primary-soft-30: rgba(21, 107, 64, 0.3);
 
-  /* Text Colors */
+  /* Buttons/Secondary */
+  --color-button-secondary-normal: #ecc140;
+  --color-button-secondary-hovering: #cda736;
+  --color-button-secondary-clicked: #af8f2d;
+  --color-button-secondary-soft: rgba(236, 193, 64, 0.06);
+  --color-button-secondary-soft-10: rgba(236, 193, 64, 0.1);
+
+  /* Buttons/Neutral */
+  --color-button-neutral-normal: #e9ecef;
+  --color-button-neutral-hovering: #dee2e6;
+  --color-button-neutral-clicked: #ced4da;
+
+  /* ============================================ */
+  /* BACKGROUNDS - Based on Figma Design Tokens */
+  /* ============================================ */
+  --color-background-base: #ffffff;
+  --color-background-base-surface: #f8f9fa;
+
+  /* ============================================ */
+  /* CARDS - Based on Figma Design Tokens */
+  /* ============================================ */
+  --color-card-main: #ffffff;
+  --color-card-surface-1: #f8f9fa;
+  --color-card-surface-primary: #e8f5e8;
+  --color-card-surface-secondary: #fdf9ee;
+  --color-card-surface-secondary-2: #e9ecef;
+
+  /* ============================================ */
+  /* TEXT & ICONS - Placeholder for future expansion */
+  /* ============================================ */
+  --color-text-title: #010d05;
   --color-text-body: #343a40;
   --color-text-caption: #6c757d;
-  --color-text-base: #2196f3;
   --color-text-placeholder: #adb5bd;
-  --color-text-title: #010d05;
   --color-text-info: #2196f3;
 
-  /* Border Colors */
+  /* ============================================ */
+  /* CHIPS - Based on Figma Design Tokens */
+  /* ============================================ */
+  --color-chips-label-surface-primary: #e8f5e8;
+  --color-chips-label-surface-secondary: #fdf9ee;
+  --color-chips-data-1: #156b40;
+  --color-chips-data-2: #ecc140;
+  --color-chips-selected-data-surface: rgba(236, 193, 64, 0.06);
+  --color-chips-selected-data-surface-hover: rgba(236, 193, 64, 0.1);
+
+  /* ============================================ */
+  /* BORDER - Based on Figma Design Tokens */
+  /* ============================================ */
+
+  /* Border/Normal */
+  --color-border-normal-low: #e9ecef;
+  --color-border-normal-medium: #adb5bd;
+  --color-border-normal-high: #010d05;
+
+  /* Border/Brand */
+  --color-border-brand-low: #bbd1c2;
+  --color-border-brand-medium: #8fb39b;
+  --color-border-brand-high: #156b40;
+  --color-border-brand-low-2: #fbf3de;
+  --color-border-brand-medium-2: #f6e1aa;
+  --color-border-brand-high-2: #ecc140;
+
+  /* ============================================ */
+  /* SEMANTIC COLORS - Based on Figma Design Tokens */
+  /* ============================================ */
+
+  /* Success */
+  --color-semantic-success-light: #e8f5e8;
+  --color-semantic-success-base: #4caf50;
+  --color-semantic-success-dark: #1b5e20;
+
+  /* Critical/Error */
+  --color-semantic-critical-light: #ffebee;
+  --color-semantic-critical-base: #f44336;
+  --color-semantic-critical-dark: #b71c1c;
+
+  /* Warning */
+  --color-semantic-warning-light: #fff3e0;
+  --color-semantic-warning-base: #ff9800;
+  --color-semantic-warning-dark: #e65100;
+
+  /* Info */
+  --color-semantic-info-light: #e3f2fd;
+  --color-semantic-info-base: #2196f3;
+  --color-semantic-info-dark: #0d47a1;
+
+  /* ============================================ */
+  /* SHADOW DROP COLORS - Based on Figma Design Tokens */
+  /* ============================================ */
+  --color-shadow-drop-light: #6c757d;
+  --color-shadow-drop-medium: #495057;
+  --color-shadow-drop-dark: #343a40;
+
+  /* ============================================ */
+  /* LEGACY/DEPRECATED ALIASES - For backward compatibility */
+  /* These will be removed in a future version */
+  /* ============================================ */
+
+  /* Primary Colors (Deprecated - use color-button-primary-* instead) */
+  --special-primary: var(--color-button-primary-normal);
+  --special-primary-hovering: var(--color-button-primary-hovering);
+  --special-primary-clicked: var(--color-button-primary-clicked);
+  --special-primary-6: var(--color-button-primary-soft);
+  --special-primary-10: var(--color-button-primary-soft-10);
+  --special-primary-30: var(--color-button-primary-soft-30);
+
+  /* Secondary Colors (Deprecated - use color-button-secondary-* instead) */
+  --special-secondary: var(--color-button-secondary-normal);
+  --special-secondary-6: var(--color-button-secondary-soft);
+  --special-secondary-10: var(--color-button-secondary-soft-10);
+
+  /* Surface Colors (Deprecated - use color-card-* instead) */
+  --color-surface-primary: var(--color-card-surface-primary);
+  --color-surface-secondary: var(--color-card-surface-secondary);
+  --color-surface-secondary-2: var(--color-card-surface-secondary-2);
+  --color-selected-surface: rgba(21, 107, 64, 0.1);
+  --color-selected-surface-secondary: rgba(236, 193, 64, 0.1);
+  --color-surface-secondary-hover: var(--color-card-surface-secondary);
+
+  /* Background Colors (Deprecated - use color-background-* instead) */
+  --color-background-white: var(--color-background-base);
+  --color-background-light: #f9fafb;
+  --color-background-surface: var(--color-background-base-surface);
+
+  /* Border Colors (Deprecated - use color-border-* instead) */
   --color-border-default: #d1d5db;
   --color-border-light: #e5e7eb;
   --color-border-hover: #9ca3af;
-  --color-border-medium: #adb5bd;
-  --color-border-brand-medium: #f6e1aa;
-  --color-border-low: #bbd1c2;
+  --color-border-medium: var(--color-border-normal-medium);
+  --color-border-brand-medium: var(--color-border-brand-medium-2);
+  --color-border-low: var(--color-border-brand-low);
 
-  /* Background Colors */
-  --color-background-white: #ffffff;
-  --color-background-light: #f9fafb;
-  --color-background-surface: #f8f9fa;
-
-  /* State Colors */
+  /* State Colors (Deprecated - use color-semantic-* instead) */
   --color-error: #ef4444;
   --color-error-light: rgba(239, 68, 68, 0.02);
   --color-error-bg: #fef2f2;
-  --color-critical: #b71c1c;
+  --color-critical: var(--color-semantic-critical-dark);
   --color-success: #10b981;
   --color-success-light: rgba(16, 185, 129, 0.1);
-  --color-success-base: #4caf50;
-  --warning: #ff9800;
+  --color-success-base: var(--color-semantic-success-base);
+  --warning: var(--color-semantic-warning-base);
 
   /* Opacity Values */
   --opacity-disabled: 0.5;
@@ -73,10 +180,6 @@
   --auth-right-bg: rgba(255, 255, 255, 0.85);
   --auth-logo-shadow: rgba(21, 107, 64, 0.1);
   --auth-stat-bg: rgba(255, 255, 255, 0.6);
-
-  /* Chips Colors */
-  --chips-data-2: #ecc140;
-  --chips-selected-data-surface: rgba(236, 193, 64, 0.06);
 
   /* Gender Colors */
   --gender-male: #009edb;

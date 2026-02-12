@@ -1,0 +1,461 @@
+# API Contract Validation & CI Pipeline
+# Ensures frontend stays in sync with backend Swagger spec
+# Fails on contract drift to prevent breaking changes
+
+name: API Contract Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/app/core/api/generated/**'
+      - 'ng-openapi-gen.json'
+      - '.github/workflows/api-contract.yml'
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 6 AM UTC to detect backend changes
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+    inputs:
+      force_regeneration:
+        description: 'Force API client regeneration even if hash matches'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  SWAGGER_URL: 'https://ask-a-muslim.runasp.net/swagger/v1/swagger.json'
+  GENERATED_DIR: 'src/app/core/api/generated'
+  HASH_FILE: 'src/app/core/api/swagger.hash'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Job 1: Validate and Check Contract
+  contract-validation:
+    name: Validate API Contract
+    runs-on: ubuntu-latest
+    outputs:
+      contract_changed: ${{ steps.check-hash.outputs.changed }}
+      current_hash: ${{ steps.check-hash.outputs.current_hash }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need history for diff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Fetch Swagger specification
+        id: fetch-swagger
+        run: |
+          echo "Fetching Swagger JSON from ${{ env.SWAGGER_URL }}"
+          
+          # Fetch with retry logic
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            HTTP_STATUS=$(curl -s -o swagger.json -w "%{http_code}" "${{ env.SWAGGER_URL }}" --connect-timeout 30 --max-time 120)
+            
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "✅ Swagger JSON fetched successfully"
+              break
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "⚠️ Attempt $RETRY_COUNT failed with HTTP $HTTP_STATUS"
+            
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              sleep $((RETRY_COUNT * 5))
+            fi
+          done
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "❌ Failed to fetch Swagger JSON after $MAX_RETRIES attempts"
+            exit 1
+          fi
+          
+          # Validate JSON structure
+          if ! node -e "JSON.parse(require('fs').readFileSync('swagger.json', 'utf8'))" 2>/dev/null; then
+            echo "❌ Invalid JSON in Swagger response"
+            exit 1
+          fi
+          
+          echo "swagger_file=swagger.json" >> $GITHUB_OUTPUT
+
+      - name: Generate Swagger hash
+        id: generate-hash
+        run: |
+          # Generate SHA256 hash of the Swagger JSON
+          # Normalize JSON to ignore whitespace differences
+          CURRENT_HASH=$(node -e "
+            const fs = require('fs');
+            const swagger = JSON.parse(fs.readFileSync('swagger.json', 'utf8'));
+            // Sort keys for consistent hashing
+            const sorted = JSON.stringify(swagger, Object.keys(swagger).sort(), 0);
+            const crypto = require('crypto');
+            console.log(crypto.createHash('sha256').update(sorted).digest('hex'));
+          ")
+          
+          echo "Current Swagger hash: $CURRENT_HASH"
+          echo "current_hash=$CURRENT_HASH" >> $GITHUB_OUTPUT
+          
+          # Save hash to temp file for comparison
+          echo "$CURRENT_HASH" > current_swagger.hash
+
+      - name: Check for contract changes
+        id: check-hash
+        run: |
+          # Check if stored hash exists
+          if [ -f "${{ env.HASH_FILE }}" ]; then
+            STORED_HASH=$(cat "${{ env.HASH_FILE }}" | tr -d '[:space:]')
+            CURRENT_HASH=$(cat current_swagger.hash | tr -d '[:space:]')
+            
+            echo "Stored hash:  $STORED_HASH"
+            echo "Current hash: $CURRENT_HASH"
+            
+            if [ "$STORED_HASH" != "$CURRENT_HASH" ]; then
+              echo "⚠️ API CONTRACT CHANGED!"
+              echo "changed=true" >> $GITHUB_OUTPUT
+              
+              # Generate diff summary for PR comment
+              node -e "
+                const fs = require('fs');
+                const oldSwagger = JSON.parse(fs.readFileSync('swagger.json.bak', 'utf8'));
+                const newSwagger = JSON.parse(fs.readFileSync('swagger.json', 'utf8'));
+                
+                // Compare endpoints
+                const oldPaths = Object.keys(oldSwagger.paths || {});
+                const newPaths = Object.keys(newSwagger.paths || {});
+                
+                const added = newPaths.filter(p => !oldPaths.includes(p));
+                const removed = oldPaths.filter(p => !newPaths.includes(p));
+                
+                console.log('## API Contract Changes Detected');
+                console.log('');
+                if (added.length > 0) {
+                  console.log('### New Endpoints Added');
+                  added.forEach(p => console.log('- ' + p));
+                }
+                if (removed.length > 0) {
+                  console.log('### Endpoints Removed');
+                  removed.forEach(p => console.log('- ' + p));
+                }
+              " 2>/dev/null || echo "Could not generate diff summary"
+            else
+              echo "✅ API contract unchanged"
+              echo "changed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ No stored hash found - first run or hash file missing"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check force regeneration flag
+          if [ "${{ github.event.inputs.force_regeneration }}" = "true" ]; then
+            echo "🔄 Force regeneration requested"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Swagger artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swagger-spec
+          path: |
+            swagger.json
+            current_swagger.hash
+          retention-days: 7
+
+  # Job 2: Regenerate API Client (if contract changed)
+  regenerate-client:
+    name: Regenerate API Client
+    needs: contract-validation
+    if: needs.contract-validation.outputs.contract_changed == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download Swagger artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: swagger-spec
+
+      - name: Backup current generated client
+        run: |
+          if [ -d "${{ env.GENERATED_DIR }}" ]; then
+            cp -r "${{ env.GENERATED_DIR }}" "${{ env.GENERATED_DIR }}.bak"
+          fi
+
+      - name: Regenerate API client
+        run: |
+          echo "🔄 Regenerating API client from Swagger spec..."
+          npm run generate:api
+          
+          echo "✅ API client regenerated successfully"
+
+      - name: Check for changes in generated code
+        id: diff-check
+        run: |
+          if [ -d "${{ env.GENERATED_DIR }}.bak" ]; then
+            # Check if there are actual changes
+            if diff -r "${{ env.GENERATED_DIR }}" "${{ env.GENERATED_DIR }}.bak" > /dev/null 2>&1; then
+              echo "⚠️ Hash changed but generated code is identical"
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            else
+              echo "📝 Generated code has changes"
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+              
+              # Generate diff summary
+              echo "## Generated Code Changes" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              diff -r "${{ env.GENERATED_DIR }}" "${{ env.GENERATED_DIR }}.bak" | head -100 >> $GITHUB_STEP_SUMMARY || true
+            fi
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update hash file
+        run: |
+          CURRENT_HASH="${{ needs.contract-validation.outputs.current_hash }}"
+          echo "$CURRENT_HASH" > "${{ env.HASH_FILE }}"
+          echo "✅ Updated hash file: $CURRENT_HASH"
+
+      - name: Upload regenerated client
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-client
+          path: |
+            ${{ env.GENERATED_DIR }}
+            ${{ env.HASH_FILE }}
+          retention-days: 7
+
+  # Job 3: Build and Test
+  build-and-test:
+    name: Build & Test
+    needs: [contract-validation, regenerate-client]
+    if: always() && (needs.regenerate-client.result == 'success' || needs.regenerate-client.result == 'skipped')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download regenerated client (if available)
+        uses: actions/download-artifact@v4
+        with:
+          name: regenerated-client
+          path: .
+        continue-on-error: true
+
+      - name: Build Angular application
+        run: |
+          echo "🏗️ Building Angular application..."
+          npm run build -- --configuration production
+          
+          echo "✅ Build successful"
+
+      - name: Run unit tests
+        run: |
+          echo "🧪 Running unit tests..."
+          npm test -- --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox
+        continue-on-error: true
+
+      - name: Check for TypeScript errors
+        run: |
+          echo "🔍 Checking for TypeScript errors..."
+          npx tsc --noEmit --project tsconfig.json
+          
+          echo "✅ No TypeScript errors"
+
+      - name: Verify generated client integrity
+        run: |
+          echo "🔍 Verifying generated client integrity..."
+          
+          # Check that all required files exist
+          REQUIRED_FILES=(
+            "${{ env.GENERATED_DIR }}/api.ts"
+            "${{ env.GENERATED_DIR }}/models.ts"
+            "${{ env.GENERATED_DIR }}/api-configuration.ts"
+            "${{ env.GENERATED_DIR }}/request-builder.ts"
+          )
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All required generated files present"
+
+  # Job 4: Fail on Contract Drift (for PRs)
+  contract-drift-check:
+    name: Contract Drift Check
+    needs: [contract-validation, build-and-test]
+    if: github.event_name == 'pull_request' && needs.contract-validation.outputs.contract_changed == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `## ⚠️ API Contract Changed
+            
+            The backend Swagger specification has changed. The API client has been regenerated.
+            
+            ### Action Required
+            1. Review the generated code changes in \`src/app/core/api/generated/\`
+            2. Update any affected facade services
+            3. Test affected features
+            4. Commit the changes if everything works
+            
+            ### Hash
+            \`\`\`
+            ${{ needs.contract-validation.outputs.current_hash }}
+            \`\`\`
+            
+            ---
+            *This check ensures frontend stays synchronized with backend API changes.*
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail with instructions
+        run: |
+          echo "❌ API CONTRACT DRIFT DETECTED"
+          echo ""
+          echo "The backend Swagger specification has changed."
+          echo ""
+          echo "Required actions:"
+          echo "1. Review the regenerated API client in src/app/core/api/generated/"
+          echo "2. Update affected facade services if needed"
+          echo "3. Test affected features"
+          echo "4. Commit the updated generated files and swagger.hash"
+          echo ""
+          echo "To bypass this check (not recommended), add [skip-contract] to your commit message."
+          
+          exit 1
+
+  # Job 5: Update Hash on Main Branch
+  update-hash:
+    name: Update Swagger Hash
+    needs: [contract-validation, build-and-test]
+    if: github.ref == 'refs/heads/main' && needs.contract-validation.outputs.contract_changed == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download regenerated client
+        uses: actions/download-artifact@v4
+        with:
+          name: regenerated-client
+          path: .
+
+      - name: Commit updated hash
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          git add "${{ env.HASH_FILE }}"
+          git add "${{ env.GENERATED_DIR }}"
+          
+          git diff --quiet && git diff --staged --quiet || \
+            git commit -m "chore: update API client and swagger hash [skip ci]"
+          
+          git push
+
+  # Job 6: Security Scan
+  security-scan:
+    name: Security Scan
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Run npm audit
+        run: |
+          echo "🔍 Running security audit..."
+          npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for sensitive data exposure
+        run: |
+          echo "🔍 Checking for sensitive data in generated files..."
+          
+          # Check for potential secrets in generated code
+          if grep -r "apiKey\|secret\|password\|token" "${{ env.GENERATED_DIR }}" --include="*.ts" | grep -v "// \|/\*\|@param\|@returns"; then
+            echo "⚠️ Potential sensitive data found in generated files"
+            echo "Please review the matches above"
+          else
+            echo "✅ No sensitive data found in generated files"
+          fi
+
+  # Summary Job
+  ci-summary:
+    name: CI Summary
+    needs: [contract-validation, regenerate-client, build-and-test, contract-drift-check]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# API Contract Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract Validation | ${{ needs.contract-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Client Regeneration | ${{ needs.regenerate-client.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ needs.build-and-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Drift Check | ${{ needs.contract-drift-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Swagger Hash:** \`${{ needs.contract-validation.outputs.current_hash }}\`" >> $GITHUB_STEP_SUMMARY

@@ -1,29 +1,36 @@
-import { CommonModule, NgFor, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
 import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
 import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
 import { PaginationComponent } from '../../../shared/reusable-components/pagination/pagination.component';
+import { QasService } from '../../../core/services/qas.service';
 
 @Component({
   selector: 'app-ask-qa',
   standalone: true,
   imports: [
     CommonModule,
-    NgIf,
-    NgFor,
     FormsModule,
     QaCardComponent,
     QuestionSearchResultComponent,
-    PaginationComponent,
-  ],
+    PaginationComponent
+],
   templateUrl: './ask-qa.component.html',
-  styleUrl: './ask-qa.component.scss',
+  styleUrls: ['./ask-qa.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AskQaComponent {
+export class AskQaComponent implements OnInit {
+  private static readonly fallbackQuestionCount = 0;
+  private static readonly fallbackIdPrefix = 'Q-';
+  private static readonly fallbackTitle = 'Question';
+  private static readonly fallbackDescription = 'Details will be available soon.';
+  private static readonly fallbackCategory = 'General';
+  private static readonly idOffset = 1;
+
+  private readonly qasService = inject(QasService);
   readonly categories = QA_CATEGORIES;
   selectedCategory = 0;
   currentPage = PAGINATION.DEFAULT_PAGE;
@@ -32,7 +39,7 @@ export class AskQaComponent {
   hasSearched = false;
   searchResults: QuestionCard[] = [];
 
-  readonly questions: QuestionCard[] = [
+  questions: QuestionCard[] = [
     {
       categories: ['Prayer & Worship'],
       id: 'Q-1453',
@@ -120,7 +127,10 @@ export class AskQaComponent {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
-  ) {
+  ) { }
+
+  ngOnInit(): void {
+    this.loadQuestions();
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
@@ -196,5 +206,70 @@ export class AskQaComponent {
       question.description.toLowerCase().includes(normalizedQuery) ||
       question.categories.some((category) => category.toLowerCase().includes(normalizedQuery))
     );
+  }
+
+  private loadQuestions(): void {
+    this.qasService.getAll().subscribe({
+      next: (response) => {
+        const mapped = this.mapQuestions(response);
+        if (mapped.length > 0) {
+          this.questions = mapped;
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => this.cdr.markForCheck(),
+    });
+  }
+
+  private mapQuestions(response: unknown): QuestionCard[] {
+    const records = this.extractArray(response);
+    return records.map((item, index) => this.mapQuestion(item, index));
+  }
+
+  private mapQuestion(item: unknown, index: number): QuestionCard {
+    const record = this.asRecord(item);
+    const title = this.asString(record?.['title']) ?? AskQaComponent.fallbackTitle;
+    const description =
+      this.asString(record?.['description']) ?? AskQaComponent.fallbackDescription;
+    const categories = this.asStringArray(record?.['categories']);
+    const id =
+      this.asString(record?.['id']) ??
+      `${AskQaComponent.fallbackIdPrefix}${index + AskQaComponent.idOffset}`;
+    const sameQuestions = this.asNumber(record?.['sameQuestions']) ??
+      AskQaComponent.fallbackQuestionCount;
+
+    return {
+      id,
+      title,
+      description,
+      categories: categories.length > 0 ? categories : [AskQaComponent.fallbackCategory],
+      sameQuestions,
+    };
+  }
+
+  private extractArray(response: unknown): readonly unknown[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+    const record = this.asRecord(response);
+    const data = record?.['data'] ?? record?.['items'] ?? record?.['results'];
+    return Array.isArray(data) ? data : [];
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+  }
+
+  private asString(value: unknown): string | null {
+    return typeof value === 'string' && value.trim().length > 0 ? value : null;
+  }
+
+  private asStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+  }
+
+  private asNumber(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 }

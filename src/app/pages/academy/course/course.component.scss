@@ -1,0 +1,303 @@
+/* =============================================
+   Course Page Styles - Figma Design Match
+   ============================================= */
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+  text-align: center;
+
+  a {
+    color: var(--color-button-primary-normal);
+    text-decoration: underline;
+    font-weight: 500;
+  }
+}
+
+.course-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.details-card {
+  padding: 1.5rem;
+  background: var(--colors-rare-grays-0, #fff);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.08);
+  border: 0.5px solid var(--colors-rare-grays-20, #e9ecef);
+
+  @media (min-width: 640px) {
+    padding: 2rem;
+  }
+}
+
+.course-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--colors-rare-grays-100, #1a1a1a);
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+
+  @media (min-width: 640px) {
+    font-size: 1.5rem;
+  }
+}
+
+.course-section {
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--colors-rare-grays-100, #1a1a1a);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+
+  @media (min-width: 640px) {
+    font-size: 1.25rem;
+  }
+}
+
+.section-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--colors-rare-grays-80, #343a40);
+}
+
+// ─── Action Buttons ───
+.course-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.locked-state {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--color-card-surface-primary, #e8f5e8);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(33, 150, 243, 0.2);
+}
+
+.hint-icon {
+  flex-shrink: 0;
+}
+
+.hint-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--colors-rare-grays-80, #343a40);
+  margin: 0;
+}
+
+.unlocked-state {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    justify-content: stretch;
+  }
+}
+
+.btn {
+  height: 3.5rem;
+  padding: 0 2rem;
+  border-radius: var(--border-radius-default, 0.5rem);
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition:
+    background 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
+  font-family: inherit;
+  min-width: 140px;
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.btn-primary {
+  background: var(--colors-green-100, #156b40);
+  color: #fff;
+  border: none;
+
+  &:hover {
+    background: var(--colors-green-200, #0c4e2d);
+    box-shadow: 0 4px 12px rgba(21, 107, 64, 0.25);
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--colors-rare-grays-20, #e9ecef);
+  color: var(--colors-rare-grays-80, #343a40);
+
+  &:hover {
+    background: var(--colors-rare-grays-10, #f8f9fa);
+    border-color: var(--colors-rare-grays-50, #adb5bd);
+  }
+}
+
+.btn-disabled {
+  background: var(--colors-rare-grays-20, #e9ecef);
+  color: var(--colors-rare-grays-50, #adb5bd);
+  border: none;
+  cursor: not-allowed;
+}
+
+// ─── Sidebar Styles ───
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (min-width: 1024px) {
+    width: 320px;
+    flex-shrink: 0;
+  }
+}
+
+.course-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8f9fa;
+
+  .course-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .stage-label {
+      color: #adb5bd;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 21px;
+      letter-spacing: 0;
+    }
+
+    .sidebar-title {
+      margin: 0;
+      color: #1a1a1a;
+      font-family: 'Poppins', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 18px;
+      letter-spacing: 0;
+      text-transform: capitalize;
+    }
+  }
+
+  .divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 4px 0;
+  }
+
+  .course-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .stat-item {
+      margin: 0;
+      color: #6c757d;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 21px;
+      letter-spacing: 0;
+    }
+  }
+}
+
+// ─── Sidebar Lessons List ───
+.lessons-list {
+  padding: 0;
+
+  .lesson-item {
+    padding: 0.75rem 1rem;
+    border-radius: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition:
+      background 0.2s,
+      border-left 0.2s;
+    border-left: 3px solid transparent;
+
+    &:hover {
+      background: var(--colors-rare-grays-10, #f8f9fa);
+    }
+
+    &.lesson-selected {
+      background: var(--colors-orange-10, #fff8e1);
+      border-left-color: var(--colors-orange-100, #ff9800);
+    }
+
+    &.lesson-completed {
+      opacity: 0.7;
+
+      .lesson-title {
+        text-decoration: line-through;
+        color: var(--colors-rare-grays-50, #adb5bd);
+      }
+    }
+
+    &.lesson-locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .lesson-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .lesson-title {
+      font-size: 0.938rem;
+      font-weight: 500;
+      color: var(--colors-rare-grays-80, #343a40);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .lesson-duration {
+      font-size: 0.813rem;
+      color: var(--colors-rare-grays-60, #6c757d);
+    }
+  }
+}

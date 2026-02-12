@@ -18,7 +18,7 @@ interface LanguageOption {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './review-step.component.html',
-  styleUrl: './review-step.component.scss',
+  styleUrls: ['./review-step.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviewStepComponent {

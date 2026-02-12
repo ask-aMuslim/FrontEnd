@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -36,15 +36,14 @@ interface TimeOption {
   selector: 'app-meet-scholar',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     StepperComponent,
     RequestStepComponent,
     DatetimeStepComponent,
-    ReviewStepComponent,
-  ],
+    ReviewStepComponent
+],
   templateUrl: './meet-scholar.component.html',
-  styleUrl: './meet-scholar.component.scss',
+  styleUrls: ['./meet-scholar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MeetScholarComponent {

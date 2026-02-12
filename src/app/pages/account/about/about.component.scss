@@ -1,6 +1,191 @@
-// About Component Styles with Simple CSS Effects
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
 
-// Fade-in animation for sections
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.about-section__content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.about-section__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-medium);
+  position: relative;
+
+  @media (min-width: 640px) {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.about-section__title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--color-text-title);
+  position: relative;
+
+  @media (min-width: 640px) {
+    font-size: 1.25rem;
+  }
+}
+
+.about-section__title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-button-primary-normal), transparent);
+  transition: width 0.3s ease-in-out;
+}
+
+.about-section__header:hover .about-section__title::after {
+  width: 100%;
+}
+
+.about-section__edit {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+
+  :deep(path) {
+    stroke: var(--color-text-body);
+  }
+}
+
+.about-section__edit:hover {
+  transform: rotate(15deg) scale(1.1);
+}
+
+.about-section__edit:active {
+  transform: rotate(15deg) scale(0.95);
+}
+
+.about-section__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.about-section__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition:
+    background 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+}
+
+.about-section__field:hover {
+  background: rgba(0, 0, 0, 0.02);
+  transform: translateX(4px);
+}
+
+.about-section__label {
+  font-size: 0.875rem;
+  color: var(--color-text-placeholder);
+}
+
+.about-section__value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-body);
+  transition: color 0.2s ease-in-out;
+}
+
+.about-section__value:hover {
+  color: var(--color-button-primary-normal);
+}
+
+.about-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.about-actions__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border-medium);
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.about-actions__row + .about-actions__row {
+  border-top: none;
+}
+
+.about-actions__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.about-actions__icon {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(svg) {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.about-actions__text {
+  font-size: 0.875rem;
+  color: var(--color-text-body);
+
+  @media (min-width: 640px) {
+    font-size: 1rem;
+  }
+}
+
+.about-actions__logout {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: var(--color-critical);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+
+  @media (min-width: 640px) {
+    width: 10rem;
+  }
+}
+
+.about-actions__logout:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -10,135 +195,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-// Section hover effect
-.space-y-4 {
-  transition: all 0.3s ease-in-out;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
-
-// Header with animated underline
-h2 {
-  position: relative;
-  transition: color 0.2s ease-in-out;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--color-primary), transparent);
-    transition: width 0.3s ease-in-out;
-  }
-
-  &:hover::after {
-    width: 100%;
-  }
-}
-
-// Edit Icon Hover Effect
-[inlineSVG] {
-  transition: all 0.2s ease-in-out;
-
-  &:hover {
-    transform: rotate(15deg) scale(1.1);
-  }
-
-  &:active {
-    transform: rotate(15deg) scale(0.95);
-  }
-}
-
-// Field Groups Animation
-.flex.flex-col.gap-2 {
-  transition: all 0.2s ease-in-out;
-  padding: 8px;
-  border-radius: 8px;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-    transform: translateX(4px);
-  }
-}
-
-// Text color transition on hover
-p.text-base {
-  position: relative;
-  transition: color 0.2s ease-in-out;
-
-  &:hover {
-    color: var(--color-primary);
-  }
-}
-
-// Button Ripple Effect
-button {
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-
-  &:active::before {
-    width: 300px;
-    height: 300px;
-  }
-}
-
-// Shimmer effect on borders
-.border-b {
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-border-medium), transparent);
-    animation: shimmer 3s infinite;
-  }
-}
-
-@keyframes shimmer {
-
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-// Card-like section styling
-.space-y-4>div {
-  transition: box-shadow 0.3s ease-in-out;
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 }

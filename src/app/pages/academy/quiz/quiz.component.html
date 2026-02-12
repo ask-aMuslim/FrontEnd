@@ -1,0 +1,1033 @@
+<!-- Quiz Component -->
+<section>
+  <div class="section-block section-block--wide">
+    <div class="quiz-container">
+      @switch (quizState()) {
+        <!-- Intro State -->
+        @case ('intro') {
+          <app-academy-page-shell
+            variant="quiz"
+            [bannerImageUrl]="bannerImageUrl"
+            bannerAlt="Quiz background"
+            [breadcrumbs]="breadcrumbs"
+            [currentBreadcrumb]="currentBreadcrumb"
+          >
+            <div academy-page-main>
+              <main class="main-content">
+                <div class="quiz-intro-card">
+                  <h1 class="quiz-intro-title">Quiz</h1>
+                  <p class="quiz-intro-description">
+                    The following quiz consists of {{ quizConfig.totalQuestions }} questions, and
+                    you should answer each question in less than
+                    {{ quizConfig.timePerQuestion / 60 }} minutes. you should answer at least
+                    {{ quizConfig.passingScore }} questions right to success.
+                  </p>
+                  <p class="quiz-ready-message">Are you ready to pass this course?</p>
+                </div>
+                <div class="quiz-intro-actions">
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-previous"
+                    (click)="goToPreviousLesson()"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M16 4L8 12L16 20"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    Previous Lesson
+                  </button>
+                  <button type="button" class="btn btn-primary btn-start" (click)="startQuiz()">
+                    Start the Quiz
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M8 20L16 12L8 4"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </main>
+            </div>
+
+            <div academy-page-sidebar>
+              <aside class="sidebar" aria-label="Course lessons">
+                <div class="course-info-card">
+                  <div class="course-header">
+                    <span class="stage-label">Stage 1</span>
+                    <h3 class="sidebar-title">Course A2: Prayer (Salah)</h3>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="course-stats">
+                    <p class="stat-item">Lesson: 5/5</p>
+                    <p class="stat-item">Duration: 4h 10m</p>
+                  </div>
+                </div>
+
+                <div class="lessons-list">
+                  @for (lesson of lessons(); track trackByLessonId($index, lesson)) {
+                    @if (lesson.type === 'quiz') {
+                      <div class="lessons-separator">
+                        <div class="separator-line"></div>
+                        <span class="separator-text">Ready?</span>
+                        <div class="separator-line"></div>
+                      </div>
+                    }
+                    <div
+                      class="lesson-item"
+                      [class.completed]="lesson.isCompleted"
+                      [class.current]="lesson.isCurrent"
+                    >
+                      <div class="lesson-icon">
+                        @if (lesson.isCompleted) {
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        } @else if (lesson.type === 'quiz') {
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M14.6659 12H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M14.6659 8.44336H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        }
+                      </div>
+                      <div class="lesson-info">
+                        <div class="lesson-title">{{ lesson.title }}</div>
+                        <div class="lesson-duration">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                              d="M3.7998 14H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M3.7998 2H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ lesson.duration }}</span>
+                        </div>
+                      </div>
+                      @if (lesson.hasNotification) {
+                        <div class="notification-dot"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              </aside>
+            </div>
+          </app-academy-page-shell>
+        }
+
+        <!-- In Progress State -->
+        @case ('in-progress') {
+          <app-academy-page-shell
+            variant="quiz"
+            layoutMode="quiz-progress"
+            sidebarPosition="left"
+            [isSidebarCollapsed]="isSidebarCollapsed()"
+            [bannerImageUrl]="bannerImageUrl"
+            bannerAlt="Quiz background"
+            [breadcrumbs]="breadcrumbs"
+            [currentBreadcrumb]="currentBreadcrumb"
+          >
+            <div academy-page-sidebar>
+              <aside
+                class="questions-sidebar"
+                [class.collapsed]="isSidebarCollapsed()"
+                aria-label="Quiz questions"
+              >
+                <button
+                  type="button"
+                  class="sidebar-toggle-btn"
+                  [class.is-collapsed]="isSidebarCollapsed()"
+                  (click)="toggleSidebar()"
+                  aria-label="Toggle sidebar"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M9 18L15 12L9 6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <div class="timer-container">
+                  <svg class="timer-svg" viewBox="0 0 240 240">
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r="105"
+                      fill="none"
+                      stroke="#E9ECEF"
+                      stroke-width="10"
+                      transform="rotate(-135 120 120)"
+                    />
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r="105"
+                      fill="none"
+                      stroke="#CDA736"
+                      stroke-width="10"
+                      stroke-dasharray="660"
+                      [attr.stroke-dashoffset]="660 - (660 * timerProgress()) / 100"
+                      stroke-linecap="round"
+                      transform="rotate(-135 120 120)"
+                      class="timer-progress"
+                    />
+                  </svg>
+                  <div class="timer-content">
+                    <div class="timer-value">{{ formattedTime() }}</div>
+                    <div class="timer-label">Time Remaining</div>
+                  </div>
+                </div>
+
+                <div class="questions-list">
+                  @for (
+                    question of questions();
+                    track trackByQuestionId($index, question);
+                    let i = $index
+                  ) {
+                    <button
+                      type="button"
+                      class="question-item"
+                      [class.correct]="getAnswerStatus(i) === 'correct'"
+                      [class.wrong]="getAnswerStatus(i) === 'wrong'"
+                      [class.current]="getAnswerStatus(i) === 'current'"
+                      [class.pending]="getAnswerStatus(i) === 'pending'"
+                      (click)="goToQuestion(i)"
+                    >
+                      <span class="question-number">Question {{ i + 1 }}</span>
+                      @if (getAnswerStatus(i) === 'correct') {
+                        <svg
+                          class="status-icon"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M11.6504 21C16.621 21 20.6504 16.9706 20.6504 12C20.6504 7.02944 16.621 3 11.6504 3C6.67983 3 2.65039 7.02944 2.65039 12C2.65039 16.9706 6.67983 21 11.6504 21Z"
+                            stroke="#4CAF50"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M8.9502 11.9992L10.7502 13.7992L14.3502 10.1992"
+                            stroke="#4CAF50"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      } @else if (getAnswerStatus(i) === 'wrong') {
+                        <svg
+                          class="status-icon"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
+                            stroke="#F44336"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M14.6998 9.30078L9.2998 14.7008"
+                            stroke="#F44336"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M9.2998 9.30078L14.6998 14.7008"
+                            stroke="#F44336"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      }
+                    </button>
+                  }
+                </div>
+              </aside>
+            </div>
+
+            <div academy-page-main>
+              <div class="quiz-main">
+                @if (currentQuestion()) {
+                  <div class="question-container">
+                    <h2 class="question-text">
+                      Q{{ currentQuestion()!.questionNumber }}.
+                      {{ currentQuestion()!.questionText }}
+                    </h2>
+                    <div class="options-list">
+                      @for (
+                        option of currentQuestion()!.options;
+                        track trackByOptionId($index, option)
+                      ) {
+                        <button
+                          type="button"
+                          class="option-item"
+                          [class.selected]="selectedOptionId() === option.id"
+                          (click)="selectOption(option.id)"
+                        >
+                          <span class="option-label">{{ option.label }}</span>
+                          <span class="option-text">{{ option.text }}</span>
+                        </button>
+                      }
+                    </div>
+                    <div class="question-actions">
+                      <button type="button" class="btn-skip" (click)="skipQuestion()">Skip</button>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        [disabled]="!selectedOptionId()"
+                        (click)="confirmAnswer()"
+                      >
+                        {{ isLastQuestion() ? 'Confirm, View Result' : 'Confirm, Next' }}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M8 20L16 12L8 4"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    @if (currentQuestion()!.hint) {
+                      <button type="button" class="hint-toggle" (click)="toggleHint()">
+                        <span class="hint-icon">💡</span>
+                        <span>Show Hint...</span>
+                        <svg
+                          class="chevron-icon"
+                          [class.rotated]="showHint()"
+                          width="40"
+                          height="40"
+                          viewBox="0 0 40 40"
+                          fill="none"
+                        >
+                          <circle cx="20" cy="20" r="20" fill="#E8F5E8" />
+                          <path
+                            d="M14 18L20 24L26 18"
+                            stroke="#010D05"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                      @if (showHint()) {
+                        <div class="hint-content">
+                          <p>{{ currentQuestion()!.hint }}</p>
+                          @if (currentQuestion()!.evidenceSource) {
+                            <p class="hint-source">
+                              Go to
+                              <a
+                                [href]="'https://' + currentQuestion()!.evidenceSource"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                >{{ currentQuestion()!.evidenceSource }}</a
+                              >
+                            </p>
+                          }
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </app-academy-page-shell>
+        }
+
+        <!-- Review State -->
+        @case ('review') {
+          <app-academy-page-shell
+            variant="quiz"
+            [bannerImageUrl]="bannerImageUrl"
+            bannerAlt="Quiz background"
+            [breadcrumbs]="breadcrumbs"
+            [currentBreadcrumb]="currentBreadcrumb"
+            [showBanner]="false"
+          >
+            <div academy-page-main>
+              <div class="quiz-main">
+                <div class="quiz-review">
+                  <h1 class="review-title">Quiz Review</h1>
+                  @if (hasPassed()) {
+                    <div class="review-success-banner">
+                      <div class="success-score">
+                        <span class="score-value">{{ scorePercentage() }}%</span>
+                      </div>
+                      <div class="success-message">
+                        <p class="message-main">
+                          Great Job! You have answered {{ correctAnswersCount() }} questions out of
+                          {{ questions().length }} in {{ formattedCompletionTime() }} and passed the
+                          quiz.
+                        </p>
+                        <p class="message-sub">
+                          Review you answers and get ready for the next course.
+                        </p>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="review-fail-banner">
+                      <div class="fail-score">
+                        <span class="score-value">{{ scorePercentage() }}%</span>
+                      </div>
+                      <div class="fail-message">
+                        <p class="message-main">
+                          You've answered {{ correctAnswersCount() }} questions out of
+                          {{ questions().length }} correctly. You need at least
+                          {{ quizConfig.passingScore }} correct answers to pass.
+                        </p>
+                        <p class="message-sub">Review your answers and try again!</p>
+                      </div>
+                    </div>
+                  }
+                  <div class="review-divider"></div>
+                  <div class="questions-review">
+                    @for (question of questions(); track trackByQuestionId($index, question)) {
+                      @let answer = answers()[$index];
+                      <div class="review-question-block">
+                        <h3 class="question-title">
+                          Q{{ question.questionNumber }}. {{ question.questionText }}
+                        </h3>
+                        <div class="answer-options">
+                          @for (option of question.options; track trackByOptionId($index, option)) {
+                            @if (option.id === question.correctOptionId) {
+                              <div class="answer-card answer-correct">
+                                <div class="answer-icon">
+                                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                                    <circle cx="20" cy="20" r="20" fill="#4CAF50" />
+                                    <path
+                                      d="M14 20L18 24L26 16"
+                                      stroke="white"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                    />
+                                  </svg>
+                                </div>
+                                <div class="answer-content">
+                                  <span class="answer-label">Answer</span>
+                                  @if (question.evidenceSource) {
+                                    <a
+                                      class="answer-hint"
+                                      [href]="'https://' + question.evidenceSource"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      >Go to {{ question.evidenceSource }}</a
+                                    >
+                                  }
+                                </div>
+                              </div>
+                            }
+                            @if (
+                              !answer.isCorrect &&
+                              !answer.isSkipped &&
+                              answer.selectedOptionId === option.id
+                            ) {
+                              <div class="answer-card answer-wrong">
+                                <div class="answer-icon">
+                                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                                    <circle cx="20" cy="20" r="20" fill="#F44336" />
+                                    <path
+                                      d="M25 15L15 25M15 15L25 25"
+                                      stroke="white"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                    />
+                                  </svg>
+                                </div>
+                                <div class="answer-content">
+                                  <span class="answer-label">Answer</span>
+                                </div>
+                              </div>
+                            }
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  <div class="review-actions">
+                    <button type="button" class="btn btn-outline" (click)="goToPreviousLesson()">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M16 4L8 12L16 20"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                      Previous Lesson
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      (click)="hasPassed() ? completeQuiz() : retakeQuiz()"
+                    >
+                      {{ hasPassed() ? 'Pass' : 'Retake Quiz' }}
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M8 20L16 12L8 4"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div academy-page-sidebar>
+              <aside class="course-sidebar" aria-label="Course lessons">
+                <div class="sidebar-header">
+                  <div class="stage-label">Stage {{ courseInfo().stage }}</div>
+                  <h2 class="course-title">
+                    Course {{ courseInfo().code }}: {{ courseInfo().title }}
+                  </h2>
+                </div>
+                <div class="sidebar-divider"></div>
+                <div class="course-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Lesson:</span
+                    ><span class="stat-value"
+                      >{{ courseInfo().currentLesson }}/{{ courseInfo().totalLessons }}</span
+                    >
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Duration:</span
+                    ><span class="stat-value">{{ courseInfo().duration }}</span>
+                  </div>
+                </div>
+                <div class="lessons-list">
+                  @for (lesson of lessons(); track trackByLessonId($index, lesson)) {
+                    <div
+                      class="lesson-item"
+                      [class.completed]="lesson.isCompleted"
+                      [class.current]="lesson.isCurrent"
+                    >
+                      <div class="lesson-icon">
+                        @if (lesson.isCompleted) {
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        } @else if (lesson.type === 'quiz') {
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M14.6659 12H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M14.6659 8.44336H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        }
+                      </div>
+                      <div class="lesson-info">
+                        <div class="lesson-title">{{ lesson.title }}</div>
+                        <div class="lesson-duration">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                              d="M3.7998 14H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M3.7998 2H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ lesson.duration }}</span>
+                        </div>
+                      </div>
+                      @if (lesson.hasNotification) {
+                        <div class="notification-dot"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              </aside>
+            </div>
+          </app-academy-page-shell>
+        }
+
+        <!-- Results State -->
+        @case ('results') {
+          <app-academy-page-shell
+            variant="quiz"
+            [bannerImageUrl]="bannerImageUrl"
+            bannerAlt="Quiz background"
+            [breadcrumbs]="breadcrumbs"
+            [currentBreadcrumb]="currentBreadcrumb"
+          >
+            <div academy-page-main>
+              <div class="quiz-main">
+                <div class="results-view">
+                  <!-- Quiz Review Header -->
+                  <div class="results-header">
+                    <h1 class="results-title">Quiz Review</h1>
+                    <div class="results-score-info">
+                      <div class="score-badge" [class.passed]="hasPassed()">
+                        <span class="score-percentage">{{ scorePercentage() }}%</span>
+                      </div>
+                      <div class="score-message">
+                        @if (hasPassed()) {
+                          <p class="message-text">
+                            Great Job! You have answered {{ correctAnswersCount() }} questions out
+                            of {{ quizConfig.totalQuestions }} in {{ formattedTime() }} and passed
+                            the quiz.<br />
+                            Review you answers and get ready for the next course.
+                          </p>
+                        } @else {
+                          <p class="message-text">
+                            You have answered {{ correctAnswersCount() }} questions out of
+                            {{ quizConfig.totalQuestions }} in {{ formattedTime() }}, and that's a
+                            big step.<br />
+                            Review you answers and you can restart your quiz again at anytime.
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Questions Review -->
+                  <div class="results-questions">
+                    @for (answer of answers(); let idx = $index; track idx) {
+                      <div
+                        class="review-question-item"
+                        [class.correct]="answer.isCorrect"
+                        [class.incorrect]="!answer.isCorrect"
+                      >
+                        <h3 class="review-question-title">
+                          Q{{ idx + 1 }}. {{ questions()[idx].questionText }}
+                        </h3>
+                        <div class="review-answers">
+                          @for (option of questions()[idx].options; track option.id) {
+                            <!-- Show user's incorrect answer if they got it wrong -->
+                            @if (answer.selectedOptionId === option.id && !answer.isCorrect) {
+                              <div class="review-answer-card wrong">
+                                <div class="answer-label-badge wrong">
+                                  {{ option.label }}
+                                </div>
+                                <div class="answer-text-container">
+                                  <p class="answer-text wrong">{{ option.text }}</p>
+                                </div>
+                              </div>
+                            }
+
+                            <!-- Always show correct answer -->
+                            @if (option.id === questions()[idx].correctOptionId) {
+                              <div class="review-answer-card correct">
+                                <div class="answer-label-badge correct">
+                                  {{ option.label }}
+                                </div>
+                                <div class="answer-text-container">
+                                  <p class="answer-text correct">{{ option.text }}</p>
+                                </div>
+                              </div>
+                            }
+                          }
+                        </div>
+                        @if (questions()[idx].hint) {
+                          <p class="answer-hint">💡 {{ questions()[idx].hint }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="results-actions">
+                    <button type="button" class="btn btn-outline" (click)="goToPreviousLesson()">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M16 4L8 12L16 20"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                      Previous Lesson
+                    </button>
+                    @if (hasPassed()) {
+                      <button type="button" class="btn btn-primary" (click)="goToNextCourse()">
+                        Next Course
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M8 20L16 12L8 4"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="retakeQuizFromResults()"
+                      >
+                        Retake Quiz
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M8 20L16 12L8 4"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div academy-page-sidebar>
+              <aside class="course-sidebar" aria-label="Course lessons">
+                <div class="sidebar-header">
+                  <div class="stage-label">Stage {{ courseInfo().stage }}</div>
+                  <h2 class="course-title">
+                    Course {{ courseInfo().code }}: {{ courseInfo().title }}
+                  </h2>
+                </div>
+                <div class="sidebar-divider"></div>
+                <div class="course-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Lesson:</span
+                    ><span class="stat-value"
+                      >{{ courseInfo().currentLesson }}/{{ courseInfo().totalLessons }}</span
+                    >
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Duration:</span
+                    ><span class="stat-value">{{ courseInfo().duration }}</span>
+                  </div>
+                </div>
+                <div class="lessons-list">
+                  @for (lesson of lessons(); track trackByLessonId($index, lesson)) {
+                    <div
+                      class="lesson-item"
+                      [class.completed]="lesson.isCompleted"
+                      [class.current]="lesson.isCurrent"
+                    >
+                      <div class="lesson-icon">
+                        @if (lesson.isCompleted) {
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        } @else if (lesson.type === 'quiz') {
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M14.6659 12H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M14.6659 8.44336H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        }
+                      </div>
+                      <div class="lesson-info">
+                        <div class="lesson-title">{{ lesson.title }}</div>
+                        <div class="lesson-duration">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                              d="M3.7998 14H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M3.7998 2H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ lesson.duration }}</span>
+                        </div>
+                      </div>
+                      @if (lesson.hasNotification) {
+                        <div class="notification-dot"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              </aside>
+            </div>
+          </app-academy-page-shell>
+        }
+
+        <!-- Completed/Congrats State -->
+        @case ('completed') {
+          <div class="congrats-page">
+            <div class="congrats-banner">
+              <div class="congrats-icon">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="40" fill="#E8F5E8" />
+                  <path
+                    d="M24 40L34 50L56 28"
+                    stroke="#4CAF50"
+                    stroke-width="4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <h1 class="congrats-title">Congratulations!</h1>
+              <p class="congrats-subtitle">
+                You have successfully passed the quiz with a score of
+                <strong>{{ scorePercentage() }}%</strong>
+              </p>
+              <p class="congrats-detail">
+                You answered {{ correctAnswersCount() }} out of {{ questions().length }} questions
+                correctly in {{ formattedCompletionTime() }}.
+              </p>
+            </div>
+
+            <div class="congrats-score-circle">
+              <svg viewBox="0 0 120 120" width="120" height="120">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#E9ECEF" stroke-width="8" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  fill="none"
+                  stroke="#4CAF50"
+                  stroke-width="8"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="2 * 3.14159 * 52"
+                  [attr.stroke-dashoffset]="2 * 3.14159 * 52 * (1 - scorePercentage() / 100)"
+                  transform="rotate(-90 60 60)"
+                />
+              </svg>
+              <span class="score-number">{{ scorePercentage() }}%</span>
+            </div>
+
+            <div class="congrats-feedback">
+              <h2 class="feedback-title">Share your feedback</h2>
+              <textarea
+                class="feedback-textarea"
+                placeholder="Tell us about your experience with this course..."
+                [value]="userFeedback()"
+                (input)="updateFeedback($any($event.target).value)"
+                rows="4"
+              ></textarea>
+            </div>
+
+            <div class="congrats-actions">
+              <button
+                type="button"
+                class="btn btn-outline"
+                (click)="submitFeedback(); goToPreviousLesson()"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M16 4L8 12L16 20"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Back to Course
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary btn-next-course"
+                (click)="submitFeedback(); goToNextCourse()"
+              >
+                <span class="btn-text">Next Course: {{ nextCourseName() }}</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M8 20L16 12L8 4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</section>

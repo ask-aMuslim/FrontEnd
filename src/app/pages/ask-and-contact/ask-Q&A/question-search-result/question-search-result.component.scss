@@ -39,17 +39,20 @@
   height: 2.5rem;
   padding: 0 1rem;
   border-radius: 0.75rem;
-  border: 1.5px solid var(--special-primary);
+  border: 1.5px solid var(--color-button-primary-normal);
   background: transparent;
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .clear-btn:hover {
-  background-color: var(--special-primary);
-  border-color: var(--special-primary);
+  background-color: var(--color-button-primary-normal);
+  border-color: var(--color-button-primary-normal);
   color: var(--colors-rare-grays-0, #fff);
 }
 
@@ -96,11 +99,14 @@
   color: var(--color-text-title);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .browse-btn:hover {
-  border-color: var(--special-primary);
-  color: var(--special-primary);
-  background-color: var(--color-surface-secondary, #f6f7fb);
+  border-color: var(--color-button-primary-normal);
+  color: var(--color-button-primary-normal);
+  background-color: var(--color-card-surface-secondary);
 }

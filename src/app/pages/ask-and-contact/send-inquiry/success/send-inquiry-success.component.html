@@ -19,14 +19,20 @@
   </div>
 
   <div
-    class="bg-(--color-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 lg:p-6 space-y-3 md:space-y-6"
-  >
+    class="bg-(--color-card-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 lg:p-6 space-y-3 md:space-y-6"
+    >
     <h2 class="text-lg md:text-xl font-medium text-(--color-text-title)">Subject:</h2>
 
-    <div *ngIf="hasDetails()" class="space-y-2">
-      <p class="text-sm text-(--color-text-title)" *ngIf="message">{{ message }}</p>
-      <p class="text-sm text-(--color-text-body)" *ngIf="details">{{ details }}</p>
-    </div>
+    @if (hasDetails()) {
+      <div class="space-y-2">
+        @if (message) {
+          <p class="text-sm text-(--color-text-title)">{{ message }}</p>
+        }
+        @if (details) {
+          <p class="text-sm text-(--color-text-body)">{{ details }}</p>
+        }
+      </div>
+    }
   </div>
 
   <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">

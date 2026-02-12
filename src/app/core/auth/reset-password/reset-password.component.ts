@@ -1,14 +1,14 @@
 import { Component, inject, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule],
   templateUrl: './reset-password.component.html',
-  styleUrl: './reset-password.component.scss',
+  styleUrls: ['./reset-password.component.scss'],
 })
 export class ResetPasswordComponent implements OnDestroy {
   private fb = inject(FormBuilder);
@@ -29,7 +29,7 @@ export class ResetPasswordComponent implements OnDestroy {
   protected otpDigits: string[] = ['', '', '', '', '', ''];
   protected otpTimer = 60;
   protected canResendOtp = false;
-  private timerInterval?: number;
+  private timerInterval?: ReturnType<typeof setInterval>;
   protected userEmail = '';
 
   constructor() {
@@ -190,7 +190,7 @@ export class ResetPasswordComponent implements OnDestroy {
       clearInterval(this.timerInterval);
     }
 
-    this.timerInterval = window.setInterval(() => {
+    this.timerInterval = globalThis.setInterval(() => {
       this.otpTimer--;
       if (this.otpTimer <= 0) {
         this.canResendOtp = true;

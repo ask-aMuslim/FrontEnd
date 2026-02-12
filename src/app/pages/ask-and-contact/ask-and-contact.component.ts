@@ -9,7 +9,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent],
   templateUrl: './ask-and-contact.component.html',
-  styleUrl: './ask-and-contact.component.scss',
+  styleUrls: ['./ask-and-contact.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AskAndContactComponent {
@@ -27,8 +27,8 @@ export class AskAndContactComponent {
     startWith(this.router.url.includes('/ask-and-contact/ask-qa/question')),
   );
 
-  navigateToRoadmap(): void {
-    void this.router.navigate(['/roadmap']);
+  navigateToAcademy(): void {
+    void this.router.navigate(['/academy']);
   }
 
   navigateToSendInquiry(): void {

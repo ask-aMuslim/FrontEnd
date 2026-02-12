@@ -1,7 +1,21 @@
 {
-    "builder.serverUrl": "http://localhost:6569",
+    "builder.serverUrl": "",
     "builder.command": "npm run start",
     "builder.runDevServer": false,
     "builder.autoDetectDevServer": true,
-    "builder.launchType": "editor"
+    "builder.launchType": "editor",
+    "chat.tools.terminal.autoReplyToPrompts": true,
+    "chat.mcp.serverSampling": {
+        "AskAMuslim/.vscode/mcp.json: TalkToFigma": {
+            "allowedModels": [
+                "copilot/auto",
+                "copilot/claude-opus-4.5",
+                "copilot/claude-opus-4.6",
+                "copilot/claude-sonnet-4.5",
+                "copilot/gemini-3-pro-preview",
+                "copilot/gpt-5.1-codex-max",
+                "copilot/gpt-5.2-codex"
+            ]
+        }
+    }
 }

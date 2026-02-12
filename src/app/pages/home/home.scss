@@ -3,6 +3,7 @@
 :host {
   display: block;
   --divider-width: 16px;
+  --polygon-side: 228px;
 }
 
 .home-page {
@@ -45,10 +46,10 @@
   gap: 1.75rem;
 }
 
-.hero-content>.inline-flex {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(21, 107, 64, 0.15);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+.hero-content > .inline-flex {
+  background: transparent;
+  border: 1px solid var(--color-button-primary-soft-10);
+  box-shadow: none;
 }
 
 .hint {
@@ -67,26 +68,26 @@
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 700;
   line-height: 1.15;
-  color: #1a1a1a;
+  color: var(--color-text-title);
   text-transform: capitalize;
   letter-spacing: -0.02em;
 }
 
 .hero-title span {
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
 }
 
 .hero-subcopy {
   max-width: 42rem;
   margin: 0 auto;
-  color: #6b7280;
+  color: var(--color-text-caption);
   font-size: 1rem;
   line-height: 1.6;
 }
 
 .hero-search {
   width: 100%;
-  max-width: 36rem;
+  max-width: 28rem;
   margin: 0 auto;
 }
 
@@ -94,8 +95,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  background: #ffffff;
-  border-radius: 999px;
+  background: var(--color-background-base);
+  border-radius: var(--border-radius-default);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   padding: 0.5rem 0.5rem 0.5rem 3rem;
   border: 1px solid rgba(0, 0, 0, 0.06);
@@ -113,8 +114,6 @@
 .hero-search input::placeholder {
   color: #8a9a92;
 }
-
-
 
 .hero-search .search-icon {
   position: absolute;
@@ -143,17 +142,13 @@
 
 .hero-stat-item strong {
   font-weight: 600;
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
 }
 
 .stat-separator {
   margin: 0 0.25rem;
   color: rgba(74, 90, 81, 0.4);
   font-size: 0.7rem;
-}
-
-.section-block {
-  padding: 0 clamp(1rem, 6vw, 3.5rem);
 }
 
 .section-shell {
@@ -163,7 +158,7 @@
 }
 
 .section-shell--soft {
-  background: var(--color-surface-secondary);
+  background: var(--color-card-surface-secondary);
 }
 
 .section-shell--raised {
@@ -180,14 +175,14 @@
   }
 }
 
-.section-shell--split>.flex {
+.section-shell--split > .flex {
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
 }
 
 @media (min-width: 960px) {
-  .section-shell--split>.flex {
+  .section-shell--split > .flex {
     flex-direction: row;
     gap: 3rem;
   }
@@ -227,7 +222,7 @@
 
 .eyebrow {
   font-size: clamp(1.5rem, 4vw, 2.5rem);
-  color: var(--special-secondary);
+  color: var(--color-button-secondary-normal);
   margin-bottom: 0.75rem;
   font-weight: var(--font-weight-semibold);
 }
@@ -247,7 +242,7 @@
 .feature-card {
   background: #fff;
   border-radius: var(--border-radius-default);
-  border: 1px solid var(--special-primary);
+  border: 1px solid var(--color-button-primary-normal);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -263,8 +258,8 @@
 .feature-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-  background-color: var(--color-selected-surface-secondary);
-  border-color: var(--special-secondary);
+  background-color: var(--color-card-surface-secondary);
+  border-color: var(--color-button-secondary-normal);
 }
 
 .feature-card--disabled {
@@ -276,12 +271,12 @@
   transform: none;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   background-color: #fff;
-  border-color: var(--special-primary);
+  border-color: var(--color-button-primary-normal);
 }
 
 .feature-icon img {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 4rem;
+  height: 4rem;
 }
 
 .feature-copy h3 {
@@ -306,7 +301,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
   font-weight: 600;
   text-decoration: none;
 }
@@ -317,13 +312,13 @@
 }
 
 .feature-soon {
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
   font-weight: 600;
 }
 
 .events-section {
   padding-bottom: clamp(3rem, 7vw, 5rem);
-  background-color: var(--color-surface-secondary);
+  background-color: var(--color-background-base-surface);
 }
 
 .events-grid {
@@ -369,7 +364,7 @@
 
 .event-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  background-color: var(--color-surface-secondary-hover);
+  background-color: var(--color-card-surface-secondary);
 }
 
 .event-image {
@@ -467,6 +462,11 @@
   gap: 0.4rem;
   font-size: 0.7rem;
   font-weight: 500;
+  color: var(--color-text-caption);
+}
+
+.event-date--upcoming {
+  color: var(--color-text-base);
 }
 
 @media (min-width: 768px) {
@@ -508,7 +508,7 @@
   margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--special-primary);
+  color: var(--color-button-primary-normal);
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -570,7 +570,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: var(--special-primary);
+  background: var(--color-button-primary-normal);
   color: #fff;
   font-size: 0.6rem;
   font-weight: 600;
@@ -637,226 +637,1005 @@
 // Islam Section
 
 .islam-section {
-  transform: translateY(7rem);
-  border-bottom: 7rem solid white;
-  border-radius: 7rem 7rem 0 0;
-  border-bottom-right-radius: 7rem;
-  border-bottom-left-radius: 7rem;
+  background-color: #ffffff;
+  padding: clamp(4rem, 8vw, 6rem) 0;
+  position: relative;
+  overflow: hidden;
 
-  .section-shell {
-    padding-bottom: 2rem;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 1464px;
+    background-image: url(/backgrounds/what-is-islam-section-background.png);
+    background-size: contain;
+    background-position: center;
+    background-repeat: repeat;
+    z-index: 0;
+    pointer-events: none;
   }
 }
 
-@media (max-width: 768px) {
-  .islam-section {
-    transform: translateY(4rem);
-    border-bottom: 4rem solid white;
-    border-radius: 4rem 4rem 0 0;
-    border-bottom-right-radius: 4rem;
-    border-bottom-left-radius: 4rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .islam-section {
-    transform: translateY(2.5rem);
-    border-bottom: 2.5rem solid white;
-    border-radius: 2.5rem 2.5rem 0 0;
-    border-bottom-right-radius: 2.5rem;
-    border-bottom-left-radius: 2.5rem;
-  }
-}
-
-.islam-copy {
+.islam-shell {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  justify-content: center;
-  align-items: flex-start;
+  gap: clamp(3rem, 7vw, 4.5rem);
+  padding-top: 0;
+  padding-bottom: 0;
+  position: relative;
+  z-index: 1;
 }
 
-@media (min-width: 960px) {
-  .islam-copy {
-    flex: 0 0 40%;
-    max-width: 40%;
-  }
+.islam-heading {
+  text-align: center;
+  max-width: 52rem;
+  margin: 0 auto;
 }
 
-.islam-copy h2 {
-  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
-  color: black;
-  font-weight: 600;
+.islam-heading h2 {
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  color: var(--color-text-title);
+  font-weight: 700;
   line-height: 1.2;
-  margin: 0;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
 }
 
-.islam-copy p {
-  color: var(--color-text-body);
-  font-size: 1.1rem;
+.islam-heading p {
+  color: var(--color-text-caption);
+  font-size: clamp(0.9375rem, 2vw, 1rem);
   line-height: 1.6;
-  margin: 0.75rem 0;
+  margin: 0;
+  letter-spacing: 0.01em;
 }
 
-.pillars-list {
+// ============================================
+// PILLARS CONTAINER & SHARED STYLES
+// ============================================
+
+.pillars-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0;
+  align-items: center;
+  width: 100%;
+  max-width: 1248px;
+  margin: 0 auto;
 }
 
-@media (min-width: 960px) {
-  .pillars-list {
-    flex: 1;
+.pillars-label {
+  background: var(--color-card-surface-secondary);
+  border-left: 8px solid var(--color-button-primary-normal);
+  border-right: 8px solid var(--color-button-primary-normal);
+  color: var(--color-button-primary-normal);
+  padding: 24px 56px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 20px;
+  text-align: center;
+  letter-spacing: 0;
+  white-space: nowrap;
+  line-height: normal;
+  z-index: 2;
+
+  @media (max-width: 639px) {
+    padding: 16px 32px;
+    font-size: 16px;
   }
 }
 
-.pillar-item {
+// ============================================
+// 6 PILLARS OF IMAN — HEXAGON ARC (opens downward)
+// ============================================
+
+// --- Mobile (< 640px): 2-column grid ---
+.iman-arc {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+
+  .pillar-card {
+    position: relative;
+    width: 140px;
+    height: 140px;
+
+    .hexagon,
+    .pentagon {
+      width: 140px;
+      height: 140px;
+    }
+
+    .pillar-hexagon,
+    .pillar-pentagon {
+      width: 140px;
+      height: 140px;
+    }
+
+    .pillar-card-title {
+      font-size: 14px;
+    }
+
+    .pillar-card-label {
+      font-size: 11px;
+    }
+
+    .pillar-card-number {
+      font-size: 18px;
+    }
+  }
+
+  .iman-label {
+    order: -1;
+    width: 100%;
+    margin-bottom: 8px;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    flex-basis: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+// --- Tablet (768px – 1023px): Arc layout with smaller polygons ---
+@media (min-width: 768px) {
+  .iman-arc {
+    display: block;
+    position: relative;
+    height: 380px;
+
+    .pillar-card {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+
+      .hexagon {
+        width: 140px;
+        height: 140px;
+      }
+
+      .pillar-hexagon {
+        width: 140px;
+        height: 140px;
+      }
+
+      .pillar-card-title {
+        font-size: 15px;
+      }
+
+      .pillar-card-label {
+        font-size: 11px;
+      }
+
+      .pillar-card-number {
+        font-size: 19px;
+      }
+    }
+
+    // Arc positions - symmetric from center (using calc to prevent overlap)
+    .pillar-iman-1 {
+      left: 0;
+      top: 195px;
+    }
+    .pillar-iman-2 {
+      left: 10%;
+      top: 85px;
+    }
+    .pillar-iman-3 {
+      left: calc(50% - 150px);
+      top: 0;
+    }
+    .pillar-iman-4 {
+      right: calc(50% - 150px);
+      left: auto;
+      top: 0;
+    }
+    .pillar-iman-5 {
+      right: 10%;
+      left: auto;
+      top: 85px;
+    }
+    .pillar-iman-6 {
+      right: 0;
+      left: auto;
+      top: 195px;
+    }
+
+    .iman-label {
+      position: absolute;
+      top: 230px;
+      left: 50%;
+      transform: translateX(-50%);
+      order: unset;
+      width: auto;
+      margin-bottom: 0;
+      flex-basis: auto;
+      display: block;
+    }
+  }
+}
+
+// --- Desktop Small (1024px – 1279px): Scaled arc layout ---
+@media (min-width: 1024px) {
+  .iman-arc {
+    height: 440px;
+
+    .pillar-card {
+      width: 190px;
+      height: 190px;
+
+      .hexagon {
+        width: 190px;
+        height: 190px;
+      }
+
+      .pillar-hexagon {
+        width: 190px;
+        height: 190px;
+      }
+
+      .pillar-card-title {
+        font-size: 18px;
+      }
+
+      .pillar-card-label {
+        font-size: 13px;
+      }
+
+      .pillar-card-number {
+        font-size: 22px;
+      }
+    }
+
+    // Scaled positions - symmetric from center (calc for no overlap)
+    .pillar-iman-1 {
+      left: 0;
+      top: 250px;
+    }
+    .pillar-iman-2 {
+      left: 12%;
+      top: 108px;
+    }
+    .pillar-iman-3 {
+      left: calc(50% - 186px);
+      top: -15px;
+    }
+    .pillar-iman-4 {
+      right: calc(50% - 186px);
+      left: auto;
+      top: -15px;
+    }
+    .pillar-iman-5 {
+      right: 12%;
+      left: auto;
+      top: 108px;
+    }
+    .pillar-iman-6 {
+      right: 0;
+      left: auto;
+      top: 250px;
+    }
+
+    .iman-label {
+      top: 295px;
+    }
+  }
+}
+
+// --- Desktop Large (≥ 1280px): Full Figma arc layout ---
+@media (min-width: 1280px) {
+  .iman-arc {
+    height: 524px;
+
+    .pillar-card {
+      width: 228px;
+      height: 228px;
+
+      .hexagon {
+        width: 228px;
+        height: 228px;
+      }
+
+      .pillar-hexagon {
+        width: 228px;
+        height: 228px;
+      }
+
+      .pillar-card-title {
+        font-size: 20px;
+      }
+
+      .pillar-card-label {
+        font-size: 14px;
+      }
+
+      .pillar-card-number {
+        font-size: 24px;
+      }
+    }
+
+    // Exact Figma positions - symmetric from center (calc for no overlap)
+    .pillar-iman-1 {
+      left: 0;
+      top: 296px;
+    }
+    .pillar-iman-2 {
+      left: 13%;
+      top: 128px;
+    }
+    .pillar-iman-3 {
+      left: calc(49% - 222px);
+      top: -25px;
+    }
+    .pillar-iman-4 {
+        right: calc(49% - 222px);
+        left: auto;
+        top: -25px;
+    }
+    .pillar-iman-5 {
+      right: 13%;
+      left: auto;
+      top: 128px;
+    }
+    .pillar-iman-6 {
+      right: 0;
+      left: auto;
+      top: 296px;
+    }
+
+    .iman-label {
+      top: 350px;
+    }
+  }
+}
+
+// ============================================
+// 5 PILLARS OF ISLAM — PENTAGON ARC (opens upward)
+// ============================================
+
+// --- Mobile (< 640px): title + 2-column grid ---
+.islam-arc {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+  margin-top: 4rem;
+  .pillar-card {
+    position: relative;
+    width: 140px;
+    height: 140px;
+
+    .pentagon {
+      width: 140px;
+      height: 140px;
+    }
+
+    .pillar-pentagon {
+      width: 140px;
+      height: 140px;
+    }
+
+    .pillar-card-title {
+      font-size: 14px;
+    }
+
+    .pillar-card-label {
+      font-size: 11px;
+    }
+
+    .pillar-card-number {
+      font-size: 18px;
+    }
+  }
+
+  .islam-label {
+    order: -1;
+    width: 100%;
+    margin-bottom: 8px;
+    flex-basis: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+// --- Tablet (640px – 1023px): Arc layout with smaller polygons ---
+@media (min-width: 640px) {
+  .islam-arc {
+    display: block;
+    position: relative;
+    height: 330px;
+
+    .pillar-card {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+
+      .pentagon {
+        width: 140px;
+        height: 140px;
+      }
+
+      .pillar-pentagon {
+        width: 140px;
+        height: 140px;
+      }
+
+      .pillar-card-title {
+        font-size: 15px;
+      }
+
+      .pillar-card-label {
+        font-size: 11px;
+      }
+
+      .pillar-card-number {
+        font-size: 19px;
+      }
+    }
+
+    // Arc positions - symmetric from center (calc for consistent gaps)
+    .pillar-islam-1 {
+      left: 0;
+      top: 65px;
+    }
+    .pillar-islam-2 {
+      left: calc(25% - 35px);
+      top: 115px;
+    }
+    .pillar-islam-3 {
+      left: 50%;
+      transform: translateX(-50%);
+      top: 165px;
+    }
+    .pillar-islam-4 {
+      right: calc(25% - 35px);
+      left: auto;
+      top: 115px;
+    }
+    .pillar-islam-5 {
+      right: 0;
+      left: auto;
+      top: 65px;
+    }
+
+    .islam-label {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      order: unset;
+      width: auto;
+      margin-bottom: 0;
+      flex-basis: auto;
+      display: block;
+    }
+  }
+}
+
+// --- Desktop Small (1024px – 1279px): Scaled arc layout ---
+@media (min-width: 1024px) {
+  .islam-arc {
+    height: 390px;
+
+    .pillar-card {
+      width: 190px;
+      height: 190px;
+
+      .pentagon {
+        width: 190px;
+        height: 190px;
+      }
+
+      .pillar-pentagon {
+        width: 190px;
+        height: 190px;
+      }
+
+      .pillar-card-title {
+        font-size: 18px;
+      }
+
+      .pillar-card-label {
+        font-size: 13px;
+      }
+
+      .pillar-card-number {
+        font-size: 22px;
+      }
+    }
+
+    // Scaled positions for smaller desktop screens (calc for consistent gaps)
+    .pillar-islam-1 {
+      left: 0;
+      top: 65px;
+    }
+    .pillar-islam-2 {
+      left: calc(25% - 48px);
+      top: 132px;
+    }
+    .pillar-islam-3 {
+      left: 50%;
+      transform: translateX(-50%);
+      top: 200px;
+    }
+    .pillar-islam-4 {
+      right: calc(25% - 48px);
+      left: auto;
+      top: 132px;
+    }
+    .pillar-islam-5 {
+      right: 0;
+      left: auto;
+      top: 65px;
+    }
+
+    .islam-label {
+      top: 0;
+    }
+  }
+}
+
+// --- Desktop Large (≥ 1280px): Full Figma arc layout ---
+@media (min-width: 1280px) {
+  .islam-arc {
+    height: 466px;
+
+    .pillar-card {
+      width: 228px;
+      height: 228px;
+
+      .pentagon {
+        width: 228px;
+        height: 228px;
+      }
+
+      .pillar-pentagon {
+        width: 228px;
+        height: 228px;
+      }
+
+      .pillar-card-title {
+        font-size: 20px;
+      }
+
+      .pillar-card-label {
+        font-size: 14px;
+      }
+
+      .pillar-card-number {
+        font-size: 24px;
+      }
+    }
+
+    // Exact Figma positions - symmetric from center (calc for consistent gaps)
+    .pillar-islam-1 {
+      left: 0;
+      top: 78px;
+    }
+    .pillar-islam-2 {
+      left: calc(25% - 57px);
+      top: 158px;
+    }
+    .pillar-islam-3 {
+      left: 50%;
+      transform: translateX(-50%);
+      top: 238px;
+    }
+    .pillar-islam-4 {
+      right: calc(25% - 57px);
+      left: auto;
+      top: 158px;
+    }
+    .pillar-islam-5 {
+      right: 0;
+      left: auto;
+      top: 78px;
+    }
+
+    .islam-label {
+      top: 0;
+    }
+  }
+}
+
+// ============================================
+// PILLAR CARD — SHARED STYLES & HOVER
+// ============================================
+
+.pillar-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+
+  &:hover {
+    z-index: 9;
+    .pillar-card-number {
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease;
+    }
+
+    .go-for-more {
+      opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease;
+    }
+
+    .hexagon-path,
+    .pentagon-path {
+      fill: var(--color-card-surface-secondary);
+    }
+
+    .hexagon,
+    .pentagon {
+      transform: translateY(-4px);
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+    }
+  }
+}
+
+.pillar-card-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hexagon,
+.pentagon {
+  border-radius: 8px;
+  width: 228px;
+  height: 228px;
+  transition:
+    transform 0.3s ease,
+    filter 0.3s ease;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1rem 1.75rem;
-  background: var(--color-surface-secondary);
-  border-radius: var(--border-radius-default);
-  border-left: 8px solid var(--special-secondary);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  padding-left: 0px;
-}
+  justify-content: center;
 
-.pillar-item:hover {
-  background-color: var(--color-surface-secondary-hover);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transform: translateX(4px);
-}
-
-/* Arc alignment - creates curved layout */
-
-@media (min-width: 960px) {
-  .pillar-item:nth-child(1) {
-    margin-left: 0;
+  .go-for-more {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s ease;
+    svg {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 20;
+    }
   }
 
-  .pillar-item:nth-child(2) {
-    margin-left: 5rem;
-  }
-
-  .pillar-item:nth-child(3) {
-    margin-left: 7.5rem;
-  }
-
-  .pillar-item:nth-child(4) {
-    margin-left: 5rem;
-  }
-
-  .pillar-item:nth-child(5) {
-    margin-left: 0;
+  svg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
   }
 }
 
-@media (min-width: 1200px) {
-  .pillar-item:nth-child(1) {
-    margin-left: 0;
-  }
-
-  .pillar-item:nth-child(2) {
-    margin-left: 6rem;
-  }
-
-  .pillar-item:nth-child(3) {
-    margin-left: 9rem;
-  }
-
-  .pillar-item:nth-child(4) {
-    margin-left: 6rem;
-  }
-
-  .pillar-item:nth-child(5) {
-    margin-left: 0;
-  }
+.pillar-hexagon,
+.pillar-pentagon {
+  width: 228px;
+  height: 228px;
 }
 
-
-
-.pillar-number {
-  padding: 0.2rem 0.4rem 0.2rem 1.2rem;
-  color: var(--special-primary);
-  border-top-right-radius: var(--border-radius-default);
-  border-bottom-right-radius: var(--border-radius-default);
-  background-color: var(--color-selected-surface-secondary);
-  font-weight: 700;
-  font-size: 1rem;
-  min-width: 1rem;
-  transform: translateY(-16px);
+.hexagon-path,
+.pentagon-path {
+  transition: fill 0.3s ease;
 }
 
-.pillar-copy {
-  flex: 1;
-}
-
-.pillar-title {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
-  color: var(--color-text-body);
-}
-
-@media (min-width: 960px) {
-  .pillar-title {
-    font-size: 1.3rem;
-  }
-}
-
-.pillar-first-word {
+.pillar-card-number {
+  color: var(--color-button-secondary-normal);
   font-weight: 600;
-  color: var(--special-primary);
+  font-size: 24px;
+  line-height: normal;
+  letter-spacing: -1px;
+  text-align: center;
+  position: relative;
+  z-index: 11;
+  pointer-events: none;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
 }
 
-.pillar-rest {
+.pillar-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 24px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.pillar-card-label {
+  font-size: 14px;
   color: var(--color-text-body);
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: 0;
 }
 
-.pillar-dash {
-  color: var(--color-text-body);
+.pillar-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-button-primary-normal);
+  line-height: normal;
+  letter-spacing: 0;
 }
 
-.pillar-english {
-  color: var(--color-text-body);
-}
+// About Quran Section
+// ==================== ABOUT QURAN SECTION - EXACT FIGMA ====================
+.about-quran-section {
+  background-color: var(--color-background-base-surface);
+  padding: 96px 0; /* Exact Figma padding */
+  position: relative;
+  overflow-x: hidden; /* Prevent horizontal overflow */
 
-.pillar-description {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-text-caption);
-  line-height: 1.5;
-}
-
-@media (min-width: 960px) {
-  .pillar-description {
-    font-size: 0.95rem;
-    line-height: 1.6;
+  @media (max-width: 768px) {
+    padding: 64px 0;
   }
 }
 
-.pillar-arrow {
-  opacity: 0.4;
-  transition: opacity 0.2s ease;
+.about-quran-shell {
+  max-width: 1248px; /* Exact Figma container width */
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  box-sizing: border-box;
 }
 
-.pillar-item:hover .pillar-arrow {
-  opacity: 0.7;
+.about-quran-heading {
+  text-align: center;
+  margin-bottom: 56px; /* Exact Figma spacing */
+}
+
+.about-quran-heading h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 40px; /* Exact Figma */
+  font-weight: 700;
+  line-height: 48px; /* Exact Figma */
+  letter-spacing: 0;
+  color: var(--color-text-title);
+  margin: 0 0 16px;
+
+  @media (max-width: 768px) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 28px;
+    line-height: 36px;
+  }
+}
+
+.about-quran-heading p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px; /* Exact Figma */
+  font-weight: 400;
+  line-height: 25.6px; /* Exact Figma: 25.600000381469727px */
+  letter-spacing: 0;
+  color: var(--color-text-caption);
+  margin: 0;
+  max-width: 100%;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    line-height: 24px;
+  }
+}
+
+.quran-content {
+  display: grid;
+  grid-template-columns: 596px 596px; /* Exact Figma widths */
+  gap: 56px; /* Exact Figma gap (1248 - 596 - 596 = 56) */
+  margin-bottom: 56px;
+  width: 100%;
+  justify-content: center;
+
+  @media (max-width: 1320px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  @media (max-width: 968px) {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.quran-text-left {
+  width: 100%;
+  max-width: 596px; /* Exact Figma width */
+  box-sizing: border-box;
+
+  span {
+    font-weight: 600;
+  }
+}
+
+.quran-text-left p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px; /* Exact Figma */
+  font-weight: 400;
+  line-height: 28.8px; /* Exact Figma: 28.80000114440918px */
+  letter-spacing: 0;
+  color: var(--color-text-body);
+  margin: 0 0 16px;
+  max-width: 100%;
+  word-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    line-height: 25.6px;
+  }
+}
+
+.quran-text-left p:last-child {
+  margin-bottom: 0;
+}
+
+.quran-quote-box {
+  width: 100%;
+  max-width: 596px;
+  min-height: 303px;
+  background-color: var(--color-card-surface-secondary);
+  border-left: 8px solid var(--color-button-primary-normal);
+  border-right: 8px solid var(--color-button-primary-normal);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-height: 250px;
+    padding: 24px 20px;
+  }
+}
+
+.quran-quote {
+  font-family: 'Poppins', sans-serif;
+  font-size: 32px; /* Exact Figma */
+  font-weight: 500; /* Medium from Figma */
+  line-height: 51.2px; /* Exact Figma: 51.20000076293945px */
+  letter-spacing: 0;
+  color: var(--color-text-body);
+  margin: 0;
+  text-align: left;
+
+  @media (max-width: 768px) {
+    font-size: 28px;
+    line-height: 44.8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 24px;
+    line-height: 38.4px;
+  }
+
+  span {
+    color: var(--color-button-primary-normal);
+  }
+}
+
+.quran-button-container {
+  text-align: center;
+}
+
+.quran-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Space between text and icon */
+  width: 237px; /* Exact Figma width */
+  height: 56px; /* Exact Figma height */
+  padding: 0 20px;
+  background-color: transparent;
+  border: 1px solid var(--color-button-primary-normal); /* Exact Figma border */
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px; /* Exact Figma */
+  font-weight: 600; /* SemiBold */
+  line-height: 27px; /* Exact Figma */
+  letter-spacing: 0;
+  color: var(--color-button-primary-normal);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  white-space: nowrap;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover {
+    background-color: var(--color-button-primary-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--color-button-primary-soft-30);
+
+    svg {
+      transform: translate(4px, -4px);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 280px;
+  }
 }
 
 .advice-section {
   text-align: center;
   padding: clamp(3rem, 6vw, 4rem) clamp(1.5rem, 6vw, 3.5rem);
-  background: var(--special-primary);
+  background: var(--color-button-primary-normal);
   color: #ffffff;
   border-radius: 0;
   margin-top: 0;
+  padding-top: 100px;
+  position: relative;
 }
-
+.rounded-bar {
+  position: absolute;
+  top: 0;
+  background-color: var(--color-background-base-surface);
+  width: 100%;
+  left: 0;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
 .advice-section .eyebrow {
-  color: var(--special-secondary);
+  color: var(--color-button-secondary-normal);
 }
 
 .advice-section .blockquote {
@@ -865,21 +1644,18 @@
   color: white;
   line-height: 1.5;
   font-weight: 600;
+  white-space: pre-line;
 }
-
 
 .advice-section .button-light {
   padding: 0.75rem 4rem;
 }
-
 
 .advice-caption {
   margin: 2rem 0;
   color: var(--color-text-placeholder);
   font-size: 0.8rem;
 }
-
-
 
 .sr-only {
   position: absolute;

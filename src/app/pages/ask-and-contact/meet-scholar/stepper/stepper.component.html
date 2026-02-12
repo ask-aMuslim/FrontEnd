@@ -6,17 +6,17 @@
         <div
           class="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[11px] md:text-sm font-medium transition-colors"
           [class.bg-(--color-selected-surface)]="currentStep() == step.index"
-          [class.text-(--special-primary)]="currentStep() == step.index"
-          [class.bg-(--special-primary)]="currentStep() > step.index"
+          [class.text-(--color-button-primary-normal)]="currentStep() == step.index"
+          [class.bg-(--color-button-primary-normal)]="currentStep() > step.index"
           [class.text-white]="currentStep() > step.index"
-          [class.bg-(--color-surface-secondary)]="currentStep() < step.index"
+          [class.bg-(--color-card-surface-secondary)]="currentStep() < step.index"
           [class.text-(--color-text-body)]="currentStep() < step.index"
         >
           {{ step.index }}
         </div>
         <span
           class="mt-2 text-[11px] md:text-sm font-medium text-center"
-          [class.text-(--special-primary)]="currentStep() >= step.index"
+          [class.text-(--color-button-primary-normal)]="currentStep() >= step.index"
           [class.text-(--color-text-caption)]="currentStep() < step.index"
         >
           {{ step.label }}
@@ -27,8 +27,8 @@
       @if (!isLast) {
         <div
           class="h-1 flex-1 mx-1 md:mx-2 rounded-lg min-w-5"
-          [class.bg-(--special-primary)]="currentStep() > step.index"
-          [class.bg-(--color-surface-secondary-2)]="currentStep() <= step.index"
+          [class.bg-(--color-button-primary-normal)]="currentStep() > step.index"
+          [class.bg-(--color-card-surface-secondary-2)]="currentStep() <= step.index"
         ></div>
       }
     }

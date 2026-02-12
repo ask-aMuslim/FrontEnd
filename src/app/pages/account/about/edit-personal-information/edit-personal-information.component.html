@@ -1,26 +1,17 @@
-<div class="space-y-4">
-  <div class="flex gap-2 pb-3 mb-4 sm:mb-6 border-b border-(--color-border-medium)">
-    <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">
-      Edit Personal Information
-    </h2>
-    <div
-      [inlineSVG]="'/icons/icons-24/user-edit.svg'"
-      class="[&_path]:stroke-(--color-text-body)"
-    ></div>
+<div class="edit-form">
+  <div class="edit-form__header">
+    <h2 class="edit-form__title">Edit Personal Information</h2>
+    <div [inlineSVG]="'/icons/icons-24/user-edit.svg'" class="edit-form__icon"></div>
   </div>
 
-  <div class="flex flex-col gap-4">
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Name</label>
-      <input
-        type="text"
-        [(ngModel)]="name"
-        class="px-4 py-3 rounded-lg border border-(--color-border-medium) text-base font-medium text-(--color-text-body) focus:outline-none focus:border-(--special-primary)"
-      />
+  <div class="edit-form__fields">
+    <div class="edit-form__field">
+      <label class="edit-form__label">Name</label>
+      <input type="text" [(ngModel)]="name" class="edit-form__input" />
     </div>
 
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Gender</label>
+    <div class="edit-form__field">
+      <label class="edit-form__label">Gender</label>
       <app-select-dropdown
         [options]="genderOptions"
         [value]="gender"
@@ -29,17 +20,13 @@
       ></app-select-dropdown>
     </div>
 
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Date of Birth</label>
-      <input
-        type="date"
-        [(ngModel)]="dateOfBirth"
-        class="px-4 py-3 rounded-lg border border-(--color-border-medium) text-base font-medium text-(--color-text-body) focus:outline-none focus:border-(--special-primary)"
-      />
+    <div class="edit-form__field">
+      <label class="edit-form__label">Date of Birth</label>
+      <input type="date" [(ngModel)]="dateOfBirth" class="edit-form__input" />
     </div>
 
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Languages Speaks</label>
+    <div class="edit-form__field">
+      <label class="edit-form__label">Languages Speaks</label>
       <app-chips-multiselect
         [options]="languageOptions"
         [selected]="selectedLanguages"
@@ -50,18 +37,8 @@
     </div>
   </div>
 
-  <div class="flex flex-col sm:flex-row gap-3 justify-end pt-4">
-    <button
-      (click)="onCancel()"
-      class="px-6 sm:px-8 py-3 rounded-lg border border-(--color-border-medium) text-(--color-text-body) cursor-pointer hover:bg-(--color-surface-secondary) w-full sm:w-auto"
-    >
-      Cancel
-    </button>
-    <button
-      (click)="onSave()"
-      class="px-6 sm:px-8 py-3 rounded-lg bg-(--special-primary) text-white cursor-pointer hover:opacity-90 w-full sm:w-auto"
-    >
-      Save
-    </button>
+  <div class="edit-form__actions">
+    <button (click)="onCancel()" class="edit-form__btn edit-form__btn--cancel">Cancel</button>
+    <button (click)="onSave()" class="edit-form__btn edit-form__btn--save">Save</button>
   </div>
 </div>

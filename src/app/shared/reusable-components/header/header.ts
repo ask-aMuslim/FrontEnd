@@ -13,17 +13,18 @@ interface NavLink {
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './header.html',
-  styleUrl: './header.scss',
+  styleUrls: ['./header.scss'],
 })
 export class Header {
   protected readonly authService = inject(AuthService);
 
   protected readonly navLinks: NavLink[] = [
     { label: 'Home', path: '/home' },
-    { label: 'Roadmap', path: '/roadmap' },
-    { label: 'Ask & Contact', path: '/ask-and-contact' },
+    { label: 'Q&A', path: '/ask-and-contact/ask-qa' },
+    { label: 'Academy', path: '/academy' },
     { label: 'Events', path: '/events' },
-    { label: 'MuslimTube', path: '/muslim-tube' },
+    { label: 'Contact', path: '/ask-and-contact/send-inquiry' },
+    // { label: 'MuslimTube', path: '/muslim-tube' },
   ];
 
   protected navOpen = false;

@@ -32,8 +32,8 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(circle at 30% 50%, var(--special-primary-6) 0%, transparent 50%),
-      radial-gradient(circle at 70% 80%, var(--special-secondary-6) 0%, transparent 50%);
+      radial-gradient(circle at 30% 50%, var(--color-button-primary-soft) 0%, transparent 50%),
+      radial-gradient(circle at 70% 80%, var(--color-button-secondary-soft) 0%, transparent 50%);
     z-index: -1;
     pointer-events: none;
     animation: ambientGlow 15s ease-in-out infinite alternate;
@@ -127,7 +127,7 @@
 .stat-text {
   color: var(--color-text-body);
   font-size: 0.9rem;
-  border: 1.5px solid var(--special-primary-10);
+  border: 1.5px solid var(--color-button-primary-soft-10);
   background: var(--color-background-white);
   padding: 0.65rem 1.5rem;
   border-radius: 999px;
@@ -143,7 +143,7 @@
 }
 
 .stat-number {
-  color: var(--special-secondary);
+  color: var(--color-button-secondary-normal);
   font-weight: 700;
 }
 

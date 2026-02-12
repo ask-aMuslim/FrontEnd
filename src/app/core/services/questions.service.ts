@@ -5,25 +5,25 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 
 @Injectable({ providedIn: 'root' })
 export class QuestionsService {
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
-  getAll(): Observable<any> {
-    return this.api.get(API_ENDPOINTS.questions.getAll());
+  getAll(): Observable<unknown> {
+    return this.api.get<unknown>(API_ENDPOINTS.questions.getAll());
   }
 
-  create(payload: any): Observable<any> {
-    return this.api.post(API_ENDPOINTS.questions.create(), payload);
+  create(payload: unknown): Observable<unknown> {
+    return this.api.post<unknown>(API_ENDPOINTS.questions.create(), payload);
   }
 
-  getById(id: string): Observable<any> {
-    return this.api.get(API_ENDPOINTS.questions.getById(id));
+  getById(id: string): Observable<unknown> {
+    return this.api.get<unknown>(API_ENDPOINTS.questions.getById(id));
   }
 
-  update(id: string, payload: any): Observable<any> {
-    return this.api.put(API_ENDPOINTS.questions.update(id), payload);
+  update(id: string, payload: unknown): Observable<unknown> {
+    return this.api.put<unknown>(API_ENDPOINTS.questions.update(id), payload);
   }
 
-  delete(id: string): Observable<any> {
-    return this.api.delete(API_ENDPOINTS.questions.delete(id));
+  delete(id: string): Observable<unknown> {
+    return this.api.delete<unknown>(API_ENDPOINTS.questions.delete(id));
   }
 }

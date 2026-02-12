@@ -53,8 +53,8 @@
 
   &:focus {
     outline: none;
-    border-color: var(--special-primary);
-    box-shadow: 0 0 0 3px var(--special-primary-6);
+    border-color: var(--color-button-primary-normal);
+    box-shadow: 0 0 0 3px var(--color-button-primary-soft);
   }
 
   &:hover {
@@ -75,7 +75,7 @@
   align-items: center;
   gap: calc(var(--spacing-unit));
   padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
-  background-color: var(--special-primary);
+  background-color: var(--color-button-primary-normal);
   color: var(--color-background-white);
   border: none;
   border-radius: var(--border-radius-default);
@@ -92,11 +92,11 @@
   }
 
   &:hover {
-    background-color: var(--special-primary-hovering);
+    background-color: var(--color-button-primary-hovering);
   }
 
   &:active {
-    background-color: var(--special-primary-clicked);
+    background-color: var(--color-button-primary-clicked);
   }
 
   @media (max-width: 768px) {
@@ -112,7 +112,7 @@
 }
 
 .category-scroll {
-  scrollbar-color: var(--special-primary) transparent;
+  scrollbar-color: var(--color-button-primary-normal) transparent;
   scrollbar-width: thin;
 }
 
@@ -125,13 +125,13 @@
 }
 
 .category-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--special-primary);
+  background-color: var(--color-button-primary-normal);
   border-radius: 9999px;
 }
 
 .category-chip {
   padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2.5);
-  background-color: var(--color-surface-secondary);
+  background-color: var(--color-card-surface-secondary);
   color: var(--color-text-body);
   border: 1px solid var(--color-border-light);
   border-radius: 20px;
@@ -143,13 +143,13 @@
   flex-shrink: 0;
 
   &:hover {
-    background-color: var(--special-primary-6);
+    background-color: var(--color-button-primary-soft);
     border-color: var(--color-border-low);
   }
 
   &.active {
-    background-color: var(--special-primary);
+    background-color: var(--color-button-primary-normal);
     color: var(--color-background-white);
-    border-color: var(--special-primary);
+    border-color: var(--color-button-primary-normal);
   }
 }

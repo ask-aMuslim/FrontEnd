@@ -1,80 +1,83 @@
+@use '../edit-form.shared';
+
 .religion-selection {
-    display: flex;
-    gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .religion-option {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.625rem;
-    padding: 0.65rem 1rem;
-    border: 1.5px solid var(--color-border-medium);
-    border-radius: var(--border-radius-default);
-    background: var(--color-background-white);
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.625rem;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid var(--color-border-medium);
+  border-radius: var(--border-radius-default);
+  background: var(--color-background-white);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  flex: 1;
 
-    &:hover {
-        background: var(--color-surface-primary);
-        box-shadow: 0 2px 8px var(--shadow-color-sm);
+  &:hover {
+    background: var(--color-card-surface-primary);
+    box-shadow: 0 2px 8px var(--shadow-color-sm);
+  }
+
+  &.selected {
+    background: var(--color-selected-surface);
+    border-color: var(--color-selected-surface);
+    box-shadow: 0 4px 12px var(--shadow-color-md);
+
+    .religion-label {
+      color: var(--color-button-primary-normal);
     }
 
-    &.selected {
-        background: var(--color-selected-surface);
-        border-color: var(--color-selected-surface);
-        box-shadow: 0 4px 12px var(--shadow-color-md);
+    .religion-radio-visual {
+      border-color: var(--color-button-primary-normal);
 
-        .religion-label {
-            color: var(--special-primary);
-        }
-
-        .religion-radio-visual {
-            border-color: var(--special-primary);
-
-            &::after {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
+      &::after {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
+  }
 }
 
 .religion-radio {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .religion-radio-visual {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--color-border-medium);
-    border-radius: 50%;
-    background: var(--color-background-white);
-    position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-medium);
+  border-radius: 50%;
+  background: var(--color-background-white);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    &::after {
-        content: '';
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: var(--special-primary);
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
+  &::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-button-primary-normal);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
 }
 
 .religion-label {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--color-text-body);
-    transition: color 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-body);
+  transition: color 0.2s ease;
 }

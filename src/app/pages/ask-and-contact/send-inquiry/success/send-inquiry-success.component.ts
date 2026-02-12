@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
@@ -12,7 +12,7 @@ interface InquirySuccessState {
 @Component({
   selector: 'app-send-inquiry-success',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './send-inquiry-success.component.html',
   styleUrl: './send-inquiry-success.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

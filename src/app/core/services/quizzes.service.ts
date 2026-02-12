@@ -1,29 +1,30 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { QuizFacade } from '../api/facades/quiz.facade';
+import { QuizReadDto } from '../api/generated/models';
 
 @Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: 'root' })
 export class QuizzesService {
-  constructor(private api: ApiService) {}
+  private facade = inject(QuizFacade);
 
-  getAll(): Observable<any> {
-    return this.api.get(API_ENDPOINTS.quizzes.getAll());
+  getAll(): Observable<QuizReadDto[]> {
+    return this.facade.getAllQuizzes();
   }
 
-  create(payload: any): Observable<any> {
-    return this.api.post(API_ENDPOINTS.quizzes.create(), payload);
+  create(payload: any): Observable<QuizReadDto> {
+    return this.facade.createQuiz(payload);
   }
 
-  getById(id: string): Observable<any> {
-    return this.api.get(API_ENDPOINTS.quizzes.getById(id));
+  getById(id: string): Observable<QuizReadDto> {
+    return this.facade.getQuizById(id);
   }
 
-  update(id: string, payload: any): Observable<any> {
-    return this.api.put(API_ENDPOINTS.quizzes.update(id), payload);
+  update(id: string, payload: any): Observable<void> {
+    return this.facade.updateQuiz(id, payload);
   }
 
-  delete(id: string): Observable<any> {
-    return this.api.delete(API_ENDPOINTS.quizzes.delete(id));
+  delete(id: string): Observable<void> {
+    return this.facade.deleteQuiz(id);
   }
 }

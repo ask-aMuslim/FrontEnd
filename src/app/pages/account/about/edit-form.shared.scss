@@ -1,0 +1,116 @@
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.edit-form__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-medium);
+
+  @media (min-width: 640px) {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.edit-form__title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--color-text-title);
+
+  @media (min-width: 640px) {
+    font-size: 1.25rem;
+  }
+}
+
+.edit-form__icon {
+  :deep(path) {
+    stroke: var(--color-text-body);
+  }
+}
+
+.edit-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.edit-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-form__label {
+  font-size: 0.875rem;
+  color: var(--color-text-placeholder);
+}
+
+.edit-form__input,
+.edit-form__textarea {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-medium);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-body);
+  outline: none;
+}
+
+.edit-form__input:focus,
+.edit-form__textarea:focus {
+  border-color: var(--color-button-primary-normal);
+}
+
+.edit-form__textarea {
+  resize: none;
+}
+
+.edit-form__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+  }
+}
+
+.edit-form__btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  width: 100%;
+
+  @media (min-width: 640px) {
+    width: auto;
+  }
+}
+
+.edit-form__btn--cancel {
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-body);
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.edit-form__btn--cancel:hover {
+  background: var(--color-card-surface-secondary);
+}
+
+.edit-form__btn--save {
+  border: none;
+  background: var(--color-button-primary-normal);
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.edit-form__btn--save:hover {
+  opacity: 0.9;
+}

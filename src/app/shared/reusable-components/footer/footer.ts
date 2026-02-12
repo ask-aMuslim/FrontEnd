@@ -1,10 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 interface FooterLink {
   label: string;
   href: string;
+  external?: boolean;
 }
 
 interface FooterColumn {
@@ -16,41 +17,61 @@ interface SocialLink {
   icon: string;
   label: string;
   href: string;
+  ariaLabel: string;
 }
 
-interface StoreBadge {
+interface AppDownload {
+  label: string;
   icon: string;
-  title: string;
-  subtitle: string;
+  text: string;
   href: string;
+  qrCode: string;
 }
 
 @Component({
   selector: 'app-footer',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './footer.html',
-  styleUrl: './footer.scss',
+  styleUrls: ['./footer.scss'],
 })
 export class Footer {
+  protected readonly currentYear = new Date().getFullYear();
+
   protected readonly footerColumns: FooterColumn[] = [
     {
       title: 'Trusted Channels',
       links: [
-        { label: 'One Message Foundation', href: '#' },
-        { label: 'One True Message Foundation', href: '#' },
-        { label: 'The Muslim Lantern', href: '#' },
-        { label: 'IMAN TV', href: '#' },
-        { label: 'Find More Channels', href: '#' },
+        {
+          label: 'One Message Foundation',
+          href: 'https://www.onemessagefoundation.com',
+          external: true,
+        },
+        {
+          label: 'One True Message Foundation',
+          href: 'https://www.onetruemessage.com/',
+          external: true,
+        },
+        {
+          label: 'The Muslim Lantern',
+          href: 'https://www.youtube.com/@TheMuslimLantern',
+          external: true,
+        },
+        {
+          label: 'IMAN TV',
+          href: 'https://www.youtube.com/@ImanTV01',
+          external: true,
+        },
+        { label: 'Find More Channels', href: '/channels', external: false },
       ],
     },
     {
       title: 'Ask & Contact',
       links: [
-        { label: 'Ask', href: '/ask-and-contact' },
-        { label: 'Virtual Assistant', href: '/ask-and-contact' },
-        { label: 'Email your Inquiry', href: '/ask-and-contact' },
-        { label: 'Talk to a Scholar', href: '/ask-and-contact' },
+        { label: 'Ask', href: '/ask-and-contact/ask-qa', external: false },
+        // { label: 'Virtual Assistant', href: '/ask-and-contact/ask-assistant', external: false },
+        { label: 'Email your Inquiry', href: '/ask-and-contact/send-inquiry', external: false },
+        { label: 'Talk to a Scholar', href: '/ask-and-contact/meet-scholar', external: false },
       ],
     },
   ];
@@ -58,43 +79,73 @@ export class Footer {
   protected readonly socialLinks: SocialLink[] = [
     {
       icon: '/icons/icons-social-apps/facebook.svg',
-      label: 'Facebook',
-      href: 'https://www.facebook.com/askamuslimofficial/',
-    },
-    {
-      icon: '/icons/icons-social-apps/youtube.svg',
-      label: 'YouTube',
-      href: 'https://www.youtube.com/AskAMuslim',
+      label: 'askamuslimofficial',
+      href: 'https://www.facebook.com/askamuslimofficial',
+      ariaLabel: 'Visit our Facebook page',
     },
     {
       icon: '/icons/icons-social-apps/instagram.svg',
-      label: 'Instagram',
-      href: 'https://www.instagram.com/askamuslim/',
+      label: 'askamuslim',
+      href: 'https://www.instagram.com/askamuslim',
+      ariaLabel: 'Visit our Instagram profile',
+    },
+    {
+      icon: '/icons/icons-social-apps/youtube.svg',
+      label: 'AskAMuslim',
+      href: 'https://www.youtube.com/@AskAMuslim',
+      ariaLabel: 'Visit our YouTube channel',
+    },
+    {
+      icon: '/icons/icons-social-apps/threads.svg',
+      label: 'askamuslim',
+      href: '',
+      ariaLabel: 'Visit our Threads profile',
+    },
+    {
+      icon: '/icons/icons-social-apps/tiktok.svg',
+      label: 'askamuslim_',
+      href: 'https://tiktok.com/@askamuslim_',
+      ariaLabel: 'Visit our TikTok profile',
+    },
+    {
+      icon: '/icons/icons-social-apps/gmail.svg',
+      label: 'contact@ask-a-muslim.com',
+      href: 'mailto:contact@ask-a-muslim.com',
+      ariaLabel: 'Send us an email',
     },
   ];
 
-  protected readonly storeBadges: StoreBadge[] = [
+  protected readonly appDownloads: AppDownload[] = [
     {
+      label: 'App Store',
       icon: '/icons/icons-social-apps/apple.svg',
-      title: 'Download on the',
-      subtitle: 'App Store',
-      href: '#',
+      text: 'Download on App Store',
+      href: '#app-store',
+      qrCode: '/footer/qr-code.svg',
     },
     {
+      label: 'Google Play',
       icon: '/icons/icons-social-apps/google-play.svg',
-      title: 'Get it on',
-      subtitle: 'Google Play',
-      href: '#',
+      text: 'Get our App from Google Play',
+      href: '#google-play',
+      qrCode: '/footer/qr-code.svg',
     },
   ];
 
-  protected trackByLabel(index: number, item: FooterLink | SocialLink | StoreBadge): string {
-    if ('label' in item) {
-      return item.label;
+  protected trackByLabel(index: number, item: FooterLink | SocialLink | AppDownload): string {
+    return item.label ?? `${index}`;
+  }
+
+  protected onSubscribe(event: Event): void {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement | null;
+    const emailInput = form?.querySelector<HTMLInputElement>('#footer-email');
+
+    if (!emailInput?.checkValidity()) {
+      emailInput?.reportValidity();
+      return;
     }
-    if ('subtitle' in item) {
-      return `${item.title}-${item.subtitle}`;
-    }
-    return `${index}`;
+
+    emailInput.value = '';
   }
 }

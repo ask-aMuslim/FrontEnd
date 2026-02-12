@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 interface Video {
   id: number;
@@ -15,7 +15,7 @@ interface Video {
 @Component({
   standalone: true,
   selector: 'app-video-card',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './video-card.component.html',
   styleUrls: ['./video-card.component.scss'],
 })

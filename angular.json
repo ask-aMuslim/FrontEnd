@@ -77,7 +77,6 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "outputPath": "dist/test",
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "css",
             "assets": [
@@ -86,7 +85,9 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles/styles.css"]
+            "styles": [
+              "src/styles/styles.css"
+            ]
           }
         }
       }

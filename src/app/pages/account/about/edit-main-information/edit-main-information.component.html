@@ -1,17 +1,14 @@
-<div class="space-y-4">
-  <div class="flex gap-2 pb-3 mb-4 sm:mb-6 border-b border-(--color-border-medium)">
-    <h2 class="text-lg sm:text-xl font-medium text-(--color-text-title)">Edit Main Information</h2>
-    <div
-      [inlineSVG]="'/icons/icons-24/user-edit.svg'"
-      class="[&_path]:stroke-(--color-text-body)"
-    ></div>
+<div class="edit-form">
+  <div class="edit-form__header">
+    <h2 class="edit-form__title">Edit Main Information</h2>
+    <div [inlineSVG]="'/icons/icons-24/user-edit.svg'" class="edit-form__icon"></div>
   </div>
 
-  <div class="flex flex-col gap-4">
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Religion</label>
-      <div class="religion-selection flex gap-2">
-        <label class="religion-option flex-1" [class.selected]="religion === 'Muslim'">
+  <div class="edit-form__fields">
+    <div class="edit-form__field">
+      <label class="edit-form__label">Religion</label>
+      <div class="religion-selection">
+        <label class="religion-option" [class.selected]="religion === 'Muslim'">
           <input
             type="radio"
             name="religion"
@@ -22,7 +19,7 @@
           <span class="religion-radio-visual"></span>
           <span class="religion-label">Muslim</span>
         </label>
-        <label class="religion-option flex-1" [class.selected]="religion === 'Non-Muslim'">
+        <label class="religion-option" [class.selected]="religion === 'Non-Muslim'">
           <input
             type="radio"
             name="religion"
@@ -36,37 +33,19 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Reason of your Religion</label>
-      <textarea
-        [(ngModel)]="reasonOfReligion"
-        rows="3"
-        class="px-4 py-3 rounded-lg border border-(--color-border-medium) text-base font-medium text-(--color-text-body) focus:outline-none focus:border-(--special-primary) resize-none"
-      ></textarea>
+    <div class="edit-form__field">
+      <label class="edit-form__label">Reason of your Religion</label>
+      <textarea [(ngModel)]="reasonOfReligion" rows="3" class="edit-form__textarea"></textarea>
     </div>
 
-    <div class="flex flex-col gap-2">
-      <label class="text-sm text-(--color-text-placeholder)">Your Life Goal (Bio)</label>
-      <textarea
-        [(ngModel)]="bio"
-        rows="3"
-        class="px-4 py-3 rounded-lg border border-(--color-border-medium) text-base font-medium text-(--color-text-body) focus:outline-none focus:border-(--special-primary) resize-none"
-      ></textarea>
+    <div class="edit-form__field">
+      <label class="edit-form__label">Your Life Goal (Bio)</label>
+      <textarea [(ngModel)]="bio" rows="3" class="edit-form__textarea"></textarea>
     </div>
   </div>
 
-  <div class="flex flex-col sm:flex-row gap-3 justify-end pt-4">
-    <button
-      (click)="onCancel()"
-      class="px-6 sm:px-8 py-3 rounded-lg border border-(--color-border-medium) text-(--color-text-body) cursor-pointer hover:bg-(--color-surface-secondary) w-full sm:w-auto"
-    >
-      Cancel
-    </button>
-    <button
-      (click)="onSave()"
-      class="px-6 sm:px-8 py-3 rounded-lg bg-(--special-primary) text-white cursor-pointer hover:opacity-90 w-full sm:w-auto"
-    >
-      Save
-    </button>
+  <div class="edit-form__actions">
+    <button (click)="onCancel()" class="edit-form__btn edit-form__btn--cancel">Cancel</button>
+    <button (click)="onSave()" class="edit-form__btn edit-form__btn--save">Save</button>
   </div>
 </div>

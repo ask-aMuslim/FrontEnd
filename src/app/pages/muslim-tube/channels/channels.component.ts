@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 
 interface Channel {
@@ -14,7 +14,7 @@ interface Channel {
 @Component({
   standalone: true,
   selector: 'app-mt-channels',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './channels.component.html',
   styleUrls: ['./channels.component.scss'],
 })

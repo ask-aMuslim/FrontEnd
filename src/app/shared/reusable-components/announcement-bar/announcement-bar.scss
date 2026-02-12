@@ -1,138 +1,142 @@
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-    }
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 
-    to {
-        opacity: 1;
-        max-height: 100px;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-    }
+  to {
+    opacity: 1;
+    max-height: 100px;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
 }
 
 @keyframes slideUp {
-    from {
-        opacity: 1;
-        max-height: 100px;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-    }
+  from {
+    opacity: 1;
+    max-height: 100px;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
 
-    to {
-        opacity: 0;
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-    }
+  to {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 }
 
 .announcement-bar {
-    width: 100%;
-    background: linear-gradient(135deg, var(--special-primary) 0%, var(--special-primary-hovering) 100%);
-    color: var(--color-background-white);
-    padding: 0.75rem 1.5rem;
-    box-shadow: 0 2px 8px var(--shadow-color-sm);
-    position: relative;
-    z-index: 50;
-    overflow: hidden;
-    animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--color-button-primary-normal) 0%,
+    var(--color-button-primary-hovering) 100%
+  );
+  color: var(--color-background-white);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 2px 8px var(--shadow-color-sm);
+  position: relative;
+  z-index: 50;
+  overflow: hidden;
+  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 
-    &.closing {
-        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
+  &.closing {
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
 }
 
 .announcement-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
 }
 
 .announcement-text {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin: 0;
-    text-align: center;
-    line-height: 1.5;
-    letter-spacing: 0.01em;
-    color: var(--special-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--color-button-secondary-normal);
 }
 
 .close-btn {
-    position: absolute;
-    right: 0;
-    background: transparent;
-    border: none;
-    color: var(--color-background-white);
-    cursor: pointer;
-    padding: 0.5rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.375rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0.8;
+  position: absolute;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-background-white);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.8;
+
+  svg {
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    opacity: 1;
+    transform: scale(1.1);
 
     svg {
-        transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      transform: rotate(90deg);
     }
+  }
 
-    &:hover {
-        background: rgba(255, 255, 255, 0.15);
-        opacity: 1;
-        transform: scale(1.1);
+  &:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.25);
+  }
 
-        svg {
-            transform: rotate(90deg);
-        }
-    }
-
-    &:active {
-        transform: scale(0.95);
-        background: rgba(255, 255, 255, 0.25);
-    }
-
-    &:focus-visible {
-        outline: 2px solid var(--color-background-white);
-        outline-offset: 2px;
-    }
+  &:focus-visible {
+    outline: 2px solid var(--color-background-white);
+    outline-offset: 2px;
+  }
 }
 
 @media (max-width: 768px) {
-    .announcement-bar {
-        padding: 0.65rem 1rem;
-    }
+  .announcement-bar {
+    padding: 0.65rem 1rem;
+  }
 
-    .announcement-text {
-        font-size: 0.85rem;
-        padding-right: 2rem;
-    }
+  .announcement-text {
+    font-size: 0.85rem;
+    padding-right: 2rem;
+  }
 
-    .close-btn {
-        padding: 0.4rem;
+  .close-btn {
+    padding: 0.4rem;
 
-        svg {
-            width: 14px;
-            height: 14px;
-        }
+    svg {
+      width: 14px;
+      height: 14px;
     }
+  }
 }
 
 @media (max-width: 480px) {
-    .announcement-bar {
-        padding: 0.6rem 0.75rem;
-    }
+  .announcement-bar {
+    padding: 0.6rem 0.75rem;
+  }
 
-    .announcement-text {
-        font-size: 0.8rem;
-        padding-right: 1.75rem;
-    }
+  .announcement-text {
+    font-size: 0.8rem;
+    padding-right: 1.75rem;
+  }
 }

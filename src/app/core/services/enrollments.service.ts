@@ -1,33 +1,39 @@
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { Injectable, inject } from '@angular/core';
+import { Observable, from } from 'rxjs';
+import { Api } from '../api/generated/api';
+// Removed unused imports
+// import {
+//   apiEnrollmentGetEnrollmentGet,
+// ...
+import { EnrollmentCreateDto } from '../api/generated/models';
+import { EnrollmentFacade } from '../api/facades/enrollment.facade';
 
 @Injectable({ providedIn: 'root' })
 export class EnrollmentsService {
-  constructor(private api: ApiService) {}
+  private facade = inject(EnrollmentFacade);
 
-  getById(id: string): Observable<any> {
-    return this.api.get(API_ENDPOINTS.enrollments.getById(id));
+  getEnrollment(studentId?: string, courseId?: string): Observable<any> {
+    return this.facade.getEnrollment(studentId, courseId);
   }
 
-  delete(id: string): Observable<any> {
-    return this.api.delete(API_ENDPOINTS.enrollments.delete(id));
+  delete(studentId: string, courseId: string): Observable<void> {
+    return this.facade.deleteEnrollment(studentId, courseId);
   }
 
   getByCourse(courseId: string): Observable<any> {
-    return this.api.get(API_ENDPOINTS.enrollments.getByCourse(courseId));
+    return this.facade.getStudentsByCourse(courseId);
   }
 
   getByStudent(studentId: string): Observable<any> {
-    return this.api.get(API_ENDPOINTS.enrollments.getByStudent(studentId));
+    return this.facade.getEnrolledCourses(studentId);
   }
 
-  create(payload: any): Observable<any> {
-    return this.api.post(API_ENDPOINTS.enrollments.create(), payload);
+  create(payload: EnrollmentCreateDto): Observable<void> {
+    return this.facade.createEnrollment(payload);
   }
 
   updateStatus(id: string, payload: any): Observable<any> {
-    return this.api.put(API_ENDPOINTS.enrollments.updateStatus(id), payload);
+    // This endpoint not in Swagger spec, keep legacy implementation if needed
+    throw new Error('updateStatus endpoint not available in generated API');
   }
 }

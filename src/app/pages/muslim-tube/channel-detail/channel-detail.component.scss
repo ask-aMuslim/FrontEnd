@@ -46,7 +46,7 @@
   border-radius: 24px;
   overflow: hidden;
   border: 1px solid var(--color-border-light);
-  background-color: var(--color-surface-secondary);
+  background-color: var(--color-card-surface-secondary);
 
   img {
     width: 100%;
@@ -139,7 +139,9 @@
   background-color: var(--color-background-white);
   color: var(--color-text-body);
   font-size: 14px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input-container input::placeholder {
@@ -148,8 +150,8 @@
 
 .search-input-container input:focus {
   outline: none;
-  border-color: var(--special-primary);
-  box-shadow: 0 0 0 3px var(--special-primary-6);
+  border-color: var(--color-button-primary-normal);
+  box-shadow: 0 0 0 3px var(--color-button-primary-soft);
 }
 
 .search-input-container input:hover {
@@ -169,13 +171,15 @@
 
 .find-button {
   padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2.5);
-  background-color: var(--special-primary);
+  background-color: var(--color-button-primary-normal);
   color: var(--color-background-white);
   border: none;
   border-radius: var(--border-radius-default);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
   white-space: nowrap;
 
   @media (max-width: 480px) {
@@ -184,11 +188,11 @@
 }
 
 .find-button:hover {
-  background-color: var(--special-primary-hovering);
+  background-color: var(--color-button-primary-hovering);
 }
 
 .find-button:active {
-  background-color: var(--special-primary-clicked);
+  background-color: var(--color-button-primary-clicked);
 }
 
 .tab-list {
@@ -207,7 +211,9 @@
   color: var(--color-text-secondary);
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
   white-space: nowrap;
 
   @media (max-width: 768px) {
@@ -222,12 +228,12 @@
 }
 
 .tab-button.active {
-  color: var(--special-primary);
-  border-color: var(--special-primary);
+  color: var(--color-button-primary-normal);
+  border-color: var(--color-button-primary-normal);
 }
 
 .tab-button:hover {
-  color: var(--special-primary-hovering);
+  color: var(--color-button-primary-hovering);
 }
 
 .section {
@@ -236,7 +242,7 @@
   gap: calc(var(--spacing-unit) * 2);
 }
 
-.section+.section {
+.section + .section {
   border-top: 1px solid var(--color-border-light);
   padding-top: calc(var(--spacing-unit) * 3);
   margin-top: calc(var(--spacing-unit) * 3);
@@ -315,7 +321,10 @@
   flex-direction: column;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 
   @media (max-width: 480px) {
     max-width: 100%;
@@ -333,7 +342,7 @@
   width: 100%;
   aspect-ratio: 9 / 16;
   overflow: hidden;
-  background-color: var(--color-surface-secondary);
+  background-color: var(--color-card-surface-secondary);
 
   img {
     width: 100%;
@@ -424,7 +433,7 @@
   padding: calc(var(--spacing-unit) * 3);
   border: 1px dashed var(--color-border-default);
   border-radius: var(--border-radius-default);
-  background-color: var(--color-surface-secondary);
+  background-color: var(--color-card-surface-secondary);
   color: var(--color-text-body);
 }
 
@@ -451,7 +460,9 @@
   padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2);
   border-radius: var(--border-radius-default);
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
   white-space: nowrap;
 
   @media (max-width: 768px) {
@@ -466,8 +477,8 @@
 }
 
 .ghost-button:hover {
-  border-color: var(--special-primary);
-  color: var(--special-primary);
+  border-color: var(--color-button-primary-normal);
+  color: var(--color-button-primary-normal);
 }
 
 @media (max-width: 768px) {

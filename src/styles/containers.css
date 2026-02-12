@@ -1,0 +1,315 @@
+/* Global Container Utilities */
+/* These utility classes provide consistent spacing and sizing across the application */
+
+:root {
+  /* Container max-widths */
+  --container-sm: 480px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1440px;
+
+  /* Container padding (responsive) */
+  --container-px: clamp(1rem, 4vw, 2rem);
+  --container-px-lg: clamp(2rem, 10vw, 4rem);
+}
+
+/* Base container class */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
+  box-sizing: border-box;
+}
+
+/* Container size utilities */
+.container-sm {
+  max-width: var(--container-sm);
+}
+
+.container-md {
+  max-width: var(--container-md);
+}
+
+.container-lg {
+  max-width: var(--container-lg);
+}
+
+.container-xl {
+  max-width: var(--container-xl);
+}
+
+.container-2xl {
+  max-width: var(--container-2xl);
+}
+
+/* Full-width container (no max-width constraint) */
+.container-full {
+  max-width: 100%;
+}
+
+/* Centered content block */
+.page-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Content wrapper with padding */
+.content-wrapper {
+  width: 100%;
+  padding: clamp(2rem, 5vw, 4rem) var(--container-px);
+
+  @media (min-width: 1024px) {
+    padding: clamp(3rem, 6vw, 5rem) var(--container-px-lg);
+  }
+}
+
+/* Section container with centered max-width content */
+.section-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  /* padding-left: var(--container-px);
+  padding-right: var(--container-px); */
+}
+
+.section-container--sm {
+  max-width: var(--container-sm);
+}
+
+.section-container--md {
+  max-width: var(--container-md);
+}
+
+.section-container--lg {
+  max-width: var(--container-lg);
+}
+
+.section-container--xl {
+  max-width: var(--container-xl);
+}
+
+/* Responsive adjustments for very large screens */
+@media (min-width: 1441px) {
+  .container {
+    padding-left: var(--container-px-lg);
+    padding-right: var(--container-px-lg);
+  }
+
+  .section-container {
+    padding-left: var(--container-px-lg);
+    padding-right: var(--container-px-lg);
+  }
+}
+
+/* Utility for consistent page horizontal padding */
+.px-page {
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
+
+  @media (min-width: 1441px) {
+    padding-left: var(--container-px-lg);
+    padding-right: var(--container-px-lg);
+  }
+}
+
+/* Utility for consistent page vertical padding */
+.py-page {
+  padding-top: clamp(2rem, 5vw, 4rem);
+  padding-bottom: clamp(2rem, 5vw, 4rem);
+
+  @media (min-width: 1024px) {
+    padding-top: clamp(3rem, 6vw, 5rem);
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+}
+
+/* Combined page padding */
+.p-page {
+  padding: clamp(2rem, 5vw, 4rem) var(--container-px);
+
+  @media (min-width: 1024px) {
+    padding: clamp(3rem, 6vw, 5rem) var(--container-px-lg);
+  }
+}
+
+/* Full-width section with constrained content */
+.full-width-section {
+  width: 100%;
+  position: relative;
+}
+
+.full-width-section>.container,
+.full-width-section>.section-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Add container-3xl and container-4xl for larger screens */
+.container-3xl {
+  max-width: 1728px;
+}
+
+.container-4xl {
+  max-width: 1920px;
+}
+
+/* Section inner container - use inside full-width sections */
+.section-block {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
+  box-sizing: border-box;
+
+  /* Mobile: Full width with minimal padding */
+  max-width: 100%;
+
+  /* Tablet: 768px */
+  @media (min-width: 768px) {
+    max-width: 48rem;
+    /* 768px */
+  }
+
+  /* Small Desktop: 1024px */
+  @media (min-width: 1024px) {
+    max-width: 68rem;
+    /* 1088px - tighter for focused content */
+  }
+
+  /* Large Desktop: 1440px */
+  @media (min-width: 1440px) {
+    max-width: 78rem;
+    /* 1248px */
+    padding-left: var(--container-px-lg);
+    padding-right: var(--container-px-lg);
+  }
+
+  /* Extra Large: 1920px+ */
+  @media (min-width: 1920px) {
+    max-width: 84rem;
+    /* 1344px */
+  }
+}
+
+/* Wide section-block - for hero, about quran, what is islam, quiz pages */
+.section-block--wide {
+  @media (min-width: 1024px) {
+    max-width: 75rem;
+    /* 1200px */
+  }
+
+  @media (min-width: 1440px) {
+    max-width: 90rem;
+    /* 1440px */
+  }
+
+  @media (min-width: 1920px) {
+    max-width: 120rem;
+    /* 1920px */
+  }
+}
+
+/* Breakout utilities - allows backgrounds to escape container constraints */
+/* Use these classes on sections to make backgrounds full-width while content stays constrained */
+
+/* Full-width section wrapper - breaks out of container */
+.section-full-width {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+/* Inner container for content within full-width sections */
+.section-full-width>.section-content,
+.section-full-width>.container,
+.section-full-width>.section-container {
+  max-width: var(--container-4xl);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1441px) {
+
+  .section-full-width>.section-content,
+  .section-full-width>.container,
+  .section-full-width>.section-container {
+    padding-left: var(--container-px-lg);
+    padding-right: var(--container-px-lg);
+  }
+}
+
+/* Legacy support - full-width-bg with pseudo-element */
+.full-width-bg {
+  position: relative;
+}
+
+.full-width-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  z-index: -1;
+  background: inherit;
+}
+
+/* Simple breakout - direct full width */
+.breakout {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+/* Commonly used pattern: section with full-width bg and centered content */
+.page-section {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding-top: clamp(2rem, 5vw, 4rem);
+  padding-bottom: clamp(2rem, 5vw, 4rem);
+}
+
+.page-section>.section-content {
+  max-width: var(--container-4xl);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
+}
+
+@media (min-width: 1024px) {
+  .page-section {
+    padding-top: clamp(3rem, 6vw, 5rem);
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+}
+
+@media (min-width: 1441px) {
+  .page-section>.section-content {
+    padding-left: var(--container-px-lg);
+    padding-right: var(--container-px-lg);
+  }
+}

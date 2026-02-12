@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { InlineSvgDirective } from '../../../../shared/directives/inline-svg.directive';
 import {
@@ -15,12 +15,11 @@ import {
   selector: 'app-edit-personal-information',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     InlineSvgDirective,
     SelectDropdownComponent,
-    ChipsMultiselectComponent,
-  ],
+    ChipsMultiselectComponent
+],
   templateUrl: './edit-personal-information.component.html',
   styleUrls: ['./edit-personal-information.component.scss'],
 })

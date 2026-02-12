@@ -32,7 +32,7 @@
 .calendar-icon,
 .time-icon,
 .mail-icon {
-  @include icon-mask(24px, var(--special-primary));
+  @include icon-mask(24px, var(--color-button-primary-normal));
 }
 
 .caution-icon {

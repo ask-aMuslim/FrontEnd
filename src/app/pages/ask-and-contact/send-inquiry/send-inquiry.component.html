@@ -1,7 +1,7 @@
 <div class="px-2 md:px-0">
   <div class="mb-6 md:mb-10">
     <h1 class="mb-2 text-xl md:text-[32px] lg:text-[40px] text-center md:text-left">
-      Welcome, <span class="text-(--special-primary)">Pholan Elpholany</span>
+      Welcome, <span class="text-(--color-button-primary-normal)">Pholan Elpholany</span>
     </h1>
     <p class="font-normal text-sm md:text-base sm:text-center md:text-left">
       If you have a new question or any kind of request or an issue, please provide it, and we will
@@ -20,13 +20,14 @@
       [error]="!!(formRef().get('topic')?.invalid && formRef().get('topic')?.touched)"
       (select)="onSelectTopic($event)"
     ></app-select-dropdown>
-    <p
-      *ngIf="formRef().get('topic')?.invalid && formRef().get('topic')?.touched"
-      class="mt-1 text-sm"
-      style="color: var(--color-error)"
-    >
-      Please select a subject
-    </p>
+    @if (formRef().get('topic')?.invalid && formRef().get('topic')?.touched) {
+      <p
+        class="mt-1 text-sm"
+        style="color: var(--color-error)"
+        >
+        Please select a subject
+      </p>
+    }
   </div>
 
   <div class="my-3 md:my-4">
@@ -34,18 +35,19 @@
       [formControl]="$any(formRef().get('message'))"
       rows="2"
       placeholder="Write here your exact question that you didn’t find its solution?"
-      class="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base resize-none focus:outline-none focus:ring-2 focus:ring-(--special-primary) focus:border-transparent overflow-hidden"
+      class="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base resize-none focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal) focus:border-transparent overflow-hidden"
       [class.border-red-500]="
         formRef().get('message')?.invalid && formRef().get('message')?.touched
       "
     ></textarea>
-    <p
-      *ngIf="formRef().get('message')?.invalid && formRef().get('message')?.touched"
-      class="mt-1 text-sm"
-      style="color: var(--color-error)"
-    >
-      Please enter your question (minimum 10 characters)
-    </p>
+    @if (formRef().get('message')?.invalid && formRef().get('message')?.touched) {
+      <p
+        class="mt-1 text-sm"
+        style="color: var(--color-error)"
+        >
+        Please enter your question (minimum 10 characters)
+      </p>
+    }
   </div>
 
   <div>
@@ -53,7 +55,7 @@
       [formControl]="$any(formRef().get('details'))"
       rows="8"
       placeholder="Explain in particular what do you need to understand .. (optional)"
-      class="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base resize-none focus:outline-none focus:ring-2 focus:ring-(--special-primary) focus:border-transparent"
+      class="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base resize-none focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal) focus:border-transparent"
     ></textarea>
   </div>
 
@@ -70,13 +72,14 @@
         (add)="onAddLanguage($event)"
         (remove)="onRemoveLanguage($event)"
       ></app-chips-multiselect>
-      <p
-        *ngIf="languagesValidated() && selectedLanguagesRef().length === 0"
-        class="mt-1 text-sm"
-        style="color: var(--color-error)"
-      >
-        Please select at least one language
-      </p>
+      @if (languagesValidated() && selectedLanguagesRef().length === 0) {
+        <p
+          class="mt-1 text-sm"
+          style="color: var(--color-error)"
+          >
+          Please select at least one language
+        </p>
+      }
     </div>
   </div>
 
@@ -85,7 +88,7 @@
       type="button"
       (click)="onNext()"
       class="button flex items-center justify-center gap-2 w-full sm:w-auto px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base"
-    >
+      >
       Send
       <img src="/icons/icons-24/arrow-right.svg" class="invert w-4 md:w-5" />
     </button>

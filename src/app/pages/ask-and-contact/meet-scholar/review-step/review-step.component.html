@@ -1,5 +1,5 @@
 <div class="space-y-5 md:space-y-6 px-2 md:px-0">
-  <div class="bg-(--color-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4">
+  <div class="bg-(--color-card-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4">
     <h2>Booking Details</h2>
 
     <div class="space-y-2">
@@ -34,36 +34,41 @@
       <div class="booking-item-row">
         <span class="booking-label">Languages:</span>
         <div class="flex flex-wrap gap-2">
-          <span
-            *ngFor="let lang of selectedLanguages()"
-            class="booking-value inline-flex items-center px-3 py-1 bg-primary-100 text-primary-700 rounded-full"
-          >
-            {{ lang.label }}
-          </span>
+          @for (lang of selectedLanguages(); track lang) {
+            <span
+              class="booking-value inline-flex items-center px-3 py-1 bg-primary-100 text-primary-700 rounded-full"
+              >
+              {{ lang.label }}
+            </span>
+          }
         </div>
       </div>
 
-      <div *ngIf="form().get('scheduledDate')?.value" class="booking-item-row">
-        <span class="booking-label">Preferred Date:</span>
-        <p class="booking-value text-text-title">
-          {{ form().get('scheduledDate')?.value | date: 'fullDate' }}
-        </p>
-      </div>
+      @if (form().get('scheduledDate')?.value) {
+        <div class="booking-item-row">
+          <span class="booking-label">Preferred Date:</span>
+          <p class="booking-value text-text-title">
+            {{ form().get('scheduledDate')?.value | date: 'fullDate' }}
+          </p>
+        </div>
+      }
 
-      <div *ngIf="form().get('scheduledTime')?.value" class="booking-item-row">
-        <span class="booking-label">Preferred Time:</span>
-        <p class="booking-value text-text-title">{{ form().get('scheduledTime')?.value }}</p>
-      </div>
+      @if (form().get('scheduledTime')?.value) {
+        <div class="booking-item-row">
+          <span class="booking-label">Preferred Time:</span>
+          <p class="booking-value text-text-title">{{ form().get('scheduledTime')?.value }}</p>
+        </div>
+      }
     </div>
   </div>
 
   <div
-    class="mt-4 md:mt-6 mb-8 md:mb-10 bg-(--color-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4"
-  >
+    class="mt-4 md:mt-6 mb-8 md:mb-10 bg-(--color-card-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4"
+    >
     <h2>Your Message</h2>
     <p
       class="mt-4 md:mt-6 mb-6 md:mb-10 text-(--color-text-title) text-sm md:text-[14px] font-normal"
-    >
+      >
       {{ form().get('message')?.value }}
     </p>
   </div>
@@ -73,7 +78,7 @@
       type="button"
       (click)="onBack()"
       class="px-6 md:px-8 py-3 border border-gray-300 text-text-body font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 cursor-pointer justify-center"
-    >
+      >
       <img [src]="leftArrowIcon" alt="Back" />
       Back
     </button>
@@ -82,9 +87,13 @@
       (click)="onSubmit()"
       [disabled]="isSubmitting()"
       class="button w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <span *ngIf="!isSubmitting()">Confirm Booking</span>
-      <span *ngIf="isSubmitting()">Submitting...</span>
+      >
+      @if (!isSubmitting()) {
+        <span>Confirm Booking</span>
+      }
+      @if (isSubmitting()) {
+        <span>Submitting...</span>
+      }
     </button>
   </div>
 </div>

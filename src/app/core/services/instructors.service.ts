@@ -1,25 +1,28 @@
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { Injectable, inject } from '@angular/core';
+import { Observable, from } from 'rxjs';
+import { InstructorFacade } from '../api/facades/instructor.facade';
 
 @Injectable({ providedIn: 'root' })
 export class InstructorsService {
-  constructor(private api: ApiService) {}
+  private facade = inject(InstructorFacade);
 
-  me(): Observable<any> {
-    return this.api.get(API_ENDPOINTS.instructors.me());
+  getAll(): Observable<any> {
+    return this.facade.getAllInstructors();
   }
 
   getById(userId: string): Observable<any> {
-    return this.api.get(API_ENDPOINTS.instructors.getById(userId));
+    return this.facade.getInstructorById(userId);
   }
 
-  getAll(): Observable<any> {
-    return this.api.get(API_ENDPOINTS.instructors.getAll());
+  getByCourseId(courseId: string): Observable<any> {
+    return this.facade.getInstructorByCourseId(courseId);
+  }
+
+  me(): Observable<any> {
+    return this.facade.me();
   }
 
   update(payload: any): Observable<any> {
-    return this.api.put(API_ENDPOINTS.instructors.update(), payload);
+    return this.facade.update(payload);
   }
 }

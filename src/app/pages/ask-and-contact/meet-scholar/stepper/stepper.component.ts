@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 export interface Step {
@@ -9,9 +9,9 @@ export interface Step {
 @Component({
   selector: 'app-stepper',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './stepper.component.html',
-  styleUrl: './stepper.component.scss',
+  styleUrls: ['./stepper.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StepperComponent {

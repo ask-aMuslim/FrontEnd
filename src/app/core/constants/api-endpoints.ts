@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
  * @constant
  */
 // Normalize base URL to avoid accidental double-slashes when joining paths
-const BASE_URL = environment.apiBaseUrl.replace(/\/+$/g, '');
+const BASE_URL = environment.apiBaseUrl.replaceAll(/\/+$/g, '');
 
 /**
  * Encode path parameters safely and consistently

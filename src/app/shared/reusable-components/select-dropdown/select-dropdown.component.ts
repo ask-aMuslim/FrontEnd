@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,9 +19,9 @@ export interface SelectOption<T = unknown> {
 @Component({
   selector: 'app-select-dropdown',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './select-dropdown.component.html',
-  styleUrl: './select-dropdown.component.scss',
+  styleUrls: ['./select-dropdown.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectDropdownComponent<T = unknown> implements OnDestroy {

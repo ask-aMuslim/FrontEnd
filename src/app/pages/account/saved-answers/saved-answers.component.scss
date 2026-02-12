@@ -1,32 +1,118 @@
-.learn-more span {
-  color: var(--special-primary);
+.saved-answers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
+
+  @media (min-width: 640px) {
+    gap: 1.5rem;
+  }
 }
 
-.learn-more {
+.saved-answers__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.saved-answers__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.saved-answers__question {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--color-text-title);
+  flex: 1;
+
+  @media (min-width: 640px) {
+    font-size: 1.25rem;
+  }
+}
+
+.saved-answers__answer {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text-body);
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+
+  @media (min-width: 640px) {
+    font-size: 1rem;
+  }
+}
+
+.saved-answers__learn-more {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2rem;
+  margin-top: 0.5rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
-.learn-more::after {
+.saved-answers__learn-more-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-button-primary-normal);
+
+  @media (min-width: 640px) {
+    font-size: 1.125rem;
+  }
+}
+
+.saved-answers__learn-more-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.saved-answers__learn-more-svg {
+  :deep(path) {
+    stroke: var(--color-button-primary-normal);
+  }
+}
+
+.saved-answers__learn-more::after {
   content: '';
   position: absolute;
   left: 0;
   bottom: -2px;
   width: 0;
   height: 1px;
-  background: var(--special-primary);
+  background: var(--color-button-primary-normal);
   transition: width 0.3s ease;
 }
 
-.learn-more:hover::after {
+.saved-answers__learn-more:hover::after {
   width: 100%;
 }
 
-.learn-more-icon {
-  background-color: var(--special-primary);
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
+.saved-answers__divider {
+  width: 100%;
+  height: 1.5px;
+  margin: 1rem 0;
+  background: var(--color-border-low);
+
+  @media (min-width: 640px) {
+    margin: 1.5rem 0;
+  }
+}
+
+.saved-answers__pagination {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }

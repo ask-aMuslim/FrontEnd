@@ -1,0 +1,58 @@
+// Page Container Component Styles
+// Responsive container with dynamic sizing and centered content
+
+.page-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  box-sizing: border-box;
+
+  // Size variants with responsive max-widths
+  &--sm {
+    max-width: 480px;
+  }
+
+  &--md {
+    max-width: 768px;
+  }
+
+  &--lg {
+    max-width: 1024px;
+  }
+
+  &--xl {
+    max-width: 1280px;
+  }
+
+  &--full {
+    max-width: 100%;
+  }
+
+  // Full width variant (no max-width constraint)
+  &--full-width {
+    max-width: 100%;
+  }
+}
+
+// Responsive adjustments
+@media (min-width: 1441px) {
+  .page-container {
+    padding: 0 clamp(2rem, 10vw, 4rem);
+
+    &--sm {
+      max-width: 480px;
+    }
+
+    &--md {
+      max-width: 768px;
+    }
+
+    &--lg {
+      max-width: 1100px;
+    }
+
+    &--xl {
+      max-width: 1360px;
+    }
+  }
+}

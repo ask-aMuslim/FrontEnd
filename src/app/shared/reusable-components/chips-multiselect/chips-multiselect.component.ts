@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,9 +18,9 @@ export interface ChipOption<T = any> {
 @Component({
   selector: 'app-chips-multiselect',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './chips-multiselect.component.html',
-  styleUrl: './chips-multiselect.component.scss',
+  styleUrls: ['./chips-multiselect.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChipsMultiselectComponent<T = any> implements OnDestroy {

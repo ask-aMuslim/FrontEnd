@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 
 interface Chat {
@@ -10,9 +10,9 @@ interface Chat {
 
 @Component({
   selector: 'app-chat-list',
-  imports: [CommonModule, InlineSvgDirective],
+  imports: [InlineSvgDirective],
   templateUrl: './chat-list.component.html',
-  styleUrl: './chat-list.component.scss',
+  styleUrls: ['./chat-list.component.scss'],
 })
 export class ChatListComponent {
   chats: Chat[] = [

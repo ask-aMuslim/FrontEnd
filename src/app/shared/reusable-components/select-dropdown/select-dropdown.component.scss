@@ -19,11 +19,13 @@
     color: var(--color-text-body);
     font: inherit;
     cursor: pointer;
-    transition: border-color 120ms ease, box-shadow 120ms ease;
+    transition:
+      border-color 120ms ease,
+      box-shadow 120ms ease;
 
     &:hover,
     &:focus-visible {
-      border-color: var(--special-primary);
+      border-color: var(--color-button-primary-normal);
       box-shadow: var(--shadow-base);
       outline: none;
     }
@@ -64,11 +66,13 @@
     border-radius: 6px;
     color: var(--color-text-body);
     cursor: pointer;
-    transition: background-color 100ms ease, color 100ms ease;
+    transition:
+      background-color 100ms ease,
+      color 100ms ease;
 
     &:hover,
     &.active {
-      background-color: var(--special-primary);
+      background-color: var(--color-button-primary-normal);
       color: white;
     }
   }

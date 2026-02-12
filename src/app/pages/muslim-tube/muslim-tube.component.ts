@@ -11,7 +11,7 @@ import {
   selector: 'app-muslim-tube',
   imports: [MuslimTubeSidebarComponent, RouterOutlet, CommonModule, SelectDropdownComponent],
   templateUrl: './muslim-tube.component.html',
-  styleUrl: './muslim-tube.component.scss',
+  styleUrls: ['./muslim-tube.component.scss'],
 })
 export class MuslimTubeComponent {
   searchQuery = signal('');

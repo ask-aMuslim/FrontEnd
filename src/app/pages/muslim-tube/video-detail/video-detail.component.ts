@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { VideoCardComponent } from '../video-card/video-card.component';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
@@ -20,7 +20,7 @@ interface Video {
 @Component({
   standalone: true,
   selector: 'app-video-detail',
-  imports: [CommonModule, VideoCardComponent, InlineSvgDirective],
+  imports: [VideoCardComponent, InlineSvgDirective],
   templateUrl: './video-detail.component.html',
   styleUrls: ['./video-detail.component.scss'],
 })
@@ -154,7 +154,7 @@ export class VideoDetailComponent implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.route.params.subscribe((params) => {
@@ -197,7 +197,7 @@ export class VideoDetailComponent implements OnInit {
       navigator.share({
         title: this.video.title,
         text: `Check out this video: ${this.video.title}`,
-        url: window.location.href,
+        url: globalThis.location.href,
       });
     } else {
       // Fallback for browsers that don't support Web Share API

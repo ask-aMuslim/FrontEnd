@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { NotFound } from './not-found';
 
@@ -8,9 +9,9 @@ describe('NotFound', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NotFound]
-    })
-    .compileComponents();
+      imports: [NotFound],
+      providers: [provideRouter([])],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(NotFound);
     component = fixture.componentInstance;
@@ -19,5 +20,35 @@ describe('NotFound', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should have quick links defined', () => {
+    expect(component['quickLinks']).toBeDefined();
+    expect(component['quickLinks'].length).toBeGreaterThan(0);
+  });
+
+  it('should render 404 error code', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const errorCode = compiled.querySelector('.error-code');
+    expect(errorCode).toBeTruthy();
+  });
+
+  it('should have a return home button', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const homeButton = compiled.querySelector('.primary-button');
+    expect(homeButton).toBeTruthy();
+    expect(homeButton?.getAttribute('href')).toBe('/home');
+  });
+
+  it('should display quick navigation links', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const quickLinks = compiled.querySelectorAll('.quick-link');
+    expect(quickLinks.length).toBe(4);
+  });
+
+  it('should display an inspirational quote', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const quote = compiled.querySelector('blockquote');
+    expect(quote).toBeTruthy();
   });
 });

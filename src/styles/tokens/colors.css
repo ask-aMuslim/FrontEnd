@@ -149,7 +149,7 @@
     --special-primary: #156b40;
     --special-primary-6: rgba(21, 107, 64, 0.06);
     --special-primary-10: rgba(21, 107, 64, 0.1);
-    --special-secondary: ##cda736;
-    --special-secondary-6: #cda7360f;
-    --special-secondary-10: #cda7361a;
+    --special-secondary: #ecc140;
+    --special-secondary-6: rgba(236, 193, 64, 0.06);
+    --special-secondary-10: rgba(236, 193, 64, 0.1);
 }

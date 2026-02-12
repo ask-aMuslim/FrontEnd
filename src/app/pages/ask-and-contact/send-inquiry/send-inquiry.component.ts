@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -28,9 +28,9 @@ interface LanguageOption {
 @Component({
   selector: 'app-send-inquiry',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SelectDropdownComponent, ChipsMultiselectComponent],
+  imports: [ReactiveFormsModule, SelectDropdownComponent, ChipsMultiselectComponent],
   templateUrl: './send-inquiry.component.html',
-  styleUrl: './send-inquiry.component.scss',
+  styleUrls: ['./send-inquiry.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SendInquiryComponent implements OnInit, OnChanges {

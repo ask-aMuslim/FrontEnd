@@ -5,9 +5,9 @@ import { catchError, retry } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private jsonHeaders = new HttpHeaders({ 'Content-Type': 'application/json' });
+  private readonly jsonHeaders = new HttpHeaders({ 'Content-Type': 'application/json' });
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   get<T>(url: string, params?: Record<string, any>): Observable<T> {
     let httpParams = new HttpParams();

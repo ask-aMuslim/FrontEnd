@@ -1,0 +1,336 @@
+<div class="academy-container">
+  <div class="academy-content">
+    @if (hasRecentLesson && recentLesson) {
+      <section class="recent-lesson-section">
+        <div class="section-block">
+          <h2 class="section-title">Your Recent Lesson</h2>
+          <div class="recent-lesson-card">
+            <div class="lesson-sequence">
+              <span
+                >Stage {{ recentLesson.stageNumber }} > {{ recentLesson.courseName }} > Lesson
+                {{ recentLesson.lessonNumber }}</span
+              >
+              <span class="completion-status">
+                <span class="emoji">Good job👏</span>
+                <span class="completion-text">
+                  , you have completed
+                  <span class="highlight">{{ recentLesson.progress }}%</span>
+                  of the course
+                </span>
+              </span>
+            </div>
+            <div class="lesson-content">
+              <div class="video-thumbnail">
+                <img
+                  [src]="recentLesson.thumbnailUrl"
+                  [alt]="'Thumbnail for ' + recentLesson.courseName"
+                  (error)="onImageError($event)"
+                  loading="lazy"
+                />
+                <button
+                  class="play-button"
+                  [attr.aria-label]="
+                    'Continue learning lesson ' +
+                    recentLesson.lessonNumber +
+                    ' of ' +
+                    recentLesson.courseName
+                  "
+                  (click)="continueLearning()"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4.09961 4.99962C4.09951 4.64771 4.19225 4.302 4.36849 3.99741C4.54473 3.69281 4.79822 3.44011 5.10336 3.26481C5.4085 3.08952 5.75449 2.99784 6.1064 2.99903C6.4583 3.00023 6.80367 3.09425 7.10761 3.27162L19.1046 10.2696C19.4074 10.4453 19.6587 10.6974 19.8335 11.0006C20.0084 11.3039 20.1005 11.6477 20.1008 11.9978C20.1011 12.3478 20.0096 12.6918 19.8353 12.9953C19.661 13.2989 19.4101 13.5514 19.1076 13.7276L7.10761 20.7276C6.80367 20.905 6.4583 20.999 6.1064 21.0002C5.75449 21.0014 5.4085 20.9097 5.10336 20.7344C4.79822 20.5591 4.54473 20.3064 4.36849 20.0018C4.19225 19.6972 4.09951 19.3515 4.09961 18.9996V4.99962Z"
+                      stroke="var(--color-button-primary-normal)"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div class="lesson-details">
+                <div class="lesson-header">
+                  <h3 class="course-title">{{ recentLesson.courseName }}</h3>
+                </div>
+                <div class="lesson-info">
+                  <div class="info-row">
+                    <span class="course-category">Worship & Role Models</span>
+                    <span class="separator">-</span>
+                    <span class="lesson-count"
+                      >{{ recentLesson.completedLessons }} out of
+                      {{ recentLesson.totalLessons }} lessons</span
+                    >
+                  </div>
+                  <span class="duration"
+                    >{{ recentLesson.currentTime }} / {{ recentLesson.totalTime }}</span
+                  >
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="recentLesson.progress"></div>
+                  </div>
+                </div>
+                <button class="continue-button" (click)="continueLearning()">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4.09961 4.99962C4.09951 4.64771 4.19225 4.302 4.36849 3.99741C4.54473 3.69281 4.79822 3.44011 5.10336 3.26481C5.4085 3.08952 5.75449 2.99784 6.1064 2.99903C6.4583 3.00023 6.80367 3.09425 7.10761 3.27162L19.1046 10.2696C19.4074 10.4453 19.6587 10.6974 19.8335 11.0006C20.0084 11.3039 20.1005 11.6477 20.1008 11.9978C20.1011 12.3478 20.0096 12.6918 19.8353 12.9953C19.661 13.2989 19.4101 13.5514 19.1076 13.7276L7.10761 20.7276C6.80367 20.905 6.4583 20.999 6.1064 21.0002C5.75449 21.0014 5.4085 20.9097 5.10336 20.7344C4.79822 20.5591 4.54473 20.3064 4.36849 20.0018C4.19225 19.6972 4.09951 19.3515 4.09961 18.9996V4.99962Z"
+                      stroke="white"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span>Continue Learning</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    <section class="important-note" [class.expanded]="showFullNote">
+      <div class="section-block">
+        <p class="note-text">{{ importantNote }}</p>
+        <button class="toggle-button" (click)="toggleNote()" [attr.aria-label]="'Toggle note'">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 8L12 16L20 8"
+              stroke="#010D05"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="academy-stages">
+      <div class="section-block">
+        <h2 class="section-title">The Academy</h2>
+
+        @for (
+          stage of stages;
+          track trackByStageNumber(i, stage);
+          let i = $index;
+          let isLast = $last
+        ) {
+          <div class="stage-wrapper">
+            <div class="stage-container" [class.locked]="stage.isLocked">
+              <h3 class="stage-title">{{ stage.title }}</h3>
+              <div class="courses-grid">
+                <div class="course-column">
+                  <span class="column-label">B: Models & Stories</span>
+                  <div class="courses-stack">
+                    @for (
+                      course of stage.courses.modelsStories;
+                      track trackByCourseId(i, course);
+                      let i = $index
+                    ) {
+                      <div class="course-wrapper">
+                        @if (i > 0) {
+                          <div class="course-connector">
+                            <div class="connector-line"></div>
+                          </div>
+                        }
+                        <div
+                          class="course-card"
+                          [class.completed]="course.status === 'completed'"
+                          [class.in-progress]="course.status === 'in-progress'"
+                          [class.locked]="course.status === 'locked'"
+                          (click)="onCourseClick(course)"
+                          [attr.aria-label]="getCourseAriaLabel(course)"
+                          [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
+                          [attr.role]="'button'"
+                          (keydown.enter)="onCourseClick(course)"
+                          (keydown.space)="onCourseClick(course)"
+                        >
+                          @if (course.status === 'locked') {
+                            <div class="course-overlay"></div>
+                          }
+                          <h4 class="course-name">{{ course.title }}</h4>
+                          <div class="course-meta">
+                            <span class="meta-item">
+                              <span>{{ course.lessons }} lessons</span>
+                            </span>
+                            <span class="meta-item">
+                              <span>{{ course.duration }}</span>
+                            </span>
+                          </div>
+                          <div class="course-progress">
+                            <div class="progress-track">
+                              <div
+                                class="progress-bar-fill"
+                                [style.width.%]="course.progress"
+                              ></div>
+                            </div>
+                            <span class="progress-text">{{ course.progress }}%</span>
+                          </div>
+                          @if (course.status === 'completed') {
+                            <div class="completion-badge">
+                              <span>Completed</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="course-column">
+                  <span class="column-label">A: Main Believes</span>
+                  <div class="courses-stack">
+                    @for (
+                      course of stage.courses.mainBelieves;
+                      track trackByCourseId(i, course);
+                      let i = $index
+                    ) {
+                      <div class="course-wrapper">
+                        @if (i > 0) {
+                          <div class="course-connector">
+                            <div class="connector-line"></div>
+                          </div>
+                        }
+                        <div
+                          class="course-card"
+                          [class.completed]="course.status === 'completed'"
+                          [class.in-progress]="course.status === 'in-progress'"
+                          [class.locked]="course.status === 'locked'"
+                          (click)="onCourseClick(course)"
+                          [attr.aria-label]="getCourseAriaLabel(course)"
+                          [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
+                          [attr.role]="'button'"
+                          (keydown.enter)="onCourseClick(course)"
+                          (keydown.space)="onCourseClick(course)"
+                        >
+                          @if (course.status === 'locked') {
+                            <div class="course-overlay"></div>
+                          }
+                          <h4 class="course-name">{{ course.title }}</h4>
+                          <div class="course-meta">
+                            <span class="meta-item">
+                              <span>{{ course.lessons }} lessons</span>
+                            </span>
+                            <span class="meta-item">
+                              <span>{{ course.duration }}</span>
+                            </span>
+                          </div>
+                          <div class="course-progress">
+                            <div class="progress-track">
+                              <div
+                                class="progress-bar-fill"
+                                [style.width.%]="course.progress"
+                              ></div>
+                            </div>
+                            <span class="progress-text">{{ course.progress }}%</span>
+                          </div>
+                          @if (course.status === 'completed') {
+                            <div class="completion-badge">
+                              <span>Completed</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="course-column">
+                  <span class="column-label">C: Social Topics</span>
+                  <div class="courses-stack">
+                    @for (
+                      course of stage.courses.socialTopics;
+                      track trackByCourseId(i, course);
+                      let i = $index
+                    ) {
+                      <div class="course-wrapper">
+                        @if (i > 0) {
+                          <div class="course-connector">
+                            <div class="connector-line"></div>
+                          </div>
+                        }
+                        <div
+                          class="course-card"
+                          [class.completed]="course.status === 'completed'"
+                          [class.in-progress]="course.status === 'in-progress'"
+                          [class.locked]="course.status === 'locked'"
+                          (click)="onCourseClick(course)"
+                          [attr.aria-label]="getCourseAriaLabel(course)"
+                          [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
+                          [attr.role]="'button'"
+                          (keydown.enter)="onCourseClick(course)"
+                          (keydown.space)="onCourseClick(course)"
+                        >
+                          @if (course.status === 'locked') {
+                            <div class="course-overlay"></div>
+                          }
+                          <h4 class="course-name">{{ course.title }}</h4>
+                          <div class="course-meta">
+                            <span class="meta-item">
+                              <span>{{ course.lessons }} lessons</span>
+                            </span>
+                            <span class="meta-item">
+                              <span>{{ course.duration }}</span>
+                            </span>
+                          </div>
+                          <div class="course-progress">
+                            <div class="progress-track">
+                              <div
+                                class="progress-bar-fill"
+                                [style.width.%]="course.progress"
+                              ></div>
+                            </div>
+                            <span class="progress-text">{{ course.progress }}%</span>
+                          </div>
+                          @if (course.status === 'completed') {
+                            <div class="completion-badge">
+                              <span>Completed</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="stage-divider"></div>
+            <p class="stage-description">{{ stage.description }}</p>
+          </div>
+          @if (!isLast) {
+            <div class="stage-connector">
+              <div class="connector-line">
+                <img
+                  src="/academy/lock.png"
+                  data--h-bstatus="5PROCESSED"
+                  class=""
+                  data--h-bfrom-bx="true"
+                  data--h-bresult="clear"
+                  style="z-index: 9"
+                />
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </section>
+  </div>
+</div>

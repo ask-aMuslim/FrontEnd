@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { QaCardComponent, QuestionCard } from '../qa-card/qa-card.component';
 
 @Component({
   selector: 'app-question-search-result',
   standalone: true,
-  imports: [CommonModule, QaCardComponent],
+  imports: [QaCardComponent],
   templateUrl: './question-search-result.component.html',
   styleUrl: './question-search-result.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

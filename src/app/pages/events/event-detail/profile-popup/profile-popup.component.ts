@@ -1,12 +1,12 @@
 import { Component, EventEmitter, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile-popup',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './profile-popup.component.html',
-  styleUrl: './profile-popup.component.scss',
+  styleUrls: ['./profile-popup.component.scss'],
 })
 export class ProfilePopupComponent {
   @Output() close = new EventEmitter<void>();

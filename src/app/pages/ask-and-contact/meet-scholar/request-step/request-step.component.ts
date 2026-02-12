@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ChipsMultiselectComponent } from '../../../../shared/reusable-components/chips-multiselect/chips-multiselect.component';
@@ -18,7 +18,7 @@ interface LanguageOption {
 @Component({
   selector: 'app-request-step',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SelectDropdownComponent, ChipsMultiselectComponent],
+  imports: [ReactiveFormsModule, SelectDropdownComponent, ChipsMultiselectComponent],
   templateUrl: './request-step.component.html',
   styleUrl: './request-step.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
