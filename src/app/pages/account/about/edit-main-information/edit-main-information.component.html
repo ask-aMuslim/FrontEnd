@@ -6,10 +6,11 @@
 
   <div class="edit-form__fields">
     <div class="edit-form__field">
-      <label class="edit-form__label">Religion</label>
+      <label class="edit-form__label" for="religion">Religion</label>
       <div class="religion-selection">
         <label class="religion-option" [class.selected]="religion === 'Muslim'">
           <input
+            id="religion"
             type="radio"
             name="religion"
             value="Muslim"
@@ -34,13 +35,18 @@
     </div>
 
     <div class="edit-form__field">
-      <label class="edit-form__label">Reason of your Religion</label>
-      <textarea [(ngModel)]="reasonOfReligion" rows="3" class="edit-form__textarea"></textarea>
+      <label class="edit-form__label" for="reasonOfReligion">Reason of your Religion</label>
+      <textarea
+        id="reasonOfReligion"
+        [(ngModel)]="reasonOfReligion"
+        rows="3"
+        class="edit-form__textarea"
+      ></textarea>
     </div>
 
     <div class="edit-form__field">
-      <label class="edit-form__label">Your Life Goal (Bio)</label>
-      <textarea [(ngModel)]="bio" rows="3" class="edit-form__textarea"></textarea>
+      <label class="edit-form__label" for="bio">Your Life Goal (Bio)</label>
+      <textarea id="bio" [(ngModel)]="bio" rows="3" class="edit-form__textarea"></textarea>
     </div>
   </div>
 

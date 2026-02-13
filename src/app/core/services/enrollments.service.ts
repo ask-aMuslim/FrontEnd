@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from } from 'rxjs';
-import { Api } from '../api/generated/api';
+import { Observable } from 'rxjs';
 // Removed unused imports
 // import {
 //   apiEnrollmentGetEnrollmentGet,
@@ -10,7 +9,7 @@ import { EnrollmentFacade } from '../api/facades/enrollment.facade';
 
 @Injectable({ providedIn: 'root' })
 export class EnrollmentsService {
-  private facade = inject(EnrollmentFacade);
+  private readonly facade = inject(EnrollmentFacade);
 
   getEnrollment(studentId?: string, courseId?: string): Observable<any> {
     return this.facade.getEnrollment(studentId, courseId);

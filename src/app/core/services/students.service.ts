@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from } from 'rxjs';
+import { Observable } from 'rxjs';
 import { StudentFacade } from '../api/facades/student.facade';
 
 @Injectable({ providedIn: 'root' })
 export class StudentsService {
-  private facade = inject(StudentFacade);
+  private readonly facade = inject(StudentFacade);
 
   getAll(): Observable<any> {
     return this.facade.getAllStudents();

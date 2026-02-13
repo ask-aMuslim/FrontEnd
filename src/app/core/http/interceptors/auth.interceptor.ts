@@ -125,7 +125,7 @@ function handle401WithRefresh(
     if (!tokenService.refreshToken()) {
         // No refresh token - redirect to login
         tokenService.clearTokens();
-        router.navigate(['/auth/login']);
+        router.navigate(['/login']);
         return throwError(() => new Error('Session expired - please login again'));
     }
 
@@ -140,7 +140,7 @@ function handle401WithRefresh(
             // Refresh failed - clear tokens and redirect to login
             tokenService.clearTokens();
             refreshQueue.cancelAllPending();
-            router.navigate(['/auth/login']);
+            router.navigate(['/login']);
             return throwError(() => refreshError);
         })
     );

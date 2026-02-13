@@ -18,7 +18,6 @@ import { Router } from '@angular/router';
 // New architecture imports
 import { IdentityFacade } from '../api/facades/identity.facade';
 import { TokenService } from '../auth/token.service';
-import { ApiError } from '../errors/api-error.model';
 
 // Legacy imports (for social login - not in Swagger spec yet)
 import { ApiService } from './api.service';
@@ -59,15 +58,19 @@ export class AuthService {
   }
 
   /**
-   * Set authentication state (for manual state updates)
+   * Set authenticated user state (for manual state updates)
    * @deprecated Use TokenService.setTokens() instead
    */
-  setAuthState(isAuthenticated: boolean, user?: { name: string; meta: string }): void {
-    if (!isAuthenticated) {
-      this._currentUser.set(null);
-    } else {
-      this._currentUser.set(user || null);
-    }
+  setAuthenticatedUser(user?: { name: string; meta: string }): void {
+    this._currentUser.set(user ?? null);
+  }
+
+  /**
+   * Clear authentication state (for manual state updates)
+   * @deprecated Use TokenService.clear() instead
+   */
+  clearAuthState(): void {
+    this._currentUser.set(null);
   }
 
   /**
@@ -96,7 +99,20 @@ export class AuthService {
    * Register new user
    */
   register(payload: RegisterRequest): Observable<AuthResponse> {
-    return this.facade.register(payload).pipe(
+    let role: 'Student' | 'Instructor' | 'Admin' = 'Student';
+    if (payload.role === 1) {
+      role = 'Instructor';
+    } else if (payload.role === 2) {
+      role = 'Admin';
+    }
+
+    return this.facade.register({
+      Email: payload.email,
+      Password: payload.password,
+      FirstName: payload.firstName,
+      LastName: payload.lastName,
+      Role: role,
+    }).pipe(
       map(() => {
         // The generated API returns void, but we need to return AuthResponse
         // This is a temporary workaround until Swagger spec includes proper response types
@@ -146,7 +162,7 @@ export class AuthService {
     return this.legacyApi.post<AuthResponse>(API_ENDPOINTS.auth.loginGoogle(), { token }).pipe(
       tap((response) => {
         // Store tokens in TokenService
-        if (response && response.accessToken) {
+        if (response?.accessToken) {
           this.tokenService.setTokens({
             accessToken: response.accessToken,
             refreshToken: response.refreshToken ?? '',
@@ -166,7 +182,7 @@ export class AuthService {
     return this.legacyApi.post<AuthResponse>(API_ENDPOINTS.auth.loginFacebook(), payload).pipe(
       tap((response) => {
         // Store tokens in TokenService
-        if (response && response.accessToken) {
+        if (response?.accessToken) {
           this.tokenService.setTokens({
             accessToken: response.accessToken,
             refreshToken: response.refreshToken ?? '',

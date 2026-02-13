@@ -20,6 +20,7 @@ import { apiIdentityLogoutLogoutPost } from '../generated/fn/identity/api-identi
 import { apiIdentityUpdateEmailUpdateEmailPut } from '../generated/fn/identity/api-identity-update-email-update-email-put';
 import { apiIdentityUpdatePasswordUpdatePasswordPut } from '../generated/fn/identity/api-identity-update-password-update-password-put';
 import { apiIdentityUpdateNameUpdateNamePut } from '../generated/fn/identity/api-identity-update-name-update-name-put';
+import type { ApiIdentityRegisterRegisterPost$Params } from '../generated/fn/identity/api-identity-register-register-post';
 
 // Generated model imports
 import type { LoginViewModel } from '../generated/models/login-view-model';
@@ -36,12 +37,7 @@ interface LoginResponse {
     userEmail?: string;
 }
 
-/** Response from register endpoint */
-interface RegisterResponse {
-    userId: string;
-    email: string;
-    message?: string;
-}
+type RegisterBody = NonNullable<ApiIdentityRegisterRegisterPost$Params['body']>;
 
 @Injectable({ providedIn: 'root' })
 export class IdentityFacade {
@@ -75,17 +71,25 @@ export class IdentityFacade {
         // Create context to skip auth for login request
         const context = new HttpContext().set(SKIP_AUTH, true);
 
-        return apiIdentityLoginLoginPost(
-            this.http,
-            this.config.rootUrl,
-            { body: credentials },
-            context
+        return this.http.post<LoginResponse>(
+            `${this.config.rootUrl}${apiIdentityLoginLoginPost.PATH}`,
+            credentials,
+            { context }
         ).pipe(
-            map(() => {
-                // TODO: When Swagger spec includes proper response types, extract tokens here
-                // For now, the actual HTTP response will need to be handled differently
-                // This is a placeholder that works with the current generated code
+            tap((response) => {
+                if (!response?.accessToken) {
+                    throw new Error('Login response did not include access token');
+                }
+
+                this.tokenService.setTokens({
+                    accessToken: response.accessToken,
+                    refreshToken: response.refreshToken ?? '',
+                    expiresIn: response.expiresIn ?? 3600,
+                    userId: response.userId,
+                    userEmail: response.userEmail,
+                });
             }),
+            map(() => undefined),
             tap(() => {
                 this._loading.set(false);
             }),
@@ -101,7 +105,7 @@ export class IdentityFacade {
     /**
      * Register new user
      */
-    register(userData: any): Observable<void> {
+    register(userData: RegisterBody): Observable<void> {
         this._loading.set(true);
         this._error.set(null);
 

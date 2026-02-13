@@ -6,7 +6,7 @@ import { QuizReadDto } from '../api/generated/models';
 @Injectable({ providedIn: 'root' })
 @Injectable({ providedIn: 'root' })
 export class QuizzesService {
-  private facade = inject(QuizFacade);
+  private readonly facade = inject(QuizFacade);
 
   getAll(): Observable<QuizReadDto[]> {
     return this.facade.getAllQuizzes();

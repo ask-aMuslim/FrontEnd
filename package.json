@@ -9,10 +9,10 @@
     "test": "ng test",
     "serve:ssr:AskAMuslim": "node dist/AskAMuslim/server/server.mjs",
     "build:tokens": "style-dictionary build",
-    "generate:api": "ng-openapi-gen -i https://ask-a-muslim.runasp.net/swagger/v1/swagger.json -o src/app/core/api/generated",
-    "swagger:hash": "node scripts/swagger-hash.js",
-    "swagger:check": "node scripts/swagger-hash.js --check",
-    "swagger:update": "node scripts/swagger-hash.js --update",
+    "generate:api": "ng-openapi-gen -c ng-openapi-gen.json",
+    "swagger:hash": "node scripts/swagger-hash.mjs",
+    "swagger:check": "node scripts/swagger-hash.mjs --check",
+    "swagger:update": "node scripts/swagger-hash.mjs --update",
     "api:sync": "npm run swagger:check || (npm run generate:api && npm run swagger:update)"
   },
   "prettier": {

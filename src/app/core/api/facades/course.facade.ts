@@ -6,13 +6,12 @@
  * Uses ErrorNormalizer for consistent error handling.
  */
 
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, shareReplay, tap, throwError } from 'rxjs';
 import { ApiConfiguration } from '../generated/api-configuration';
 import { ErrorNormalizer } from '../../errors/error-normalizer';
 import { ApiError } from '../../errors/api-error.model';
-import { SKIP_ERROR_HANDLING } from '../../http/context-tokens';
 
 // Generated function imports
 import { apiCourseGetCoursesGet$Json } from '../generated/fn/course/api-course-get-courses-get-json';

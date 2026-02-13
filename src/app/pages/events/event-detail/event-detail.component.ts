@@ -73,7 +73,9 @@ export class EventDetailComponent implements OnInit {
             this.router.navigate(['/events']);
           }
         },
-        error: () => this.router.navigate(['/events']),
+        error: () => {
+          this.router.navigate(['/events']);
+        },
       });
     }
   }

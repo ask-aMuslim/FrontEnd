@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from } from 'rxjs';
+import { Observable } from 'rxjs';
 import { LessonReadDto } from '../api/generated/models';
 import { Id } from '../models/interfaces/base.model';
 import { LessonFacade } from '../api/facades/lesson.facade';
@@ -11,7 +11,7 @@ import { LessonFacade } from '../api/facades/lesson.facade';
  */
 @Injectable({ providedIn: 'root' })
 export class LessonsService {
-  private facade = inject(LessonFacade);
+  private readonly facade = inject(LessonFacade);
 
   /**
    * Get all lessons

@@ -22,7 +22,7 @@ on:
       force_regeneration:
         description: 'Force API client regeneration even if hash matches'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:
@@ -125,30 +125,9 @@ jobs:
               echo "⚠️ API CONTRACT CHANGED!"
               echo "changed=true" >> $GITHUB_OUTPUT
               
-              # Generate diff summary for PR comment
-              node -e "
-                const fs = require('fs');
-                const oldSwagger = JSON.parse(fs.readFileSync('swagger.json.bak', 'utf8'));
-                const newSwagger = JSON.parse(fs.readFileSync('swagger.json', 'utf8'));
-                
-                // Compare endpoints
-                const oldPaths = Object.keys(oldSwagger.paths || {});
-                const newPaths = Object.keys(newSwagger.paths || {});
-                
-                const added = newPaths.filter(p => !oldPaths.includes(p));
-                const removed = oldPaths.filter(p => !newPaths.includes(p));
-                
-                console.log('## API Contract Changes Detected');
-                console.log('');
-                if (added.length > 0) {
-                  console.log('### New Endpoints Added');
-                  added.forEach(p => console.log('- ' + p));
-                }
-                if (removed.length > 0) {
-                  console.log('### Endpoints Removed');
-                  removed.forEach(p => console.log('- ' + p));
-                }
-              " 2>/dev/null || echo "Could not generate diff summary"
+              echo "## API Contract Changes Detected" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Stored and current Swagger hashes differ. Regeneration is required." >> $GITHUB_STEP_SUMMARY
             else
               echo "✅ API contract unchanged"
               echo "changed=false" >> $GITHUB_OUTPUT

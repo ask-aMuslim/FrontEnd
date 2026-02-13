@@ -133,6 +133,10 @@ export class Footer {
   ];
 
   protected trackByLabel(index: number, item: FooterLink | SocialLink | AppDownload): string {
+    // For social links, use label + href to ensure uniqueness (handles duplicate labels)
+    if ('href' in item && 'ariaLabel' in item) {
+      return `${item.label}-${item.href}`;
+    }
     return item.label ?? `${index}`;
   }
 

@@ -6,8 +6,9 @@
 
   <div class="edit-form__fields">
     <div class="edit-form__field">
-      <label class="edit-form__label">City / Country</label>
+      <label class="edit-form__label" for="city">City / Country</label>
       <input
+        id="city"
         type="text"
         [(ngModel)]="city"
         placeholder="e.g., Cairo, Egypt"
@@ -16,8 +17,9 @@
     </div>
 
     <div class="edit-form__field">
-      <label class="edit-form__label">Phone Number</label>
+      <label class="edit-form__label" for="phoneNumber">Phone Number</label>
       <input
+        id="phoneNumber"
         type="tel"
         [(ngModel)]="phoneNumber"
         placeholder="+20 123 456 7890"
@@ -26,8 +28,9 @@
     </div>
 
     <div class="edit-form__field">
-      <label class="edit-form__label">Email</label>
+      <label class="edit-form__label" for="email">Email</label>
       <input
+        id="email"
         type="email"
         [(ngModel)]="email"
         placeholder="user@example.com"

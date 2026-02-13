@@ -6,8 +6,8 @@
 
   <div class="edit-form__fields">
     <div class="edit-form__field">
-      <label class="edit-form__label">Name</label>
-      <input type="text" [(ngModel)]="name" class="edit-form__input" />
+      <label class="edit-form__label" for="name">Name</label>
+      <input id="name" type="text" [(ngModel)]="name" class="edit-form__input" />
     </div>
 
     <div class="edit-form__field">
@@ -21,13 +21,13 @@
     </div>
 
     <div class="edit-form__field">
-      <label class="edit-form__label">Date of Birth</label>
-      <input type="date" [(ngModel)]="dateOfBirth" class="edit-form__input" />
+      <label class="edit-form__label" for="dateOfBirth">Date of Birth</label>
+      <input id="dateOfBirth" type="date" [(ngModel)]="dateOfBirth" class="edit-form__input" />
     </div>
 
     <div class="edit-form__field">
-      <label class="edit-form__label">Languages Speaks</label>
-      <app-chips-multiselect
+      <label class="edit-form__label" for="languages">Languages Speaks</label>
+      <app-chips-multiselect id="languages"
         [options]="languageOptions"
         [selected]="selectedLanguages"
         [placeholder]="'Select languages'"
