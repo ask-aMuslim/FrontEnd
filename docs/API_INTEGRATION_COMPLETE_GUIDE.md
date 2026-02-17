@@ -90,7 +90,7 @@ This document provides a comprehensive guide to the production-grade, contract-e
 │                              BACKEND API                                     │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │              ASP.NET Core - Swagger/OpenAPI                          │   │
-│  │              https://ask-a-muslim.runasp.net/swagger                 │   │
+│  │              https://askamusslimapi.runasp.net/swagger                 │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -154,7 +154,7 @@ this.courseFacade.getAll().subscribe(courses => ...)
 
 ### 3. No Generated File Modification
 
-Files in `src/app/core/api/generated/` are auto-generated and must not be modified.
+Files in `src/app/api/` are auto-generated and must not be modified.
 
 ### 4. Contract Drift Detection
 
@@ -653,7 +653,7 @@ if (!this.tokenService.isAuthenticated()) {
 
 **Solution:**
 1. Run `npm run generate:api` locally
-2. Review changes in `src/app/core/api/generated/`
+2. Review changes in `src/app/api/`
 3. Commit and push changes
 
 ### "Refresh token failed"
@@ -728,7 +728,7 @@ provideHttpClient(
 | ApiError Model | `src/app/core/errors/api-error.model.ts` |
 | ErrorNormalizer | `src/app/core/errors/error-normalizer.ts` |
 | IdentityFacade | `src/app/core/api/facades/identity.facade.ts` |
-| Generated API | `src/app/core/api/generated/` |
+| Generated API | `src/app/api/` |
 | CI Workflow | `.github/workflows/api-contract.yml` |
 | Environment Config | `src/environments/environment.ts` |
 | App Configuration | `src/app/app.config.ts` |

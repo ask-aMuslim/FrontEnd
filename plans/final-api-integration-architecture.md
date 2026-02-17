@@ -218,7 +218,7 @@ src/app/
 // ng-openapi-gen.json
 {
   "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
-  "input": "https://ask-a-muslim.runasp.net/swagger/v1/swagger.json",
+  "input": "https://askamusslimapi.runasp.net/swagger/v1/swagger.json",
   "output": "src/app/core/api/generated",
   "ignoreUnusedModels": false,
   "modelIndex": true,
@@ -623,7 +623,7 @@ jobs:
 {
   "name": "AskAMuslim - Dev",
   "values": [
-    { "key": "baseUrl", "value": "https://ask-a-muslim.runasp.net" },
+    { "key": "baseUrl", "value": "https://askamusslimapi.runasp.net" },
     { "key": "jwt", "value": "" },
     { "key": "refreshToken", "value": "" }
   ]

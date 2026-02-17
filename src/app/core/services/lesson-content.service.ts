@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { LessonType } from '../models/interfaces/enums.model';
 import {
   LessonContent,
@@ -12,9 +12,10 @@ import {
   IntroLessonContent
 } from '../models/interfaces/lesson-content.model';
 import { LessonsService } from './lessons.service';
-import { LessonReadDto } from '../api/generated/models';
+import { LessonReadDto } from '../../api/facades/lesson.facade';
 import { Id } from '../models/interfaces/base.model';
 import { AcademyMockDataService } from './mock-data/academy-mock-data.service';
+import { toApiMediaUrl } from '../helpers/media-url.helper';
 
 /**
  * Service to manage lesson content and metadata
@@ -40,21 +41,21 @@ export class LessonContentService {
     const parts = String(lessonId).split('-lesson-');
     const courseId = parts[0];
 
-    // Use mock data service as primary source
-    return this.mockDataService.getLessonData(String(lessonId), courseId).pipe(
-      map(data => {
-        if (!data) {
-          throw new Error('Lesson not found');
-        }
-        return data;
-      }),
-      catchError(() => {
-        // Fallback to API if mock service fails
-        return this.lessonsService.getById(lessonId).pipe(
-          map(lessonDto => this.mapLessonDtoToLessonData(lessonDto as LessonReadDto & { order?: number })),
-          catchError(() => of(this.getMockLessonData(String(lessonId))))
-        );
-      })
+    return this.lessonsService.getById(lessonId).pipe(
+      switchMap(lessonDto =>
+        this.getCourseLessons(courseId).pipe(
+          map(lessons => {
+            const lessonData = lessonDto ? this.mapLessonDtoToLessonData(lessonDto) : this.getMockLessonData(String(lessonId));
+            const currentIndex = lessons.findIndex(lesson => lesson.id === String(lessonId));
+
+            return {
+              ...lessonData,
+              previousLesson: currentIndex > 0 ? lessons[currentIndex - 1] : undefined,
+              nextLesson: currentIndex >= 0 && currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : undefined,
+            };
+          })
+        )
+      )
     );
   }
 
@@ -63,19 +64,8 @@ export class LessonContentService {
    * Uses mock data service as primary source
    */
   getLessonContent(lessonId: Id): Observable<LessonContent> {
-    return this.mockDataService.getLessonContent(String(lessonId)).pipe(
-      map(content => {
-        if (!content) {
-          throw new Error('Lesson content not found');
-        }
-        return content;
-      }),
-      catchError(() => {
-        return this.lessonsService.getById(lessonId).pipe(
-          map(lessonDto => this.mapLessonDtoToContent(lessonDto as LessonReadDto & { order?: number })),
-          catchError(() => of(this.getMockLessonContent(String(lessonId))))
-        );
-      })
+    return this.lessonsService.getById(lessonId).pipe(
+      map(lessonDto => this.mapLessonDtoToContent(lessonDto))
     );
   }
 
@@ -108,16 +98,11 @@ export class LessonContentService {
    * Uses mock data service as primary source
    */
   getCourseLessons(courseId: Id): Observable<LessonMetadata[]> {
-    return this.mockDataService.getCourseLessonsMetadata(String(courseId)).pipe(
-      catchError(() => {
-        return this.lessonsService.getByCourseId(courseId).pipe(
-          map(lessons => {
-            const withOrder = lessons as (LessonReadDto & { order?: number })[];
-            const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-            return sortedLessons.map(lesson => this.mapLessonDtoToMetadata(lesson));
-          }),
-          catchError(() => of(this.getMockLessonsList(String(courseId))))
-        );
+    return this.lessonsService.getByCourseId(courseId).pipe(
+      map(lessons => {
+        const withOrder = lessons as (LessonReadDto & { order?: number })[];
+        const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        return sortedLessons.map(lesson => this.mapLessonDtoToMetadata(lesson));
       })
     );
   }
@@ -128,18 +113,14 @@ export class LessonContentService {
   saveLessonProgress(lessonId: Id, completed: boolean = false): Observable<boolean> {
     return this.lessonsService.saveProgress(lessonId, { completed }).pipe(
       map(() => true),
-      catchError(error => {
-        console.error('Error saving lesson progress:', error);
-        return of(false);
-      })
+      catchError(() => of(false))
     );
   }
 
   /**
    * Submit lesson feedback
    */
-  submitLessonFeedback(lessonId: Id, rating: number, feedback?: string): Observable<boolean> {
-    console.log(`Submitting feedback for lesson ${lessonId}:`, { rating, feedback });
+  submitLessonFeedback(_lessonId: Id, _rating: number, _feedback?: string): Observable<boolean> {
     return of(true);
   }
 
@@ -161,21 +142,26 @@ export class LessonContentService {
    */
   addLessonNote(lessonId: Id, note: string, timestamp: string): Observable<{ timestamp: string; text: string }> {
     return this.lessonsService.addNote(lessonId, { timestamp, text: note }).pipe(
-      map(createdNote => ({
-        timestamp: createdNote.timestamp,
-        text: createdNote.text
-      })),
-      catchError(error => {
-        console.error('Error adding note:', error);
-        return of({ timestamp, text: note });
-      })
+      map(createdNote => {
+        if (!createdNote) {
+          return { timestamp, text: note };
+        }
+        return {
+          timestamp: createdNote.timestamp,
+          text: createdNote.text
+        };
+      }),
+      catchError(() => of({ timestamp, text: note }))
     );
   }
 
   /**
    * Map LessonReadDto to LessonData
    */
-  private mapLessonDtoToLessonData(lessonDto: LessonReadDto & { order?: number }): LessonData {
+  private mapLessonDtoToLessonData(lessonDto: LessonReadDto | null): LessonData {
+    if (!lessonDto) {
+      return this.getMockLessonData('');
+    }
     const content = this.mapLessonDtoToContent(lessonDto);
     const metadata = this.mapLessonDtoToMetadata(lessonDto);
 
@@ -190,32 +176,41 @@ export class LessonContentService {
   /**
    * Map LessonReadDto to LessonContent based on type
    */
-  private mapLessonDtoToContent(lessonDto: LessonReadDto & { order?: number }): LessonContent {
+  private mapLessonDtoToContent(lessonDto: LessonReadDto | null): LessonContent {
+    if (!lessonDto) {
+      return this.getMockLessonContent('');
+    }
     const lessonType = (lessonDto as { type?: number }).type as LessonType;
 
     switch (lessonType) {
-      case LessonType.Video:
+      case LessonType.Video: {
+        const primaryVideoUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
+        const fallbackVideoUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
         return {
           id: String(lessonDto.id ?? ''),
           type: LessonType.Video,
           title: lessonDto.title ?? '',
           description: (lessonDto as { description?: string }).description || '',
-          videoUrl: lessonDto.externalVideoUrl || lessonDto.videoUrl || '',
-          thumbnailUrl: lessonDto.thumbnailUrl ?? undefined,
+          videoUrl: primaryVideoUrl ?? fallbackVideoUrl ?? '',
+          thumbnailUrl: toApiMediaUrl(lessonDto.thumbnailUrl ?? null) ?? undefined,
           duration: '0:00',
           transcript: ''
         } as VideoLessonContent;
+      }
 
-      case LessonType.Audio:
+      case LessonType.Audio: {
+        const audioPrimaryUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
+        const audioFallbackUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
         return {
           id: String(lessonDto.id ?? ''),
           type: LessonType.Audio,
           title: lessonDto.title ?? '',
           description: (lessonDto as { description?: string }).description || '',
-          audioUrl: lessonDto.videoUrl || lessonDto.externalVideoUrl || '',
+          audioUrl: audioPrimaryUrl ?? audioFallbackUrl ?? '',
           duration: '0:00',
           transcript: ''
         } as AudioLessonContent;
+      }
 
       case LessonType.Article:
       case LessonType.Document:
@@ -244,7 +239,21 @@ export class LessonContentService {
   /**
    * Map LessonReadDto to LessonMetadata
    */
-  private mapLessonDtoToMetadata(lessonDto: LessonReadDto & { order?: number }): LessonMetadata {
+  private mapLessonDtoToMetadata(lessonDto: LessonReadDto | null): LessonMetadata {
+    if (!lessonDto) {
+      return {
+        id: '',
+        courseId: '',
+        title: '',
+        type: LessonType.Video,
+        status: 'pending',
+        duration: '0:00',
+        order: 0,
+        hasFeedback: false
+      };
+    }
+    // Note: LessonReadDto doesn't have 'order' from backend, so we use 0 as default
+    // The order is determined by the array position in getCourseLessons
     return {
       id: String(lessonDto.id ?? ''),
       courseId: String(lessonDto.courseId ?? ''),
@@ -252,7 +261,7 @@ export class LessonContentService {
       type: ((lessonDto as { type?: number }).type as LessonType) || LessonType.Video,
       status: 'pending',
       duration: '0:00',
-      order: lessonDto.order ?? 0,
+      order: 0,
       hasFeedback: false
     };
   }

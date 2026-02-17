@@ -312,7 +312,7 @@ interface SchemaChange {
 }
 
 async function preGenerationCheck(): Promise<SchemaChange[]> {
-  const SWAGGER_URL = 'https://ask-a-muslim.runasp.net/swagger/v1/swagger.json';
+  const SWAGGER_URL = 'https://askamusslimapi.runasp.net/swagger/v1/swagger.json';
   const PREVIOUS_SCHEMA = 'schemas/previous-swagger.json';
   
   // Fetch current schema
@@ -442,7 +442,7 @@ flowchart TB
   "tool": "postman_send_request",
   "parameters": {
     "method": "GET",
-    "url": "https://ask-a-muslim.runasp.net/api/Course/GetCourses",
+    "url": "https://askamusslimapi.runasp.net/api/Course/GetCourses",
     "headers": {
       "Authorization": "Bearer {{jwt}}",
       "Accept": "application/json"
@@ -471,7 +471,7 @@ const validationRules: ValidationRule[] = [
 ];
 
 async function validateResponseShapes(): Promise<void> {
-  const baseUrl = 'https://ask-a-muslim.runasp.net';
+  const baseUrl = 'https://askamusslimapi.runasp.net';
   const jwt = process.env.TEST_JWT_TOKEN;
   
   for (const rule of validationRules) {
@@ -562,7 +562,7 @@ sequenceDiagram
   "tool": "postman_send_request",
   "parameters": {
     "method": "POST",
-    "url": "https://ask-a-muslim.runasp.net/api/Identity/Login",
+    "url": "https://askamusslimapi.runasp.net/api/Identity/Login",
     "headers": {
       "Content-Type": "application/json"
     },
@@ -846,7 +846,7 @@ flowchart LR
   "parameters": {
     "schema1": {
       "source": "url",
-      "url": "https://ask-a-muslim.runasp.net/swagger/v1/swagger.json"
+      "url": "https://askamusslimapi.runasp.net/swagger/v1/swagger.json"
     },
     "schema2": {
       "source": "file",
@@ -1320,7 +1320,7 @@ execSync('npm run generate:api');
 // MCP Tool: postman_send_request
 const response = await mcp.sendRequest({
   method: 'GET',
-  url: 'https://ask-a-muslim.runasp.net/api/NewEndpoint',
+  url: 'https://askamusslimapi.runasp.net/api/NewEndpoint',
   headers: { 'Authorization': `Bearer ${jwt}` }
 });
 

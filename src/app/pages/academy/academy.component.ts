@@ -1,16 +1,18 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
 
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
-import { ACADEMY_STAGES, getStageCoursesGrouped } from '../../core/services/academy-data';
+import { ACADEMY_STAGES } from '../../core/services/academy-data';
 import {
+    AcademyCourse,
     RecentLessonInfo,
     StageProgress,
     CourseProgress,
     CourseStatus,
 } from '../../core/models/interfaces/academy-progress.model';
+import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 /**
  * Course interface for template binding
@@ -72,6 +74,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
         private readonly router: Router,
         private readonly route: ActivatedRoute,
         private readonly academyProgressService: AcademyProgressService,
+        private readonly cdr: ChangeDetectorRef,
     ) { }
 
     readonly fallbackImage = '/ask-a-muslim-logo.png';
@@ -81,6 +84,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
     showFullNote = false;
     stages: Stage[] = [];
     isLoading = true;
+    error: string | null = null;
 
     ngOnInit(): void {
         this.loadProgressData();
@@ -92,21 +96,31 @@ export class AcademyComponent implements OnInit, OnDestroy {
     }
 
     private loadProgressData(): void {
-        this.academyProgressService
-            .getStudentProgress()
+        combineLatest([
+            this.academyProgressService.getStudentProgress(),
+            this.academyProgressService.getAcademyCourses(),
+        ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (progress) => {
+                next: ([progress, courses]) => {
                     if (progress.recentLesson) {
                         this.recentLesson = this.mapRecentLesson(progress.recentLesson);
                         this.hasRecentLesson = true;
                     }
-                    this.stages = this.buildStagesWithProgress(progress.stageProgress, progress.courseProgress);
+
+                    this.stages = this.buildStagesWithProgress(
+                        progress.stageProgress,
+                        progress.courseProgress,
+                        courses
+                    );
+                    this.error = null;
                     this.isLoading = false;
+                    this.cdr.detectChanges();
                 },
-                error: (err) => {
-                    console.error('Error loading progress:', err);
+                error: () => {
+                    this.error = 'Unable to load academy content right now. Please try again.';
                     this.isLoading = false;
+                    this.cdr.detectChanges();
                 },
             });
     }
@@ -118,7 +132,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
             courseName: info.courseName,
             lessonId: info.lessonId,
             lessonNumber: info.lessonNumber,
-            thumbnailUrl: info.thumbnailUrl || '/images/recent-lesson-thumbnail.jpg',
+            thumbnailUrl: toApiMediaUrl(info.thumbnailUrl ?? null) || '/images/recent-lesson-thumbnail.jpg',
             progress: info.progress,
             currentTime: info.currentTime,
             totalTime: info.totalTime,
@@ -129,12 +143,18 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
     private buildStagesWithProgress(
         stageProgress: StageProgress[],
-        courseProgress: CourseProgress[]
+        courseProgress: CourseProgress[],
+        courses: AcademyCourse[]
     ): Stage[] {
         return ACADEMY_STAGES.map((stageData) => {
             const stageProg = stageProgress.find((sp) => sp.stageNumber === stageData.number);
             const isLocked = !stageProg?.isUnlocked;
-            const groupedCourses = getStageCoursesGrouped(stageData.number);
+            const stageCourses = courses.filter(course => course.stageId === stageData.number);
+            const groupedCourses = {
+                mainBelieves: stageCourses.filter(course => course.category === 'main-believes'),
+                modelsStories: stageCourses.filter(course => course.category === 'models-stories'),
+                socialTopics: stageCourses.filter(course => course.category === 'social-topics'),
+            };
 
             return {
                 number: stageData.number,
@@ -157,7 +177,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
     }
 
     private mapCourseWithProgress(
-        course: any,
+        course: AcademyCourse,
         courseProgress: CourseProgress[],
         stageLocked: boolean
     ): Course {
@@ -192,11 +212,11 @@ export class AcademyComponent implements OnInit, OnDestroy {
         }
     }
 
-    trackByStageNumber(index: number, stage: Stage): number {
+    trackByStageNumber(_index: number, stage: Stage): number {
         return stage.number;
     }
 
-    trackByCourseId(index: number, course: Course): string {
+    trackByCourseId(_index: number, course: Course): string {
         return course.id;
     }
 

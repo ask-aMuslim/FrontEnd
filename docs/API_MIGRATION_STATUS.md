@@ -119,7 +119,7 @@ npm run api:sync         # Full sync (check, generate, update)
 1. **Verify endpoint exists in Swagger**
    ```bash
    # Check if endpoint is in generated functions
-   ls src/app/core/api/generated/fn/{endpoint-name}/
+    ls src/app/api/fn/{endpoint-name}/
    ```
 
 2. **If endpoint exists in Swagger:**

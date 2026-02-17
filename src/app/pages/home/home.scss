@@ -327,6 +327,13 @@
   gap: 1rem;
 }
 
+.events-empty-message {
+  text-align: center;
+  color: var(--color-text-caption);
+  font-weight: 500;
+  padding: 1rem 0;
+}
+
 @media (min-width: 768px) {
   .events-grid {
     grid-template-columns: 1fr;

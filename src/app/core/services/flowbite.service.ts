@@ -6,7 +6,7 @@ import { isPlatformBrowser } from '@angular/common';
   providedIn: 'root',
 })
 export class FlowbiteService {
-  constructor(@Inject(PLATFORM_ID) private platformId: any) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: object) {}
 
   loadFlowbite(callback: (flowbite: any) => void) {
     if (isPlatformBrowser(this.platformId)) {

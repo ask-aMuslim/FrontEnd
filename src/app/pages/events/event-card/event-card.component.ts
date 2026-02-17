@@ -1,8 +1,8 @@
 import { Component, Input } from '@angular/core';
 
 import { Router } from '@angular/router';
-import { EventService } from '../event.service';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
+import { EventService } from '../event.service';
 
 export interface EventCard {
   id: number | string;
@@ -14,6 +14,7 @@ export interface EventCard {
   speakerImage: string;
   speakerRole: string;
   date: string;
+  timeRange?: string;
   tags: string[];
   isRecorded?: boolean;
 }
@@ -27,10 +28,13 @@ export interface EventCard {
 export class EventCardComponent {
   @Input() event!: EventCard;
 
-  constructor(private router: Router, private eventService: EventService) {}
+  constructor(
+    private readonly router: Router,
+    private readonly eventService: EventService,
+  ) { }
 
   onCardClick(): void {
     this.eventService.setSelectedEvent(this.event);
-    this.router.navigate(['/events', this.event.id]);
+    void this.router.navigate(['/events', this.event.id]);
   }
 }

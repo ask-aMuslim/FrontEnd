@@ -41,20 +41,6 @@ export const errorInterceptor: HttpInterceptorFn = (
             // Normalize the error
             const apiError = errorNormalizer.normalize(error);
 
-            // Log for debugging (in development)
-            if (ngDevMode) {
-                console.group(`[HTTP Error] ${req.method} ${req.url}`);
-                console.log('Status:', apiError.statusCode);
-                console.log('Message:', apiError.message);
-                if (apiError.isValidationError) {
-                    console.log('Validation Errors:', apiError.validationErrors);
-                }
-                if (apiError.traceId) {
-                    console.log('Trace ID:', apiError.traceId);
-                }
-                console.groupEnd();
-            }
-
             // Re-throw the normalized error
             return throwError(() => apiError);
         })

@@ -15,7 +15,10 @@
           </div>
 
           <span class="events-hero__title">
-            The Islamic rules in relationships between family members and friends
+            {{
+              featuredEvent?.title ||
+                'The Islamic rules in relationships between family members and friends'
+            }}
           </span>
         </div>
 
@@ -26,7 +29,9 @@
               alt="Calendar Icon"
               class="events-hero__detail-icon"
             />
-            <span class="events-hero__detail-text">31 Dec, 2025</span>
+            <span class="events-hero__detail-text">{{
+              featuredEvent?.date || '31 Dec, 2025'
+            }}</span>
           </div>
 
           <div class="events-hero__detail-item">
@@ -35,7 +40,7 @@
               alt="Clock Icon"
               class="events-hero__detail-icon"
             />
-            <span class="events-hero__detail-text">1 pm .. 4 pm</span>
+            <span class="events-hero__detail-text">{{ featuredEvent?.timeRange || 'TBD' }}</span>
           </div>
 
           <div class="events-hero__detail-item">
@@ -83,8 +88,8 @@
       </div>
 
       <div class="events-hero__date-box">
-        <h1 class="events-hero__date-day">31</h1>
-        <h2 class="events-hero__date-month">Dec</h2>
+        <h1 class="events-hero__date-day">{{ featuredEventDay }}</h1>
+        <h2 class="events-hero__date-month">{{ featuredEventMonth }}</h2>
       </div>
     </div>
 
@@ -96,7 +101,13 @@
         <div class="events-search">
           <div class="events-search__input-wrapper">
             <div [inlineSVG]="'/icons/icons-24/search.svg'" class="events-search__icon"></div>
-            <input type="text" placeholder="Search for events .." class="events-search__input" />
+            <input
+              id="events-search"
+              name="events-search"
+              type="text"
+              placeholder="Search for events .."
+              class="events-search__input"
+            />
           </div>
 
           <button type="button" class="events-search__btn">
@@ -104,44 +115,52 @@
           </button>
         </div>
 
-        <div class="events-grid">
-          @for (event of paginatedEventCards; track event) {
-            <app-event-card [event]="event"></app-event-card>
-          }
-        </div>
+        @if (paginatedEventCards.length > 0) {
+          <div class="events-grid">
+            @for (event of paginatedEventCards; track event) {
+              <app-event-card [event]="event"></app-event-card>
+            }
+          </div>
+        } @else {
+          <div class="events-empty-state">
+            <span class="events-empty-state__text">No events are available right now.</span>
+          </div>
+        }
       </div>
 
       <!-- Pagination -->
-      <div class="events-pagination">
-        <button type="button" (click)="prevPage()" class="events-pagination__arrow">
-          <div
-            [inlineSVG]="'/icons/icons-24/arrow-left.svg'"
-            [class.events-pagination__arrow-icon--disabled]="isFirstPage"
-            [class.events-pagination__arrow-icon--active]="!isFirstPage"
-            class="events-pagination__arrow-icon"
-          ></div>
-        </button>
-
-        @for (page of pages; track $index) {
-          <button
-            type="button"
-            (click)="goToPage(page)"
-            class="events-pagination__page"
-            [class.events-pagination__page--active]="page === currentPage"
-          >
-            <span class="events-pagination__page-text">{{ page }}</span>
+      @if (pages.length > 0) {
+        <div class="events-pagination">
+          <button type="button" (click)="prevPage()" class="events-pagination__arrow">
+            <div
+              [inlineSVG]="'/icons/icons-24/arrow-left.svg'"
+              [class.events-pagination__arrow-icon--disabled]="isFirstPage"
+              [class.events-pagination__arrow-icon--active]="!isFirstPage"
+              class="events-pagination__arrow-icon"
+            ></div>
           </button>
-        }
 
-        <button type="button" (click)="nextPage()" class="events-pagination__arrow">
-          <div
-            [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
-            [class.events-pagination__arrow-icon--disabled]="isLastPage"
-            [class.events-pagination__arrow-icon--active]="!isLastPage"
-            class="events-pagination__arrow-icon"
-          ></div>
-        </button>
-      </div>
+          @for (page of pages; track $index) {
+            <button
+              type="button"
+              (click)="goToPage(page)"
+              class="events-pagination__page"
+              [class.events-pagination__page--active]="page === currentPage"
+            >
+              <span class="events-pagination__page-text">{{ page }}</span>
+            </button>
+          }
+
+          <button type="button" (click)="nextPage()" class="events-pagination__arrow">
+            <div
+              [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+              [class.events-pagination__arrow-icon--disabled]="isLastPage"
+              [class.events-pagination__arrow-icon--active]="!isLastPage"
+              class="events-pagination__arrow-icon"
+            ></div>
+          </button>
+        </div>
+      }
     </div>
   </div>
 </section>

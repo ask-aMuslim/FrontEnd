@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -47,7 +47,8 @@ export class EventDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private eventService: EventService
+    private eventService: EventService,
+    private readonly cdr: ChangeDetectorRef,
   ) { }
 
   ngOnInit(): void {
@@ -56,32 +57,39 @@ export class EventDetailComponent implements OnInit {
   }
 
   loadEventData(): void {
-    const selectedCard = this.eventService.getSelectedEvent();
-    if (selectedCard) {
-      this.event = this.eventService.convertCardToDetail(selectedCard);
-    } else {
-      if (!this.eventId) {
-        this.router.navigate(['/events']);
-        return;
-      }
-
-      this.eventService.getEventById(this.eventId).subscribe({
-        next: (event) => {
-          if (event) {
-            this.event = event;
-          } else {
-            this.router.navigate(['/events']);
-          }
-        },
-        error: () => {
-          this.router.navigate(['/events']);
-        },
-      });
+    if (!this.eventId) {
+      void this.router.navigate(['/events']);
+      return;
     }
+
+    const fallbackEvent = this.eventService.getSelectedEventById(this.eventId);
+    if (fallbackEvent) {
+      this.event = fallbackEvent;
+      this.cdr.detectChanges();
+    }
+
+    this.eventService.getEventById(this.eventId).subscribe({
+      next: (event) => {
+        if (event) {
+          this.event = event;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        if (!fallbackEvent) {
+          void this.router.navigate(['/events']);
+        }
+      },
+      error: () => {
+        if (!fallbackEvent) {
+          void this.router.navigate(['/events']);
+        }
+      },
+    });
   }
 
   goBack(): void {
-    this.router.navigate(['/events']);
+    void this.router.navigate(['/events']);
   }
 
   registerForEvent(): void {
@@ -102,7 +110,6 @@ export class EventDetailComponent implements OnInit {
       return;
     }
 
-    // TODO: Replace with API call when backend endpoint is ready.
     this.questionText = '';
   }
 

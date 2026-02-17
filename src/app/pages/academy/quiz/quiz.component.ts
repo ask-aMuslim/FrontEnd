@@ -15,6 +15,7 @@ import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
+import { asRecord, extractArray, getValue, toStringValue } from '../../../core/helpers/api-response.helper';
 
 // Quiz Question Interface
 interface QuizQuestion {
@@ -568,10 +569,6 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.timerSubscription?.complete();
     }
 
-    private resetTimer(): void {
-        this.timeRemaining.set(this.quizConfig.timePerQuestion);
-    }
-
     // Helper methods
     getAnswerStatus(index: number): 'correct' | 'wrong' | 'skipped' | 'current' | 'pending' {
         const answer = this.answers()[index];
@@ -618,21 +615,20 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.router.navigate(['/academy/course', this.courseId, 'certificate']);
     }
     private mapApiQuestions(response: unknown): QuizQuestion[] {
-        const records = this.extractArray(response);
+        const records = extractArray(response);
         const filtered = this.filterQuestionsByCourse(records, this.courseId);
         return filtered.map((item, index) => this.mapApiQuestion(item, index));
     }
 
     private mapApiQuestion(item: unknown, index: number): QuizQuestion {
-        const record = this.asRecord(item);
-        const id = this.asString(record?.['id']) ?? `question-${index + QuizComponent.questionNumberOffset}`;
-        const questionText = this.asString(record?.['questionText']) ??
-            this.asString(record?.['text']) ??
+        const record = asRecord(item);
+        const id = toStringValue(getValue(record, 'id', 'Id')) ?? `question-${index + QuizComponent.questionNumberOffset}`;
+        const questionText = toStringValue(getValue(record, 'questionText', 'QuestionText', 'text', 'Text')) ??
             'Question';
-        const options = this.mapOptions(record?.['options']);
-        const hint = this.asString(record?.['hint']) ?? undefined;
-        const evidenceSource = this.asString(record?.['evidenceSource']) ?? undefined;
-        const correctOptionId = this.asString(record?.['correctOptionId']) ?? (options[0]?.id ?? '');
+        const options = this.mapOptions(getValue(record, 'options', 'Options'));
+        const hint = toStringValue(getValue(record, 'hint', 'Hint')) ?? undefined;
+        const evidenceSource = toStringValue(getValue(record, 'evidenceSource', 'EvidenceSource')) ?? undefined;
+        const correctOptionId = toStringValue(getValue(record, 'correctOptionId', 'CorrectOptionId')) ?? (options[0]?.id ?? '');
 
         return {
             id,
@@ -651,40 +647,23 @@ export class QuizComponent implements OnInit, OnDestroy {
         }
 
         return value.map((option, index) => {
-            const record = this.asRecord(option);
-            const id = this.asString(record?.['id']) ?? `option-${index + QuizComponent.questionNumberOffset}`;
-            const text = this.asString(record?.['text']) ?? 'Answer';
-            const label = this.asString(record?.['label']) ??
+            const record = asRecord(option);
+            const id = toStringValue(getValue(record, 'id', 'Id')) ?? `option-${index + QuizComponent.questionNumberOffset}`;
+            const text = toStringValue(getValue(record, 'text', 'Text')) ?? 'Answer';
+            const label = toStringValue(getValue(record, 'label', 'Label')) ??
                 QuizComponent.optionLabels[index] ?? `${index + QuizComponent.questionNumberOffset}`;
             return { id, text, label };
         });
     }
 
-    private extractArray(response: unknown): readonly unknown[] {
-        if (Array.isArray(response)) {
-            return response;
-        }
-        const record = this.asRecord(response);
-        const data = record?.['data'] ?? record?.['items'] ?? record?.['results'];
-        return Array.isArray(data) ? data : [];
-    }
-
     private filterQuestionsByCourse(records: readonly unknown[], courseId: string): readonly unknown[] {
         if (!courseId) return records;
         return records.filter((item) => {
-            const record = this.asRecord(item);
-            const quizId = this.asString(record?.['quizId']);
-            const mappedCourseId = this.asString(record?.['courseId']);
+            const record = asRecord(item);
+            const quizId = toStringValue(getValue(record, 'quizId', 'QuizId'));
+            const mappedCourseId = toStringValue(getValue(record, 'courseId', 'CourseId'));
             return quizId === courseId || mappedCourseId === courseId;
         });
-    }
-
-    private asRecord(value: unknown): Record<string, unknown> | null {
-        return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
-    }
-
-    private asString(value: unknown): string | null {
-        return typeof value === 'string' && value.trim().length > 0 ? value : null;
     }
 
     private mapLessonType(value: unknown): 'intro' | 'video' | 'article' | 'quiz' | 'audio' {
@@ -696,8 +675,8 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     private extractAttemptId(value: unknown): string {
-        const record = this.asRecord(value);
-        return this.asString(record?.['id']) ?? '';
+        const record = asRecord(value);
+        return toStringValue(getValue(record, 'id', 'Id')) ?? '';
     }
 
     retakeQuizFromResults(): void {

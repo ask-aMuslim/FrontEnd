@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, combineLatest } from 'rxjs';
@@ -74,7 +74,8 @@ export class CourseComponent implements OnInit, OnDestroy {
     constructor(
         private readonly router: Router,
         private readonly route: ActivatedRoute,
-        private readonly academyProgressService: AcademyProgressService
+        private readonly academyProgressService: AcademyProgressService,
+        private readonly cdr: ChangeDetectorRef,
     ) { }
 
     ngOnInit(): void {
@@ -95,79 +96,35 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     /**
      * Load course data and lessons with progress.
-     * Uses seed data directly to ensure immediate rendering without loading states.
+     * Uses API-backed course and lesson content and merges student progress.
      */
     private loadCourseData(): void {
         this.error = null;
+        this.isLoading = true;
 
-        // Get course static data
-        const courseData = this.academyProgressService.getCourseById(this.courseId);
-        if (!courseData) {
-            this.error = 'Course not found';
-            this.isLoading = false;
-            return;
-        }
-
-        // Get lessons from seed data
-        const lessons = this.academyProgressService.getCourseLessons(this.courseId);
-
-        // Build course details immediately from seed data (no loading delay)
-        this.course = this.buildCourseDetailsFromSeed(courseData, lessons);
-        this.isLoading = false;
-
-        // Then update with progress data asynchronously
         combineLatest([
+            this.academyProgressService.getAcademyCourseById(this.courseId),
             this.academyProgressService.getCourseProgress(this.courseId),
             this.academyProgressService.getCourseLessonsWithProgress(this.courseId)
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([courseProgress, lessonsWithProgress]) => {
+                next: ([courseData, courseProgress, lessonsWithProgress]) => {
                     this.course = this.buildCourseDetails(
                         courseData,
                         courseProgress,
                         lessonsWithProgress
                     );
+                    this.error = null;
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
                 },
                 error: () => {
-                    // Keep the seed data display - no error needed
+                    this.error = 'Unable to load this course right now. Please try again.';
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
                 },
             });
-    }
-
-    /**
-     * Build CourseDetails from seed data (no progress info - for immediate rendering)
-     */
-    private buildCourseDetailsFromSeed(
-        courseData: AcademyCourse,
-        lessons: AcademyLesson[]
-    ): CourseDetails {
-        return {
-            id: courseData.id,
-            stageNumber: courseData.stageId,
-            title: `Course: ${courseData.title}`,
-            intro:
-                courseData.description ||
-                "In this course, you'll learn comprehensive content designed to guide you step by step through important Islamic teachings.",
-            lessons: lessons
-                .filter((l) => l.type !== 'quiz' && l.type !== 'intro')
-                .map((l) => l.title),
-            answers: ['Why God..?', 'Is Mohamed..?'],
-            totalLessons: lessons.length,
-            completedLessons: 0,
-            duration: courseData.duration,
-            isLocked: false,
-            lessonsList: lessons.map((lesson, index) => ({
-                id: lesson.id,
-                title: lesson.title,
-                duration: lesson.duration,
-                type: lesson.type,
-                isLocked: false,
-                isCompleted: false,
-                isCurrent: index === 0,
-                hasNotification: index === 0,
-            })),
-        };
     }
 
     /**
@@ -228,12 +185,13 @@ export class CourseComponent implements OnInit, OnDestroy {
      * Navigate to first lesson (Begin button)
      */
     onBeginClick(): void {
-        if (this.course && !this.course.isLocked) {
-            const firstLesson = this.academyProgressService.getFirstLessonOfCourse(this.courseId);
-            if (firstLesson) {
-                // Updated path from academy routes
-                this.router.navigate(['lesson', firstLesson.id], { relativeTo: this.route });
-            }
+        if (!this.course || this.course.isLocked) {
+            return;
+        }
+
+        const firstLesson = this.course.lessonsList.find((lesson) => !lesson.isLocked);
+        if (firstLesson) {
+            this.router.navigate(['lesson', firstLesson.id], { relativeTo: this.route });
         }
     }
 

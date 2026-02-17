@@ -716,7 +716,7 @@ function generatePrayerLessons(courseId: string, courseDescription: string): See
     ];
 }
 
-function generateSeerahLessons(courseId: string, courseDescription: string): SeedLesson[] {
+function generateSeerahLessons(courseId: string, _courseDescription: string): SeedLesson[] {
     return [
         {
             id: `${courseId}-lesson-1`,
@@ -832,7 +832,7 @@ function generateSeerahLessons(courseId: string, courseDescription: string): See
     ];
 }
 
-function generateEqualityLessons(courseId: string, courseDescription: string): SeedLesson[] {
+function generateEqualityLessons(courseId: string, _courseDescription: string): SeedLesson[] {
     return [
         {
             id: `${courseId}-lesson-1`,
@@ -927,7 +927,7 @@ function generateEqualityLessons(courseId: string, courseDescription: string): S
     ];
 }
 
-function generateWomenLessons(courseId: string, courseDescription: string): SeedLesson[] {
+function generateWomenLessons(courseId: string, _courseDescription: string): SeedLesson[] {
     return [
         {
             id: `${courseId}-lesson-1`,

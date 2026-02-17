@@ -4,7 +4,7 @@
             "type": "streamable-http",
             "url": "https://mcp.postman.com/mcp",
             "headers": {
-                "Authorization": "Bearer PMAK-698cb72137f70b0001078161-52224c9747c87d3e2a963b0cab8f71920c"
+                "Authorization": "Bearer ${POSTMAN_API_KEY}"
             },
             "alwaysAllow": [
                 "getAuthenticatedUser",
@@ -85,7 +85,60 @@
                 "updateWorkspaceGlobalVariables",
                 "updateWorkspaceTags"
             ],
-            "disabled": true
+            "disabled": false
+        },
+        "chrome-devtools": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "chrome-devtools-mcp"
+            ],
+            "alwaysAllow": [
+                "list_pages",
+                "take_snapshot",
+                "click",
+                "close_page",
+                "drag",
+                "emulate",
+                "evaluate_script",
+                "fill",
+                "fill_form",
+                "get_console_message",
+                "get_network_request",
+                "handle_dialog",
+                "hover",
+                "list_console_messages",
+                "list_network_requests",
+                "navigate_page",
+                "new_page",
+                "performance_analyze_insight",
+                "performance_start_trace",
+                "performance_stop_trace",
+                "press_key",
+                "resize_page",
+                "select_page",
+                "take_screenshot",
+                "upload_file",
+                "wait_for"
+            ]
+        },
+        "memory": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+            ],
+            "alwaysAllow": [
+                "create_entities",
+                "create_relations",
+                "add_observations",
+                "delete_entities",
+                "delete_observations",
+                "delete_relations",
+                "read_graph",
+                "search_nodes",
+                "open_nodes"
+            ]
         }
     }
 }

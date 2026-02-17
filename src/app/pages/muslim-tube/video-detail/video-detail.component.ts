@@ -29,6 +29,7 @@ export class VideoDetailComponent implements OnInit {
   relatedVideos: Video[] = [];
   isLiked = false;
   isSaved = false;
+  userActionMessage: string | null = null;
 
   // Sample video data
   allVideos: Video[] = [
@@ -182,6 +183,7 @@ export class VideoDetailComponent implements OnInit {
   }
 
   toggleLike(): void {
+    this.userActionMessage = null;
     this.isLiked = !this.isLiked;
     if (this.video) {
       this.video.likes += this.isLiked ? 1 : -1;
@@ -189,24 +191,69 @@ export class VideoDetailComponent implements OnInit {
   }
 
   toggleSave(): void {
+    this.userActionMessage = null;
     this.isSaved = !this.isSaved;
+    this.userActionMessage = this.isSaved
+      ? 'Video saved to your list.'
+      : 'Video removed from your saved list.';
   }
 
   share(): void {
-    if (navigator.share && this.video) {
-      navigator.share({
-        title: this.video.title,
-        text: `Check out this video: ${this.video.title}`,
-        url: globalThis.location.href,
-      });
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      alert('Share functionality: Implement your own share mechanism');
+    if (!this.video) {
+      this.userActionMessage = 'Unable to share this video right now.';
+      return;
     }
+
+    this.userActionMessage = null;
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: this.video.title,
+          text: `Check out this video: ${this.video.title}`,
+          url: globalThis.location.href,
+        })
+        .then(() => {
+          this.userActionMessage = 'Video link shared successfully.';
+        })
+        .catch(() => {
+          this.userActionMessage = 'Unable to share right now. Please try again.';
+        });
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(globalThis.location.href)
+      .then(() => {
+        this.userActionMessage = 'Video link copied to clipboard.';
+      })
+      .catch(() => {
+        this.userActionMessage = 'Unable to copy the video link.';
+      });
   }
 
   download(): void {
-    alert('Download functionality: Implement your own download mechanism');
+    if (!this.video) {
+      this.userActionMessage = 'Unable to download this video right now.';
+      return;
+    }
+
+    const fileName = `${this.video.title || 'video-details'}.txt`;
+    const fileContent = [this.video.title, '', this.video.description ?? '', '', globalThis.location.href]
+      .join('\n')
+      .trim();
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(blobUrl);
+
+    this.userActionMessage = 'Video details downloaded.';
   }
 
   formatNumber(num: number): string {

@@ -1,29 +1,37 @@
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { Injectable, inject } from '@angular/core';
+import { Observable, map } from 'rxjs';
+import { QuestionFacade, QuestionReadDto, QuestionCreateDto, QuestionUpdateDto } from '../../api/facades/question.facade';
 
+/**
+ * Domain service for question operations.
+ *
+ * Delegates to QuestionFacade (generated API paths via HttpClient).
+ */
 @Injectable({ providedIn: 'root' })
 export class QuestionsService {
-  constructor(private api: ApiService) { }
+  private readonly facade = inject(QuestionFacade);
 
-  getAll(): Observable<unknown> {
-    return this.api.get<unknown>(API_ENDPOINTS.questions.getAll());
+  getAll(): Observable<QuestionReadDto[]> {
+    return this.facade.getAllQuestions();
   }
 
-  create(payload: unknown): Observable<unknown> {
-    return this.api.post<unknown>(API_ENDPOINTS.questions.create(), payload);
+  create(payload: QuestionCreateDto): Observable<boolean> {
+    return this.facade.createQuestion(payload).pipe(
+      map(question => question !== null)
+    );
   }
 
-  getById(id: string): Observable<unknown> {
-    return this.api.get<unknown>(API_ENDPOINTS.questions.getById(id));
+  getById(id: string): Observable<QuestionReadDto | null> {
+    return this.facade.getQuestionById(id);
   }
 
-  update(id: string, payload: unknown): Observable<unknown> {
-    return this.api.put<unknown>(API_ENDPOINTS.questions.update(id), payload);
+  update(id: string, payload: QuestionUpdateDto): Observable<boolean> {
+    return this.facade.updateQuestion(id, payload).pipe(
+      map(question => question !== null)
+    );
   }
 
-  delete(id: string): Observable<unknown> {
-    return this.api.delete<unknown>(API_ENDPOINTS.questions.delete(id));
+  delete(id: string): Observable<boolean> {
+    return this.facade.deleteQuestion(id);
   }
 }

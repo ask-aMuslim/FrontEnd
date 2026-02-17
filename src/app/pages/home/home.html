@@ -4,7 +4,7 @@
     <div class="section-block section-block--wide">
       <div class="hero-content">
         <div
-          class="mx-auto rounded-full border border-(--colors-green-30) text-(--color-text-caption) bg-white px-4 py-1 text-sm font-medium hint"
+          class="mx-auto rounded-full border border-(--colors-green-30) text-(--color-text-caption) bg-transparent px-4 py-1 text-sm font-medium hint"
         >
           <span class="text-(--color-button-secondary-normal)">2,000,000,000+</span>
           Muslim brothers &amp; sisters
@@ -131,21 +131,16 @@
           </p>
         </div>
 
-        <div class="events-grid">
-          @for (event of eventCards; track $index; let i = $index) {
-            <article
-              class="event-card"
-              [ngClass]="{ 'event-card--reverse': Math.floor(i / 2) % 2 === 1 }"
-            >
-              <div class="event-image">
-                <img [src]="event.image" [alt]="event.title" loading="lazy" />
-                <a
-                  [href]="event.videoUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="play-pill"
-                  [attr.aria-label]="'Watch ' + event.title"
-                >
+        @if (eventCards.length > 0) {
+          <div class="events-grid">
+            @for (event of eventCards; track event.id; let i = $index) {
+              <article
+                class="event-card"
+                [ngClass]="{ 'event-card--reverse': Math.floor(i / 2) % 2 === 1 }"
+              >
+                <div class="event-image">
+                  <img [src]="event.image" [alt]="event.title" loading="lazy" />
+                  <a [routerLink]="event.detailUrl" class="play-pill" [attr.aria-label]="'Open ' + event.title">
                   <svg
                     width="64"
                     height="64"
@@ -168,10 +163,10 @@
                       stroke-linejoin="round"
                     />
                   </svg>
-                </a>
-              </div>
-              <div class="divider"></div>
-              <div class="event-body">
+                  </a>
+                </div>
+                <div class="divider"></div>
+                <div class="event-body">
                 <div
                   class="event-date"
                   [ngClass]="{ 'event-date--upcoming': isUpcoming(event.date) }"
@@ -228,17 +223,20 @@
                     </li>
                   }
                 </ul>
-                <div class="event-speaker">
-                  <img src="/images/profile-picture-navbar.png" alt="{{ event.speaker }}" />
-                  <div>
-                    <p>{{ event.speaker }}</p>
-                    <span>{{ event.speakerRole }}</span>
+                  <div class="event-speaker">
+                    <img [src]="event.speakerImage" alt="{{ event.speaker }}" />
+                    <div>
+                      <p>{{ event.speaker }}</p>
+                      <span>{{ event.speakerRole }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </article>
-          }
-        </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="events-empty-message">No events are available right now.</p>
+        }
 
         <div class="section-cta">
           <a class="button" [routerLink]="'/account'">Join for Free</a>

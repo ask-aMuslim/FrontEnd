@@ -43,6 +43,10 @@
       </div>
     </div>
 
+    @if (userActionMessage) {
+      <p class="text-sm text-(--color-button-primary-normal) mt-2">{{ userActionMessage }}</p>
+    }
+
     <!-- Description Section -->
     <div class="description-section">
       <h2 class="section-title">Description</h2>

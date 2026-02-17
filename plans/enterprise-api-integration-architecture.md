@@ -216,7 +216,7 @@ src/app/core/
 ```json
 {
   "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
-  "input": "https://ask-a-muslim.runasp.net/swagger/v1/swagger.json",
+  "input": "https://askamusslimapi.runasp.net/swagger/v1/swagger.json",
   "output": "src/app/core/api/generated",
   "ignoreUnusedModels": false,
   "modelIndex": true,
@@ -665,7 +665,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import https from 'https';
 import http from 'http';
 
-const SWAGGER_URL = 'https://ask-a-muslim.runasp.net/swagger/v1/swagger.json';
+const SWAGGER_URL = 'https://askamusslimapi.runasp.net/swagger/v1/swagger.json';
 const HASH_FILE = 'src/app/core/api/swagger.hash';
 
 async function fetchSwagger(): Promise<string> {
@@ -759,7 +759,7 @@ jobs:
         id: swagger
         run: |
           CURRENT_HASH=$(cat src/app/core/api/swagger.hash 2>/dev/null || echo "")
-          NEW_HASH=$(curl -s https://ask-a-muslim.runasp.net/swagger/v1/swagger.json | sha256sum | cut -d' ' -f1)
+          NEW_HASH=$(curl -s https://askamusslimapi.runasp.net/swagger/v1/swagger.json | sha256sum | cut -d' ' -f1)
           echo "current_hash=$CURRENT_HASH" >> $GITHUB_OUTPUT
           echo "new_hash=$NEW_HASH" >> $GITHUB_OUTPUT
           
@@ -897,7 +897,7 @@ jobs:
 {
   "name": "AskAMuslim - Dev",
   "values": [
-    { "key": "baseUrl", "value": "https://ask-a-muslim.runasp.net", "enabled": true },
+    { "key": "baseUrl", "value": "https://askamusslimapi.runasp.net", "enabled": true },
     { "key": "jwt", "value": "", "enabled": true },
     { "key": "refreshToken", "value": "", "enabled": true },
     { "key": "userId", "value": "", "enabled": true }

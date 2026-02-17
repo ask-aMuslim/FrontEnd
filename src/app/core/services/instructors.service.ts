@@ -1,28 +1,26 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { InstructorFacade } from '../api/facades/instructor.facade';
+import { Observable, map } from 'rxjs';
+import { InstructorFacade, InstructorReadDto, InstructorUpdatePayload } from '../../api/facades/instructor.facade';
 
 @Injectable({ providedIn: 'root' })
 export class InstructorsService {
   private readonly facade = inject(InstructorFacade);
 
-  getAll(): Observable<any> {
+  getAll(): Observable<InstructorReadDto[]> {
     return this.facade.getAllInstructors();
   }
 
-  getById(userId: string): Observable<any> {
-    return this.facade.getInstructorById(userId);
+  getById(id: string): Observable<InstructorReadDto | null> {
+    return this.facade.getInstructorById(id);
   }
 
-  getByCourseId(courseId: string): Observable<any> {
-    return this.facade.getInstructorByCourseId(courseId);
-  }
-
-  me(): Observable<any> {
+  me(): Observable<InstructorReadDto | null> {
     return this.facade.me();
   }
 
-  update(payload: any): Observable<any> {
-    return this.facade.update(payload);
+  update(id: string, payload: InstructorUpdatePayload): Observable<boolean> {
+    return this.facade.updateInstructor(id, payload).pipe(
+      map(instructor => instructor !== null)
+    );
   }
 }

@@ -1,10 +1,9 @@
-import { Component, inject } from '@angular/core';
-
-import { Router, RouterLink } from '@angular/router';
+import { Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
-import { AuthService } from '../../services/auth.service';
-import { LoginViewModel } from '../../api/generated/models';
+import { IdentityFacade } from '../../../api/facades/identity.facade';
+import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 
 @Component({
   selector: 'app-login',
@@ -13,17 +12,22 @@ import { LoginViewModel } from '../../api/generated/models';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent {
-  private fb = inject(FormBuilder);
-  private readonly authService = inject(AuthService);
+export class LoginComponent implements OnInit, OnDestroy {
+  private readonly fb = inject(FormBuilder);
+  private readonly facade = inject(IdentityFacade);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+
+  protected readonly loading = this.facade.isLoading;
+  protected readonly apiError = this.facade.error;
 
   protected loginForm: FormGroup;
   protected showPassword = false;
-  protected isSubmitting = false;
   protected submitSuccess = false;
-  protected fieldFocused: { [key: string]: boolean } = {};
-  protected fieldTouched: { [key: string]: boolean } = {};
+  protected fieldFocused: Record<string, boolean> = {};
+  protected fieldTouched: Record<string, boolean> = {};
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -31,6 +35,17 @@ export class LoginComponent {
       password: ['', [Validators.required, Validators.minLength(8)]],
       rememberMe: [false]
     });
+
+    this.facade.clearError();
+  }
+
+  ngOnInit(): void {
+    this.submitSuccess = false;
+    this.facade.clearError();
+  }
+
+  ngOnDestroy(): void {
+    this.facade.clearError();
   }
 
   protected togglePassword(): void {
@@ -79,30 +94,39 @@ export class LoginComponent {
   }
 
   protected onSubmit(): void {
-    if (this.loginForm.valid && !this.isSubmitting) {
-      this.isSubmitting = true;
-      const payload: LoginViewModel = {
-        email: String(this.loginForm.value.email).trim(),
-        password: String(this.loginForm.value.password),
-      };
+    if (this.loginForm.valid && !this.loading()) {
+      this.facade.clearError();
+      const email = String(this.loginForm.value.email).trim();
+      const password = String(this.loginForm.value.password);
 
-      this.authService
-        .login(payload)
-        .pipe(finalize(() => (this.isSubmitting = false)))
-        .subscribe({
-          next: () => {
-            this.submitSuccess = true;
-            void this.router.navigate(['/home']);
-          },
-          error: () => {
-            this.submitSuccess = false;
-          },
-        });
+      this.facade.login(email, password).subscribe({
+        next: () => {
+          this.submitSuccess = true;
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] as string | undefined;
+          void this.router.navigateByUrl(returnUrl ?? '/home');
+        },
+        error: () => {
+          this.submitSuccess = false;
+        },
+      });
     } else {
       Object.keys(this.loginForm.controls).forEach(key => {
         this.loginForm.get(key)?.markAsTouched();
         this.fieldTouched[key] = true;
       });
     }
+  }
+
+  protected onSocialSignIn(provider: 'google' | 'facebook'): void {
+    if (!this.isBrowser) return;
+
+    const targetUrl =
+      provider === 'google' ? '/api/Authentication/login/google' : '/api/Authentication/login/facebook';
+
+    globalThis.location.href = targetUrl;
+  }
+
+  protected get friendlyApiError(): string | null {
+    return toFriendlyAuthErrorMessage(this.apiError());
   }
 }

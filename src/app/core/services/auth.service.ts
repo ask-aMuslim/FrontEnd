@@ -10,29 +10,29 @@
  * @deprecated Use IdentityFacade and TokenService directly
  */
 
-import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, signal, inject } from '@angular/core';
 import { Observable, map, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
 
 // New architecture imports
-import { IdentityFacade } from '../api/facades/identity.facade';
+import { IdentityFacade, UserRole } from '../../api/facades/identity.facade';
 import { TokenService } from '../auth/token.service';
+import { StudentFacade } from '../../api/facades/student.facade';
 
 // Legacy imports (for social login - not in Swagger spec yet)
 import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
 
 // Types
-import { LoginViewModel } from '../api/generated/models';
 import { AuthResponse, RegisterRequest } from '../models/interfaces/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private static readonly GOOGLE_LOGIN_PATH = '/api/Authentication/login/google';
+  private static readonly FACEBOOK_LOGIN_PATH = '/api/Authentication/login/facebook';
+
   private readonly facade = inject(IdentityFacade);
   private readonly tokenService = inject(TokenService);
+  private readonly studentFacade = inject(StudentFacade);
   private readonly legacyApi = inject(ApiService);
   private readonly router = inject(Router);
 
@@ -43,6 +43,7 @@ export class AuthService {
   // Expose isAuthenticated from TokenService
   readonly isAuthenticated = this.tokenService.isAuthenticated;
   readonly currentUser = this._currentUser.asReadonly();
+  readonly error = this.facade.error;
 
   constructor() {
     this.initializeAuthState();
@@ -52,8 +53,7 @@ export class AuthService {
     // TokenService handles its own initialization from localStorage
     // We just need to set up the user info if authenticated
     if (this.tokenService.isAuthenticated()) {
-      const email = this.tokenService.userEmail();
-      this._currentUser.set(email ? { name: email, meta: 'Signed in' } : null);
+      this.hydrateCurrentUserFromProfile();
     }
   }
 
@@ -81,37 +81,34 @@ export class AuthService {
     // Clear local state
     this._currentUser.set(null);
 
-    // Call backend logout and clear tokens
-    return this.facade.logout().pipe(
-      tap(() => {
-        // Navigate to login
-        this.router.navigate(['/login']);
-      }),
-      catchError((error) => {
-        // Even if logout fails, tokens are cleared by facade
-        this.router.navigate(['/login']);
-        return of(undefined);
-      })
-    );
+    // Call backend logout (returns void, not Observable)
+    this.facade.logout();
+
+    // Clear tokens and navigate to login
+    this.router.navigate(['/login']);
+
+    return of(undefined);
   }
 
   /**
    * Register new user
    */
   register(payload: RegisterRequest): Observable<AuthResponse> {
-    let role: 'Student' | 'Instructor' | 'Admin' = 'Student';
-    if (payload.role === 1) {
+    // UserRole is a string union type: 'Student' | 'Instructor' | 'Admin'
+    // Default to 'Student' if not provided
+    let role: UserRole = 'Student';
+    if (payload.role === 2) {
       role = 'Instructor';
-    } else if (payload.role === 2) {
+    } else if (payload.role === 3) {
       role = 'Admin';
     }
 
     return this.facade.register({
-      Email: payload.email,
-      Password: payload.password,
-      FirstName: payload.firstName,
-      LastName: payload.lastName,
-      Role: role,
+      email: payload.email,
+      password: payload.password,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      role: role,
     }).pipe(
       map(() => {
         // The generated API returns void, but we need to return AuthResponse
@@ -122,7 +119,7 @@ export class AuthService {
           expiresIn: 0
         } as AuthResponse;
       }),
-      tap((response) => {
+      tap((_response) => {
         // If the API actually returns tokens, they would be set here
         // For now, user needs to login after registration
       })
@@ -132,24 +129,19 @@ export class AuthService {
   /**
    * Login user with credentials
    */
-  login(payload: LoginViewModel): Observable<AuthResponse> {
-    return this.facade.login(payload).pipe(
-      map(() => {
-        // The generated API returns void, but we need to return AuthResponse
-        // This is a temporary workaround until Swagger spec includes proper response types
-        // The actual tokens are handled by the HTTP response, not the generated client
+  login(email: string, password: string): Observable<AuthResponse> {
+    return this.facade.login(email, password).pipe(
+      map((response) => {
+        // The facade returns LoginResponse with token and user info
         return {
-          accessToken: this.tokenService.accessToken() || '',
-          refreshToken: this.tokenService.refreshToken() || '',
-          expiresIn: 3600 // Default 1 hour
+          accessToken: response.token || '',
+          refreshToken: '',
+          expiresIn: response.expiresIn ?? 3600
         } as AuthResponse;
       }),
-      tap((response) => {
-        // Update user state
-        this._currentUser.set({
-          name: payload.email,
-          meta: 'Signed in',
-        });
+      tap((_response) => {
+        this._currentUser.set({ name: email, meta: 'Signed in' });
+        this.hydrateCurrentUserFromProfile();
       })
     );
   }
@@ -159,7 +151,7 @@ export class AuthService {
    * Note: This endpoint is not in Swagger spec, uses legacy API
    */
   loginGoogle(token: string): Observable<AuthResponse> {
-    return this.legacyApi.post<AuthResponse>(API_ENDPOINTS.auth.loginGoogle(), { token }).pipe(
+    return this.legacyApi.post<AuthResponse>(AuthService.GOOGLE_LOGIN_PATH, { token }).pipe(
       tap((response) => {
         // Store tokens in TokenService
         if (response?.accessToken) {
@@ -179,7 +171,7 @@ export class AuthService {
    * Note: This endpoint is not in Swagger spec, uses legacy API
    */
   loginFacebook(payload: { accessToken: string }): Observable<AuthResponse> {
-    return this.legacyApi.post<AuthResponse>(API_ENDPOINTS.auth.loginFacebook(), payload).pipe(
+    return this.legacyApi.post<AuthResponse>(AuthService.FACEBOOK_LOGIN_PATH, payload).pipe(
       tap((response) => {
         // Store tokens in TokenService
         if (response?.accessToken) {
@@ -201,6 +193,10 @@ export class AuthService {
     return this.tokenService.hasValidSession();
   }
 
+  clearError(): void {
+    this.facade.clearError();
+  }
+
   /**
    * Get current access token
    */
@@ -213,5 +209,56 @@ export class AuthService {
    */
   getRefreshToken(): string | null {
     return this.tokenService.refreshToken();
+  }
+
+  private hydrateCurrentUserFromProfile(): void {
+    const fallbackEmail = this.tokenService.userEmail();
+    if (!fallbackEmail) {
+      this._currentUser.set(null);
+      return;
+    }
+
+    this._currentUser.set({ name: fallbackEmail, meta: 'Signed in' });
+
+    this.studentFacade.getMyProfile().pipe(
+      map((profile: unknown) => {
+        const profileRecord = this.asRecord(profile);
+
+        const firstName = this.getString(profileRecord, ['firstName', 'firstname', 'givenName']);
+        const lastName = this.getString(profileRecord, ['lastName', 'lastname', 'familyName']);
+        const fullNameFromParts = `${firstName} ${lastName}`.trim();
+        const fullName =
+          fullNameFromParts ||
+          this.getString(profileRecord, ['fullName', 'name', 'displayName']) ||
+          fallbackEmail;
+
+        const level = this.getString(profileRecord, ['level', 'studentLevel', 'stage']);
+        const meta = level ? `Level ${level}` : 'Student';
+
+        return { name: fullName, meta };
+      }),
+      catchError(() => of({ name: fallbackEmail, meta: 'Signed in' }))
+    ).subscribe((user: { name: string; meta: string }) => {
+      this._currentUser.set(user);
+    });
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+  }
+
+  private getString(record: Record<string, unknown> | null, keys: string[]): string {
+    if (!record) {
+      return '';
+    }
+
+    for (const key of keys) {
+      const candidate = record[key];
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+
+    return '';
   }
 }

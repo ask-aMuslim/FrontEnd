@@ -1,8 +1,27 @@
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  ViewChild,
+} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { EventsService } from '../../core/services/events.service';
+import {
+  asRecord,
+  extractArray,
+  getValue,
+  toStringValue,
+} from '../../core/helpers/api-response.helper';
+import { formatEventDateDisplay } from '../../core/helpers/event-display.helper';
+import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 interface HeroStat {
   value: string;
@@ -19,14 +38,16 @@ interface FeatureCard {
 }
 
 interface EventCard {
+  id: string;
   date: string;
   tag: string;
   title: string;
   bullets: string[];
   image: string;
   speaker: string;
+  speakerImage: string;
   speakerRole: string;
-  videoUrl: string;
+  detailUrl: string;
 }
 
 interface PillarItem {
@@ -42,7 +63,7 @@ interface PillarItem {
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
-export class Home implements AfterViewInit, OnDestroy {
+export class Home implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('bubblesContainer') bubblesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bubblesTrack') bubblesTrack?: ElementRef<HTMLDivElement>;
 
@@ -151,64 +172,7 @@ export class Home implements AfterViewInit, OnDestroy {
     },
   ];
 
-  protected readonly eventCards: EventCard[] = [
-    {
-      date: '29 December, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example2',
-    },
-    {
-      date: '20 October, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example3',
-    },
-    {
-      date: '20 October, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example1',
-    },
-    {
-      date: '20 October, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example4',
-    },
-  ];
+  protected eventCards: EventCard[] = [];
 
   protected readonly imanPillars: PillarItem[] = [
     { number: '1', label: 'Belief in', name: 'Allah' },
@@ -234,14 +198,21 @@ export class Home implements AfterViewInit, OnDestroy {
   }
 
   private cleanupFns: (() => void)[] = [];
-  private readonly bubbleMarqueeId?: number;
-  private readonly lastFrameTime = 0;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   constructor(
-    private readonly host: ElementRef<HTMLElement>,
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
+    private readonly eventsService: EventsService,
+    private readonly cdr: ChangeDetectorRef,
   ) { }
+
+  ngOnInit(): void {
+    if (this.isBrowser) {
+      this.loadEventsSection();
+    }
+  }
 
   protected isSvgIcon(feature: FeatureCard): boolean {
     return typeof feature.icon === 'string' && feature.icon.trim().startsWith('<svg');
@@ -286,6 +257,61 @@ export class Home implements AfterViewInit, OnDestroy {
     void this.router.navigate(['/ask-and-contact'], { queryParams: { question: q } });
   }
 
+  private loadEventsSection(): void {
+    this.eventsService.getAll().subscribe({
+      next: (response) => {
+        this.eventCards = this.mapEventCards(response);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.eventCards = [];
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private mapEventCards(response: unknown): EventCard[] {
+    const records = extractArray(response);
+    return records.map((item, index) => this.mapEventCard(item, index));
+  }
+
+  private mapEventCard(item: unknown, index: number): EventCard {
+    const record = asRecord(item);
+    const id = toStringValue(getValue(record, 'id', 'Id')) ?? `event-${index + 1}`;
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? 'Upcoming Event';
+    const description =
+      toStringValue(getValue(record, 'description', 'Description')) ?? 'Details will be available soon.';
+    const speakerName = toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? 'Ask A Muslim';
+    const speakerImage =
+      toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
+      '/images/profile-picture-navbar.png';
+    const speakerRole = toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? 'Islamic Scholar';
+    const image =
+      toApiMediaUrl(
+        toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
+      ) ??
+      '/images/events-picture.png';
+    const startDateValue = toStringValue(
+      getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
+    );
+    const date = formatEventDateDisplay(startDateValue);
+    const tag = toStringValue(getValue(record, 'tag', 'Tag')) ?? '#Event';
+    const detailUrl = `/events/${id}`;
+
+    return {
+      id,
+      date,
+      tag,
+      title,
+      bullets: [description],
+      image,
+      speaker: speakerName,
+      speakerImage,
+      speakerRole,
+      detailUrl,
+    };
+  }
+
   ngAfterViewInit(): void {
     if (globalThis.window === undefined) {
       return;
@@ -316,10 +342,7 @@ export class Home implements AfterViewInit, OnDestroy {
 
     // Calculate total width of all bubbles + gaps
     const trackWidth = track.scrollWidth;
-    const containerWidth = this.bubblesContainer?.nativeElement?.offsetWidth || 0;
 
-    // Animation speed: move all content width in 20 seconds
-    const duration = 20;
 
     // Create continuous animation using requestAnimationFrame for smooth scrolling
     let currentTranslate = 0;

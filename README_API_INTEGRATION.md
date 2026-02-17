@@ -8,17 +8,17 @@ npm run generate:api
 ```
 
 This command:
-1. Fetches the Swagger specification from `https://ask-a-muslim.runasp.net/swagger/v1/swagger.json`
+1. Fetches the Swagger specification from `https://askamusslimapi.runasp.net/api/specification.json`
 2. Generates type-safe TypeScript interfaces and services
-3. Outputs everything to `src/app/core/api/generated/`
+3. Outputs everything to `src/app/api/`
 
 ### Using Generated API Clients
 
 #### Basic Usage
 ```typescript
-import { Api } from '@core/api/generated/api';
-import { apiCourseGetCoursesGetJson } from '@core/api/generated/functions';
-import { CourseReadDTO } from '@core/api/generated/models';
+import { Api } from 'src/app/api/api';
+import { apiCourseGetCoursesGetJson } from 'src/app/api/fn/course/get-courses';
+import { CourseReadDTO } from 'src/app/api/models/course-read-dto';
 
 export class MyComponent {
   private api = inject(Api);
@@ -33,8 +33,8 @@ export class MyComponent {
 #### With RxJS Observables
 ```typescript
 import { from } from 'rxjs';
-import { Api } from '@core/api/generated/api';
-import { apiCourseGetCoursesGetJson } from '@core/api/generated/functions';
+import { Api } from 'src/app/api/api';
+import { apiCourseGetCoursesGetJson } from 'src/app/api/fn/course/get-courses';
 
 export class MyComponent {
   private api = inject(Api);
@@ -54,7 +54,7 @@ Update `src/environments/environment.ts` to change the API base URL.
 
 ## Available Endpoints
 
-All endpoints from the Swagger specification are available. Check `src/app/core/api/generated/functions.ts` for the complete list.
+All endpoints from the Swagger specification are available. Check `src/app/api/functions.ts` for the complete list.
 
 ### Common Endpoints
 
@@ -65,7 +65,7 @@ All endpoints from the Swagger specification are available. Check `src/app/core/
 
 ## Type Safety
 
-All generated types are in `src/app/core/api/generated/models/`:
+All generated types are in `src/app/api/models/`:
 - `CourseReadDTO` - Course data structure
 - `LessonReadDTO` - Lesson data structure
 - `LoginViewModel` - Login request

@@ -38,7 +38,7 @@ export class ChatListComponent {
     },
   ];
 
-  selectChat(chat: Chat): void {
-    console.log('Selected chat:', chat);
+  selectChat(_chat: Chat): void {
+    // TODO: Implement chat selection
   }
 }

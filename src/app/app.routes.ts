@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { NotFound } from './pages/not-found/not-found';
 import { Home } from './pages/home/home';
+import { authGuard, guestGuard } from './core/guards';
 import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
 import { LoginComponent } from './core/auth/login/login.component';
 import { RegisterComponent } from './core/auth/register/register.component';
@@ -22,10 +23,11 @@ export const routes: Routes = [
   // default route
   { path: '', redirectTo: '/home', pathMatch: 'full' },
 
-  // Auth layout routes
+  // Auth layout routes (guest only — redirect to /home if authenticated)
   {
     path: '',
     component: AuthLayoutComponent,
+    canActivate: [guestGuard],
     children: [
       { path: 'login', component: LoginComponent, title: 'Login' },
       { path: 'register', component: RegisterComponent, title: 'Register' },
@@ -166,6 +168,7 @@ export const routes: Routes = [
       },
       {
         path: 'academy',
+        canActivate: [authGuard],
         children: [
           { path: '', component: AcademyComponent, title: 'Academy' },
           { path: 'course/:id', component: CourseComponent, title: 'Course' },
@@ -189,7 +192,7 @@ export const routes: Routes = [
           { path: ':id', component: EventDetailComponent, title: 'Event Details' },
         ],
       },
-      { path: 'account', component: AccountComponent, title: 'Account' },
+      { path: 'account', component: AccountComponent, title: 'Account', canActivate: [authGuard] },
     ],
   },
 

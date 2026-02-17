@@ -21,12 +21,7 @@
       (select)="onSelectTopic($event)"
     ></app-select-dropdown>
     @if (formRef().get('topic')?.invalid && formRef().get('topic')?.touched) {
-      <p
-        class="mt-1 text-sm"
-        style="color: var(--color-error)"
-        >
-        Please select a subject
-      </p>
+      <p class="mt-1 text-sm" style="color: var(--color-error)">Please select a subject</p>
     }
   </div>
 
@@ -41,10 +36,7 @@
       "
     ></textarea>
     @if (formRef().get('message')?.invalid && formRef().get('message')?.touched) {
-      <p
-        class="mt-1 text-sm"
-        style="color: var(--color-error)"
-        >
+      <p class="mt-1 text-sm" style="color: var(--color-error)">
         Please enter your question (minimum 10 characters)
       </p>
     }
@@ -73,10 +65,7 @@
         (remove)="onRemoveLanguage($event)"
       ></app-chips-multiselect>
       @if (languagesValidated() && selectedLanguagesRef().length === 0) {
-        <p
-          class="mt-1 text-sm"
-          style="color: var(--color-error)"
-          >
+        <p class="mt-1 text-sm" style="color: var(--color-error)">
           Please select at least one language
         </p>
       }
@@ -87,10 +76,19 @@
     <button
       type="button"
       (click)="onNext()"
-      class="button flex items-center justify-center gap-2 w-full sm:w-auto px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base"
-      >
-      Send
+      [disabled]="isSubmitting()"
+      class="button flex items-center justify-center gap-2 w-full sm:w-auto px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      @if (isSubmitting()) {
+        Sending...
+      } @else {
+        Send
+      }
       <img src="/icons/icons-24/arrow-right.svg" class="invert w-4 md:w-5" />
     </button>
   </div>
+
+  @if (submitError()) {
+    <p class="mb-4 text-sm text-(--color-error)">{{ submitError() }}</p>
+  }
 </div>

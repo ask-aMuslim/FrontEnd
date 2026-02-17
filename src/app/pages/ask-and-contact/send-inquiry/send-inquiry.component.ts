@@ -9,11 +9,14 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChipsMultiselectComponent } from '../../../shared/reusable-components/chips-multiselect/chips-multiselect.component';
 import { SelectDropdownComponent } from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
+import type { CreateInquiryRequestCommand } from '../../../api/models';
 import { Router } from '@angular/router';
+import { InquiryRequestsService } from '../../../core/services';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -66,8 +69,13 @@ export class SendInquiryComponent implements OnInit, OnChanges {
   removeLanguage = output<LanguageOption>();
 
   languagesValidated = signal(false);
+  isSubmitting = signal(false);
+  submitError = signal<string | null>(null);
 
-  constructor(private router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly inquiryRequestsService: InquiryRequestsService,
+  ) { }
 
   ngOnInit(): void {
     const providedForm = this.form();
@@ -100,19 +108,76 @@ export class SendInquiryComponent implements OnInit, OnChanges {
       form.get('languages')?.markAsTouched();
       return;
     }
+
+    if (this.isSubmitting()) {
+      return;
+    }
+
     const topicLabel = this.getTopicLabel(form.get('topic')?.value ?? null);
     const languages = this.selectedLanguagesRef().map((language) => language.label);
+    const payload: CreateInquiryRequestCommand = {
+      topic: form.get('topic')?.value,
+      message: form.get('message')?.value ?? '',
+      languages: this.selectedLanguagesRef().map((language) => language.value),
+    };
 
-    this.next.emit();
+    this.submitError.set(null);
+    this.isSubmitting.set(true);
 
-    this.router.navigate(['/ask-and-contact/send-inquiry/success'], {
-      state: {
-        topicLabel,
-        languages,
-        message: form.get('message')?.value ?? '',
-        details: form.get('details')?.value ?? '',
+    this.inquiryRequestsService.create(payload).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.next.emit();
+
+        this.router.navigate(['/ask-and-contact/send-inquiry/success'], {
+          state: {
+            topicLabel,
+            languages,
+            message: form.get('message')?.value ?? '',
+            details: form.get('details')?.value ?? '',
+          },
+        });
+      },
+      error: (error: unknown) => {
+        this.isSubmitting.set(false);
+        this.submitError.set(this.getSubmitErrorMessage(error));
+
+        if (this.extractErrorStatus(error) === 401) {
+          this.router.navigate(['/login'], {
+            queryParams: { redirectUrl: '/ask-and-contact/send-inquiry' },
+          });
+        }
       },
     });
+  }
+
+  private getSubmitErrorMessage(error: unknown): string {
+    const status = this.extractErrorStatus(error);
+
+    if (status === 401) {
+      return 'Please sign in before sending an inquiry.';
+    }
+
+    if (status === 400) {
+      return 'Please review your inquiry details and try again.';
+    }
+
+    return 'Unable to send your inquiry right now. Please try again shortly.';
+  }
+
+  private extractErrorStatus(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+      return error.status;
+    }
+
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const candidateStatus = (error as { status?: unknown }).status;
+      if (typeof candidateStatus === 'number') {
+        return candidateStatus;
+      }
+    }
+
+    return null;
   }
 
   onSelectTopic(value: MeetingInquiryTopic): void {

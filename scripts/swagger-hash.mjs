@@ -16,8 +16,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SWAGGER_URL = process.env.SWAGGER_URL || 'https://ask-a-muslim.runasp.net/swagger/v1/swagger.json';
-const HASH_FILE = path.join(__dirname, '../src/app/core/api/swagger.hash');
+const SWAGGER_URL = process.env.SWAGGER_URL || 'https://aam-api.ask-a-muslim.com/api/specification.json';
+const HASH_FILE = path.join(__dirname, '../src/app/api/swagger.hash');
 const MAX_RETRIES = 3;
 const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_BASE_DELAY_MS = 2000;

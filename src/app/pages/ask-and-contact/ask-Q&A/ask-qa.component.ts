@@ -7,6 +7,7 @@ import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
 import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
 import { PaginationComponent } from '../../../shared/reusable-components/pagination/pagination.component';
 import { QasService } from '../../../core/services/qas.service';
+import { asRecord, extractArray, getValue, toNumberValue, toStringArray, toStringValue } from '../../../core/helpers/api-response.helper';
 
 @Component({
   selector: 'app-ask-qa',
@@ -17,7 +18,7 @@ import { QasService } from '../../../core/services/qas.service';
     QaCardComponent,
     QuestionSearchResultComponent,
     PaginationComponent
-],
+  ],
   templateUrl: './ask-qa.component.html',
   styleUrls: ['./ask-qa.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -196,7 +197,7 @@ export class AskQaComponent implements OnInit {
     return index;
   }
 
-  trackByQuestionId(index: number, question: QuestionCard): string {
+  trackByQuestionId(_index: number, question: QuestionCard): string {
     return question.id;
   }
 
@@ -222,20 +223,20 @@ export class AskQaComponent implements OnInit {
   }
 
   private mapQuestions(response: unknown): QuestionCard[] {
-    const records = this.extractArray(response);
+    const records = extractArray(response);
     return records.map((item, index) => this.mapQuestion(item, index));
   }
 
   private mapQuestion(item: unknown, index: number): QuestionCard {
-    const record = this.asRecord(item);
-    const title = this.asString(record?.['title']) ?? AskQaComponent.fallbackTitle;
+    const record = asRecord(item);
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? AskQaComponent.fallbackTitle;
     const description =
-      this.asString(record?.['description']) ?? AskQaComponent.fallbackDescription;
-    const categories = this.asStringArray(record?.['categories']);
+      toStringValue(getValue(record, 'description', 'Description')) ?? AskQaComponent.fallbackDescription;
+    const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
     const id =
-      this.asString(record?.['id']) ??
+      toStringValue(getValue(record, 'id', 'Id')) ??
       `${AskQaComponent.fallbackIdPrefix}${index + AskQaComponent.idOffset}`;
-    const sameQuestions = this.asNumber(record?.['sameQuestions']) ??
+    const sameQuestions = toNumberValue(getValue(record, 'sameQuestions', 'SameQuestions')) ??
       AskQaComponent.fallbackQuestionCount;
 
     return {
@@ -245,31 +246,5 @@ export class AskQaComponent implements OnInit {
       categories: categories.length > 0 ? categories : [AskQaComponent.fallbackCategory],
       sameQuestions,
     };
-  }
-
-  private extractArray(response: unknown): readonly unknown[] {
-    if (Array.isArray(response)) {
-      return response;
-    }
-    const record = this.asRecord(response);
-    const data = record?.['data'] ?? record?.['items'] ?? record?.['results'];
-    return Array.isArray(data) ? data : [];
-  }
-
-  private asRecord(value: unknown): Record<string, unknown> | null {
-    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
-  }
-
-  private asString(value: unknown): string | null {
-    return typeof value === 'string' && value.trim().length > 0 ? value : null;
-  }
-
-  private asStringArray(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
-  }
-
-  private asNumber(value: unknown): number | null {
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 }

@@ -1322,7 +1322,7 @@ class MCPDevelopmentWorkflow {
   private async fetchSchema(): Promise<void> {
     // MCP tool call: postman_get_api_schema
     console.log('Fetching schema from Swagger endpoint...');
-    execSync('curl -s https://ask-a-muslim.runasp.net/swagger/v1/swagger.json -o schemas/current.json');
+    execSync('curl -s https://askamusslimapi.runasp.net/swagger/v1/swagger.json -o schemas/current.json');
   }
   
   private async checkChanges(): Promise<void> {
@@ -1560,7 +1560,7 @@ export async function initializeMCPForTesting(): Promise<MCPTestHelper> {
     apiKey: process.env['POSTMAN_API_KEY'] || '',
     collectionId: process.env['COLLECTION_ID'] || '',
     environmentId: process.env['ENVIRONMENT_ID'] || '',
-    baseUrl: process.env['API_BASE_URL'] || 'https://ask-a-muslim.runasp.net'
+    baseUrl: process.env['API_BASE_URL'] || 'https://askamusslimapi.runasp.net'
   });
   
   await mcpHelper.authenticate();
@@ -1735,7 +1735,7 @@ describe('CourseFacade', () => {
 // Step 1: Execute request via MCP
 const response = await mcp.sendRequest({
   method: 'GET',
-  url: 'https://ask-a-muslim.runasp.net/api/Course/abc123',
+  url: 'https://askamusslimapi.runasp.net/api/Course/abc123',
   headers: { 'Authorization': `Bearer ${jwt}` }
 });
 

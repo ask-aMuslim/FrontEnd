@@ -45,7 +45,7 @@ export class SidebarComponent {
     this.isCollapsed = !this.isCollapsed;
   }
 
-  trackByKey(index: number, item: MenuItem): string {
+  trackByKey(_index: number, item: MenuItem): string {
     return item.key;
   }
 }

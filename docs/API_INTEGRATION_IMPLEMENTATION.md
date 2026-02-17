@@ -248,7 +248,7 @@ npm run generate:api
    - List all endpoints being called
 
 2. **Verify endpoint exists in Swagger**
-   - Check `https://ask-a-muslim.runasp.net/swagger`
+   - Check `https://askamusslimapi.runasp.net/swagger`
    - If missing, backend needs to expose it
 
 3. **Create/update facade method**

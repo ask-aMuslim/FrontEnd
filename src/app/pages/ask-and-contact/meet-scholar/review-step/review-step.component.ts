@@ -26,6 +26,7 @@ export class ReviewStepComponent {
   topics = input.required<TopicOption[]>();
   selectedLanguages = input.required<LanguageOption[]>();
   isSubmitting = input.required<boolean>();
+  submitError = input<string | null>(null);
 
   back = output<void>();
   submit = output<void>();

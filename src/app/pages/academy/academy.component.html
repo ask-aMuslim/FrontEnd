@@ -1,5 +1,13 @@
 <div class="academy-container">
   <div class="academy-content">
+    @if (error) {
+      <section class="important-note">
+        <div class="section-block">
+          <p class="note-text">{{ error }}</p>
+        </div>
+      </section>
+    }
+
     @if (hasRecentLesson && recentLesson) {
       <section class="recent-lesson-section">
         <div class="section-block">
@@ -320,6 +328,7 @@
               <div class="connector-line">
                 <img
                   src="/academy/lock.png"
+                  alt="Locked stage"
                   data--h-bstatus="5PROCESSED"
                   class=""
                   data--h-bfrom-bx="true"

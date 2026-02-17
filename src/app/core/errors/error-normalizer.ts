@@ -9,31 +9,6 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiError, ApiErrorFactory } from './api-error.model';
 
-/**
- * ASP.NET Core ProblemDetails format
- * @see https://datatracker.ietf.org/doc/html/rfc7807
- */
-interface ProblemDetails {
-    type?: string;
-    title?: string;
-    status?: number;
-    detail?: string;
-    instance?: string;
-    traceId?: string;
-    errors?: Record<string, string | string[]>;
-}
-
-/**
- * Validation error format from ASP.NET Core
- */
-interface ValidationErrorResponse {
-    type?: string;
-    title?: string;
-    status?: number;
-    traceId?: string;
-    errors: Record<string, string[]>;
-}
-
 @Injectable({ providedIn: 'root' })
 export class ErrorNormalizer {
 
@@ -128,7 +103,9 @@ export class ErrorNormalizer {
     private normalizeValidationError(error: HttpErrorResponse): ApiError {
         const body = error.error;
         const validationErrors = this.extractValidationErrors(body);
-        const message = this.extractMessage(body) ?? 'Validation failed';
+        const firstValidationError = Object.values(validationErrors)
+            .find((entries) => entries.length > 0)?.[0];
+        const message = firstValidationError ?? this.extractMessage(body) ?? 'Validation failed';
 
         return ApiErrorFactory.create({
             statusCode: 400,
@@ -143,16 +120,15 @@ export class ErrorNormalizer {
      * Extract message from error body
      */
     private extractMessage(body: unknown): string | null {
+        if (typeof body === 'string' && body.trim().length > 0) {
+            return body;
+        }
+
         if (!body || typeof body !== 'object') {
             return null;
         }
 
         const obj = body as Record<string, unknown>;
-
-        // ProblemDetails format
-        if (typeof obj['title'] === 'string') {
-            return obj['title'];
-        }
 
         // Standard error message
         if (typeof obj['message'] === 'string') {
@@ -162,6 +138,11 @@ export class ErrorNormalizer {
         // Detail field
         if (typeof obj['detail'] === 'string') {
             return obj['detail'];
+        }
+
+        // ProblemDetails format
+        if (typeof obj['title'] === 'string') {
+            return obj['title'];
         }
 
         // Error field

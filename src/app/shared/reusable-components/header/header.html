@@ -52,6 +52,17 @@
     </div>
   </ng-template>
 
+  <ng-template #logoutButtonTemplate>
+    <button
+      type="button"
+      class="auth-btn auth-btn--logout"
+      [disabled]="isLoggingOut"
+      (click)="handleLogout()"
+    >
+      Logout
+    </button>
+  </ng-template>
+
   <div class="nav-shell">
     <a class="brand" routerLink="/home" aria-label="Ask A Muslim home">
       <img src="/ask-a-muslim-logo.png" alt="Ask A Muslim logo" />
@@ -97,6 +108,12 @@
       </ul>
       <div class="mobile-user-card">
         @if (authService.isAuthenticated()) {
+          <div class="mobile-user-actions">
+            <ng-container *ngTemplateOutlet="logoutButtonTemplate"></ng-container>
+            @if (logoutErrorMessage) {
+              <p class="logout-error" role="alert">{{ logoutErrorMessage }}</p>
+            }
+          </div>
           <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
         } @else {
           <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
@@ -107,6 +124,12 @@
     <div class="header-right">
       @if (authService.isAuthenticated()) {
         <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+        <div class="desktop-user-actions">
+          <ng-container *ngTemplateOutlet="logoutButtonTemplate"></ng-container>
+          @if (logoutErrorMessage) {
+            <p class="logout-error" role="alert">{{ logoutErrorMessage }}</p>
+          }
+        </div>
       } @else {
         <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
       }

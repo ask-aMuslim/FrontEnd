@@ -64,7 +64,7 @@ When the backend team adds a new feature, they update the Swagger document, and 
 
 **What it is:** TypeScript files automatically created from the Swagger specification.
 
-**Where it lives:** `src/app/core/api/generated/`
+**Where it lives:** `src/app/api/`
 
 **What it does:** Contains functions for every API endpoint. For example:
 - `apiCourseGetCoursesGet()` - Gets all courses

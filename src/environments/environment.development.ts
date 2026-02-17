@@ -1,4 +1,5 @@
 export const environment = {
     production: false,
-    apiBaseUrl: 'https://ask-a-muslim.runasp.net',
+    apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
+    BearerToken: ''
 } as const;

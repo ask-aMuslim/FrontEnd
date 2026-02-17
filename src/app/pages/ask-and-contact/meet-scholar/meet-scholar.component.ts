@@ -1,9 +1,10 @@
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
-import { CreateMeetingRequest } from '../../../core/models/interfaces/meeting-request.model';
+import type { CreateMeetingRequestCommand } from '../../../api/models';
 import { MeetingRequestsService } from '../../../core/services';
 import { StepperComponent, Step } from './stepper/stepper.component';
 import { RequestStepComponent } from './request-step/request-step.component';
@@ -41,7 +42,7 @@ interface TimeOption {
     RequestStepComponent,
     DatetimeStepComponent,
     ReviewStepComponent
-],
+  ],
   templateUrl: './meet-scholar.component.html',
   styleUrls: ['./meet-scholar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +51,7 @@ export class MeetScholarComponent {
   currentStep = signal(1);
   meetingForm: FormGroup;
   isSubmitting = signal(false);
+  submitError = signal<string | null>(null);
 
   steps: Step[] = [
     { label: 'Request', index: 1 },
@@ -84,7 +86,7 @@ export class MeetScholarComponent {
 
   constructor(
     private fb: FormBuilder,
-    private meetingRequestsService: MeetingRequestsService,
+    private readonly _meetingRequestsService: MeetingRequestsService,
     private router: Router,
   ) {
     this.meetingForm = this.fb.group({
@@ -235,6 +237,7 @@ export class MeetScholarComponent {
     }
 
     this.isSubmitting.set(true);
+    this.submitError.set(null);
 
     const formValue = this.meetingForm.value;
     let scheduledAt: string | undefined;
@@ -248,36 +251,14 @@ export class MeetScholarComponent {
       scheduledDateTime = date;
     }
 
-    const payload: CreateMeetingRequest = {
-      name: formValue.name,
-      email: formValue.email,
+    const payload: CreateMeetingRequestCommand = {
       topic: formValue.topic,
       message: formValue.message,
       languages: formValue.languages,
-      durationMinutes: formValue.durationMinutes,
       scheduledAt,
     };
 
-    // TODO: Remove this temporary bypass when API is ready
-    // For now, simulate successful submission and navigate to success page
-    console.log('Meeting request payload:', payload);
-
-    // Temporary: Skip API call and go directly to success
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.router.navigate(['/ask-and-contact/meet-scholar/success'], {
-        state: {
-          scheduledDateTime: scheduledDateTime ?? scheduledAt,
-          scheduledTime: formValue.scheduledTime,
-          durationMinutes: formValue.durationMinutes,
-          confirmationEmail: formValue.email,
-        },
-      });
-    }, 500);
-
-    // Uncomment when API endpoint is ready:
-    /*
-    this.meetingRequestsService.create(payload).subscribe({
+    this._meetingRequestsService.create(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.router.navigate(['/ask-and-contact/meet-scholar/success'], {
@@ -289,13 +270,46 @@ export class MeetScholarComponent {
           },
         });
       },
-      error: (error) => {
+      error: (error: unknown) => {
         this.isSubmitting.set(false);
-        console.error('Error submitting meeting request:', error);
-        alert('Failed to submit meeting request. Please try again.');
+        this.submitError.set(this.getSubmitErrorMessage(error));
+
+        if (this.extractErrorStatus(error) === 401) {
+          this.router.navigate(['/login'], {
+            queryParams: { redirectUrl: '/ask-and-contact/meet-scholar' },
+          });
+        }
       },
     });
-    */
+  }
+
+  private getSubmitErrorMessage(error: unknown): string {
+    const status = this.extractErrorStatus(error);
+
+    if (status === 401) {
+      return 'Please sign in before booking a meeting.';
+    }
+
+    if (status === 400) {
+      return 'Please review your booking details and try again.';
+    }
+
+    return 'Unable to submit your booking right now. Please try again shortly.';
+  }
+
+  private extractErrorStatus(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+      return error.status;
+    }
+
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const candidateStatus = (error as { status?: unknown }).status;
+      if (typeof candidateStatus === 'number') {
+        return candidateStatus;
+      }
+    }
+
+    return null;
   }
 
   getTopicLabel(value: MeetingInquiryTopic | null): string {

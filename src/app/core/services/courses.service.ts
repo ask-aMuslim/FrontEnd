@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { CourseReadDto, CourseReadByIdDto } from '../api/generated/models';
-import { CourseFacade } from '../api/facades/course.facade';
+import { Observable, map } from 'rxjs';
+import { CourseFacade, CourseReadDto, CourseReadByIdDto, CourseCreatePayload, CourseUpdatePayload } from '../../api/facades/course.facade';
 
 @Injectable({ providedIn: 'root' })
 export class CoursesService {
@@ -11,21 +10,27 @@ export class CoursesService {
     return this.facade.getAllCourses();
   }
 
-  create(payload: any): Observable<CourseReadByIdDto> {
-    // Note: The facade's createCourse should return the created object
-    // Verification needed if generated API returns generic response or typed DTO
-    return this.facade.createCourse(payload);
+  create(payload: CourseCreatePayload): Observable<boolean> {
+    return this.facade.createCourse(payload).pipe(
+      map(course => course !== null)
+    );
   }
 
-  getById(id: string): Observable<CourseReadByIdDto> {
+  getById(id: string): Observable<CourseReadByIdDto | null> {
     return this.facade.getCourseById(id);
   }
 
-  update(id: string, payload: any): Observable<void> {
-    return this.facade.updateCourse(id, payload);
+  getByIdDetailed(id: string): Observable<CourseReadByIdDto | null> {
+    return this.facade.getCourseById(id);
   }
 
-  delete(id: string): Observable<void> {
+  update(id: string, payload: CourseUpdatePayload): Observable<boolean> {
+    return this.facade.updateCourse(id, payload).pipe(
+      map(course => course !== null)
+    );
+  }
+
+  delete(id: string): Observable<boolean> {
     return this.facade.deleteCourse(id);
   }
 }

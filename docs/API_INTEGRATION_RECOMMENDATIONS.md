@@ -243,7 +243,7 @@ These services are lower priority but should eventually be migrated for consiste
 - [ ] Verify backend endpoint is in Swagger
 - [ ] Verify response schema is defined
 - [ ] Run `npm run generate:api` to get latest client
-- [ ] Check generated types in `src/app/core/api/generated/models/`
+- [ ] Check generated types in `src/app/api/models/`
 
 ### For Each Facade Creation
 

@@ -23,7 +23,7 @@ export class QuestionSearchResultComponent {
     this.clearSearch.emit();
   }
 
-  trackByQuestionId(index: number, question: QuestionCard): string {
+  trackByQuestionId(_index: number, question: QuestionCard): string {
     return question.id;
   }
 }

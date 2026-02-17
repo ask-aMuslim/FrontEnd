@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LessonContentService } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
@@ -13,7 +13,9 @@ import {
 import {
     AcademyCourse,
     AcademyLesson,
+    LessonProgress,
 } from '../../../core/models/interfaces/academy-progress.model';
+import { LessonType } from '../../../core/models/interfaces/enums.model';
 import {
     LessonContent,
     LessonData,
@@ -73,6 +75,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     lessonRating: number = 0;
     feedbackText: string = '';
+    feedbackSubmissionMessage: string | null = null;
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
@@ -84,7 +87,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         private readonly route: ActivatedRoute,
         private readonly router: Router,
         private readonly lessonContentService: LessonContentService,
-        private readonly academyProgressService: AcademyProgressService
+        private readonly academyProgressService: AcademyProgressService,
+        private readonly cdr: ChangeDetectorRef,
     ) { }
 
     get bannerImageUrl(): string {
@@ -139,29 +143,45 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.isContentLoading = true;
         this.error = null;
 
-        this.currentCourse = this.academyProgressService.getCourseById(this.courseId);
-        this.currentLesson = this.academyProgressService.getLessonById(this.lessonId);
-        this.courseLessons = this.academyProgressService.getCourseLessons(this.courseId);
+        combineLatest([
+            this.academyProgressService.getAcademyCourseById(this.courseId),
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
+        ])
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: ([course, lessonsWithProgress]) => {
+                    const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
 
-        this.nextAcademyLesson = this.academyProgressService.getNextLesson(this.courseId, this.lessonId);
-        this.previousAcademyLesson = this.academyProgressService.getPreviousLesson(this.courseId, this.lessonId);
+                    if (!currentLesson) {
+                        this.error = 'Lesson not found';
+                        this.isLoading = false;
+                        this.isContentLoading = false;
+                        this.cdr.detectChanges();
+                        return;
+                    }
 
-        if (!this.currentCourse || !this.currentLesson) {
-            this.error = 'Lesson not found';
-            this.isLoading = false;
-            this.isContentLoading = false;
-            return;
-        }
+                    this.currentCourse = course;
+                    this.courseLessons = lessonsWithProgress.map((lesson) => this.stripProgress(lesson));
+                    this.currentLesson = this.stripProgress(currentLesson);
+                    this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
+                    this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
+                    this.isIntroLesson = this.currentLesson.type === 'intro';
 
-        this.isIntroLesson = this.currentLesson.type === 'intro';
+                    this.academyProgressService.updateLessonProgress({
+                        lessonId: this.lessonId,
+                        courseId: this.courseId,
+                    }).pipe(takeUntil(this.destroy$)).subscribe();
 
-        this.academyProgressService.updateLessonProgress({
-            lessonId: this.lessonId,
-            courseId: this.courseId,
-        }).pipe(takeUntil(this.destroy$)).subscribe();
-
-        this.loadLessonContent();
-        this.loadCourseLessonsForSidebar();
+                    this.loadLessonContent();
+                    this.loadCourseLessonsForSidebar();
+                },
+                error: () => {
+                    this.error = 'Unable to load this lesson right now. Please try again.';
+                    this.isLoading = false;
+                    this.isContentLoading = false;
+                    this.cdr.detectChanges();
+                }
+            });
     }
 
     private loadLessonContent(): void {
@@ -174,13 +194,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.lessonContent = data.content;
                     this.nextLesson = data.nextLesson;
                     this.previousLesson = data.previousLesson;
+                    this.error = null;
                     this.isLoading = false;
                     this.isContentLoading = false;
+                    this.cdr.detectChanges();
                 },
-                error: (err) => {
-                    console.warn('Content service failed, using academy data:', err);
+                error: () => {
+                    this.error = 'Unable to load lesson content right now. Please try again.';
                     this.isLoading = false;
                     this.isContentLoading = false;
+                    this.cdr.detectChanges();
                 }
             });
     }
@@ -192,10 +215,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (lessons: LessonMetadata[]) => {
                     this.coarseLessons = lessons;
+                    this.cdr.detectChanges();
                 },
-                error: (err) => {
-                    console.error('Error loading course lessons:', err);
-                }
+                error: () => void 0
             });
     }
 
@@ -231,10 +253,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     onSave(): void {
         if (this.lessonId) {
-            this.lessonContentService.saveLessonProgress(this.lessonId).subscribe({
-                next: () => console.log('Lesson saved successfully'),
-                error: (err) => console.error('Error saving lesson:', err)
-            });
+            this.lessonContentService.saveLessonProgress(this.lessonId).subscribe();
         }
     }
 
@@ -244,16 +263,35 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                 title: this.lessonContent.title,
                 text: this.lessonContent.description,
                 url: globalThis.location.href
-            }).catch(err => console.error('Error sharing:', err));
+            }).catch(() => void 0);
         } else {
-            navigator.clipboard.writeText(globalThis.location.href).then(() => {
-                console.log('Link copied to clipboard');
-            });
+            navigator.clipboard.writeText(globalThis.location.href).then(() => void 0);
         }
     }
 
     onDownload(): void {
-        console.log('Download initiated for lesson:', this.lessonId);
+        if (!this.lessonContent) {
+            return;
+        }
+
+        const fileName = `${this.lessonContent.title || 'lesson-content'}.txt`;
+        const text = [
+            this.lessonContent.title || 'Lesson Content',
+            '',
+            this.lessonContent.description || '',
+            '',
+            this.isArticleContent ? (this.articleContent?.sections || []).map(section => section.content).join('\n\n') : '',
+        ].join('\n');
+
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     }
 
     isLessonCompleted(lesson: LessonMetadata): boolean { return lesson.status === 'completed'; }
@@ -266,7 +304,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return this.getLessonTypeIcon(lesson.type);
     }
 
-    getLessonTypeIcon(type: any): string {
+    getLessonTypeIcon(type: LessonType): string {
         switch (type) {
             case 1: return 'video';
             case 2: return 'article';
@@ -293,9 +331,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     submitFeedback(): void {
         if (this.lessonRating > 0 || this.feedbackText.trim()) {
-            console.log('Feedback submitted:', { rating: this.lessonRating, feedback: this.feedbackText });
             this.feedbackText = '';
-            alert('Thank you for your feedback!');
+            this.feedbackSubmissionMessage = 'Thank you for your feedback!';
         }
     }
 
@@ -320,5 +357,35 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     get filteredNotes(): Array<{ timestamp: string; text: string }> {
         return this.previousNotes.filter(note => note.text.toLowerCase().includes(this.notesSearchQuery.toLowerCase()));
+    }
+
+    private stripProgress(lesson: AcademyLesson & { progress: LessonProgress }): AcademyLesson {
+        return {
+            id: lesson.id,
+            courseId: lesson.courseId,
+            title: lesson.title,
+            duration: lesson.duration,
+            type: lesson.type,
+            order: lesson.order,
+            description: lesson.description,
+        };
+    }
+
+    private resolveNextLesson(
+        lessons: Array<AcademyLesson & { progress: LessonProgress }>,
+        lessonId: string,
+    ): AcademyLesson | undefined {
+        const sorted = [...lessons].sort((a, b) => a.order - b.order);
+        const index = sorted.findIndex((lesson) => lesson.id === lessonId);
+        return index >= 0 && index < sorted.length - 1 ? this.stripProgress(sorted[index + 1]) : undefined;
+    }
+
+    private resolvePreviousLesson(
+        lessons: Array<AcademyLesson & { progress: LessonProgress }>,
+        lessonId: string,
+    ): AcademyLesson | undefined {
+        const sorted = [...lessons].sort((a, b) => a.order - b.order);
+        const index = sorted.findIndex((lesson) => lesson.id === lessonId);
+        return index > 0 ? this.stripProgress(sorted[index - 1]) : undefined;
     }
 }
