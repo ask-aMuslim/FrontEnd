@@ -7,7 +7,26 @@ const angularTemplateParser = require('@angular-eslint/template-parser');
 
 module.exports = tseslint.config(
     {
+        // Ignore auto-generated OpenAPI client files — these are regenerated from swagger and must not be edited
+        ignores: [
+            'src/app/api/fn/**',
+            'src/app/api/models/**',
+            'src/app/api/api-configuration.ts',
+            'src/app/api/api.ts',
+            'src/app/api/functions.ts',
+            'src/app/api/models.ts',
+        ],
+    },
+    {
         files: ['**/*.ts'],
+        ignores: [
+            'src/app/api/fn/**',
+            'src/app/api/models/**',
+            'src/app/api/api-configuration.ts',
+            'src/app/api/api.ts',
+            'src/app/api/functions.ts',
+            'src/app/api/models.ts',
+        ],
         extends: [
             eslint.configs.recommended,
             ...tseslint.configs.recommended,
