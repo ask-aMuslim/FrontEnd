@@ -7,15 +7,15 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { RegisterCommand } from '../../models/register-command';
+import { RefreshTokenCommand } from '../../models/refresh-token-command';
 import { ResultOfAuthenticationResponse } from '../../models/result-of-authentication-response';
 
-export interface RegisterParams {
-  body: RegisterCommand
+export interface RefreshTokenParams {
+  body: RefreshTokenCommand
 }
 
-export function register(http: HttpClient, rootUrl: string, params: RegisterParams, context?: HttpContext): Observable<StrictHttpResponse<ResultOfAuthenticationResponse>> {
-  const rb = new RequestBuilder(rootUrl, register.PATH, 'post');
+export function refreshToken(http: HttpClient, rootUrl: string, params: RefreshTokenParams, context?: HttpContext): Observable<StrictHttpResponse<ResultOfAuthenticationResponse>> {
+  const rb = new RequestBuilder(rootUrl, refreshToken.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/json');
   }
@@ -30,4 +30,4 @@ export function register(http: HttpClient, rootUrl: string, params: RegisterPara
   );
 }
 
-register.PATH = '/api/Authentication/register';
+refreshToken.PATH = '/api/Authentication/refresh-token';

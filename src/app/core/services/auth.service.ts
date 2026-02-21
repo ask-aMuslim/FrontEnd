@@ -13,6 +13,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Observable, map, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 
 // New architecture imports
 import { IdentityFacade, UserRole } from '../../api/facades/identity.facade';
@@ -81,13 +82,14 @@ export class AuthService {
     // Clear local state
     this._currentUser.set(null);
 
-    // Call backend logout (returns void, not Observable)
-    this.facade.logout();
-
-    // Clear tokens and navigate to login
-    this.router.navigate(['/login']);
-
-    return of(undefined);
+    return this.facade.logout().pipe(
+      catchError(() => of(undefined)),
+      finalize(() => {
+        this.tokenService.clearTokens();
+        void this.router.navigate(['/login']);
+      }),
+      map(() => void 0)
+    );
   }
 
   /**
@@ -119,7 +121,7 @@ export class AuthService {
           expiresIn: 0
         } as AuthResponse;
       }),
-      tap((_response) => {
+      tap(() => {
         // If the API actually returns tokens, they would be set here
         // For now, user needs to login after registration
       })
@@ -139,7 +141,7 @@ export class AuthService {
           expiresIn: response.expiresIn ?? 3600
         } as AuthResponse;
       }),
-      tap((_response) => {
+      tap(() => {
         this._currentUser.set({ name: email, meta: 'Signed in' });
         this.hydrateCurrentUserFromProfile();
       })

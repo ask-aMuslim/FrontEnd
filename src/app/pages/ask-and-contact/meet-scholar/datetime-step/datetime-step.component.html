@@ -1,117 +1,126 @@
 <div class="space-y-6 md:space-y-8 px-2 md:px-0">
   <div>
-    <label class="block text-sm md:text-base font-medium text-(--color-text-body) mb-2"
+    <label
+      for="meet-scholar-duration"
+      class="block text-sm md:text-base font-medium text-(--color-text-body) mb-2"
       >Meeting duration (minutes)</label
-      >
-      <input
-        type="number"
-        min="15"
-        step="15"
-        [formControl]="$any(form().get('durationMinutes'))"
-        placeholder="30"
-        class="w-full rounded-lg border border-(--color-border-medium) px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal) focus:border-transparent"
+    >
+    <input
+      id="meet-scholar-duration"
+      name="durationMinutes"
+      type="number"
+      min="15"
+      step="15"
+      [formControl]="$any(form().get('durationMinutes'))"
+      placeholder="30"
+      class="w-full rounded-lg border border-(--color-border-medium) px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal) focus:border-transparent"
       [class.border-red-500]="
         form().get('durationMinutes')?.invalid && form().get('durationMinutes')?.touched
       "
-        />
-        @if (form().get('durationMinutes')?.invalid && form().get('durationMinutes')?.touched) {
-          <p
-            class="mt-1 text-xs md:text-sm"
-            style="color: var(--color-error)"
-            >
-            Please enter a duration of at least 15 minutes
-          </p>
+    />
+    @if (form().get('durationMinutes')?.invalid && form().get('durationMinutes')?.touched) {
+      <p class="mt-1 text-xs md:text-sm" style="color: var(--color-error)">
+        Please enter a duration of at least 15 minutes
+      </p>
+    }
+  </div>
+
+  <div>
+    <label class="block text-sm md:text-base font-medium text-(--color-text-body) mb-3 md:mb-4"
+      >Select Date:</label
+    >
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 md:gap-3">
+      @for (date of availableDates(); track date) {
+        <button
+          type="button"
+          (click)="onSelectDate(date)"
+          [disabled]="date.disabled"
+          class="px-3 md:px-4 py-2.5 md:py-3 rounded-lg border text-xs md:text-sm font-normal transition-all w-full"
+          [class.bg-(--color-card-surface-primary)]="
+            !date.disabled && form().get('scheduledDate')?.value === date.value
+          "
+          [class.border-(--color-border-medium)]="
+            !date.disabled && form().get('scheduledDate')?.value === date.value
+          "
+          [class.text-(--color-button-primary-normal)]="
+            !date.disabled && form().get('scheduledDate')?.value === date.value
+          "
+          [class.bg-white]="!date.disabled && form().get('scheduledDate')?.value !== date.value"
+          [style.border-color]="
+            !date.disabled && form().get('scheduledDate')?.value !== date.value
+              ? 'var(--color-card-surface-secondary-2)'
+              : null
+          "
+          [class.cursor-pointer]="
+            !date.disabled && form().get('scheduledDate')?.value !== date.value
+          "
+          [class.text-text-body]="
+            !date.disabled && form().get('scheduledDate')?.value !== date.value
+          "
+          [class.bg-(--color-card-surface-secondary-2)]="date.disabled"
+          [class.border-(--color-card-surface-secondary-2)]="date.disabled"
+          [class.text-(--color-text-placeholder)]="date.disabled"
+          [class.cursor-not-allowed]="date.disabled"
+        >
+          {{ date.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (form().get('scheduledDate')?.value) {
+    <div>
+      <label class="block text-sm md:text-base font-medium text-text-title mb-3 md:mb-4"
+        >Select Time:</label
+      >
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 md:gap-3">
+        @for (time of availableTimes(); track time) {
+          <button
+            type="button"
+            (click)="onSelectTime(time)"
+            [disabled]="time.disabled"
+            class="px-3 md:px-4 py-2.5 md:py-3 rounded-lg border text-xs md:text-sm font-normal transition-all w-full"
+            [class.bg-(--color-card-surface-primary)]="
+              !time.disabled && form().get('scheduledTime')?.value === time.value
+            "
+            [class.border-(--color-border-medium)]="
+              !time.disabled && form().get('scheduledTime')?.value === time.value
+            "
+            [class.text-(--color-button-primary-normal)]="
+              !time.disabled && form().get('scheduledTime')?.value === time.value
+            "
+            [class.bg-white]="!time.disabled && form().get('scheduledTime')?.value !== time.value"
+            [style.border-color]="
+              !time.disabled && form().get('scheduledTime')?.value !== time.value
+                ? 'var(--color-card-surface-secondary-2)'
+                : null
+            "
+            [class.cursor-pointer]="
+              !time.disabled && form().get('scheduledTime')?.value !== time.value
+            "
+            [class.text-text-body]="
+              !time.disabled && form().get('scheduledTime')?.value !== time.value
+            "
+            [class.bg-(--color-card-surface-secondary-2)]="time.disabled"
+            [class.border-(--color-card-surface-secondary-2)]="time.disabled"
+            [class.text-(--color-text-placeholder)]="time.disabled"
+            [class.cursor-not-allowed]="time.disabled"
+          >
+            {{ time.label }}
+          </button>
         }
       </div>
+    </div>
+  }
 
-      <div>
-        <label class="block text-sm md:text-base font-medium text-(--color-text-body) mb-3 md:mb-4"
-          >Select Date:</label
-          >
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 md:gap-3">
-            @for (date of availableDates(); track date) {
-              <button
-                type="button"
-                (click)="onSelectDate(date)"
-                [disabled]="date.disabled"
-                class="px-3 md:px-4 py-2.5 md:py-3 rounded-lg border text-xs md:text-sm font-normal transition-all w-full"
-        [class.bg-(--color-card-surface-primary)]="
-          !date.disabled && form().get('scheduledDate')?.value === date.value
-        "
-        [class.border-(--color-border-medium)]="
-          !date.disabled && form().get('scheduledDate')?.value === date.value
-        "
-        [class.text-(--color-button-primary-normal)]="
-          !date.disabled && form().get('scheduledDate')?.value === date.value
-        "
-                [class.bg-white]="!date.disabled && form().get('scheduledDate')?.value !== date.value"
-        [style.border-color]="
-          !date.disabled && form().get('scheduledDate')?.value !== date.value
-            ? 'var(--color-card-surface-secondary-2)'
-            : null
-        "
-                [class.cursor-pointer]="!date.disabled && form().get('scheduledDate')?.value !== date.value"
-                [class.text-text-body]="!date.disabled && form().get('scheduledDate')?.value !== date.value"
-                [class.bg-(--color-card-surface-secondary-2)]="date.disabled"
-                [class.border-(--color-card-surface-secondary-2)]="date.disabled"
-                [class.text-(--color-text-placeholder)]="date.disabled"
-                [class.cursor-not-allowed]="date.disabled"
-                >
-                {{ date.label }}
-              </button>
-            }
-          </div>
-        </div>
-
-        @if (form().get('scheduledDate')?.value) {
-          <div>
-            <label class="block text-sm md:text-base font-medium text-text-title mb-3 md:mb-4"
-              >Select Time:</label
-              >
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 md:gap-3">
-                @for (time of availableTimes(); track time) {
-                  <button
-                    type="button"
-                    (click)="onSelectTime(time)"
-                    [disabled]="time.disabled"
-                    class="px-3 md:px-4 py-2.5 md:py-3 rounded-lg border text-xs md:text-sm font-normal transition-all w-full"
-        [class.bg-(--color-card-surface-primary)]="
-          !time.disabled && form().get('scheduledTime')?.value === time.value
-        "
-        [class.border-(--color-border-medium)]="
-          !time.disabled && form().get('scheduledTime')?.value === time.value
-        "
-        [class.text-(--color-button-primary-normal)]="
-          !time.disabled && form().get('scheduledTime')?.value === time.value
-        "
-                    [class.bg-white]="!time.disabled && form().get('scheduledTime')?.value !== time.value"
-        [style.border-color]="
-          !time.disabled && form().get('scheduledTime')?.value !== time.value
-            ? 'var(--color-card-surface-secondary-2)'
-            : null
-        "
-                    [class.cursor-pointer]="!time.disabled && form().get('scheduledTime')?.value !== time.value"
-                    [class.text-text-body]="!time.disabled && form().get('scheduledTime')?.value !== time.value"
-                    [class.bg-(--color-card-surface-secondary-2)]="time.disabled"
-                    [class.border-(--color-card-surface-secondary-2)]="time.disabled"
-                    [class.text-(--color-text-placeholder)]="time.disabled"
-                    [class.cursor-not-allowed]="time.disabled"
-                    >
-                    {{ time.label }}
-                  </button>
-                }
-              </div>
-            </div>
-          }
-
-          <div class="flex justify-end mb-5">
-            <button
-              type="button"
-              (click)="onNext()"
-              class="button flex items-center justify-center gap-2 w-full sm:w-auto px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base"
-              >
-              Next
-              <img src="/icons/icons-24/arrow-right.svg" class="invert w-4 md:w-5" />
-            </button>
-          </div>
-        </div>
+  <div class="flex justify-end mb-5">
+    <button
+      type="button"
+      (click)="onNext()"
+      class="button flex items-center justify-center gap-2 w-full sm:w-auto px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base"
+    >
+      Next
+      <img src="/icons/icons-24/arrow-right.svg" class="invert w-4 md:w-5" />
+    </button>
+  </div>
+</div>

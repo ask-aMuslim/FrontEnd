@@ -15,10 +15,7 @@
           </div>
 
           <span class="events-hero__title">
-            {{
-              featuredEvent?.title ||
-                'The Islamic rules in relationships between family members and friends'
-            }}
+            {{ featuredEvent?.title || '—' }}
           </span>
         </div>
 
@@ -29,9 +26,7 @@
               alt="Calendar Icon"
               class="events-hero__detail-icon"
             />
-            <span class="events-hero__detail-text">{{
-              featuredEvent?.date || '31 Dec, 2025'
-            }}</span>
+            <span class="events-hero__detail-text">{{ featuredEvent?.date || '—' }}</span>
           </div>
 
           <div class="events-hero__detail-item">
@@ -40,7 +35,7 @@
               alt="Clock Icon"
               class="events-hero__detail-icon"
             />
-            <span class="events-hero__detail-text">{{ featuredEvent?.timeRange || 'TBD' }}</span>
+            <span class="events-hero__detail-text">{{ featuredEvent?.timeRange || '—' }}</span>
           </div>
 
           <div class="events-hero__detail-item">

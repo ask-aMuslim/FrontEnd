@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../../../environments/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { IdentityFacade, RegistrationData, UserRole } from '../../../api/facades/identity.facade';
@@ -165,10 +166,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
   protected onSocialSignIn(provider: 'google' | 'facebook'): void {
     if (!this.isBrowser) return;
 
-    const targetUrl =
-      provider === 'google' ? '/api/Authentication/login/google' : '/api/Authentication/login/facebook';
+    const path = provider === 'google'
+      ? '/api/Authentication/login/google'
+      : '/api/Authentication/login/facebook';
 
-    globalThis.location.href = targetUrl;
+    const baseUrl = environment.apiBaseUrl.startsWith('http') ? environment.apiBaseUrl : '';
+    globalThis.location.href = `${baseUrl}${path}`;
   }
 
   protected get friendlyApiError(): string | null {

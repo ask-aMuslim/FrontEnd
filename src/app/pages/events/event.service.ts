@@ -35,18 +35,17 @@ export class EventService {
       id: this.selectedEvent.id,
       title: this.selectedEvent.title,
       description: this.selectedEvent.description,
-      fullDescription: this.selectedEvent.description || 'Details will be available soon.',
+      fullDescription: this.selectedEvent.description,
       imageUrl: this.selectedEvent.imageUrl,
       imageAlt: this.selectedEvent.imageAlt,
       speakerName: this.selectedEvent.speakerName,
       speakerImage: this.selectedEvent.speakerImage,
       speakerRole: this.selectedEvent.speakerRole,
-      speakerBio:
-        'A trusted scholar dedicated to guiding the community with clarity and compassion.',
+      speakerBio: '',
       date: this.selectedEvent.date,
-      time: 'TBD',
-      location: 'TBD',
-      tags: this.selectedEvent.tags.length > 0 ? this.selectedEvent.tags : ['#Event'],
+      time: '',
+      location: '',
+      tags: this.selectedEvent.tags,
       isRecorded: this.selectedEvent.isRecorded === true,
       agenda: [],
       outcomes: [],
@@ -65,7 +64,7 @@ export class EventService {
       return null;
     }
 
-    const title = toStringValue(getValue(record, 'title', 'Title')) ?? 'Event';
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
     const description = toStringValue(getValue(record, 'description', 'Description')) ?? '';
     const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
     const startDateValue = toStringValue(
@@ -79,27 +78,27 @@ export class EventService {
       description,
       fullDescription:
         toStringValue(getValue(record, 'fullDescription', 'FullDescription')) ??
-        (description ? `${description}` : 'Details will be available soon.'),
+        description,
       imageUrl:
         toApiMediaUrl(
           toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
         ) ??
         '/images/events-picture.png',
       imageAlt: toStringValue(getValue(record, 'imageAlt', 'ImageAlt')) ?? title,
-      speakerName: toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? 'Ask A Muslim',
+      speakerName: toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '',
       speakerImage:
         toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
         '/images/profile-picture-navbar.png',
-      speakerRole: toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? 'Islamic Scholar',
+      speakerRole: toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? '',
       speakerBio:
         toStringValue(getValue(record, 'speakerBio', 'SpeakerBio')) ??
-        'A trusted scholar dedicated to guiding the community with clarity and compassion.',
+        '',
       date: formatEventDateDisplay(startDateValue),
       time:
         toStringValue(getValue(record, 'time', 'Time', 'startTime', 'StartTime')) ??
         formatEventTimeRangeDisplay(startDateValue, endDateValue),
-      location: toStringValue(getValue(record, 'location', 'Location')) ?? 'TBD',
-      tags: tags.length > 0 ? tags : ['#Event'],
+      location: toStringValue(getValue(record, 'location', 'Location')) ?? '',
+      tags,
       isRecorded: toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
       registrationDeadline: toStringValue(
         getValue(record, 'registrationDeadline', 'RegistrationDeadline'),

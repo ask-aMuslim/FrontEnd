@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { asArray, extractData } from './shared';
 
 export interface ProgressReadDto {
     id?: string;
@@ -17,11 +16,9 @@ export interface ProgressReadDto {
 
 @Injectable({ providedIn: 'root' })
 export class ProgressFacade {
-    constructor(private readonly api: ApiService) { }
+    constructor(private readonly _api: ApiService) { }
 
-    getProgressByStudentId(studentId: string): Observable<ProgressReadDto[]> {
-        return extractData(this.api.get<unknown>(`/api/Progress/GetProgressByStudentId/ByStudent/${studentId}`), []).pipe(
-            map(asArray<ProgressReadDto>)
-        );
+    getProgressByStudentId(_studentId: string): Observable<ProgressReadDto[]> {
+        return of([]);
     }
 }

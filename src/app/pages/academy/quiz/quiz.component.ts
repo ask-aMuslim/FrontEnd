@@ -1,21 +1,18 @@
-/* eslint-disable deprecation/deprecation */
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, interval } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { QuizAttemptsService } from '../../../core/services/quiz-attempts.service';
-import { QuestionsService } from '../../../core/services/questions.service';
-import { AcademyMockDataService } from '../../../core/services/mock-data/academy-mock-data.service';
+import { Observable, Subject, forkJoin, interval, of } from 'rxjs';
+import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
+import { QuizzesService } from '../../../core/services/quizzes.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { ScrollService } from '../../../core/services/scroll.service';
-import { LessonMetadata } from '../../../core/models/interfaces/lesson-content.model';
+import { QuestionsService } from '../../../core/services/questions.service';
+import { OptionsService } from '../../../core/services/options.service';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
-import { asRecord, extractArray, getValue, toStringValue } from '../../../core/helpers/api-response.helper';
 
 // Quiz Question Interface
 interface QuizQuestion {
@@ -42,6 +39,7 @@ interface QuizAnswer {
 }
 
 type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
+type QuizTarget = 1 | 2 | 3;
 
 @Component({
     selector: 'app-quiz',
@@ -54,7 +52,6 @@ type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
 export class QuizComponent implements OnInit, OnDestroy {
     private static readonly optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
     private static readonly questionNumberOffset = 1;
-    private static readonly defaultStudentId = '1';
     // Route params
     courseId = '';
     lessonId = '';
@@ -100,6 +97,7 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     // Quiz data
     readonly questions = signal<QuizQuestion[]>([]);
+    readonly activeQuizId = signal<string | null>(null);
     readonly answers = signal<QuizAnswer[]>([]);
 
     // Computed values
@@ -161,15 +159,15 @@ export class QuizComponent implements OnInit, OnDestroy {
     });
 
     // Lessons for sidebar
-    readonly lessons = signal([
-        { id: 'intro', title: 'Intro', duration: '3 min', type: 'intro', isCompleted: true, hasNotification: false },
-        { id: 'lesson-1', title: 'Introduction To Fiqh', duration: '3 min', type: 'video', isCompleted: true, hasNotification: true },
-        { id: 'lesson-2', title: 'How To Pray - Part 1', duration: '3 min', type: 'video', isCompleted: true, hasNotification: false },
-        { id: 'lesson-3', title: 'How To Pray - Part 2', duration: '3 min', type: 'video', isCompleted: true, hasNotification: false },
-        { id: 'lesson-4', title: 'How To Pray - Part 3', duration: '3 min', type: 'video', isCompleted: true, hasNotification: false },
-        { id: 'lesson-5', title: 'How To Pray - Part 4', duration: '3 min', type: 'video', isCompleted: true, hasNotification: false },
-        { id: 'quiz', title: 'Quiz', duration: '3 min', type: 'quiz', isCompleted: false, isCurrent: true, hasNotification: false },
-    ]);
+    readonly lessons = signal<Array<{
+        id: string;
+        title: string;
+        duration: string;
+        type: 'intro' | 'video' | 'article' | 'quiz' | 'audio';
+        isCompleted: boolean;
+        isCurrent?: boolean;
+        hasNotification?: boolean;
+    }>>([]);
 
     // Passed/Completed state
     readonly userRating = signal<number>(0);
@@ -178,15 +176,13 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
-    private currentQuizId = '';
-    private currentAttemptId: string = '';
 
     constructor(
         private readonly route: ActivatedRoute,
         private readonly router: Router,
-        private readonly quizAttemptsService: QuizAttemptsService,
+        private readonly quizzesService: QuizzesService,
         private readonly questionsService: QuestionsService,
-        private readonly mockDataService: AcademyMockDataService,
+        private readonly optionsService: OptionsService,
         private readonly academyProgressService: AcademyProgressService,
         private readonly scrollService: ScrollService,
         @Inject(PLATFORM_ID) private readonly platformId: object
@@ -214,7 +210,6 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
             this.courseId = params.get('courseId') || '';
             this.lessonId = params.get('lessonId') || '';
-            this.currentQuizId = this.courseId;
             this.loadCourseInfo();
             this.loadQuizData();
             this.checkPreviousCompletion();
@@ -270,10 +265,10 @@ export class QuizComponent implements OnInit, OnDestroy {
             });
         }
 
-        this.mockDataService.getCourseLessonsMetadata(this.courseId)
+        this.academyProgressService.getCourseLessonsWithProgress(this.courseId)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (lessons: LessonMetadata[]) => {
+                next: (lessons) => {
                     this.lessons.set(lessons.map((lesson) => {
                         const lessonType = this.mapLessonType(lesson.type);
                         return {
@@ -281,9 +276,9 @@ export class QuizComponent implements OnInit, OnDestroy {
                             title: lesson.title,
                             duration: lesson.duration,
                             type: lessonType,
-                            isCompleted: lesson.status === 'completed',
-                            isCurrent: lesson.status === 'current',
-                            hasNotification: lesson.hasFeedback === true
+                            isCompleted: lesson.progress.status === 'completed',
+                            isCurrent: lesson.progress.status === 'current',
+                            hasNotification: lesson.progress.status === 'current'
                         };
                     }));
                 },
@@ -292,45 +287,47 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     private loadQuizData(): void {
-        if (!this.courseId) {
-            this.loadMockQuizData();
-            return;
-        }
+        const query = this.lessonId
+            ? { lessonId: this.lessonId, pageSize: 50 }
+            : { courseId: this.courseId, pageSize: 50 };
 
-        this.questionsService.getAll()
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (response) => {
-                    const mappedQuestions = this.mapApiQuestions(response);
-                    if (mappedQuestions.length > 0) {
-                        this.questions.set(mappedQuestions);
-                        this.initializeAnswers(mappedQuestions);
-                        return;
+        this.quizzesService.getAll(query)
+            .pipe(
+                switchMap((quizzes) => {
+                    const activeQuiz = quizzes[0];
+                    if (!activeQuiz?.id) {
+                        return of([] as QuizQuestion[]);
                     }
-                    this.loadMockQuizData();
-                },
-                error: () => this.loadMockQuizData()
+
+                    this.activeQuizId.set(activeQuiz.id);
+                    return this.buildQuestionsFromQuizId(activeQuiz.id);
+                }),
+                catchError(() => of([] as QuizQuestion[])),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((questions: QuizQuestion[]) => {
+                this.questions.set(questions);
+                this.initializeAnswers(questions);
             });
     }
 
-    private loadMockQuizData(): void {
-        const mockQuestions: QuizQuestion[] = Array.from({ length: 10 }, (_, i) => ({
-            id: `q${i + 1}`,
-            questionNumber: i + 1,
-            questionText: 'The term "Tawhid" is a fundamental concept in Islam. What does it mean?',
-            options: [
-                { id: 'a', label: 'A', text: 'The belief in multiple gods' },
-                { id: 'b', label: 'B', text: 'The oneness of Allah (God)' },
-                { id: 'c', label: 'C', text: 'The practice of fasting' },
-                { id: 'd', label: 'D', text: 'The pilgrimage to Mecca' }
-            ],
-            correctOptionId: 'b',
-            hint: 'Tawhid comes from the Arabic root "wahada" which means to make one.',
-            evidenceSource: 'google.translate.mon'
-        }));
+    private buildQuestionsFromQuizId(quizId: string): Observable<QuizQuestion[]> {
+        return this.questionsService.getAllByQuizId(quizId).pipe(
+            switchMap((questions) => {
+                if (!questions.length) {
+                    return of([] as QuizQuestion[]);
+                }
 
-        this.questions.set(mockQuestions);
-        this.initializeAnswers(mockQuestions);
+                return forkJoin(questions.map((question, index) => this.loadQuestionWithOptions(question, index)));
+            })
+        );
+    }
+
+    private loadQuestionWithOptions(question: { id?: string; text?: string }, index: number) {
+        return this.optionsService.getByQuestion(String(question.id ?? '')).pipe(
+            map((options) => this.mapApiQuestion(question, options, index)),
+            catchError(() => of(this.mapApiQuestion(question, [], index)))
+        );
     }
 
     private initializeAnswers(questions: QuizQuestion[]): void {
@@ -345,6 +342,9 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     // Quiz Actions
     startQuiz(): void {
+        if (this.questions().length === 0) {
+            return;
+        }
         this.quizState.set('in-progress');
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
@@ -355,17 +355,14 @@ export class QuizComponent implements OnInit, OnDestroy {
         // Timer starts with quiz - 10 minutes total for entire quiz
         this.startTimer();
 
-        if (this.currentQuizId) {
-            this.quizAttemptsService
-                .create({ quizId: this.currentQuizId, studentId: QuizComponent.defaultStudentId })
+        const payload = this.buildQuizCreationPayload();
+        if (payload) {
+            this.quizzesService
+                .create(payload)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
-                    next: (attempt) => {
-                        this.currentAttemptId = this.extractAttemptId(attempt);
-                    },
-                    error: () => {
-                        this.currentAttemptId = '';
-                    },
+                    next: () => void 0,
+                    error: () => void 0,
                 });
         }
     }
@@ -478,17 +475,6 @@ export class QuizComponent implements OnInit, OnDestroy {
         };
         localStorage.setItem(storageKey, JSON.stringify(quizData));
 
-        if (this.currentAttemptId) {
-            const score = this.correctAnswersCount();
-            const isPassed = this.hasPassed();
-
-            this.quizAttemptsService.complete(this.currentAttemptId, { score, isPassed })
-                .pipe(takeUntil(this.destroy$))
-                .subscribe({
-                    next: () => { },
-                    error: () => { }
-                });
-        }
     }
 
     retakeQuiz(): void {
@@ -614,58 +600,6 @@ export class QuizComponent implements OnInit, OnDestroy {
     goToCertificPage(): void {
         this.router.navigate(['/academy/course', this.courseId, 'certificate']);
     }
-    private mapApiQuestions(response: unknown): QuizQuestion[] {
-        const records = extractArray(response);
-        const filtered = this.filterQuestionsByCourse(records, this.courseId);
-        return filtered.map((item, index) => this.mapApiQuestion(item, index));
-    }
-
-    private mapApiQuestion(item: unknown, index: number): QuizQuestion {
-        const record = asRecord(item);
-        const id = toStringValue(getValue(record, 'id', 'Id')) ?? `question-${index + QuizComponent.questionNumberOffset}`;
-        const questionText = toStringValue(getValue(record, 'questionText', 'QuestionText', 'text', 'Text')) ??
-            'Question';
-        const options = this.mapOptions(getValue(record, 'options', 'Options'));
-        const hint = toStringValue(getValue(record, 'hint', 'Hint')) ?? undefined;
-        const evidenceSource = toStringValue(getValue(record, 'evidenceSource', 'EvidenceSource')) ?? undefined;
-        const correctOptionId = toStringValue(getValue(record, 'correctOptionId', 'CorrectOptionId')) ?? (options[0]?.id ?? '');
-
-        return {
-            id,
-            questionNumber: index + QuizComponent.questionNumberOffset,
-            questionText,
-            options,
-            correctOptionId,
-            hint,
-            evidenceSource,
-        };
-    }
-
-    private mapOptions(value: unknown): QuizOption[] {
-        if (!Array.isArray(value)) {
-            return [];
-        }
-
-        return value.map((option, index) => {
-            const record = asRecord(option);
-            const id = toStringValue(getValue(record, 'id', 'Id')) ?? `option-${index + QuizComponent.questionNumberOffset}`;
-            const text = toStringValue(getValue(record, 'text', 'Text')) ?? 'Answer';
-            const label = toStringValue(getValue(record, 'label', 'Label')) ??
-                QuizComponent.optionLabels[index] ?? `${index + QuizComponent.questionNumberOffset}`;
-            return { id, text, label };
-        });
-    }
-
-    private filterQuestionsByCourse(records: readonly unknown[], courseId: string): readonly unknown[] {
-        if (!courseId) return records;
-        return records.filter((item) => {
-            const record = asRecord(item);
-            const quizId = toStringValue(getValue(record, 'quizId', 'QuizId'));
-            const mappedCourseId = toStringValue(getValue(record, 'courseId', 'CourseId'));
-            return quizId === courseId || mappedCourseId === courseId;
-        });
-    }
-
     private mapLessonType(value: unknown): 'intro' | 'video' | 'article' | 'quiz' | 'audio' {
         if (value === 'quiz' || value === 4) return 'quiz';
         if (value === 'article' || value === 3) return 'article';
@@ -674,9 +608,60 @@ export class QuizComponent implements OnInit, OnDestroy {
         return 'video';
     }
 
-    private extractAttemptId(value: unknown): string {
-        const record = asRecord(value);
-        return toStringValue(getValue(record, 'id', 'Id')) ?? '';
+    private buildQuizCreationPayload(): Record<string, unknown> | null {
+        if (this.lessonId) {
+            return {
+                title: 'Lesson Quiz',
+                lessonId: this.lessonId,
+                targetType: 3 as QuizTarget,
+                target: 3 as QuizTarget,
+            };
+        }
+
+        if (this.courseId) {
+            return {
+                title: 'Course Quiz',
+                courseId: this.courseId,
+                targetType: 2 as QuizTarget,
+                target: 2 as QuizTarget,
+            };
+        }
+
+        const levelId = String(this.courseInfo().stage);
+        if (levelId) {
+            return {
+                title: 'Level Quiz',
+                levelId,
+                targetType: 1 as QuizTarget,
+                target: 1 as QuizTarget,
+            };
+        }
+
+        return null;
+    }
+
+    private mapApiQuestion(
+        question: { id?: string; text?: string },
+        options: Array<{ id?: string; text?: string; isCorrect?: boolean }>,
+        index: number,
+    ): QuizQuestion {
+        const questionFallbackId = question.id ?? `question-${index + 1}`;
+        const mappedOptions = options.map((option, optionIndex) => ({
+            id: String(option.id ?? `${questionFallbackId}-option-${optionIndex + 1}`),
+            label: QuizComponent.optionLabels[optionIndex] ?? String(optionIndex + 1),
+            text: String(option.text ?? ''),
+        }));
+
+        const correctOption = options.find(option => option.isCorrect === true);
+        const correctOptionId = String(correctOption?.id ?? mappedOptions[0]?.id ?? '');
+
+        return {
+            id: String(question.id ?? `question-${index + 1}`),
+            questionNumber: index + QuizComponent.questionNumberOffset,
+            questionText: String(question.text ?? 'Untitled question'),
+            options: mappedOptions,
+            correctOptionId,
+        };
     }
 
     retakeQuizFromResults(): void {

@@ -17,6 +17,7 @@ import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/e
 import type { CreateInquiryRequestCommand } from '../../../api/models';
 import { Router } from '@angular/router';
 import { InquiryRequestsService } from '../../../core/services';
+import { TokenService } from '../../../core/auth/token.service';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -75,6 +76,7 @@ export class SendInquiryComponent implements OnInit, OnChanges {
   constructor(
     private readonly router: Router,
     private readonly inquiryRequestsService: InquiryRequestsService,
+    private readonly tokenService: TokenService,
   ) { }
 
   ngOnInit(): void {
@@ -113,6 +115,14 @@ export class SendInquiryComponent implements OnInit, OnChanges {
       return;
     }
 
+    if (!this.tokenService.isAuthenticated()) {
+      this.submitError.set('Please sign in before sending an inquiry.');
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/ask-and-contact/send-inquiry' },
+      });
+      return;
+    }
+
     const topicLabel = this.getTopicLabel(form.get('topic')?.value ?? null);
     const languages = this.selectedLanguagesRef().map((language) => language.label);
     const payload: CreateInquiryRequestCommand = {
@@ -144,7 +154,7 @@ export class SendInquiryComponent implements OnInit, OnChanges {
 
         if (this.extractErrorStatus(error) === 401) {
           this.router.navigate(['/login'], {
-            queryParams: { redirectUrl: '/ask-and-contact/send-inquiry' },
+            queryParams: { returnUrl: '/ask-and-contact/send-inquiry' },
           });
         }
       },
@@ -153,8 +163,9 @@ export class SendInquiryComponent implements OnInit, OnChanges {
 
   private getSubmitErrorMessage(error: unknown): string {
     const status = this.extractErrorStatus(error);
+    const message = this.extractErrorMessage(error).toLowerCase();
 
-    if (status === 401) {
+    if (status === 401 || message.includes('401') || message.includes('unauthorized') || message.includes('authentication')) {
       return 'Please sign in before sending an inquiry.';
     }
 
@@ -165,16 +176,64 @@ export class SendInquiryComponent implements OnInit, OnChanges {
     return 'Unable to send your inquiry right now. Please try again shortly.';
   }
 
-  private extractErrorStatus(error: unknown): number | null {
-    if (error instanceof HttpErrorResponse) {
-      return error.status;
+  private extractErrorMessage(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
     }
 
-    if (typeof error === 'object' && error !== null && 'status' in error) {
-      const candidateStatus = (error as { status?: unknown }).status;
-      if (typeof candidateStatus === 'number') {
-        return candidateStatus;
+    if (error instanceof HttpErrorResponse) {
+      const nestedMessage = this.extractErrorMessage(error.error);
+      return nestedMessage.length > 0 ? nestedMessage : error.message;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const record = error as Record<string, unknown>;
+      const candidates = [record['message'], record['detail'], record['error']];
+
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.length > 0) {
+          return candidate;
+        }
       }
+
+      return this.extractErrorMessage(record['originalError']);
+    }
+
+    return '';
+  }
+
+  private extractErrorStatus(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+      const nestedHttpStatus = this.parseStatusCandidate(error.error);
+      return nestedHttpStatus ?? error.status;
+    }
+
+    return this.parseStatusCandidate(error);
+  }
+
+  private parseStatusCandidate(candidate: unknown): number | null {
+    if (candidate === null || candidate === undefined) {
+      return null;
+    }
+
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      return candidate;
+    }
+
+    if (typeof candidate === 'string') {
+      const parsed = Number(candidate);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    if (typeof candidate === 'object') {
+      const record = candidate as Record<string, unknown>;
+
+      const directStatus = this.parseStatusCandidate(record['statusCode'] ?? record['status']);
+      if (directStatus !== null) {
+        return directStatus;
+      }
+
+      return this.parseStatusCandidate(record['originalError'] ?? record['error']);
     }
 
     return null;

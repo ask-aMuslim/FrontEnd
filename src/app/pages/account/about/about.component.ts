@@ -5,6 +5,7 @@ import { InlineSvgDirective } from '../../../shared/directives/inline-svg.direct
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
 import { EditPersonalInformationComponent } from './edit-personal-information/edit-personal-information.component';
 import { EditContactInformationComponent } from './edit-contact-information/edit-contact-information.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-about',
@@ -13,12 +14,15 @@ import { EditContactInformationComponent } from './edit-contact-information/edit
     EditMainInformationComponent,
     EditPersonalInformationComponent,
     EditContactInformationComponent
-],
+  ],
   templateUrl: './about.component.html',
   styleUrls: ['./about.component.scss'],
 })
 export class AboutComponent {
-  constructor(private readonly router: Router) { }
+  constructor(
+    private readonly router: Router,
+    private readonly authService: AuthService,
+  ) { }
 
   about = {
     religion: 'Islam',
@@ -90,6 +94,11 @@ export class AboutComponent {
   }
 
   logout() {
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => void 0,
+      error: () => {
+        void this.router.navigate(['/login']);
+      },
+    });
   }
 }

@@ -1,9 +1,11 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, finalize, map, Observable, throwError } from 'rxjs';
+import { catchError, finalize, map, Observable, of, throwError } from 'rxjs';
 import { ApiConfiguration } from '../api-configuration';
 import { forgotPassword, login, register, resetPassword, verifyOtp } from '../functions';
 import { LoginCommand, RegisterCommand } from '../models';
+import { TokenService } from '../../core/auth/token.service';
+import { ResultOfAuthenticationResponse } from '../models/result-of-authentication-response';
 
 export type UserRole = 'Student' | 'Instructor' | 'Admin' | 'NonMuslim';
 
@@ -26,19 +28,16 @@ export interface LoginResponse {
   userId?: string;
 }
 
-interface ApiEnvelope<T> {
-  data?: T | null;
-  errors?: string[];
-}
-
 @Injectable({ providedIn: 'root' })
 export class IdentityFacade {
+
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
 
   constructor(
     private readonly http: HttpClient,
-    private readonly config: ApiConfiguration
+    private readonly config: ApiConfiguration,
+    private readonly tokenService: TokenService
   ) { }
 
   clearError(): void {
@@ -47,9 +46,7 @@ export class IdentityFacade {
 
   register(payload: RegistrationData): Observable<void> {
     let role: 1 | 2 | 3 | 4 | 5 = 2; // Default to Student (2)
-    if (payload.role === 'Student') {
-      role = 2;
-    } else if (payload.role === 'Instructor') {
+    if (payload.role === 'Instructor') {
       role = 3;
     } else if (payload.role === 'Admin') {
       role = 1;
@@ -76,15 +73,42 @@ export class IdentityFacade {
     return this.withRequestState(
       login(this.http, this.config.rootUrl, { body }).pipe(
         map((response) => {
-          const payload = response.body as ApiEnvelope<LoginResponse> | null;
-          return payload?.data ?? {};
+          const envelope = response.body as ResultOfAuthenticationResponse | null;
+          const data = envelope?.data ?? {};
+
+          // Persist token so authGuard sees an authenticated session immediately
+          if (data.token) {
+            const expiresAt = data.expiresAt
+              ? new Date(data.expiresAt).getTime()
+              : Date.now() + 24 * 60 * 60 * 1000; // default 24 h
+            const expiresIn = Math.max(60, Math.floor((expiresAt - Date.now()) / 1000));
+
+            this.tokenService.setTokens({
+              accessToken: data.token,
+              refreshToken: '',   // API does not issue a refresh token
+              expiresIn,
+              userId: data.userId ?? undefined,
+              userEmail: data.email ?? undefined,
+            });
+          }
+
+          return {
+            token: data.token,
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            role: data.role,
+            userId: data.userId,
+          } as LoginResponse;
         })
       )
     );
   }
 
-  logout(): void {
+  logout(): Observable<void> {
     this.clearError();
+    this.tokenService.clearTokens();
+    return of(void 0);
   }
 
   requestPasswordResetOtp(email: string): Observable<void> {

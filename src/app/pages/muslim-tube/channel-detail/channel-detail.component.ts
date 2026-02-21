@@ -1,13 +1,16 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID, computed, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { MuslimTubeFacade } from '../../../api/facades/muslim-tube.facade';
 import { Short } from '../short-card/short-card.component';
 import { VideoCardComponent } from '../video-card/video-card.component';
 
 type Tab = 'home' | 'playlists' | 'videos' | 'shorts' | 'live';
 
 interface ChannelSummary {
-  id: number;
+  id: string;
   title: string;
   description: string;
   logo: string;
@@ -18,7 +21,7 @@ interface ChannelSummary {
 }
 
 interface Video {
-  id: number;
+  id: string;
   image: string;
   duration: string;
   title: string;
@@ -35,8 +38,15 @@ interface Video {
   templateUrl: './channel-detail.component.html',
   styleUrls: ['./channel-detail.component.scss'],
 })
-export class ChannelDetailComponent {
-  constructor(private readonly router: Router) {}
+export class ChannelDetailComponent implements OnInit, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
+
+  constructor(
+    private readonly router: Router,
+    private readonly route: ActivatedRoute,
+    private readonly muslimTubeFacade: MuslimTubeFacade,
+    @Inject(PLATFORM_ID) private readonly platformId: object,
+  ) { }
 
   readonly tabs: Tab[] = ['home', 'videos', 'shorts', 'live', 'playlists'];
   selectedTab = signal<Tab>('home');
@@ -44,78 +54,17 @@ export class ChannelDetailComponent {
   searchTerm = signal('');
 
   channel = signal<ChannelSummary>({
-    id: 1,
-    title: 'Islamic Knowledge Hub',
-    description: 'Comprehensive Islamic teachings and lectures from renowned scholars.',
+    id: '',
+    title: '',
+    description: '',
     logo: '/images/channel1.png',
-    followers: 125000,
-    videosCount: 342,
-    since: 'Joined Jan 2022',
-    location: 'Worldwide',
+    followers: 0,
+    videosCount: 0,
+    since: '',
+    location: 'Global',
   });
 
-  videos: Video[] = [
-    {
-      id: 1,
-      image: '/images/video1.png',
-      duration: '12:45',
-      title: 'Understanding Tawheed in Daily Life',
-      channelLogo: '/images/channel1.png',
-      channelTitle: 'Islamic Knowledge Hub',
-      date: '2026-01-02',
-      likes: 15200,
-    },
-    {
-      id: 2,
-      image: '/images/video2.png',
-      duration: '08:30',
-      title: 'Foundations of Quran Recitation',
-      channelLogo: '/images/channel1.png',
-      channelTitle: 'Islamic Knowledge Hub',
-      date: '2026-01-01',
-      likes: 22500,
-    },
-    {
-      id: 3,
-      image: '/images/video3.png',
-      duration: '05:15',
-      title: 'Morning Duas to Start Strong',
-      channelLogo: '/images/channel1.png',
-      channelTitle: 'Islamic Knowledge Hub',
-      date: '2025-12-30',
-      likes: 18700,
-    },
-    {
-      id: 4,
-      image: '/images/video1.png',
-      duration: '18:20',
-      title: 'Applying Fiqh to Modern Work',
-      channelLogo: '/images/channel1.png',
-      channelTitle: 'Islamic Knowledge Hub',
-      date: '2025-12-28',
-      likes: 9800,
-    },
-    {
-      id: 5,
-      image: '/images/video2.png',
-      duration: '15:40',
-      title: 'Stories from the Seerah for Today',
-      channelLogo: '/images/channel1.png',
-      channelTitle: 'Islamic Knowledge Hub',
-      date: '2025-12-25',
-      likes: 31400,
-    },
-    {
-      id: 6,
-      image: '/images/video3.png',
-      duration: '09:55',
-      title: 'How to Build a Consistent Salah Habit',
-      channelLogo: '/images/channel1.png',
-      channelTitle: 'Islamic Knowledge Hub',
-      date: '2025-12-20',
-      likes: 14200,
-    },
-  ];
+  videos: Video[] = [];
 
   shorts: Short[] = [
     {
@@ -207,8 +156,88 @@ export class ChannelDetailComponent {
     this.selectedTab.set(tab);
   }
 
-  onVideoClick(videoId: number): void {
-    this.router.navigate(['/muslim-tube/video', videoId]);
+  ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const channelId = params.get('id');
+        if (!channelId) {
+          return;
+        }
+
+        this.loadChannel(channelId);
+        this.loadChannelVideos(channelId);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onVideoClick(videoId: string | number): void {
+    this.router.navigate(['/muslim-tube/video', String(videoId)]);
+  }
+
+  private loadChannel(channelId: string): void {
+    this.muslimTubeFacade.getChannels({ pageSize: 100 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: channels => {
+          const channel = channels.find(item => item.id === channelId);
+          if (!channel) {
+            return;
+          }
+          this.channel.set({
+            id: channel.id,
+            title: channel.title,
+            description: channel.description,
+            logo: channel.imageUrl,
+            followers: channel.followers,
+            videosCount: channel.videosCount,
+            since: 'Active',
+            location: 'Global',
+          });
+        },
+        error: () => {
+          this.channel.set({
+            id: channelId,
+            title: '',
+            description: '',
+            logo: '/images/channel1.png',
+            followers: 0,
+            videosCount: 0,
+            since: '',
+            location: 'Global',
+          });
+        }
+      });
+  }
+
+  private loadChannelVideos(channelId: string): void {
+    this.muslimTubeFacade.getVideosByChannel(channelId, { pageSize: 100 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: videos => {
+          this.videos = videos.map(video => ({
+            id: video.id,
+            image: video.image,
+            duration: video.duration,
+            title: video.title,
+            channelLogo: video.channelLogo,
+            channelTitle: video.channelTitle,
+            date: video.date,
+            likes: video.likes,
+          }));
+        },
+        error: () => {
+          this.videos = [];
+        }
+      });
   }
 
   formatNumber(num: number): string {

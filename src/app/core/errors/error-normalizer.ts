@@ -173,9 +173,14 @@ export class ErrorNormalizer {
                     errors[field] = value.map(String);
                 } else if (typeof value === 'string') {
                     errors[field] = [value];
-                } else if (Array.isArray((value as any)?.errors)) {
+                } else if (
+                    value &&
+                    typeof value === 'object' &&
+                    'errors' in value &&
+                    Array.isArray((value as { errors?: unknown }).errors)
+                ) {
                     // Nested validation errors
-                    errors[field] = (value as any).errors.map(String);
+                    errors[field] = ((value as { errors: unknown[] }).errors).map(String);
                 }
             }
         }

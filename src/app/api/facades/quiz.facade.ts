@@ -13,12 +13,30 @@ export interface QuizReadDto {
 export type QuizCreateDto = Record<string, unknown>;
 export type QuizUpdateDto = Record<string, unknown>;
 
+export interface QuizQuery {
+    levelId?: string;
+    courseId?: string;
+    lessonId?: string;
+    targetType?: number;
+    pageNumber?: number;
+    pageSize?: number;
+    searchTerm?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class QuizFacade {
     constructor(private readonly api: ApiService) { }
 
-    getAllQuizzes(): Observable<QuizReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Quizzes'), []).pipe(map(asArray<QuizReadDto>));
+    getAllQuizzes(query?: QuizQuery): Observable<QuizReadDto[]> {
+        return extractData(this.api.get<unknown>('/api/Quizzes', {
+            LevelId: query?.levelId,
+            CourseId: query?.courseId,
+            LessonId: query?.lessonId,
+            TargetType: query?.targetType,
+            PageNumber: query?.pageNumber,
+            PageSize: query?.pageSize,
+            SearchTerm: query?.searchTerm,
+        }), []).pipe(map(asArray<QuizReadDto>));
     }
 
     getQuizById(id: string): Observable<QuizReadDto | null> {

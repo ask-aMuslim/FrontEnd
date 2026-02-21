@@ -4,6 +4,7 @@
       <img
         [src]="event.imageUrl"
         [alt]="event.imageAlt"
+        (error)="onEventImageError($event)"
         class="event-card__image"
       />
     </div>
@@ -22,10 +23,7 @@
         </div>
       }
       <div class="event-card__date">
-        <div
-          [inlineSVG]="'/icons/icons-16/calendar.svg'"
-          class="event-card__date-icon"
-        ></div>
+        <div [inlineSVG]="'/icons/icons-16/calendar.svg'" class="event-card__date-icon"></div>
         <span class="event-card__date-text">{{ event.date }}</span>
       </div>
     </div>
@@ -41,6 +39,7 @@
       <img
         [src]="event.speakerImage"
         alt="speaker"
+        (error)="onSpeakerImageError($event)"
         class="event-card__speaker-image"
       />
       <div class="event-card__speaker-info">

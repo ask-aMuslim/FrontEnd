@@ -61,13 +61,17 @@
               <aside class="sidebar" aria-label="Course lessons">
                 <div class="course-info-card">
                   <div class="course-header">
-                    <span class="stage-label">Stage 1</span>
-                    <h3 class="sidebar-title">Course A2: Prayer (Salah)</h3>
+                    <span class="stage-label">Stage {{ courseInfo().stage }}</span>
+                    <h3 class="sidebar-title">
+                      Course {{ courseInfo().code }}: {{ courseInfo().title }}
+                    </h3>
                   </div>
                   <div class="divider"></div>
                   <div class="course-stats">
-                    <p class="stat-item">Lesson: 5/5</p>
-                    <p class="stat-item">Duration: 4h 10m</p>
+                    <p class="stat-item">
+                      Lesson: {{ courseInfo().currentLesson }}/{{ courseInfo().totalLessons }}
+                    </p>
+                    <p class="stat-item">Duration: {{ courseInfo().duration }}</p>
                   </div>
                 </div>
 

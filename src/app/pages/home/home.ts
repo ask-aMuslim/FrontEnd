@@ -278,14 +278,13 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   private mapEventCard(item: unknown, index: number): EventCard {
     const record = asRecord(item);
     const id = toStringValue(getValue(record, 'id', 'Id')) ?? `event-${index + 1}`;
-    const title = toStringValue(getValue(record, 'title', 'Title')) ?? 'Upcoming Event';
-    const description =
-      toStringValue(getValue(record, 'description', 'Description')) ?? 'Details will be available soon.';
-    const speakerName = toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? 'Ask A Muslim';
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
+    const description = toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    const speakerName = toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '';
     const speakerImage =
       toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
       '/images/profile-picture-navbar.png';
-    const speakerRole = toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? 'Islamic Scholar';
+    const speakerRole = toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? '';
     const image =
       toApiMediaUrl(
         toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
@@ -295,7 +294,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
     );
     const date = formatEventDateDisplay(startDateValue);
-    const tag = toStringValue(getValue(record, 'tag', 'Tag')) ?? '#Event';
+    const tag = toStringValue(getValue(record, 'tag', 'Tag')) ?? '';
     const detailUrl = `/events/${id}`;
 
     return {

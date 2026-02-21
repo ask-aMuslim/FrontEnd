@@ -1,13 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { QuizFacade, QuizReadDto, QuizCreateDto, QuizUpdateDto } from '../../api/facades/quiz.facade';
+import { QuizFacade, QuizReadDto, QuizCreateDto, QuizUpdateDto, QuizQuery } from '../../api/facades/quiz.facade';
 
 @Injectable({ providedIn: 'root' })
 export class QuizzesService {
   private readonly facade = inject(QuizFacade);
 
-  getAll(): Observable<QuizReadDto[]> {
-    return this.facade.getAllQuizzes();
+  getAll(query?: QuizQuery): Observable<QuizReadDto[]> {
+    return this.facade.getAllQuizzes(query);
   }
 
   getById(id: string): Observable<QuizReadDto | null> {

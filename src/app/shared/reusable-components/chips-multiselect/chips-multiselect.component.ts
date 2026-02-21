@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 
-export interface ChipOption<T = any> {
+export interface ChipOption<T = unknown> {
   value: T;
   label: string;
 }
@@ -23,7 +23,7 @@ export interface ChipOption<T = any> {
   styleUrls: ['./chips-multiselect.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChipsMultiselectComponent<T = any> implements OnDestroy {
+export class ChipsMultiselectComponent<T = unknown> implements OnDestroy {
   options = input.required<ChipOption<T>[]>();
   selected = input.required<ChipOption<T>[]>();
   placeholder = input('Select options');
@@ -36,17 +36,18 @@ export class ChipsMultiselectComponent<T = any> implements OnDestroy {
   isOpen = signal(false);
 
   constructor(
-    private elementRef: ElementRef,
+    private elementRef: ElementRef<HTMLElement>,
     private renderer: Renderer2,
   ) {
     this.renderer.listen('document', 'click', (event: MouseEvent) => {
-      if (!this.elementRef.nativeElement.contains(event.target)) {
+      const target = event.target;
+      if (!(target instanceof Node) || !this.elementRef.nativeElement.contains(target)) {
         this.isOpen.set(false);
       }
     });
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void { }
 
   toggleDropdown(): void {
     this.isOpen.set(!this.isOpen());

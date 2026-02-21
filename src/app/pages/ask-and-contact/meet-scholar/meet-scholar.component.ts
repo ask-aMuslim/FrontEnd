@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
 import type { CreateMeetingRequestCommand } from '../../../api/models';
 import { MeetingRequestsService } from '../../../core/services';
+import { TokenService } from '../../../core/auth/token.service';
 import { StepperComponent, Step } from './stepper/stepper.component';
 import { RequestStepComponent } from './request-step/request-step.component';
 import { DatetimeStepComponent } from './datetime-step/datetime-step.component';
@@ -88,6 +89,7 @@ export class MeetScholarComponent {
     private fb: FormBuilder,
     private readonly _meetingRequestsService: MeetingRequestsService,
     private router: Router,
+    private readonly tokenService: TokenService,
   ) {
     this.meetingForm = this.fb.group({
       name: ['', Validators.required],
@@ -159,7 +161,9 @@ export class MeetScholarComponent {
 
   private convertTo24Hour(time12h: string): string {
     const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
+    const timeParts = time.split(':');
+    let hours = timeParts[0];
+    const minutes = timeParts[1];
 
     if (hours === '12') {
       hours = '00';
@@ -231,8 +235,24 @@ export class MeetScholarComponent {
     const requiredControls = ['name', 'email', 'topic', 'message', 'durationMinutes'];
     const hasInvalidRequired = requiredControls.some((ctrl) => this.meetingForm.get(ctrl)?.invalid);
     const selectedLanguagesEmpty = this.selectedLanguages().length === 0;
+    const hasSelectedDateTime =
+      typeof this.meetingForm.value.scheduledDate === 'string' &&
+      this.meetingForm.value.scheduledDate.length > 0 &&
+      typeof this.meetingForm.value.scheduledTime === 'string' &&
+      this.meetingForm.value.scheduledTime.length > 0;
 
-    if (hasInvalidRequired || selectedLanguagesEmpty || this.isSubmitting()) {
+    if (hasInvalidRequired || selectedLanguagesEmpty || !hasSelectedDateTime || this.isSubmitting()) {
+      if (!hasSelectedDateTime) {
+        this.submitError.set('Please select both a date and time before submitting your booking.');
+      }
+      return;
+    }
+
+    if (!this.tokenService.isAuthenticated()) {
+      this.submitError.set('Please sign in before booking a meeting.');
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
+      });
       return;
     }
 
@@ -240,16 +260,11 @@ export class MeetScholarComponent {
     this.submitError.set(null);
 
     const formValue = this.meetingForm.value;
-    let scheduledAt: string | undefined;
-    let scheduledDateTime: Date | undefined;
-
-    if (formValue.scheduledDate && formValue.scheduledTime) {
-      const date = new Date(formValue.scheduledDate);
-      const [hours, minutes] = formValue.scheduledTime.split(':');
-      date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-      scheduledAt = date.toISOString();
-      scheduledDateTime = date;
-    }
+    const date = new Date(formValue.scheduledDate);
+    const [hours, minutes] = String(formValue.scheduledTime).split(':');
+    date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+    const scheduledAt = date.toISOString();
+    const scheduledDateTime: Date = date;
 
     const payload: CreateMeetingRequestCommand = {
       topic: formValue.topic,
@@ -263,7 +278,7 @@ export class MeetScholarComponent {
         this.isSubmitting.set(false);
         this.router.navigate(['/ask-and-contact/meet-scholar/success'], {
           state: {
-            scheduledDateTime: scheduledDateTime ?? scheduledAt,
+            scheduledDateTime,
             scheduledTime: formValue.scheduledTime,
             durationMinutes: formValue.durationMinutes,
             confirmationEmail: formValue.email,
@@ -276,7 +291,7 @@ export class MeetScholarComponent {
 
         if (this.extractErrorStatus(error) === 401) {
           this.router.navigate(['/login'], {
-            queryParams: { redirectUrl: '/ask-and-contact/meet-scholar' },
+            queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
           });
         }
       },
@@ -285,8 +300,9 @@ export class MeetScholarComponent {
 
   private getSubmitErrorMessage(error: unknown): string {
     const status = this.extractErrorStatus(error);
+    const message = this.extractErrorMessage(error).toLowerCase();
 
-    if (status === 401) {
+    if (status === 401 || message.includes('401') || message.includes('unauthorized') || message.includes('authentication')) {
       return 'Please sign in before booking a meeting.';
     }
 
@@ -297,16 +313,64 @@ export class MeetScholarComponent {
     return 'Unable to submit your booking right now. Please try again shortly.';
   }
 
-  private extractErrorStatus(error: unknown): number | null {
-    if (error instanceof HttpErrorResponse) {
-      return error.status;
+  private extractErrorMessage(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
     }
 
-    if (typeof error === 'object' && error !== null && 'status' in error) {
-      const candidateStatus = (error as { status?: unknown }).status;
-      if (typeof candidateStatus === 'number') {
-        return candidateStatus;
+    if (error instanceof HttpErrorResponse) {
+      const nestedMessage = this.extractErrorMessage(error.error);
+      return nestedMessage.length > 0 ? nestedMessage : error.message;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const record = error as Record<string, unknown>;
+      const candidates = [record['message'], record['detail'], record['error']];
+
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.length > 0) {
+          return candidate;
+        }
       }
+
+      return this.extractErrorMessage(record['originalError']);
+    }
+
+    return '';
+  }
+
+  private extractErrorStatus(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+      const nestedHttpStatus = this.parseStatusCandidate(error.error);
+      return nestedHttpStatus ?? error.status;
+    }
+
+    return this.parseStatusCandidate(error);
+  }
+
+  private parseStatusCandidate(candidate: unknown): number | null {
+    if (candidate === null || candidate === undefined) {
+      return null;
+    }
+
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      return candidate;
+    }
+
+    if (typeof candidate === 'string') {
+      const parsed = Number(candidate);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    if (typeof candidate === 'object') {
+      const record = candidate as Record<string, unknown>;
+
+      const directStatus = this.parseStatusCandidate(record['statusCode'] ?? record['status']);
+      if (directStatus !== null) {
+        return directStatus;
+      }
+
+      return this.parseStatusCandidate(record['originalError'] ?? record['error']);
     }
 
     return null;

@@ -17,8 +17,8 @@ export type QuestionUpdateDto = Record<string, unknown>;
 export class QuestionFacade {
     constructor(private readonly api: ApiService) { }
 
-    getAllQuestions(): Observable<QuestionReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Questions'), []).pipe(map(asArray<QuestionReadDto>));
+    getAllQuestions(quizId: string): Observable<QuestionReadDto[]> {
+        return extractData(this.api.get<unknown>('/api/Questions', { QuizId: quizId }), []).pipe(map(asArray<QuestionReadDto>));
     }
 
     getQuestionById(id: string): Observable<QuestionReadDto | null> {

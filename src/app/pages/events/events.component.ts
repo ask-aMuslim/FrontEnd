@@ -21,13 +21,8 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
   styleUrls: ['./events.component.scss'],
 })
 export class EventsComponent implements OnInit {
-  private static readonly fallbackTitle = 'Upcoming Event';
-  private static readonly fallbackDescription = 'Details will be available soon.';
-  private static readonly fallbackSpeakerName = 'Ask A Muslim';
-  private static readonly fallbackSpeakerRole = 'Islamic Scholar';
   private static readonly fallbackImage = '/images/events-picture.png';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
-  private static readonly fallbackTag = '#Event';
   private static readonly idOffset = 1;
 
   currentPage = 1;
@@ -92,23 +87,23 @@ export class EventsComponent implements OnInit {
 
   get featuredEventDay(): string {
     const dateValue = this.featuredEvent?.date;
-    if (!dateValue || dateValue === 'TBD') {
-      return '31';
+    if (!dateValue) {
+      return '--';
     }
 
     const parsed = new Date(dateValue);
-    return Number.isNaN(parsed.getTime()) ? '31' : String(parsed.getDate()).padStart(2, '0');
+    return Number.isNaN(parsed.getTime()) ? '--' : String(parsed.getDate()).padStart(2, '0');
   }
 
   get featuredEventMonth(): string {
     const dateValue = this.featuredEvent?.date;
-    if (!dateValue || dateValue === 'TBD') {
-      return 'Dec';
+    if (!dateValue) {
+      return '---';
     }
 
     const parsed = new Date(dateValue);
     if (Number.isNaN(parsed.getTime())) {
-      return 'Dec';
+      return '---';
     }
 
     return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(parsed);
@@ -138,25 +133,19 @@ export class EventsComponent implements OnInit {
     const record = asRecord(item);
     const id =
       toStringValue(getValue(record, 'id', 'Id')) ?? `event-${index + EventsComponent.idOffset}`;
-    const title = toStringValue(getValue(record, 'title', 'Title')) ?? EventsComponent.fallbackTitle;
-    const description =
-      toStringValue(getValue(record, 'description', 'Description')) ??
-      EventsComponent.fallbackDescription;
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
+    const description = toStringValue(getValue(record, 'description', 'Description')) ?? '';
     const imageUrl =
       toApiMediaUrl(
         toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
       ) ??
       EventsComponent.fallbackImage;
     const imageAlt = toStringValue(getValue(record, 'imageAlt', 'ImageAlt')) ?? title;
-    const speakerName =
-      toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ??
-      EventsComponent.fallbackSpeakerName;
+    const speakerName = toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '';
     const speakerImage =
       toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
       EventsComponent.fallbackSpeakerImage;
-    const speakerRole =
-      toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ??
-      EventsComponent.fallbackSpeakerRole;
+    const speakerRole = toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? '';
     const startDateValue = toStringValue(
       getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
     );
@@ -177,7 +166,7 @@ export class EventsComponent implements OnInit {
       speakerRole,
       date,
       timeRange,
-      tags: tags.length > 0 ? tags : [EventsComponent.fallbackTag],
+      tags,
       isRecorded,
     };
   }

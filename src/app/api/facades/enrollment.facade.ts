@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { CreateEnrollmentCommand } from '../models';
 import { asArray, extractData } from './shared';
@@ -16,8 +16,11 @@ export interface EnrollmentReadDto {
 export class EnrollmentFacade {
     constructor(private readonly api: ApiService) { }
 
-    getAllEnrollments(): Observable<EnrollmentReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Enrollments'), []).pipe(map(asArray<EnrollmentReadDto>));
+    getAllEnrollments(studentId?: string): Observable<EnrollmentReadDto[]> {
+        if (!studentId) {
+            return of([]);
+        }
+        return extractData(this.api.get<unknown>(`/api/Enrollments/by-student/${studentId}`), []).pipe(map(asArray<EnrollmentReadDto>));
     }
 
     getEnrollment(id: string): Observable<EnrollmentReadDto | null> {

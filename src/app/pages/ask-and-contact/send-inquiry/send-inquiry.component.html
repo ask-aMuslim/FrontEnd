@@ -26,7 +26,10 @@
   </div>
 
   <div class="my-3 md:my-4">
+    <label for="send-inquiry-message" class="sr-only">Question message</label>
     <textarea
+      id="send-inquiry-message"
+      name="message"
       [formControl]="$any(formRef().get('message'))"
       rows="2"
       placeholder="Write here your exact question that you didn’t find its solution?"
@@ -43,7 +46,10 @@
   </div>
 
   <div>
+    <label for="send-inquiry-details" class="sr-only">Additional details</label>
     <textarea
+      id="send-inquiry-details"
+      name="details"
       [formControl]="$any(formRef().get('details'))"
       rows="8"
       placeholder="Explain in particular what do you need to understand .. (optional)"

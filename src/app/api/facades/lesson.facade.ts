@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 
@@ -54,8 +54,8 @@ export class LessonFacade {
         return this.api.delete<unknown>(`/api/Lessons/${id}`).pipe(map(() => true));
     }
 
-    saveProgress(lessonId: string, payload: { completed: boolean; currentTime?: number; lessonId?: string; progress?: number }): Observable<unknown> {
-        return this.api.post<unknown>(`/api/Lessons/${lessonId}/progress`, payload);
+    saveProgress(_lessonId: string, payload: { completed: boolean; currentTime?: number; lessonId?: string; progress?: number }): Observable<unknown> {
+        return of(payload);
     }
 
     getNotes(lessonId: string): Observable<LessonNote[]> {

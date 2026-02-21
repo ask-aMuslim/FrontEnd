@@ -7,27 +7,22 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { RegisterCommand } from '../../models/register-command';
-import { ResultOfAuthenticationResponse } from '../../models/result-of-authentication-response';
+import { Result } from '../../models/result';
 
-export interface RegisterParams {
-  body: RegisterCommand
+export interface LogoutParams {
 }
 
-export function register(http: HttpClient, rootUrl: string, params: RegisterParams, context?: HttpContext): Observable<StrictHttpResponse<ResultOfAuthenticationResponse>> {
-  const rb = new RequestBuilder(rootUrl, register.PATH, 'post');
-  if (params) {
-    rb.body(params.body, 'application/json');
-  }
+export function logout(http: HttpClient, rootUrl: string, _params?: LogoutParams, context?: HttpContext): Observable<StrictHttpResponse<Result>> {
+  const rb = new RequestBuilder(rootUrl, logout.PATH, 'post');
 
   return http.request(
     rb.build({ responseType: 'json', accept: 'application/json', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ResultOfAuthenticationResponse>;
+      return r as StrictHttpResponse<Result>;
     })
   );
 }
 
-register.PATH = '/api/Authentication/register';
+logout.PATH = '/api/Authentication/logout';

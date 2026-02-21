@@ -11,8 +11,8 @@ import { QuestionFacade, QuestionReadDto, QuestionCreateDto, QuestionUpdateDto }
 export class QuestionsService {
   private readonly facade = inject(QuestionFacade);
 
-  getAll(): Observable<QuestionReadDto[]> {
-    return this.facade.getAllQuestions();
+  getAllByQuizId(quizId: string): Observable<QuestionReadDto[]> {
+    return this.facade.getAllQuestions(quizId);
   }
 
   create(payload: QuestionCreateDto): Observable<boolean> {

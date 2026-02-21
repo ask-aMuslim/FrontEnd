@@ -7,6 +7,7 @@ export * from './inquiry-requests.service';
 export * from './instructors.service';
 export * from './lessons.service';
 export * from './meeting-requests.service';
+export * from './options.service';
 export * from './qas.service';
 export * from './questions.service';
 export * from './quiz-attempts.service';

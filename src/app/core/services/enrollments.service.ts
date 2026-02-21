@@ -7,8 +7,8 @@ import type { CreateEnrollmentCommand } from '../../api/models';
 export class EnrollmentsService {
   private readonly facade = inject(EnrollmentFacade);
 
-  getAll(): Observable<EnrollmentReadDto[]> {
-    return this.facade.getAllEnrollments();
+  getAll(studentId?: string): Observable<EnrollmentReadDto[]> {
+    return this.facade.getAllEnrollments(studentId);
   }
 
   getEnrollment(id: string): Observable<EnrollmentReadDto | null> {

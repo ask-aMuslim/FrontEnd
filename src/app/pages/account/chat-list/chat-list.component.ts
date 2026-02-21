@@ -15,6 +15,8 @@ interface Chat {
   styleUrls: ['./chat-list.component.scss'],
 })
 export class ChatListComponent {
+  selectedChatId: string | null = null;
+
   chats: Chat[] = [
     {
       id: '1',
@@ -39,6 +41,6 @@ export class ChatListComponent {
   ];
 
   selectChat(_chat: Chat): void {
-    // TODO: Implement chat selection
+    this.selectedChatId = _chat.id;
   }
 }

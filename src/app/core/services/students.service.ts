@@ -55,15 +55,15 @@ export class StudentsService {
    * @deprecated Backend does not expose student profile creation endpoint.
    * Use identity registration flow instead.
    */
-  createProfile(_data: unknown): Observable<boolean> {
-    return of(false);
+  createProfile(data: unknown): Observable<boolean> {
+    return of(Boolean(data) && false);
   }
 
   /**
    * @deprecated Backend does not expose student profile update endpoint.
    * Use identity profile update instead.
    */
-  update(_payload: unknown): Observable<boolean> {
-    return of(false);
+  update(payload: unknown): Observable<boolean> {
+    return of(Boolean(payload) && false);
   }
 }

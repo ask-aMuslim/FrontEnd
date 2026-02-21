@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, of } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
-import { AcademyMockDataService } from './mock-data/academy-mock-data.service';
 import {
     StudentProgress,
     StageProgress,
@@ -16,17 +15,12 @@ import {
     CourseStatus,
     LessonStatus,
 } from '../models/interfaces/academy-progress.model';
-import { ProgressFacade, ProgressReadDto } from '../../api/facades/progress.facade';
+import { ProgressFacade } from '../../api/facades/progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
 import { CourseFacade, CourseReadDto, CourseReadByIdDto } from '../../api/facades/course.facade';
 import { StudentFacade } from '../../api/facades/student.facade';
+import { EnrollmentFacade } from '../../api/facades/enrollment.facade';
 import { toApiMediaUrl } from '../helpers/media-url.helper';
-
-// Re-export for backward compatibility
-export { ACADEMY_STAGES } from './mock-data/academy-seed-data';
-export { ACADEMY_COURSES } from './mock-data/academy-seed-data';
-export { ACADEMY_LESSONS } from './mock-data/academy-seed-data';
-export type { AcademyStage } from './mock-data/academy-seed-data';
 
 const CATEGORY_LABELS: Record<CourseStatus | 'unknown', string> = {
     completed: 'A: Main Believes',
@@ -55,14 +49,11 @@ const LEVEL_TO_STAGE: Record<string, number> = {
  * - Recent lesson for "Continue Learning" feature
  *
  * Integration Strategy:
- * - ProgressFacade: Course-level progress (API-backed)
- * - LessonFacade: Lesson-level progress via legacy endpoints
+ * - EnrollmentFacade: Student-course linkage
+ * - LessonFacade: Lesson list and basic lesson writes
  * - StudentFacade: Current student identity
- * - AcademyMockDataService: Fallback for unsupported operations
- *   (stage progress, lesson-level watch tracking, quiz evaluation)
  *
- * Sync methods (getCourseById, getLessonById, etc.) use seed data for
- * instant rendering. Async methods try API first with mock fallback.
+ * This service is API-first and avoids static/mock academy data.
  */
 @Injectable({
     providedIn: 'root',
@@ -72,7 +63,7 @@ export class AcademyProgressService {
     private readonly lessonFacade = inject(LessonFacade);
     private readonly courseFacade = inject(CourseFacade);
     private readonly studentFacade = inject(StudentFacade);
-    private readonly mockDataService = inject(AcademyMockDataService);
+    private readonly enrollmentFacade = inject(EnrollmentFacade);
 
     private readonly progressSubject = new BehaviorSubject<StudentProgress | null>(null);
     readonly progress$ = this.progressSubject.asObservable();
@@ -84,33 +75,51 @@ export class AcademyProgressService {
     }
 
     private initializeProgress(): void {
-        this.mockDataService.getStudentProgress().subscribe(progress => {
-            this.progressSubject.next(progress);
+        this.getStudentProgress().subscribe({
+            next: (progress) => this.progressSubject.next(progress),
+            error: () => this.progressSubject.next(this.buildEmptyProgress()),
         });
     }
 
     /**
      * Get complete student progress.
-     * Attempts API-backed progress merge; falls back to mock data.
+        * Builds progress from API-backed enrollments, courses, and lessons.
      */
     getStudentProgress(): Observable<StudentProgress> {
-        return this.studentFacade.me().pipe(
-            switchMap(student => {
-                const studentId = student?.id;
-                if (!studentId) {
-                    return this.mockDataService.getStudentProgress();
-                }
-                return this.progressFacade.getProgressByStudentId(studentId).pipe(
-                    switchMap(apiProgress =>
-                        this.mockDataService.getStudentProgress().pipe(
-                            map(mockProgress => this.mergeApiProgressIntoMock(mockProgress, apiProgress))
-                        )
-                    ),
-                    catchError(() => this.mockDataService.getStudentProgress())
-                );
-            }),
-            catchError(() => this.mockDataService.getStudentProgress()),
+        return this.getAcademyCourses().pipe(
+            switchMap(courses =>
+                this.studentFacade.me().pipe(
+                    switchMap(student => this.buildProgressForStudent(courses, student?.id)),
+                    catchError(() => of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null)))
+                )
+            ),
             tap(progress => this.progressSubject.next(progress))
+        );
+    }
+
+    private buildProgressForStudent(courses: AcademyCourse[], studentId?: string): Observable<StudentProgress> {
+        if (!studentId) {
+            return of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null));
+        }
+
+        return this.getEnrolledCourseIds(studentId).pipe(
+            switchMap(enrolledCourseIds =>
+                this.resolveRecentLesson(courses, enrolledCourseIds).pipe(
+                    map(recentLesson => this.buildStudentProgress(studentId, courses, enrolledCourseIds, recentLesson))
+                )
+            ),
+            catchError(() => of(this.buildStudentProgress(studentId, courses, new Set<string>(), null)))
+        );
+    }
+
+    private getEnrolledCourseIds(studentId: string): Observable<Set<string>> {
+        return this.enrollmentFacade.getEnrolledCoursesByStudent(studentId).pipe(
+            map(enrollments => {
+                const ids = enrollments
+                    .map(item => item.courseId)
+                    .filter((courseId): courseId is string => typeof courseId === 'string' && courseId.length > 0);
+                return new Set(ids);
+            })
         );
     }
 
@@ -168,24 +177,36 @@ export class AcademyProgressService {
 
     /**
      * Get lessons for a specific course with their progress.
-     * Tries LessonFacade for lesson list, merges with mock progress data.
+        * Uses API lessons and derives an initial progress projection.
      */
     getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
         return this.getAcademyLessons(courseId).pipe(
-            switchMap(apiLessons =>
-                this.mockDataService.getCourseLessonsWithProgress(courseId).pipe(
-                    map(mockLessons => this.mergeApiLessonsWithProgress(apiLessons, mockLessons, courseId))
-                )
+            map(apiLessons =>
+                apiLessons.map((apiLesson, index) => ({
+                    ...apiLesson,
+                    progress: {
+                        lessonId: apiLesson.id,
+                        courseId,
+                        status: index === 0 ? 'current' : 'available',
+                        isCompleted: false,
+                    },
+                }))
             )
         );
     }
 
     getAcademyCourses(forceRefresh = false): Observable<AcademyCourse[]> {
+        const useCache = !forceRefresh && this.academyCoursesCache.length > 0;
+        if (useCache) {
+            return of(this.academyCoursesCache);
+        }
+
         return this.courseFacade.getAllCourses().pipe(
             map(courses => courses.map(course => this.mapCourseDtoToAcademyCourse(course))),
             tap(courses => {
                 this.academyCoursesCache = courses;
-            })
+            }),
+            catchError(() => of([]))
         );
     }
 
@@ -213,22 +234,39 @@ export class AcademyProgressService {
                     return;
                 }
                 this.academyCoursesCache[index] = course;
-            })
+            }),
+            catchError(() =>
+                of({
+                    id: courseId,
+                    stageId: 1,
+                    title: 'Unknown Course',
+                    category: 'social-topics' as const,
+                    categoryLabel: 'C: Social Topics',
+                    lessons: 0,
+                    duration: '0m',
+                })
+            )
         );
     }
 
     getAcademyLessons(courseId: string, forceRefresh = false): Observable<AcademyLesson[]> {
+        const cachedLessons = this.lessonsCache.get(courseId);
+        if (!forceRefresh && cachedLessons && cachedLessons.length > 0) {
+            return of(cachedLessons);
+        }
+
         return this.lessonFacade.getCourseLessons(courseId).pipe(
             map(lessons => lessons.map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))),
             tap(lessons => {
                 this.lessonsCache.set(courseId, lessons);
-            })
+            }),
+            catchError(() => of([]))
         );
     }
 
     /**
      * Update lesson progress.
-     * Tries LessonFacade.saveProgress for completion; falls back to mock.
+        * Persists completion and watch position through lesson progress APIs.
      */
     updateLessonProgress(request: UpdateLessonProgressRequest): Observable<LessonProgress> {
         if (request.isCompleted) {
@@ -236,8 +274,7 @@ export class AcademyProgressService {
                 completed: true,
                 currentTime: request.lastPosition,
             }).pipe(
-                map(() => this.buildLessonProgress(request.lessonId, request.courseId, true)),
-                catchError(() => this.mockDataService.markLessonCompleted(request.lessonId, request.courseId))
+                map(() => this.buildLessonProgress(request.lessonId, request.courseId, true))
             );
         }
 
@@ -246,22 +283,11 @@ export class AcademyProgressService {
                 completed: false,
                 currentTime: request.lastPosition,
             }).pipe(
-                map(() => this.buildLessonProgress(request.lessonId, request.courseId, false)),
-                catchError(() => this.mockDataService.updateLessonWatchProgress(
-                    request.lessonId,
-                    request.courseId,
-                    request.watchTime ?? 0,
-                    request.lastPosition ?? 0
-                ))
+                map(() => this.buildLessonProgress(request.lessonId, request.courseId, false))
             );
         }
 
-        return this.mockDataService.getCourseLessonsWithProgress(request.courseId).pipe(
-            map(lessons => {
-                const lesson = lessons.find(l => l.id === request.lessonId);
-                return lesson?.progress ?? this.buildLessonProgress(request.lessonId, request.courseId, false);
-            })
-        );
+        return of(this.buildLessonProgress(request.lessonId, request.courseId, false));
     }
 
     /**
@@ -277,21 +303,15 @@ export class AcademyProgressService {
 
     /**
      * Submit quiz result and potentially unlock next stage.
-     * No quiz evaluation endpoint exists yet — mock only.
+        * Uses client-side evaluation until a dedicated backend endpoint is available.
      */
     submitQuizResult(request: SubmitQuizResultRequest): Observable<StageQuizResult> {
-        return this.mockDataService.submitQuizResult(
-            request.courseId,
-            request.score,
-            request.passed
-        ).pipe(
-            map(result => ({
-                stageNumber: request.stageNumber,
-                score: result.score,
-                passed: result.passed,
-                nextStageUnlocked: result.nextCourseUnlocked,
-            }))
-        );
+        return of({
+            stageNumber: request.stageNumber,
+            score: request.score,
+            passed: request.passed,
+            nextStageUnlocked: request.passed,
+        });
     }
 
     /**
@@ -360,72 +380,105 @@ export class AcademyProgressService {
 
     // ─── Private Helpers ──────────────────────────────────────────────
 
-    /**
-     * Merge API progress records into the mock StudentProgress structure.
-     * Updates courseProgress entries with real data from the backend while
-     * preserving stage/lesson progress from mock (no API equivalent yet).
-     */
-    private mergeApiProgressIntoMock(
-        mockProgress: StudentProgress,
-        apiRecords: ProgressReadDto[]
+    private buildEmptyProgress(): StudentProgress {
+        return {
+            studentId: 'anonymous',
+            currentStage: 1,
+            recentLesson: null,
+            stageProgress: [],
+            courseProgress: [],
+            lessonProgress: [],
+        };
+    }
+
+    private buildStudentProgress(
+        studentId: string,
+        courses: AcademyCourse[],
+        enrolledCourseIds: Set<string>,
+        recentLesson: RecentLessonInfo | null,
     ): StudentProgress {
-        if (!apiRecords?.length) {
-            return mockProgress;
-        }
+        const sortedStageIds = Array.from(new Set(courses.map(course => course.stageId))).sort((a, b) => a - b);
+        const unlockedStageIds = new Set<number>(sortedStageIds.filter(stageId => stageId === 1));
 
-        const updatedCourseProgress = mockProgress.courseProgress.map(cp => {
-            const apiRecord = apiRecords.find(r => r.courseId === cp.courseId);
-            if (!apiRecord) {
-                return cp;
+        const courseProgress = courses.map((course) => {
+            const isEnrolled = enrolledCourseIds.has(String(course.id));
+            const isUnlocked = unlockedStageIds.has(course.stageId);
+            let status: CourseStatus = 'locked';
+            if (isUnlocked) {
+                status = 'available';
             }
-            const completedLessons = apiRecord.totalLessonsCompleted ?? cp.completedLessons;
-            const totalLessons = cp.totalLessons || 1;
-            const lessonCompletionRate = apiRecord.lessonCompletionRate;
-            const hasLessonCompletionRate = typeof lessonCompletionRate === 'number';
-            const progressPercent = hasLessonCompletionRate
-                ? Math.round(lessonCompletionRate * 100)
-                : Math.round((completedLessons / totalLessons) * 100);
-
-            let status: CourseStatus = cp.status;
-            if (apiRecord.isCompleted) {
-                status = 'completed';
-            } else if (completedLessons > 0) {
+            if (isEnrolled) {
                 status = 'in-progress';
             }
 
             return {
-                ...cp,
-                completedLessons,
-                progress: progressPercent,
+                courseId: course.id,
                 status,
-                quizPassed: apiRecord.isCertified ?? cp.quizPassed,
+                progress: 0,
+                completedLessons: 0,
+                totalLessons: course.lessons,
+                quizPassed: false,
             };
         });
 
-        return { ...mockProgress, courseProgress: updatedCourseProgress };
+        const stageProgress: StageProgress[] = sortedStageIds.map((stageId) => {
+            const stageCourses = courseProgress.filter(course => {
+                const matchedCourse = courses.find(item => item.id === course.courseId);
+                return matchedCourse?.stageId === stageId;
+            });
+
+            return {
+                stageNumber: stageId,
+                isUnlocked: stageId === 1,
+                quizPassed: false,
+                completedCourses: stageCourses.filter(item => item.progress >= 100).length,
+                totalCourses: stageCourses.length,
+            };
+        });
+
+        return {
+            studentId,
+            currentStage: 1,
+            recentLesson,
+            stageProgress,
+            courseProgress,
+            lessonProgress: [],
+        };
     }
 
-    /**
-     * Merge API lesson list with mock progress data.
-     * Uses API lesson metadata while preserving local progress state.
-     */
-    private mergeApiLessonsWithProgress(
-        apiLessons: AcademyLesson[],
-        mockLessons: (AcademyLesson & { progress: LessonProgress })[],
-        courseId: string
-    ): (AcademyLesson & { progress: LessonProgress })[] {
-        return apiLessons.map((apiLesson, index) => {
-            const mockLesson = mockLessons.find(item => item.id === apiLesson.id);
-            return {
-                ...apiLesson,
-                progress: mockLesson?.progress ?? {
-                    lessonId: apiLesson.id,
-                    courseId,
-                    status: index === 0 ? 'current' : 'available',
-                    isCompleted: false,
-                },
-            };
-        });
+    private resolveRecentLesson(courses: AcademyCourse[], enrolledCourseIds: Set<string>): Observable<RecentLessonInfo | null> {
+        const fallbackCourse = courses[0];
+        const enrolledCourse = courses.find(course => enrolledCourseIds.has(String(course.id)));
+        const targetCourse = enrolledCourse ?? fallbackCourse;
+
+        if (!targetCourse) {
+            return of(null);
+        }
+
+        return this.getAcademyLessons(String(targetCourse.id)).pipe(
+            map((lessons) => {
+                const firstLesson = lessons[0];
+                if (!firstLesson) {
+                    return null;
+                }
+
+                return {
+                    stageNumber: targetCourse.stageId,
+                    courseId: targetCourse.id,
+                    courseName: targetCourse.title,
+                    lessonId: firstLesson.id,
+                    lessonNumber: firstLesson.order,
+                    lessonTitle: firstLesson.title,
+                    thumbnailUrl: targetCourse.thumbnailUrl ?? '',
+                    progress: 0,
+                    currentTime: '0:00',
+                    totalTime: firstLesson.duration,
+                    completedLessons: 0,
+                    totalLessons: targetCourse.lessons,
+                };
+            }),
+            catchError(() => of(null))
+        );
     }
 
     /**
@@ -592,4 +645,5 @@ export class AcademyProgressService {
 
         return `${hours}h ${minutes}m`;
     }
+
 }

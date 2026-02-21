@@ -97,6 +97,15 @@ export class ApiService {
     if (
       typeof error === 'object' &&
       error !== null &&
+      'statusCode' in error &&
+      typeof (error as { statusCode?: unknown }).statusCode === 'number'
+    ) {
+      return (error as { statusCode: number }).statusCode;
+    }
+
+    if (
+      typeof error === 'object' &&
+      error !== null &&
       'status' in error &&
       typeof (error as { status?: unknown }).status === 'number'
     ) {

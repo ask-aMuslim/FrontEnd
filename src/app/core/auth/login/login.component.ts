@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IdentityFacade } from '../../../api/facades/identity.facade';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -120,10 +121,15 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected onSocialSignIn(provider: 'google' | 'facebook'): void {
     if (!this.isBrowser) return;
 
-    const targetUrl =
-      provider === 'google' ? '/api/Authentication/login/google' : '/api/Authentication/login/facebook';
+    const path = provider === 'google'
+      ? '/api/Authentication/login/google'
+      : '/api/Authentication/login/facebook';
 
-    globalThis.location.href = targetUrl;
+    // Prefix with apiBaseUrl only when it is an absolute URL (dev/prod direct).
+    // When apiBaseUrl is a relative path (e.g. '/api'), keep the path relative so
+    // the Angular dev-server proxy or same-host deployment forwards it correctly.
+    const baseUrl = environment.apiBaseUrl.startsWith('http') ? environment.apiBaseUrl : '';
+    globalThis.location.href = `${baseUrl}${path}`;
   }
 
   protected get friendlyApiError(): string | null {

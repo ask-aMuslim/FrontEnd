@@ -26,6 +26,9 @@ export interface EventCard {
   styleUrls: ['./event-card.component.scss'],
 })
 export class EventCardComponent {
+  private static readonly fallbackEventImage = '/images/events-picture.png';
+  private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
+
   @Input() event!: EventCard;
 
   constructor(
@@ -36,5 +39,22 @@ export class EventCardComponent {
   onCardClick(): void {
     this.eventService.setSelectedEvent(this.event);
     void this.router.navigate(['/events', this.event.id]);
+  }
+
+  onEventImageError(event: Event): void {
+    this.setFallbackImage(event, EventCardComponent.fallbackEventImage);
+  }
+
+  onSpeakerImageError(event: Event): void {
+    this.setFallbackImage(event, EventCardComponent.fallbackSpeakerImage);
+  }
+
+  private setFallbackImage(event: Event, fallbackSrc: string): void {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement) || target.src.endsWith(fallbackSrc)) {
+      return;
+    }
+
+    target.src = fallbackSrc;
   }
 }

@@ -128,6 +128,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             this.lessonId = params.get('lessonId') || '';
 
             if (this.courseId && this.lessonId) {
+                this.resetViewStateForRouteChange();
                 this.loadLessonData();
             }
         });
@@ -166,6 +167,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
                     this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
                     this.isIntroLesson = this.currentLesson.type === 'intro';
+
+                    this.cdr.detectChanges();
 
                     this.academyProgressService.updateLessonProgress({
                         lessonId: this.lessonId,
@@ -219,6 +222,21 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                 },
                 error: () => void 0
             });
+    }
+
+    private resetViewStateForRouteChange(): void {
+        this.error = null;
+        this.lessonData = null;
+        this.lessonContent = null;
+        this.currentCourse = undefined;
+        this.currentLesson = undefined;
+        this.nextAcademyLesson = undefined;
+        this.previousAcademyLesson = undefined;
+        this.nextLesson = undefined;
+        this.previousLesson = undefined;
+        this.courseLessons = [];
+        this.coarseLessons = [];
+        this.activeTab = 'overview';
     }
 
     get isIntroContent(): boolean { return this.lessonContent ? isIntroContent(this.lessonContent) : false; }
