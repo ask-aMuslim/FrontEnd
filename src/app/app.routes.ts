@@ -168,21 +168,27 @@ export const routes: Routes = [
       },
       {
         path: 'academy',
-        canActivate: [authGuard],
         children: [
           { path: '', component: AcademyComponent, title: 'Academy' },
           { path: 'course/:id', component: CourseComponent, title: 'Course' },
           {
             path: 'course/:courseId/lesson/:lessonId',
             component: LessonPlayerComponent,
+            canActivate: [authGuard],
             title: 'Lesson Player',
           },
           {
             path: 'course/:courseId/quiz',
             component: QuizComponent,
+            canActivate: [authGuard],
             title: 'Quiz',
           },
-          { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
+          {
+            path: 'lesson/:id',
+            component: LessonOverviewComponent,
+            canActivate: [authGuard],
+            title: 'Lesson Overview'
+          },
         ],
       },
       {

@@ -1,0 +1,27 @@
+- when I refresh the page, the website routes by mistake to the home page, it must keep me in the displayed page
+- you must make a loading screen that is runned by the renderer technique to prevent displaying empty pages, consider using interceptor
+
+- you should make a pagination effect from the frontend side for the events sections, the "Join for free" button should be converted to "See All Events" when the user is signed in,
+
+ - you should fix the QA display, check them with the chrome dev tools mcp to ensure correct display, you should also use the postman mcp to ensure you are passing the correct headers and body to the endpoint,
+if a category didn't have any QAs, it should display a nice hint for the user to inform him that, also the pagination should be hidden when there is no QAs in the selected categories
+
+- you must correct the hardcoded content of the question page in the QA tab learn more, this should display the full Question and Answer of the QA, if the QA have an image, so an image should be displayed instead of the placeholder, if there were no image, there should not be an image placeholder and the content of the QA will be displayed 
+
+- you must ensure you get all the Tags from the "Tags" endpoint and use them to filter the QAs in the categories selection list, you should also correct the categories list names according to the tags
+
+
+ - you should ensure the sign in with google and sign in with facebook endpoints are receiving the correct body, and you must ensure they work well by testing them
+
+- in the academy, the guest user should be able to enter the academy without signing in, all courses should be accessible for viewing to help the guest know the courses contents in the course overview, then when the guest user clicks begin course, a modal should be displaying informing him that he has to sign in first, with a sign in button or cancel button, make sure you implement the UI and logic of that modal correctly and nicely
+
+- in the stages, connector line, the lock image is not displayed and I don't know the reason, ensure it is displayed correctly with 40*40 dimensions,
+- stages should be dynamic not hardcoded, they should be displayed depending on the api data, ensure you fix that, also the description of the stage should be displayed instead the hardcoded static description
+
+- in the lesson page, the hardcoded notes must be replaced with the notes retrieved from the api, you should ensure the next lesson buttons logic : if there is a following lesson it should display "Next Lesson", if this is the last lesson and the course has a quiz, it should display "Course Quiz", if there is no following lesson or quiz, it should show a congrats page of completing the course with proper page breadcrump
+
+- you must ensure the lesson page is displaying the lesson content in the "article-header-container" correctly from the api instead of the static content
+
+- in the lesson page, sidebar, the sidebar-title should not display the course Id, it should only display the course title with a text-overflow: elipsis,
+
+- in any pagination in the website, you must ensure that when navigating through the pagination pages, the screen view must be always scrolled at the top of the section that the pagination works on, example, in the events page, when I use the pagination, the screen view should be scrolled at the top of the "events-recorded" section, so the top of the screen be the "events-recorded"

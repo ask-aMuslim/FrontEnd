@@ -14,6 +14,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from '../../core/services/events.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   asRecord,
   extractArray,
@@ -173,6 +174,11 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   protected eventCards: EventCard[] = [];
+  protected currentEventPage = 1;
+  protected readonly eventsPerPage = 4;
+  protected totalEventPages = 1;
+  protected arrowRightIcon = '/icons/icons-24/arrow-right.svg';
+  protected arrowLeftIcon = '/icons/icons-24/arrow-left.svg';
 
   protected readonly imanPillars: PillarItem[] = [
     { number: '1', label: 'Belief in', name: 'Allah' },
@@ -205,8 +211,17 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
     private readonly eventsService: EventsService,
+    private readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef,
   ) { }
+
+  protected get eventsCtaLabel(): string {
+    return this.authService.isAuthenticated() ? 'See All Events' : 'Join for Free';
+  }
+
+  protected get eventsCtaLink(): string {
+    return this.authService.isAuthenticated() ? '/events' : '/account';
+  }
 
   ngOnInit(): void {
     if (this.isBrowser) {
@@ -258,9 +273,13 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadEventsSection(): void {
-    this.eventsService.getAll().subscribe({
+    const pageNumber = this.currentEventPage;
+    const pageSize = this.eventsPerPage;
+
+    this.eventsService.getAll({ pageNumber, pageSize }).subscribe({
       next: (response) => {
         this.eventCards = this.mapEventCards(response);
+        this.calculateTotalEventPages(response);
         this.cdr.detectChanges();
       },
       error: () => {
@@ -268,6 +287,32 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private calculateTotalEventPages(response: unknown): void {
+    const records = extractArray(response);
+    this.totalEventPages = Math.max(1, Math.ceil(records.length / this.eventsPerPage));
+  }
+
+  protected goToEventPage(page: number): void {
+    if (!Number.isFinite(page)) return;
+    this.currentEventPage = Math.min(
+      Math.max(page, 1),
+      this.totalEventPages,
+    );
+    this.loadEventsSection();
+  }
+
+  protected nextEventPage(): void {
+    this.goToEventPage(this.currentEventPage + 1);
+  }
+
+  protected prevEventPage(): void {
+    this.goToEventPage(this.currentEventPage - 1);
+  }
+
+  protected showEventPagination(): boolean {
+    return this.totalEventPages > 1;
   }
 
   private mapEventCards(response: unknown): EventCard[] {

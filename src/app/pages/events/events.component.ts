@@ -48,18 +48,21 @@ export class EventsComponent implements OnInit {
   prevPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.scrollToTopOfSection();
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.pages.length) {
       this.currentPage++;
+      this.scrollToTopOfSection();
     }
   }
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.pages.length) {
       this.currentPage = page;
+      this.scrollToTopOfSection();
     }
   }
 
@@ -169,5 +172,10 @@ export class EventsComponent implements OnInit {
       tags,
       isRecorded,
     };
+  }
+
+  private scrollToTopOfSection(): void {
+    const section = globalThis.document?.getElementById('events-recorded-section');
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

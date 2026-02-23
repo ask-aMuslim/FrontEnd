@@ -8,8 +8,10 @@ export class EventsService {
 
   constructor(private api: ApiService) { }
 
-  getAll(): Observable<unknown> {
-    return this.api.get<unknown>(EventsService.EVENTS_PATH);
+  getAll(params?: { pageNumber?: number; pageSize?: number }): Observable<unknown> {
+    const query = this.buildQueryString(params);
+    const url = query ? `${EventsService.EVENTS_PATH}?${query}` : EventsService.EVENTS_PATH;
+    return this.api.get<unknown>(url);
   }
 
   create(payload: unknown): Observable<unknown> {
@@ -26,5 +28,13 @@ export class EventsService {
 
   delete(id: string): Observable<unknown> {
     return this.api.delete<unknown>(`${EventsService.EVENTS_PATH}/${encodeURIComponent(id)}`);
+  }
+
+  private buildQueryString(params?: { pageNumber?: number; pageSize?: number }): string {
+    if (!params) return '';
+    const parts: string[] = [];
+    if (params.pageNumber !== undefined) parts.push(`pageNumber=${params.pageNumber}`);
+    if (params.pageSize !== undefined) parts.push(`pageSize=${params.pageSize}`);
+    return parts.join('&');
   }
 }

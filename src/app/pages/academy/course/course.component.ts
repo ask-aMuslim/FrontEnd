@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import { AuthService } from '../../../core/services/auth.service';
 import {
     AcademyPageShellComponent,
     AcademyBreadcrumbItem,
@@ -63,6 +64,7 @@ export class CourseComponent implements OnInit, OnDestroy {
     // Loading and error states
     isLoading = true;
     error: string | null = null;
+    showSignInPrompt = false;
 
     backgroundImageUrl =
         '/backgrounds/course-background.png'; // Default background image for all courses (can be customized per course if needed)
@@ -75,6 +77,7 @@ export class CourseComponent implements OnInit, OnDestroy {
         private readonly router: Router,
         private readonly route: ActivatedRoute,
         private readonly academyProgressService: AcademyProgressService,
+        private readonly authService: AuthService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
 
@@ -147,7 +150,7 @@ export class CourseComponent implements OnInit, OnDestroy {
             lessons: lessonsWithProgress
                 .filter((l) => l.type !== 'quiz' && l.type !== 'intro')
                 .map((l) => l.title),
-            answers: ['Why God..?', 'Is Mohamed..?'], // NOTE: Load from API when available
+            answers: this.extractOutcomes(courseData.description),
             totalLessons: lessonsWithProgress.length,
             completedLessons: lessonsWithProgress.filter((l) => l.progress.isCompleted).length,
             duration: courseData.duration,
@@ -156,6 +159,18 @@ export class CourseComponent implements OnInit, OnDestroy {
                 this.mapLessonForDisplay(lesson, isLocked)
             ),
         };
+    }
+
+    private extractOutcomes(description: string | undefined): string[] {
+        if (!description) {
+            return [];
+        }
+
+        return description
+            .split(/[\n•]+/)
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0)
+            .slice(0, 3);
     }
 
     /**
@@ -185,6 +200,11 @@ export class CourseComponent implements OnInit, OnDestroy {
      * Navigate to first lesson (Begin button)
      */
     onBeginClick(): void {
+        if (!this.authService.isAuthenticated()) {
+            this.showSignInPrompt = true;
+            return;
+        }
+
         if (!this.course || this.course.isLocked) {
             return;
         }
@@ -199,6 +219,11 @@ export class CourseComponent implements OnInit, OnDestroy {
      * Navigate to quiz lesson (Take Quiz button)
      */
     onTakeQuizClick(): void {
+        if (!this.authService.isAuthenticated()) {
+            this.showSignInPrompt = true;
+            return;
+        }
+
         if (this.course && !this.course.isLocked) {
             // Updated path from academy routes
             this.router.navigate(['quiz'], { relativeTo: this.route });
@@ -209,6 +234,11 @@ export class CourseComponent implements OnInit, OnDestroy {
      * Navigate to specific lesson
      */
     onLessonClick(lesson: Lesson): void {
+        if (!this.authService.isAuthenticated()) {
+            this.showSignInPrompt = true;
+            return;
+        }
+
         if (!lesson.isLocked) {
             if (lesson.type === 'quiz') {
                 // Updated path from academy routes
@@ -218,5 +248,16 @@ export class CourseComponent implements OnInit, OnDestroy {
                 this.router.navigate(['lesson', lesson.id], { relativeTo: this.route });
             }
         }
+    }
+
+    closeSignInPrompt(): void {
+        this.showSignInPrompt = false;
+    }
+
+    continueToSignIn(): void {
+        this.showSignInPrompt = false;
+        void this.router.navigate(['/login'], {
+            queryParams: { returnUrl: this.router.url },
+        });
     }
 }

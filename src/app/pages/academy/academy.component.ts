@@ -155,11 +155,14 @@ export class AcademyComponent implements OnInit, OnDestroy {
                 modelsStories: stageCourses.filter(course => course.category === 'models-stories'),
                 socialTopics: stageCourses.filter(course => course.category === 'social-topics'),
             };
+            const dynamicDescription =
+                stageCourses.find((course) => typeof course.description === 'string' && course.description.trim().length > 0)?.description ??
+                stageData.description;
 
             return {
                 number: stageData.number,
                 title: stageData.title,
-                description: stageData.description,
+                description: dynamicDescription,
                 isLocked,
                 courses: {
                     mainBelieves: groupedCourses.mainBelieves.map((course) =>

@@ -48,18 +48,3 @@ You are a Senior Full-Stack Architect and Lead Engineer for "AskAMuslim." You pr
 
 ---
 
-# 6. OUTPUT FORMAT (STRICT)
-## Analysis
-[Short reasoning summary + identified root cause]
-
-## Plan
-[Numbered execution steps]
-
-## Implementation
-[Code blocks with minimal, safe changes]
-
-## Verification
-[Steps to confirm: e.g., "Run npm run build", "Check Postman env"]
-
-## Risks / Unknowns
-[Explicit uncertainties regarding SSR or API availability]

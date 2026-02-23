@@ -11,6 +11,12 @@ export interface StudentProfileDto {
     lastName?: string;
     email?: string;
     level?: string;
+    bio?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    phoneNumber?: string;
+    address?: string;
+    country?: string;
     [key: string]: unknown;
 }
 
@@ -18,6 +24,17 @@ export interface StudentCourseDto {
     id?: string;
     title?: string;
     [key: string]: unknown;
+}
+
+export interface UpdateProfileRequest {
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    phoneNumber?: string;
+    address?: string;
+    country?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -83,5 +100,21 @@ export class StudentFacade {
 
     getMyProfile(): Observable<StudentProfileDto | null> {
         return this.me();
+    }
+
+    updateProfile(data: UpdateProfileRequest): Observable<StudentProfileDto | null> {
+        return extractData(
+            this.api.put<unknown>('/api/StudentProfiles/me', data),
+            null
+        );
+    }
+
+    updateProfilePicture(file: File): Observable<StudentProfileDto | null> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return extractData(
+            this.api.post<unknown>('/api/StudentProfiles/picture', formData),
+            null
+        );
     }
 }

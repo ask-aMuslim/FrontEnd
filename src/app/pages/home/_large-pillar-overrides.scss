@@ -1,0 +1,135 @@
+/* Overrides for large screens: adjustments starting at 1280px and further tightening at 1440px */
+
+/* -- from 1280px: decrease pentagon sizes and pull center Iman pillars closer -- */
+
+@media (min-width: 1280px) {
+  .iman-arc,
+  .islam-arc {
+    /* minimize spacing between pillar cards */
+    gap: 0 !important;
+    column-gap: 0 !important;
+    row-gap: 0 !important;
+    justify-content: center;
+  }
+
+  /* Hexagon (6 pillars) - scale down slightly */
+  .iman-arc {
+    .pillar-card {
+      width: 160px;
+      height: 160px;
+
+      .hexagon,
+      .pillar-hexagon {
+        width: 160px;
+        height: 160px;
+      }
+
+      .pillar-card-title {
+        font-size: 17px;
+      }
+      .pillar-card-label {
+        font-size: 12px;
+      }
+      .pillar-card-number {
+        font-size: 20px;
+      }
+    }
+  }
+
+  /* Pentagon (5 pillars) - scale down accordingly */
+  .islam-arc {
+    .pillar-card {
+      width: 160px;
+      height: 160px;
+
+      .pentagon,
+      .pillar-pentagon {
+        width: 160px;
+        height: 160px;
+      }
+
+      .pillar-card-title {
+        font-size: 17px;
+      }
+      .pillar-card-label {
+        font-size: 12px;
+      }
+      .pillar-card-number {
+        font-size: 20px;
+      }
+    }
+  }
+
+  /* Position nudges to tighten gaps horizontally and vertically (mirror 1280px values) */
+  .home-page .iman-arc {
+    .pillar-iman-1 {
+      left: calc(10% + 8px) !important;
+      top: 282px !important;
+    }
+    .pillar-iman-2 {
+      left: calc(20% + 0px) !important;
+      top: 140px !important;
+    }
+    .pillar-iman-3 {
+      left: calc(35%) !important;
+      top: 30px !important;
+    }
+    .pillar-iman-4 {
+      right: calc(35%) !important;
+      left: auto !important;
+      top: 30px !important;
+    }
+    .pillar-iman-5 {
+      right: calc(20% + 0px) !important;
+      left: auto !important;
+      top: 140px !important;
+    }
+    .pillar-iman-6 {
+      right: calc(10% + 8px) !important;
+      left: auto !important;
+      top: 282px !important;
+    }
+    .iman-label {
+      top: 338px !important;
+    }
+  }
+
+  .home-page .islam-arc {
+    .pillar-islam-1 {
+      left: calc(12% + 6px) !important;
+      top: 92px !important;
+    }
+    .pillar-islam-2 {
+      left: calc(32% - 65px) !important;
+      top: 180px !important;
+    }
+    .pillar-islam-3 {
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      top: 230px !important;
+    }
+    .pillar-islam-4 {
+      right: calc(32% - 65px) !important;
+      left: auto !important;
+      top: 180px !important;
+    }
+    .pillar-islam-5 {
+      right: calc(12% + 6px) !important;
+      left: auto !important;
+      top: 92px !important;
+    }
+    .islam-label {
+      top: 0 !important;
+    }
+  }
+
+  /* Adjust shared pillar wrapper sizing so hover transforms remain visually coherent */
+  .hexagon,
+  .pentagon,
+  .pillar-hexagon,
+  .pillar-pentagon {
+    transition:
+      transform 0.3s ease,
+      filter 0.3s ease;
+  }
+}

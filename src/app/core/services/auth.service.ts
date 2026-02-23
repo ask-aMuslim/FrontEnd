@@ -20,21 +20,14 @@ import { IdentityFacade, UserRole } from '../../api/facades/identity.facade';
 import { TokenService } from '../auth/token.service';
 import { StudentFacade } from '../../api/facades/student.facade';
 
-// Legacy imports (for social login - not in Swagger spec yet)
-import { ApiService } from './api.service';
-
 // Types
 import { AuthResponse, RegisterRequest } from '../models/interfaces/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private static readonly GOOGLE_LOGIN_PATH = '/api/Authentication/login/google';
-  private static readonly FACEBOOK_LOGIN_PATH = '/api/Authentication/login/facebook';
-
   private readonly facade = inject(IdentityFacade);
   private readonly tokenService = inject(TokenService);
   private readonly studentFacade = inject(StudentFacade);
-  private readonly legacyApi = inject(ApiService);
   private readonly router = inject(Router);
 
   // Reactive authentication state using signals
@@ -150,41 +143,35 @@ export class AuthService {
 
   /**
    * Login with Google
-   * Note: This endpoint is not in Swagger spec, uses legacy API
    */
   loginGoogle(token: string): Observable<AuthResponse> {
-    return this.legacyApi.post<AuthResponse>(AuthService.GOOGLE_LOGIN_PATH, { token }).pipe(
-      tap((response) => {
-        // Store tokens in TokenService
-        if (response?.accessToken) {
-          this.tokenService.setTokens({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken ?? '',
-            expiresIn: response.expiresIn ?? 3600
-          });
-          this._currentUser.set({ name: 'Google User', meta: 'Signed in with Google' });
-        }
-      })
+    return this.facade.loginGoogle(token).pipe(
+      map((response) => ({
+        accessToken: response.token ?? '',
+        refreshToken: '',
+        expiresIn: response.expiresIn ?? 3600,
+      })),
+      tap(() => {
+        this._currentUser.set({ name: 'Google User', meta: 'Signed in with Google' });
+        this.hydrateCurrentUserFromProfile();
+      }),
     );
   }
 
   /**
    * Login with Facebook
-   * Note: This endpoint is not in Swagger spec, uses legacy API
    */
   loginFacebook(payload: { accessToken: string }): Observable<AuthResponse> {
-    return this.legacyApi.post<AuthResponse>(AuthService.FACEBOOK_LOGIN_PATH, payload).pipe(
-      tap((response) => {
-        // Store tokens in TokenService
-        if (response?.accessToken) {
-          this.tokenService.setTokens({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken ?? '',
-            expiresIn: response.expiresIn ?? 3600
-          });
-          this._currentUser.set({ name: 'Facebook User', meta: 'Signed in with Facebook' });
-        }
-      })
+    return this.facade.loginFacebook(payload.accessToken).pipe(
+      map((response) => ({
+        accessToken: response.token ?? '',
+        refreshToken: '',
+        expiresIn: response.expiresIn ?? 3600,
+      })),
+      tap(() => {
+        this._currentUser.set({ name: 'Facebook User', meta: 'Signed in with Facebook' });
+        this.hydrateCurrentUserFromProfile();
+      }),
     );
   }
 

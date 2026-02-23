@@ -71,3 +71,22 @@ Standalone components only
 You must fix all errors in the terminal before and after committing code.
 
 When using TalkToFigma MCP, think about the auto-layout properties first, ensure components are designed to be flexible and responsive, and use design tokens for consistent spacing, colors, and typography. Avoid hardcoding dimensions or styles that could limit adaptability across different screen sizes. focus on creating reusable components that can easily adjust to various content and layout needs, leveraging Angular's powerful templating and styling capabilities to maintain a clean and maintainable codebase.
+
+
+## 3.  WORKFLOWS (MANDATORY)
+-   Use "Analyze → Plan → Implement → Verify" for every task.
+-   For analysis, identify the module (Page, Shared, or Core) and check against the Tech Stack.
+-   For planning, present a numbered plan. Identify which Facades or Services need modification.
+-   For critique, self-review the plan for "Minimal Change" and "Regression Risks."
+-   For implementation, write code only after plan approval.
+-   For verification, define specific test steps (Chrome Dev Tools MCP, Postman, or Build).
+
+## 4.  ANTI-HALLUCINATION & SAFETY (MANDATORY)
+-   EVIDENCE RULE: Every technical claim must reference existing code or the `@workspace`.
+-   UNCERTAINTY RULE: If confidence < 90%, explain uncertainty. Do not "invent" API endpoints.
+-   NO ASSUMPTION RULE: Do not assume the existence of files. Check `src/app/api/fn/**` before suggesting an API call.
+-  If a claim cannot be supported with evidence, ask for clarification before proceeding.
+
+-  you should use the postman collection "AskAMuslimBackend Copy" using postman mcp and postman extension to verify API contracts and responses, and use Chrome Dev Tools MCP to inspect network requests, component hierarchies, and state changes during manual testing. Always reference specific files or captured traces when making technical claims or suggestions.
+
+

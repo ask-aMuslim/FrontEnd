@@ -131,10 +131,19 @@ export class AccountComponent implements OnInit, OnDestroy {
         const fullName = this.buildDisplayName(profile?.firstName, profile?.lastName);
         const email = toStringValue(profile?.email);
 
+        // Use profileImage from API if available, otherwise use placeholder
+        const profileRecord = (profile as Record<string, unknown>) || {};
+        const profileImage = toStringValue(
+          (profileRecord['profileImage'] as string | null) ??
+          (profileRecord['profilePictureUrl'] as string | null) ??
+          null
+        );
+
         this.userProfile = {
           ...this.userProfile,
           name: fullName ?? this.userProfile.name,
           bio: email ? `Email: ${email}` : this.userProfile.bio,
+          profileImage: profileImage ?? '/images/profile-picture-navbar.png',
         };
       },
       error: () => void 0,

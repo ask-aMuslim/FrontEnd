@@ -112,23 +112,29 @@
   display: flex;
   flex-direction: column;
   line-height: 1.2;
-  min-width: 0;
+  /* ensure text container never collapses completely after logout/login */
+  min-width: 100px !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  max-width: 240px;
+  white-space: nowrap;
 }
 
 .user-name {
   color: #000401;
   font-weight: 600;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* allow text to overflow naturally instead of hiding completely */
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .user-meta {
   color: var(--color-button-primary-normal);
   font-size: 0.75rem;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .user-avatar {

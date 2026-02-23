@@ -8,8 +8,10 @@ export class QasService {
 
   constructor(private api: ApiService) { }
 
-  getAll(): Observable<unknown> {
-    return this.api.get<unknown>(QasService.QAS_PATH);
+  getAll(params?: { pageNumber?: number; pageSize?: number }): Observable<unknown> {
+    const query = this.buildQueryString(params);
+    const url = query ? `${QasService.QAS_PATH}?${query}` : QasService.QAS_PATH;
+    return this.api.get<unknown>(url);
   }
 
   create(payload: unknown): Observable<unknown> {
@@ -26,5 +28,13 @@ export class QasService {
 
   delete(id: string): Observable<unknown> {
     return this.api.delete<unknown>(`${QasService.QAS_PATH}/${id}`);
+  }
+
+  private buildQueryString(params?: { pageNumber?: number; pageSize?: number }): string {
+    if (!params) return '';
+    const parts: string[] = [];
+    if (params.pageNumber !== undefined) parts.push(`pageNumber=${params.pageNumber}`);
+    if (params.pageSize !== undefined) parts.push(`pageSize=${params.pageSize}`);
+    return parts.join('&');
   }
 }

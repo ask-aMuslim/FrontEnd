@@ -64,12 +64,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     previousLesson: LessonMetadata | undefined;
 
     noteText: string = '';
-    previousNotes: Array<{ timestamp: string; text: string }> = [
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' },
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' },
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' },
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' }
-    ];
+    previousNotes: Array<{ timestamp: string; text: string }> = [];
     notesFilter: 'latest' | 'current-lesson' = 'latest';
     notesSearchQuery: string = '';
 
@@ -177,6 +172,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
                     this.loadLessonContent();
                     this.loadCourseLessonsForSidebar();
+                    this.loadLessonNotes();
                 },
                 error: () => {
                     this.error = 'Unable to load this lesson right now. Please try again.';
@@ -221,6 +217,22 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.cdr.detectChanges();
                 },
                 error: () => void 0
+            });
+    }
+
+    private loadLessonNotes(): void {
+        this.lessonContentService
+            .getLessonNotes(this.lessonId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (notes) => {
+                    this.previousNotes = notes;
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.previousNotes = [];
+                    this.cdr.detectChanges();
+                },
             });
     }
 
@@ -333,14 +345,28 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     addNote(): void {
-        if (this.noteText.trim()) {
-            const newNote = {
-                timestamp: `[Lesson] ${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2, '0')}`,
-                text: this.noteText
-            };
-            this.previousNotes.unshift(newNote);
-            this.noteText = '';
+        const trimmedNote = this.noteText.trim();
+        if (!trimmedNote) {
+            return;
         }
+
+        const now = new Date();
+        const timestamp = `[Lesson] ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        this.lessonContentService
+            .addLessonNote(this.lessonId, trimmedNote, timestamp)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (createdNote) => {
+                    this.previousNotes = [createdNote, ...this.previousNotes];
+                    this.noteText = '';
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.noteText = '';
+                    this.cdr.detectChanges();
+                },
+            });
     }
 
     deleteNote(index: number): void { this.previousNotes.splice(index, 1); }
@@ -362,12 +388,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     get courseInfo(): { stage: number; code: string; title: string; stats: string } {
         const stage = this.currentCourse?.stageId || 0;
-        const code = (this.currentCourse?.id || '').split('-').slice(0, 2).join('-').toUpperCase() || '';
         const title = this.currentCourse?.title || '';
         const currentOrder = this.lessonData?.metadata.order || (this.currentLesson?.order || 0);
         return {
             stage,
-            code,
+            code: '',
             title,
             stats: `Lesson: ${currentOrder}/${this.courseLessons.length}`
         };

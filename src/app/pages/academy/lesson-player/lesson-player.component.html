@@ -91,7 +91,7 @@
       }
 
       <!-- Article Content Header -->
-      @if (isArticleContent && lessonContent) {
+      @if (isArticleContent && articleContent) {
         <div class="article-header-container">
           <div class="article-icon">
             <svg
@@ -143,6 +143,12 @@
                 stroke-linejoin="round"
               />
             </svg>
+          </div>
+          <div class="article-header-content">
+            <p class="article-type">Article</p>
+            @if (articleContent.description) {
+              <p class="article-description">{{ articleContent.description }}</p>
+            }
           </div>
         </div>
       }
@@ -478,7 +484,7 @@
       <div class="course-info-card">
         <div class="course-header">
           <span class="stage-label">Stage {{ courseInfo.stage }}</span>
-          <h3 class="sidebar-title">Course {{ courseInfo.code }}: {{ courseInfo.title }}</h3>
+          <h3 class="sidebar-title" [title]="courseInfo.title">{{ courseInfo.title }}</h3>
         </div>
         <div class="divider"></div>
         <div class="course-stats">

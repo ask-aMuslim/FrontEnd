@@ -2,8 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs';
 import { ApiConfiguration } from '../api-configuration';
-import { forgotPassword, login, register, resetPassword, verifyOtp } from '../functions';
-import { LoginCommand, RegisterCommand } from '../models';
+import { forgotPassword, login, loginWithFacebook, loginWithGoogle, register, resetPassword, verifyOtp } from '../functions';
+import { LoginCommand, LoginWithFacebookCommand, LoginWithGoogleCommand, RegisterCommand } from '../models';
 import { TokenService } from '../../core/auth/token.service';
 import { ResultOfAuthenticationResponse } from '../models/result-of-authentication-response';
 
@@ -72,35 +72,27 @@ export class IdentityFacade {
 
     return this.withRequestState(
       login(this.http, this.config.rootUrl, { body }).pipe(
-        map((response) => {
-          const envelope = response.body as ResultOfAuthenticationResponse | null;
-          const data = envelope?.data ?? {};
+        map((response) => this.mapAuthenticationResponse(response.body as ResultOfAuthenticationResponse | null))
+      )
+    );
+  }
 
-          // Persist token so authGuard sees an authenticated session immediately
-          if (data.token) {
-            const expiresAt = data.expiresAt
-              ? new Date(data.expiresAt).getTime()
-              : Date.now() + 24 * 60 * 60 * 1000; // default 24 h
-            const expiresIn = Math.max(60, Math.floor((expiresAt - Date.now()) / 1000));
+  loginGoogle(idToken: string): Observable<LoginResponse> {
+    const body: LoginWithGoogleCommand = { idToken };
 
-            this.tokenService.setTokens({
-              accessToken: data.token,
-              refreshToken: '',   // API does not issue a refresh token
-              expiresIn,
-              userId: data.userId ?? undefined,
-              userEmail: data.email ?? undefined,
-            });
-          }
+    return this.withRequestState(
+      loginWithGoogle(this.http, this.config.rootUrl, { body }).pipe(
+        map((response) => this.mapAuthenticationResponse(response.body as ResultOfAuthenticationResponse | null))
+      )
+    );
+  }
 
-          return {
-            token: data.token,
-            email: data.email,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            role: data.role,
-            userId: data.userId,
-          } as LoginResponse;
-        })
+  loginFacebook(accessToken: string): Observable<LoginResponse> {
+    const body: LoginWithFacebookCommand = { accessToken };
+
+    return this.withRequestState(
+      loginWithFacebook(this.http, this.config.rootUrl, { body }).pipe(
+        map((response) => this.mapAuthenticationResponse(response.body as ResultOfAuthenticationResponse | null))
       )
     );
   }
@@ -163,5 +155,33 @@ export class IdentityFacade {
     }
 
     return 'Request failed. Please try again.';
+  }
+
+  private mapAuthenticationResponse(envelope: ResultOfAuthenticationResponse | null): LoginResponse {
+    const data = envelope?.data ?? {};
+
+    if (data.token) {
+      const expiresAt = data.expiresAt
+        ? new Date(data.expiresAt).getTime()
+        : Date.now() + 24 * 60 * 60 * 1000;
+      const expiresIn = Math.max(60, Math.floor((expiresAt - Date.now()) / 1000));
+
+      this.tokenService.setTokens({
+        accessToken: data.token,
+        refreshToken: '',
+        expiresIn,
+        userId: data.userId ?? undefined,
+        userEmail: data.email ?? undefined,
+      });
+    }
+
+    return {
+      token: data.token,
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: data.role,
+      userId: data.userId,
+    } as LoginResponse;
   }
 }
