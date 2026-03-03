@@ -1,4 +1,24 @@
 <div class="about">
+  <!-- Success/Error Messages -->
+  @if (successMessage) {
+    <div class="about-message about-message--success animate-fade-in">
+      <span>{{ successMessage }}</span>
+    </div>
+  }
+
+  @if (error) {
+    <div class="about-message about-message--error animate-fade-in">
+      <span>{{ error }}</span>
+      <button class="about-message__dismiss" (click)="clearMessages()">×</button>
+    </div>
+  }
+
+  @if (isLoading && !isEditingMain && !isEditingPersonal && !isEditingContact) {
+    <div class="about-loading animate-fade-in">
+      <span>Loading profile...</span>
+    </div>
+  }
+
   <!-- Main Information -->
   <div class="about-section">
     @if (!isEditingMain) {
@@ -101,7 +121,12 @@
         <div class="about-section__fields">
           <div class="about-section__field">
             <span class="about-section__label">City / Country</span>
-            <p class="about-section__value">{{ about.city }}</p>
+            <p class="about-section__value">
+              {{ about.city }}
+              @if (about.country) {
+                / {{ about.country }}
+              }
+            </p>
           </div>
           <div class="about-section__field">
             <span class="about-section__label">Phone Number</span>
@@ -119,6 +144,7 @@
       <app-edit-contact-information
         class="animate-fade-in"
         [city]="about.city"
+        [country]="about.country"
         [phoneNumber]="about.phoneNumber"
         [email]="about.email"
         (save)="saveContactInfo($event)"

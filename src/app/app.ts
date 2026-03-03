@@ -3,6 +3,7 @@ import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
 import { GlobalLoadingService } from './core/services/global-loading.service';
+import * as AOS from 'aos';
 
 @Component({
   selector: 'app-root',
@@ -27,8 +28,20 @@ export class App {
       .subscribe(() => {
         if (isPlatformBrowser(this.platformId)) {
           window.scrollTo(0, 0);
+          setTimeout(() => {
+            AOS.refresh();
+          }, 100);
         }
       });
+
+    if (isPlatformBrowser(this.platformId)) {
+      AOS.init({
+        duration: 800,
+        easing: 'ease-in-out',
+        once: true,
+        offset: 50
+      });
+    }
   }
 }
 

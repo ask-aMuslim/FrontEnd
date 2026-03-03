@@ -453,8 +453,10 @@
         <div class="article-sections">
           @for (section of articleContent?.sections; track section) {
             <div class="article-section">
-              <h2 class="section-header">{{ section.header }}</h2>
-              <p class="section-content">{{ section.content }}</p>
+              @if (section.header) {
+                <h2 class="section-header">{{ section.header }}</h2>
+              }
+              <div class="section-content" [innerHTML]="section.content"></div>
             </div>
           }
         </div>
@@ -494,8 +496,8 @@
       </div>
 
       <div class="lessons-list">
-        @for (lesson of coarseLessons; track lesson; let i = $index) {
-          @if (i === coarseLessons.length - 1 && coarseLessons.length > 0) {
+        @for (lesson of courseLessons; track lesson.id; let i = $index) {
+          @if (i === courseLessons.length - 1 && courseLessons.length > 0 && lesson.type === 'quiz') {
             <div class="ready-divider">
               <div class="divider-line"></div>
               <span class="ready-text">Ready?</span>
@@ -515,9 +517,6 @@
                 <span>{{ lesson.duration }}</span>
               </div>
             </div>
-            @if (lesson.hasFeedback) {
-              <div class="feedback-indicator"></div>
-            }
           </div>
         }
       </div>

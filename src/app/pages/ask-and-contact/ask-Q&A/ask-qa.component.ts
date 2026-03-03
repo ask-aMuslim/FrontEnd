@@ -36,6 +36,8 @@ export class AskQaComponent implements OnInit {
   selectedCategory = 0;
   currentPage = PAGINATION.DEFAULT_PAGE;
   itemsPerPage = AskQaComponent.defaultPageSize;
+  totalPages = 1;
+  totalCount = 0;
   searchQuery = '';
   hasSearched = false;
   searchResults: QuestionCard[] = [];
@@ -55,7 +57,6 @@ export class AskQaComponent implements OnInit {
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
-      this.onSearch();
     }
   }
 
@@ -63,42 +64,21 @@ export class AskQaComponent implements OnInit {
     return this.hasSearched && this.searchQuery.trim().length > 0;
   }
 
-  get filteredQuestions(): QuestionCard[] {
-    if (this.selectedCategory === 0) {
-      return this.questions;
-    }
-    const selectedCategoryName = this.selectedCategoryName;
-    if (!selectedCategoryName) {
-      return [];
-    }
-
-    const normalizedCategory = selectedCategoryName.toLowerCase();
-    return this.questions.filter((question) =>
-      question.categories.some((category) => category.toLowerCase() === normalizedCategory),
-    );
-  }
-
   get paginatedFilteredQuestions(): QuestionCard[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    return this.filteredQuestions.slice(startIndex, startIndex + this.itemsPerPage);
+    return this.questions;
   }
 
   get pages(): number[] {
-    const totalPages = Math.max(
-      PAGINATION.DEFAULT_PAGE,
-      Math.ceil(this.filteredQuestions.length / this.itemsPerPage),
-    );
-
-    return Array.from({ length: totalPages }, (_value, index) => index + PAGINATION.DEFAULT_PAGE);
+    return Array.from({ length: this.totalPages }, (_value, index) => index + PAGINATION.DEFAULT_PAGE);
   }
 
   get showPagination(): boolean {
     // Only show pagination when there is more than one page of results
-    return this.pages.length > 1;
+    return this.totalPages > 1;
   }
 
   get showEmptyCategoryHint(): boolean {
-    return this.filteredQuestions.length === 0;
+    return this.questions.length === 0;
   }
 
   get selectedCategoryName(): string {
@@ -171,12 +151,31 @@ export class AskQaComponent implements OnInit {
   private loadQuestions(): void {
     const pageNumber = this.currentPage;
     const pageSize = this.itemsPerPage;
+    const selectedCategoryName = this.selectedCategoryName;
+    const tags = selectedCategoryName && this.selectedCategory !== 0 ? [selectedCategoryName] : undefined;
 
-    this.qasService.getAll({ pageNumber, pageSize }).subscribe({
-      next: (response) => {
+    this.qasService.getAll({ pageNumber, pageSize, tags: tags ? tags[0] : undefined }).subscribe({
+      next: (response: any) => {
         const mapped = this.mapQuestions(response);
         this.questions = mapped;
+
+        // Extract pagination details from standard response structure if available
+        if (response && response.data) {
+          this.totalPages = response.data.totalPages || 1;
+          this.totalCount = response.data.totalCount || mapped.length;
+        } else if (response && response.totalPages) {
+          this.totalPages = response.totalPages || 1;
+          this.totalCount = response.totalCount || mapped.length;
+        } else {
+          this.totalPages = 1;
+          this.totalCount = mapped.length;
+        }
+
         this.cdr.markForCheck();
+
+        if (this.searchQuery && !this.hasSearched) {
+          this.onSearch();
+        }
       },
       error: () => this.cdr.markForCheck(),
     });
@@ -203,7 +202,7 @@ export class AskQaComponent implements OnInit {
     records.forEach((item) => {
       const record = asRecord(item);
       const name = toStringValue(getValue(record, 'name', 'Name', 'title', 'Title'));
-      if (name) {
+      if (name && name !== 'Hero Page Questions') {
         uniqueCategories.add(name);
       }
     });

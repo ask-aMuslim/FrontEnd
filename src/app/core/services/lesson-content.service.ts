@@ -186,7 +186,15 @@ export class LessonContentService {
         language: 'English'
       } as ArticleLessonContent;
     }
-    const lessonType = (lessonDto as { type?: number }).type as LessonType;
+
+    let lessonType = (lessonDto as { type?: number }).type as LessonType;
+    if (!lessonType) {
+      if (lessonDto.videoUrl || lessonDto.externalVideoUrl) {
+        lessonType = LessonType.Video;
+      } else if (lessonDto.content && lessonDto.content.trim().length > 0) {
+        lessonType = LessonType.Article;
+      }
+    }
 
     switch (lessonType) {
       case LessonType.Video: {
@@ -225,7 +233,12 @@ export class LessonContentService {
           type: LessonType.Article,
           title: lessonDto.title ?? '',
           description: (lessonDto as { description?: string }).description || '',
-          sections: [],
+          sections: [
+            {
+              header: '',
+              content: lessonDto.content || ''
+            }
+          ],
           language: 'English'
         } as ArticleLessonContent;
 

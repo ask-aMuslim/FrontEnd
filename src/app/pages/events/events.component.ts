@@ -21,7 +21,7 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
   styleUrls: ['./events.component.scss'],
 })
 export class EventsComponent implements OnInit {
-  private static readonly fallbackImage = '/images/events-picture.png';
+  private static readonly fallbackImage = '/images/events-image-placeholder.jpg';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
   private static readonly idOffset = 1;
 

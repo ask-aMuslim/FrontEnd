@@ -31,7 +31,7 @@ export class QuestionComponent implements OnDestroy {
   readonly shareIcon = '/icons/icons-24/share.svg';
   readonly downloadIcon = '/icons/icons-24/download.svg';
 
-  private static readonly fallbackImage = '/images/events-picture.png';
+  private static readonly fallbackImage = '/images/events-image-placeholder.jpg';
 
   constructor(
     private readonly route: ActivatedRoute,

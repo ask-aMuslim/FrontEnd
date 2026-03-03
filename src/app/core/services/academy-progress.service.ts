@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject, of } from 'rxjs';
+import { Observable, BehaviorSubject, of, forkJoin } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import {
     StudentProgress,
@@ -12,32 +12,17 @@ import {
     StageQuizResult,
     AcademyCourse,
     AcademyLesson,
+    AcademyStageApi,
     CourseStatus,
     LessonStatus,
 } from '../models/interfaces/academy-progress.model';
 import { ProgressFacade } from '../../api/facades/progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
-import { CourseFacade, CourseReadDto, CourseReadByIdDto } from '../../api/facades/course.facade';
+import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
+import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { EnrollmentFacade } from '../../api/facades/enrollment.facade';
 import { toApiMediaUrl } from '../helpers/media-url.helper';
-
-const CATEGORY_LABELS: Record<CourseStatus | 'unknown', string> = {
-    completed: 'A: Main Believes',
-    'in-progress': 'A: Main Believes',
-    locked: 'A: Main Believes',
-    available: 'A: Main Believes',
-    unknown: 'A: Main Believes',
-};
-
-const MAIN_BELIEVES_CATEGORIES = new Set(['Aqeeda', 'Faith', 'Quran']);
-const MODELS_STORIES_CATEGORIES = new Set(['Seerah', 'BiographyOfProphets', 'Hadith']);
-const LEVEL_TO_STAGE: Record<string, number> = {
-    Beginner: 1,
-    Intermediate: 2,
-    Advanced: 3,
-    AllLevels: 1,
-};
 
 /**
  * Academy Progress Service
@@ -49,6 +34,8 @@ const LEVEL_TO_STAGE: Record<string, number> = {
  * - Recent lesson for "Continue Learning" feature
  *
  * Integration Strategy:
+ * - LevelFacade: Fetch real stages from GET /api/Levels
+ * - CourseFacade: Fetch courses per level from GET /api/Courses?LevelId=&IsPublished=true
  * - EnrollmentFacade: Student-course linkage
  * - LessonFacade: Lesson list and basic lesson writes
  * - StudentFacade: Current student identity
@@ -62,12 +49,14 @@ export class AcademyProgressService {
     private readonly progressFacade = inject(ProgressFacade);
     private readonly lessonFacade = inject(LessonFacade);
     private readonly courseFacade = inject(CourseFacade);
+    private readonly levelFacade = inject(LevelFacade);
     private readonly studentFacade = inject(StudentFacade);
     private readonly enrollmentFacade = inject(EnrollmentFacade);
 
     private readonly progressSubject = new BehaviorSubject<StudentProgress | null>(null);
     readonly progress$ = this.progressSubject.asObservable();
     private academyCoursesCache: AcademyCourse[] = [];
+    private academyStagesCache: AcademyStageApi[] = [];
     private readonly lessonsCache = new Map<string, AcademyLesson[]>();
 
     constructor() {
@@ -82,8 +71,27 @@ export class AcademyProgressService {
     }
 
     /**
+     * Get all academy stages from the real API.
+     * Fetches from GET /api/Levels with published status.
+     */
+    getAcademyStages(forceRefresh = false): Observable<AcademyStageApi[]> {
+        if (!forceRefresh && this.academyStagesCache.length > 0) {
+            return of(this.academyStagesCache);
+        }
+        return this.levelFacade.getAllLevels().pipe(
+            map(levels => levels
+                .filter(l => l.isPublished !== false) // include all unless explicitly not published
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((level, index) => this.mapLevelToStage(level, index + 1))
+            ),
+            tap(stages => { this.academyStagesCache = stages; }),
+            catchError(() => of([]))
+        );
+    }
+
+    /**
      * Get complete student progress.
-        * Builds progress from API-backed enrollments, courses, and lessons.
+     * Builds progress from API-backed enrollments, courses, and lessons.
      */
     getStudentProgress(): Observable<StudentProgress> {
         return this.getAcademyCourses().pipe(
@@ -160,52 +168,72 @@ export class AcademyProgressService {
     }
 
     /**
-     * Get all courses for a specific stage with their progress
+     * Get courses for a specific stage (level) and map with progress.
+     * Accepts either a level UUID string OR a stage number (1-based index).
+     * When a number is passed the cached stages are consulted to resolve the real levelId.
      */
-    getStageCoursesWithProgress(stageNumber: number): Observable<(AcademyCourse & { progress: CourseProgress })[]> {
-        return this.getStudentProgress().pipe(
-            switchMap((progress) =>
-                this.getAcademyCourses().pipe(
-                    map((courses) => {
-                        const stageCourses = courses.filter((course) => course.stageId === stageNumber);
-                        return stageCourses.map((course) => this.withCourseProgress(course, progress.courseProgress));
-                    })
+    getStageCoursesWithProgress(stageId: string | number): Observable<(AcademyCourse & { progress: CourseProgress })[]> {
+        const resolvedId$ = typeof stageId === 'string'
+            ? of(stageId)
+            : this.getAcademyStages().pipe(
+                map(stages => {
+                    const match = stages.find(s => s.number === stageId);
+                    return match?.id ?? String(stageId);
+                })
+            );
+
+        return resolvedId$.pipe(
+            switchMap(levelId =>
+                this.getStudentProgress().pipe(
+                    switchMap((progress) =>
+                        this.getAcademyCoursesByLevel(levelId).pipe(
+                            map((courses) => courses.map((course) => this.withCourseProgress(course, progress.courseProgress)))
+                        )
+                    )
                 )
             )
         );
     }
 
     /**
-     * Get lessons for a specific course with their progress.
-        * Uses API lessons and derives an initial progress projection.
+     * Get all academy courses with API data. Fetches all levels then all courses per level.
      */
-    getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
-        return this.getAcademyLessons(courseId).pipe(
-            map(apiLessons =>
-                apiLessons.map((apiLesson, index) => ({
-                    ...apiLesson,
-                    progress: {
-                        lessonId: apiLesson.id,
-                        courseId,
-                        status: index === 0 ? 'current' : 'available',
-                        isCompleted: false,
-                    },
-                }))
-            )
-        );
-    }
-
     getAcademyCourses(forceRefresh = false): Observable<AcademyCourse[]> {
         const useCache = !forceRefresh && this.academyCoursesCache.length > 0;
         if (useCache) {
             return of(this.academyCoursesCache);
         }
 
-        return this.courseFacade.getAllCourses().pipe(
-            map(courses => courses.map(course => this.mapCourseDtoToAcademyCourse(course))),
-            tap(courses => {
-                this.academyCoursesCache = courses;
+        return this.getAcademyStages().pipe(
+            switchMap(stages => {
+                if (stages.length === 0) {
+                    // fallback to unfiltered course fetch if no levels yet
+                    return this.courseFacade.getAllCourses().pipe(
+                        map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c, undefined, 1)))
+                    );
+                }
+                const courseRequests = stages.map(stage =>
+                    this.courseFacade.getCoursesByLevel(stage.id).pipe(
+                        map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c, stage.id, stage.number))),
+                        catchError(() => of([] as AcademyCourse[]))
+                    )
+                );
+                return forkJoin(courseRequests).pipe(
+                    map(coursesByLevel => coursesByLevel.flat())
+                );
             }),
+            tap(courses => { this.academyCoursesCache = courses; }),
+            catchError(() => of([]))
+        );
+    }
+
+    /**
+     * Get courses for a specific level from the API.
+     */
+    getAcademyCoursesByLevel(levelId: string): Observable<AcademyCourse[]> {
+        const stageNumber = this.academyStagesCache.find(s => s.id === levelId)?.number ?? 1;
+        return this.courseFacade.getCoursesByLevel(levelId).pipe(
+            map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c, levelId, stageNumber))),
             catchError(() => of([]))
         );
     }
@@ -214,10 +242,10 @@ export class AcademyProgressService {
         return this.courseFacade.getCourseById(courseId).pipe(
             map(course => {
                 if (!course) {
-                    // Return a default course if not found
                     return {
                         id: courseId,
                         stageId: 1,
+                        levelId: '',
                         title: 'Unknown Course',
                         category: 'social-topics' as const,
                         categoryLabel: 'C: Social Topics',
@@ -225,7 +253,7 @@ export class AcademyProgressService {
                         duration: '0m',
                     };
                 }
-                return this.mapCourseByIdDtoToAcademyCourse(course);
+                return this.mapCourseDtoToAcademyCourse(course, course.levelId, 1);
             }),
             tap(course => {
                 const index = this.academyCoursesCache.findIndex(existing => existing.id === course.id);
@@ -239,6 +267,7 @@ export class AcademyProgressService {
                 of({
                     id: courseId,
                     stageId: 1,
+                    levelId: '',
                     title: 'Unknown Course',
                     category: 'social-topics' as const,
                     categoryLabel: 'C: Social Topics',
@@ -257,16 +286,34 @@ export class AcademyProgressService {
 
         return this.lessonFacade.getCourseLessons(courseId).pipe(
             map(lessons => lessons.map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))),
-            tap(lessons => {
-                this.lessonsCache.set(courseId, lessons);
-            }),
+            tap(lessons => { this.lessonsCache.set(courseId, lessons); }),
             catchError(() => of([]))
         );
     }
 
     /**
+     * Get lessons for a specific course with their progress.
+     * Uses API lessons and derives an initial progress projection.
+     */
+    getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
+        return this.getAcademyLessons(courseId).pipe(
+            map(apiLessons =>
+                apiLessons.map((apiLesson, index) => ({
+                    ...apiLesson,
+                    progress: {
+                        lessonId: apiLesson.id,
+                        courseId,
+                        status: index === 0 ? 'current' : 'available',
+                        isCompleted: false,
+                    },
+                }))
+            )
+        );
+    }
+
+    /**
      * Update lesson progress.
-        * Persists completion and watch position through lesson progress APIs.
+     * Persists completion and watch position through lesson progress APIs.
      */
     updateLessonProgress(request: UpdateLessonProgressRequest): Observable<LessonProgress> {
         if (request.isCompleted) {
@@ -303,7 +350,7 @@ export class AcademyProgressService {
 
     /**
      * Submit quiz result and potentially unlock next stage.
-        * Uses client-side evaluation until a dedicated backend endpoint is available.
+     * Uses client-side evaluation until a dedicated backend endpoint is available.
      */
     submitQuizResult(request: SubmitQuizResultRequest): Observable<StageQuizResult> {
         return of({
@@ -315,14 +362,14 @@ export class AcademyProgressService {
     }
 
     /**
-     * Get static course data by ID
+     * Get course data by ID from cache
      */
     getCourseById(courseId: string): AcademyCourse | undefined {
         return this.academyCoursesCache.find(course => course.id === courseId);
     }
 
     /**
-     * Get static lesson data by ID
+     * Get lesson data by ID from cache
      */
     getLessonById(lessonId: string): AcademyLesson | undefined {
         for (const lessons of this.lessonsCache.values()) {
@@ -331,12 +378,11 @@ export class AcademyProgressService {
                 return lesson;
             }
         }
-
         return undefined;
     }
 
     /**
-     * Get lessons for a course
+     * Get lessons for a course from cache
      */
     getCourseLessons(courseId: string): AcademyLesson[] {
         return (this.lessonsCache.get(courseId) ?? []).slice().sort((a, b) => a.order - b.order);
@@ -497,10 +543,7 @@ export class AcademyProgressService {
     private withCourseProgress(course: AcademyCourse, courseProgress: CourseProgress[]): AcademyCourse & { progress: CourseProgress } {
         const progress = courseProgress.find(item => item.courseId === course.id);
         if (progress) {
-            return {
-                ...course,
-                progress,
-            };
+            return { ...course, progress };
         }
 
         return {
@@ -516,50 +559,36 @@ export class AcademyProgressService {
         };
     }
 
-    private mapCourseDtoToAcademyCourse(course: CourseReadDto): AcademyCourse {
+    private mapLevelToStage(level: LevelReadDto, index: number): AcademyStageApi {
+        return {
+            id: level.id ?? '',
+            number: index,
+            title: level.title ?? `Stage ${index}`,
+            description: level.description ?? '',
+            order: level.order ?? index,
+            difficulty: level.difficulty ?? 1,
+        };
+    }
+
+    private mapCourseDtoToAcademyCourse(course: CourseReadDto, levelId: string | undefined, stageNumber: number): AcademyCourse {
         const id = course.id ?? '';
         const title = course.title ?? 'Untitled course';
-        const stageId = this.mapLevelToStage(course.level ?? 'AllLevels');
-        const category = this.mapCategory(course.category ?? 'Other');
         const lessons = course.numberOfLessons ?? 0;
 
         return {
             id,
-            stageId,
+            stageId: stageNumber,
+            levelId: levelId ?? course.levelId ?? '',
             title,
-            category,
-            categoryLabel: this.mapCategoryLabel(category),
+            category: 'social-topics', // all API courses map to the same neutral category by default
+            categoryLabel: 'Course',
             lessons,
             duration: this.buildDurationText(lessons),
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
+            order: course.order,
+            prerequisites: course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []
         };
-    }
-
-    private mapCourseByIdDtoToAcademyCourse(course: CourseReadByIdDto): AcademyCourse {
-        const mapped = this.mapCourseDtoToAcademyCourse({
-            id: course.id,
-            title: course.title,
-            category: course.category,
-            level: course.level,
-            numberOfLessons: course.numberOfLessons,
-            thumbnailUrl: course.thumbnailUrl,
-            description: course.description,
-            instructorID: course.instructorID,
-            instructorName: course.instructorName,
-            numberOfStudentsEnrolled: course.numberOfStudentsEnrolled,
-        });
-
-        const explicitLessonCount = course.lessons?.length;
-        if (typeof explicitLessonCount === 'number' && explicitLessonCount > 0) {
-            return {
-                ...mapped,
-                lessons: explicitLessonCount,
-                duration: this.buildDurationText(explicitLessonCount),
-            };
-        }
-
-        return mapped;
     }
 
     private mapLessonDtoToAcademyLesson(
@@ -577,38 +606,9 @@ export class AcademyProgressService {
             title,
             duration: '10 min',
             type,
-            order: index + 1,
+            order: lesson.order ?? (index + 1),
             description: lesson.content ?? undefined,
         };
-    }
-
-    private mapCategory(category: string): AcademyCourse['category'] {
-        if (MAIN_BELIEVES_CATEGORIES.has(category)) {
-            return 'main-believes';
-        }
-
-        if (MODELS_STORIES_CATEGORIES.has(category)) {
-            return 'models-stories';
-        }
-
-        return 'social-topics';
-    }
-
-    private mapCategoryLabel(category: AcademyCourse['category']): string {
-        switch (category) {
-            case 'main-believes':
-                return 'A: Main Believes';
-            case 'models-stories':
-                return 'B: Models & Stories';
-            case 'social-topics':
-                return 'C: Social Topics';
-            default:
-                return CATEGORY_LABELS.unknown;
-        }
-    }
-
-    private mapLevelToStage(level: string): number {
-        return LEVEL_TO_STAGE[level] ?? 1;
     }
 
     private mapLessonType(lesson: LessonReadDto, index: number): AcademyLesson['type'] {
@@ -645,5 +645,4 @@ export class AcademyProgressService {
 
         return `${hours}h ${minutes}m`;
     }
-
 }

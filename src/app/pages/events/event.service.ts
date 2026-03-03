@@ -83,7 +83,7 @@ export class EventService {
         toApiMediaUrl(
           toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
         ) ??
-        '/images/events-picture.png',
+        '/images/events-image-placeholder.jpg',
       imageAlt: toStringValue(getValue(record, 'imageAlt', 'ImageAlt')) ?? title,
       speakerName: toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '',
       speakerImage:

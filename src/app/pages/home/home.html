@@ -3,6 +3,9 @@
     <div class="hero-surface" aria-hidden="true"></div>
     <div class="section-block section-block--wide">
       <div class="hero-content">
+        <div class="mb-3 text-center text-sm font-semibold tracking-wider text-(--color-text-caption) uppercase">
+          One God | One Message | Many Prophets
+        </div>
         <div
           class="mx-auto rounded-full border border-(--colors-green-30) text-(--color-text-caption) bg-transparent px-4 py-1 text-sm font-medium hint"
         >
@@ -71,7 +74,7 @@
   <section class="what-section">
     <div class="section-block">
       <div class="section-shell">
-        <div class="section-heading">
+        <div class="section-heading" data-aos="fade-up">
           <h2 class="eyebrow">What is "Ask a Muslim"</h2>
           <p>A trusted platform to answer questions and guide Muslims &amp; non-Muslims</p>
         </div>
@@ -80,6 +83,7 @@
           @for (feature of featureCards; track $index) {
             <a
               class="feature-card"
+              data-aos="fade-up"
               [routerLink]="feature.href"
               [class.feature-card--disabled]="feature.status === 'soon'"
             >
@@ -123,7 +127,7 @@
   <section class="events-section">
     <div class="section-block">
       <div class="section-shell section-shell--raised">
-        <div class="section-heading">
+        <div class="section-heading" data-aos="fade-up">
           <h2 class="eyebrow">Events and Sessions</h2>
           <p>
             Check out latest &amp; upcoming offline &amp; online events, and join to gain the right
@@ -136,6 +140,7 @@
             @for (event of eventCards; track event.id; let i = $index) {
               <article
                 class="event-card"
+                data-aos="fade-up"
                 [ngClass]="{ 'event-card--reverse': Math.floor(i / 2) % 2 === 1 }"
               >
                 <div class="event-image">
@@ -277,7 +282,7 @@
     <div class="section-block section-block--wide">
       <div class="section-shell islam-shell">
         <!-- Main Heading -->
-        <div class="islam-heading">
+        <div class="islam-heading" data-aos="fade-up">
           <h2>What is Islam</h2>
           <p>
             Islam is a monotheistic Abrahamic religion that teaches that there is only one God and
@@ -286,7 +291,7 @@
         </div>
 
         <!-- Container for both pillars sections forming semi-circle -->
-        <div class="pillars-container">
+        <div class="pillars-container" data-aos="fade-up">
           <!-- 6 Pillars of Iman (Hexagons) - Top Arc -->
           <div class="iman-arc">
             <!-- Hexagon 1: Allah (bottom left) -->
@@ -1309,7 +1314,7 @@
     <div class="section-block section-block--wide">
       <div class="section-shell about-quran-shell">
         <!-- Heading -->
-        <div class="about-quran-heading">
+        <div class="about-quran-heading" data-aos="fade-up">
           <h2>About Quran</h2>
           <p>
             Did you know that non-Arabic speaking children between ages 6 & 7 around the world can
@@ -1318,7 +1323,7 @@
         </div>
 
         <!-- Content Container -->
-        <div class="quran-content">
+        <div class="quran-content" data-aos="fade-up">
           <!-- Left Text Content -->
           <div class="quran-text-left">
             <p>
@@ -1348,7 +1353,7 @@
 
         <!-- Button -->
         <div class="quran-button-container">
-          <a class="button quran-button" [routerLink]="'/quran'">
+          <a class="button quran-button" href="https://www.onemessagefoundation.com/free-quran" target="_blank">
             Get Free Qur'an
             <svg
               width="24"
@@ -1373,7 +1378,7 @@
 
   <section class="advice-section">
     <div class="rounded-bar py-14"></div>
-    <div class="section-block">
+    <div class="section-block" data-aos="fade-up">
       <p class="eyebrow">Here is a good advice for you!</p>
       <p class="blockquote">
         {{ adviceQuote }}

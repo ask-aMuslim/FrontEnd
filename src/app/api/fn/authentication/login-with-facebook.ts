@@ -11,13 +11,18 @@ import { LoginWithFacebookCommand } from '../../models/login-with-facebook-comma
 import { ResultOfAuthenticationResponse } from '../../models/result-of-authentication-response';
 
 export interface LoginWithFacebook$Params {
-  body: LoginWithFacebookCommand
+  accessToken?: string;
+  body?: LoginWithFacebookCommand;
 }
 
 export function loginWithFacebook(http: HttpClient, rootUrl: string, params: LoginWithFacebook$Params, context?: HttpContext): Observable<StrictHttpResponse<ResultOfAuthenticationResponse>> {
   const rb = new RequestBuilder(rootUrl, loginWithFacebook.PATH, 'post');
   if (params) {
-    rb.body(params.body, 'application/json');
+    if (params.body) {
+      rb.body(params.body, 'application/json');
+    } else if (params.accessToken) {
+      rb.body({ accessToken: params.accessToken }, 'application/json');
+    }
   }
 
   return http.request(

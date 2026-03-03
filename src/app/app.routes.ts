@@ -198,6 +198,11 @@ export const routes: Routes = [
           { path: ':id', component: EventDetailComponent, title: 'Event Details' },
         ],
       },
+      {
+        path: 'contact',
+        loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
+        title: 'Contact Us',
+      },
       { path: 'account', component: AccountComponent, title: 'Account', canActivate: [authGuard] },
     ],
   },

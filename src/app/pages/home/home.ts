@@ -15,11 +15,13 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from '../../core/services/events.service';
 import { AuthService } from '../../core/services/auth.service';
+import { QasService } from '../../core/services/qas.service';
 import {
   asRecord,
   extractArray,
   getValue,
   toStringValue,
+  toStringArray,
 } from '../../core/helpers/api-response.helper';
 import { formatEventDateDisplay } from '../../core/helpers/event-display.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
@@ -75,7 +77,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     { value: '250+ ', label: 'Scholars & Teachers' },
   ];
 
-  protected readonly heroBubbles: string[] = [
+  protected heroBubbles: string[] = [
     'Who is Allah?',
     'What is Islam?',
     'Is Islam peaceful?',
@@ -213,6 +215,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     private readonly eventsService: EventsService,
     private readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef,
+    private readonly qasService: QasService,
   ) { }
 
   protected get eventsCtaLabel(): string {
@@ -226,7 +229,49 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     if (this.isBrowser) {
       this.loadEventsSection();
+      this.loadHeroBubbles();
     }
+  }
+
+  private loadHeroBubbles(): void {
+    this.qasService.getAll({ pageNumber: 1, pageSize: 50, tags: 'Hero Page Questions' }).subscribe({
+      next: (response) => {
+        const records = extractArray(response);
+        if (records.length > 0) {
+          const fetchedBubbles = records
+            .map(item => asRecord(item))
+            .filter(record => {
+              // Fallback client-side filter in case backend ignores the tags parameter
+              const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
+              return categories.length === 0 || categories.some(c =>
+                c.toLowerCase().includes('hero') ||
+                c.toLowerCase().includes('misconception')
+              );
+            })
+            .map(record => {
+              const translations = extractArray(getValue(record, 'translations', 'Translations'));
+              const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+              return toStringValue(
+                firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
+              ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
+            })
+            .filter(val => val.trim().length > 0);
+
+          if (fetchedBubbles.length > 0) {
+            this.heroBubbles = fetchedBubbles;
+            this.cdr.detectChanges();
+
+            // Re-setup bubbles animation if needed for the new elements
+            setTimeout(() => {
+              if (this.heroBubbles.length > 0) {
+                this.setupBubblesAnimation();
+              }
+            }, 100);
+          }
+        }
+      },
+      error: () => void 0,
+    });
   }
 
   protected isSvgIcon(feature: FeatureCard): boolean {
@@ -334,7 +379,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       toApiMediaUrl(
         toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
       ) ??
-      '/images/events-picture.png';
+      '/images/events-image-placeholder.jpg';
     const startDateValue = toStringValue(
       getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
     );

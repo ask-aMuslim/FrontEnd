@@ -48,11 +48,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     currentLesson: AcademyLesson | undefined;
     nextAcademyLesson: AcademyLesson | undefined;
     previousAcademyLesson: AcademyLesson | undefined;
-    courseLessons: AcademyLesson[] = [];
+    courseLessons: Array<AcademyLesson & { progress: LessonProgress }> = [];
 
     lessonData: LessonData | null = null;
     lessonContent: LessonContent | null = null;
-    coarseLessons: LessonMetadata[] = [];
 
     isIntroLesson = false;
     activeTab: LessonPlayerTab = 'overview';
@@ -157,7 +156,13 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     }
 
                     this.currentCourse = course;
-                    this.courseLessons = lessonsWithProgress.map((lesson) => this.stripProgress(lesson));
+                    this.courseLessons = lessonsWithProgress.map((lesson) => ({
+                        ...lesson,
+                        progress: {
+                            ...lesson.progress,
+                            status: lesson.id === this.lessonId ? 'current' : lesson.progress.status
+                        }
+                    }));
                     this.currentLesson = this.stripProgress(currentLesson);
                     this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
                     this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
@@ -171,7 +176,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     }).pipe(takeUntil(this.destroy$)).subscribe();
 
                     this.loadLessonContent();
-                    this.loadCourseLessonsForSidebar();
                     this.loadLessonNotes();
                 },
                 error: () => {
@@ -207,19 +211,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             });
     }
 
-    private loadCourseLessonsForSidebar(): void {
-        this.lessonContentService
-            .getCourseLessons(this.courseId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (lessons: LessonMetadata[]) => {
-                    this.coarseLessons = lessons;
-                    this.cdr.detectChanges();
-                },
-                error: () => void 0
-            });
-    }
-
     private loadLessonNotes(): void {
         this.lessonContentService
             .getLessonNotes(this.lessonId)
@@ -247,7 +238,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.nextLesson = undefined;
         this.previousLesson = undefined;
         this.courseLessons = [];
-        this.coarseLessons = [];
         this.activeTab = 'overview';
     }
 
@@ -266,19 +256,19 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     goToNextLesson(): void {
         const nextId = this.nextAcademyLesson?.id || this.nextLesson?.id;
         if (nextId) {
-            this.router.navigate(['../lesson', nextId], { relativeTo: this.route });
+            this.router.navigate(['/academy/course', this.courseId, 'lesson', nextId]);
         }
     }
 
     goToPreviousLesson(): void {
         const prevId = this.previousAcademyLesson?.id || this.previousLesson?.id;
         if (prevId) {
-            this.router.navigate(['../lesson', prevId], { relativeTo: this.route });
+            this.router.navigate(['/academy/course', this.courseId, 'lesson', prevId]);
         }
     }
 
     goToLesson(lessonId: string): void {
-        this.router.navigate(['../lesson', lessonId], { relativeTo: this.route });
+        this.router.navigate(['/academy/course', this.courseId, 'lesson', lessonId]);
     }
 
     onSave(): void {
@@ -324,10 +314,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         URL.revokeObjectURL(url);
     }
 
-    isLessonCompleted(lesson: LessonMetadata): boolean { return lesson.status === 'completed'; }
-    isLessonCurrent(lesson: LessonMetadata): boolean { return lesson.status === 'current' || lesson.id === this.lessonId; }
-    isLessonPending(lesson: LessonMetadata): boolean { return lesson.status === 'pending'; }
-    canClickLesson(lesson: LessonMetadata): boolean { return lesson.status !== 'pending'; }
+    isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'completed'; }
+    isLessonCurrent(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.id === this.lessonId || lesson.progress.status === 'current'; }
+    isLessonPending(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'locked'; }
+    canClickLesson(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status !== 'locked'; }
 
     getLessonIcon(lesson: LessonMetadata): string {
         if (lesson.status === 'completed') return 'checked';

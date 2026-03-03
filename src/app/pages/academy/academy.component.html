@@ -9,7 +9,7 @@
     }
 
     @if (hasRecentLesson && recentLesson) {
-      <section class="recent-lesson-section">
+      <section class="recent-lesson-section" data-aos="fade-up">
         <div class="section-block">
           <h2 class="section-title">Your Recent Lesson</h2>
           <div class="recent-lesson-card">
@@ -110,7 +110,7 @@
       </section>
     }
 
-    <section class="important-note" [class.expanded]="showFullNote">
+    <section class="important-note" [class.expanded]="showFullNote" data-aos="fade-up">
       <div class="section-block">
         <p class="note-text">{{ importantNote }}</p>
         <button class="toggle-button" (click)="toggleNote()" [attr.aria-label]="'Toggle note'">
@@ -133,7 +133,7 @@
       </div>
     </section>
 
-    <section class="academy-stages">
+    <section class="academy-stages" data-aos="fade-up">
       <div class="section-block">
         <h2 class="section-title">The Academy</h2>
 
@@ -146,179 +146,14 @@
           <div class="stage-wrapper">
             <div class="stage-container" [class.locked]="stage.isLocked">
               <h3 class="stage-title">{{ stage.title }}</h3>
-              <div class="courses-grid">
-                <div class="course-column">
-                  <span class="column-label">B: Models & Stories</span>
-                  <div class="courses-stack">
-                    @for (
-                      course of stage.courses.modelsStories;
-                      track trackByCourseId(i, course);
-                      let i = $index
-                    ) {
-                      <div class="course-wrapper">
-                        @if (i > 0) {
-                          <div class="course-connector">
-                            <div class="connector-line"></div>
-                          </div>
-                        }
-                        <div
-                          class="course-card"
-                          [class.completed]="course.status === 'completed'"
-                          [class.in-progress]="course.status === 'in-progress'"
-                          [class.locked]="course.status === 'locked'"
-                          (click)="onCourseClick(course)"
-                          [attr.aria-label]="getCourseAriaLabel(course)"
-                          [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
-                          [attr.role]="'button'"
-                          (keydown.enter)="onCourseClick(course)"
-                          (keydown.space)="onCourseClick(course)"
-                        >
-                          @if (course.status === 'locked') {
-                            <div class="course-overlay"></div>
-                          }
-                          <h4 class="course-name">{{ course.title }}</h4>
-                          <div class="course-meta">
-                            <span class="meta-item">
-                              <span>{{ course.lessons }} lessons</span>
-                            </span>
-                            <span class="meta-item">
-                              <span>{{ course.duration }}</span>
-                            </span>
-                          </div>
-                          <div class="course-progress">
-                            <div class="progress-track">
-                              <div
-                                class="progress-bar-fill"
-                                [style.width.%]="course.progress"
-                              ></div>
-                            </div>
-                            <span class="progress-text">{{ course.progress }}%</span>
-                          </div>
-                          @if (course.status === 'completed') {
-                            <div class="completion-badge">
-                              <span>Completed</span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-                <div class="course-column">
-                  <span class="column-label">A: Main Believes</span>
-                  <div class="courses-stack">
-                    @for (
-                      course of stage.courses.mainBelieves;
-                      track trackByCourseId(i, course);
-                      let i = $index
-                    ) {
-                      <div class="course-wrapper">
-                        @if (i > 0) {
-                          <div class="course-connector">
-                            <div class="connector-line"></div>
-                          </div>
-                        }
-                        <div
-                          class="course-card"
-                          [class.completed]="course.status === 'completed'"
-                          [class.in-progress]="course.status === 'in-progress'"
-                          [class.locked]="course.status === 'locked'"
-                          (click)="onCourseClick(course)"
-                          [attr.aria-label]="getCourseAriaLabel(course)"
-                          [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
-                          [attr.role]="'button'"
-                          (keydown.enter)="onCourseClick(course)"
-                          (keydown.space)="onCourseClick(course)"
-                        >
-                          @if (course.status === 'locked') {
-                            <div class="course-overlay"></div>
-                          }
-                          <h4 class="course-name">{{ course.title }}</h4>
-                          <div class="course-meta">
-                            <span class="meta-item">
-                              <span>{{ course.lessons }} lessons</span>
-                            </span>
-                            <span class="meta-item">
-                              <span>{{ course.duration }}</span>
-                            </span>
-                          </div>
-                          <div class="course-progress">
-                            <div class="progress-track">
-                              <div
-                                class="progress-bar-fill"
-                                [style.width.%]="course.progress"
-                              ></div>
-                            </div>
-                            <span class="progress-text">{{ course.progress }}%</span>
-                          </div>
-                          @if (course.status === 'completed') {
-                            <div class="completion-badge">
-                              <span>Completed</span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-                <div class="course-column">
-                  <span class="column-label">C: Social Topics</span>
-                  <div class="courses-stack">
-                    @for (
-                      course of stage.courses.socialTopics;
-                      track trackByCourseId(i, course);
-                      let i = $index
-                    ) {
-                      <div class="course-wrapper">
-                        @if (i > 0) {
-                          <div class="course-connector">
-                            <div class="connector-line"></div>
-                          </div>
-                        }
-                        <div
-                          class="course-card"
-                          [class.completed]="course.status === 'completed'"
-                          [class.in-progress]="course.status === 'in-progress'"
-                          [class.locked]="course.status === 'locked'"
-                          (click)="onCourseClick(course)"
-                          [attr.aria-label]="getCourseAriaLabel(course)"
-                          [attr.tabindex]="course.status !== 'locked' ? 0 : -1"
-                          [attr.role]="'button'"
-                          (keydown.enter)="onCourseClick(course)"
-                          (keydown.space)="onCourseClick(course)"
-                        >
-                          @if (course.status === 'locked') {
-                            <div class="course-overlay"></div>
-                          }
-                          <h4 class="course-name">{{ course.title }}</h4>
-                          <div class="course-meta">
-                            <span class="meta-item">
-                              <span>{{ course.lessons }} lessons</span>
-                            </span>
-                            <span class="meta-item">
-                              <span>{{ course.duration }}</span>
-                            </span>
-                          </div>
-                          <div class="course-progress">
-                            <div class="progress-track">
-                              <div
-                                class="progress-bar-fill"
-                                [style.width.%]="course.progress"
-                              ></div>
-                            </div>
-                            <span class="progress-text">{{ course.progress }}%</span>
-                          </div>
-                          @if (course.status === 'completed') {
-                            <div class="completion-badge">
-                              <span>Completed</span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-              </div>
+              <app-course-tree 
+                [nodes]="stage.treeCourses"
+                [loading]="isLoading"
+                [error]="error"
+                (courseClick)="onCourseClick($event)"
+                (retryAction)="ngOnInit()">
+              </app-course-tree>
+
             </div>
             <div class="stage-divider"></div>
             <p class="stage-description">{{ stage.description }}</p>
@@ -326,7 +161,9 @@
           @if (!isLast) {
             <div class="stage-connector">
               <div class="connector-line">
-                <img src="/academy/lock.png" alt="Locked stage" class="lock-icon" />
+                @if (stages[i + 1].isLocked) {
+                  <img src="/academy/lock.png" alt="Locked stage" class="lock-icon" />
+                }
               </div>
             </div>
           }

@@ -38,7 +38,7 @@
 .hero-content {
   position: relative;
   z-index: 1;
-  max-width: 68rem;
+  max-width: 85rem;
   margin: 0 auto;
   text-align: center;
   display: flex;
@@ -317,7 +317,6 @@
 }
 
 .events-section {
-  padding-bottom: clamp(3rem, 7vw, 5rem);
   background-color: var(--color-background-base-surface);
 }
 
@@ -1041,7 +1040,7 @@
   justify-content: center;
   gap: 16px;
   padding-top: 8px;
-  margin-top: 4rem;
+  // margin-top: 4rem;
   .pillar-card {
     position: relative;
     width: 140px;

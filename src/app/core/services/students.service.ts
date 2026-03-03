@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { StudentFacade, StudentProfileDto, StudentCourseDto } from '../../api/facades/student.facade';
+import { Observable } from 'rxjs';
+import { StudentFacade, StudentProfileDto, StudentCourseDto, UpdateProfileRequest } from '../../api/facades/student.facade';
 
 @Injectable({ providedIn: 'root' })
 export class StudentsService {
@@ -46,24 +46,17 @@ export class StudentsService {
   }
 
   /**
-   * NOTE: createProfile and updateProfile are NOT available on the backend.
-   * Student profiles are managed through the identity/registration flow.
-   * These methods are kept for backward compatibility but will return false.
+   * Create or update the student's profile using the API. The server will
+   * create a new record if one does not exist yet.
    */
-
-  /**
-   * @deprecated Backend does not expose student profile creation endpoint.
-   * Use identity registration flow instead.
-   */
-  createProfile(data: unknown): Observable<boolean> {
-    return of(Boolean(data) && false);
+  createProfile(data: UpdateProfileRequest): Observable<StudentProfileDto | null> {
+    return this.facade.createProfile(data);
   }
 
   /**
-   * @deprecated Backend does not expose student profile update endpoint.
-   * Use identity profile update instead.
+   * Update existing profile data.
    */
-  update(payload: unknown): Observable<boolean> {
-    return of(Boolean(payload) && false);
+  updateProfile(data: UpdateProfileRequest): Observable<StudentProfileDto | null> {
+    return this.facade.updateProfile(data);
   }
 }

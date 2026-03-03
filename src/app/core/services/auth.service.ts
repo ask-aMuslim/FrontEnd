@@ -32,7 +32,7 @@ export class AuthService {
 
   // Reactive authentication state using signals
   // These now delegate to TokenService
-  private _currentUser = signal<{ name: string; meta: string } | null>(null);
+  private _currentUser = signal<{ name: string; meta: string; imageUrl?: string | null } | null>(null);
 
   // Expose isAuthenticated from TokenService
   readonly isAuthenticated = this.tokenService.isAuthenticated;
@@ -79,6 +79,7 @@ export class AuthService {
       catchError(() => of(undefined)),
       finalize(() => {
         this.tokenService.clearTokens();
+        this.studentFacade.clearCache();
         void this.router.navigate(['/login']);
       }),
       map(() => void 0)
@@ -135,6 +136,7 @@ export class AuthService {
         } as AuthResponse;
       }),
       tap(() => {
+        this.studentFacade.clearCache();
         this._currentUser.set({ name: email, meta: 'Signed in' });
         this.hydrateCurrentUserFromProfile();
       })
@@ -152,6 +154,7 @@ export class AuthService {
         expiresIn: response.expiresIn ?? 3600,
       })),
       tap(() => {
+        this.studentFacade.clearCache();
         this._currentUser.set({ name: 'Google User', meta: 'Signed in with Google' });
         this.hydrateCurrentUserFromProfile();
       }),
@@ -169,6 +172,7 @@ export class AuthService {
         expiresIn: response.expiresIn ?? 3600,
       })),
       tap(() => {
+        this.studentFacade.clearCache();
         this._currentUser.set({ name: 'Facebook User', meta: 'Signed in with Facebook' });
         this.hydrateCurrentUserFromProfile();
       }),
@@ -223,11 +227,12 @@ export class AuthService {
 
         const level = this.getString(profileRecord, ['level', 'studentLevel', 'stage']);
         const meta = level ? `Level ${level}` : 'Student';
+        const imageUrl = this.getString(profileRecord, ['imageUrl', 'profileImageUrl', 'picture', 'avatarUrl']);
 
-        return { name: fullName, meta };
+        return { name: fullName, meta, imageUrl: imageUrl || null };
       }),
       catchError(() => of({ name: fallbackEmail, meta: 'Signed in' }))
-    ).subscribe((user: { name: string; meta: string }) => {
+    ).subscribe((user: { name: string; meta: string; imageUrl?: string | null }) => {
       this._currentUser.set(user);
     });
   }

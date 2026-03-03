@@ -26,7 +26,7 @@ export interface EventCard {
   styleUrls: ['./event-card.component.scss'],
 })
 export class EventCardComponent {
-  private static readonly fallbackEventImage = '/images/events-picture.png';
+  private static readonly fallbackEventImage = '/images/events-image-placeholder.jpg';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
 
   @Input() event!: EventCard;

@@ -3,7 +3,8 @@
   <ng-template #userCardTemplate>
     <div class="user-card" routerLink="/account" (click)="closeNav()">
       <img
-        src="/images/profile-picture-navbar.png"
+        [src]="authService.currentUser()?.imageUrl || '/images/profile-placeholder.svg'"
+        (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
         alt="{{ authService.currentUser()?.name }}"
         class="user-avatar"
       />
@@ -70,11 +71,11 @@
 
     <nav
       class="primary-nav ms-auto"
-      [class.open]="navOpen"
+      [class.open]="isMobileMenuOpen()"
       id="primary-navigation"
       aria-label="Primary navigation"
     >
-      <button class="drawer-close" type="button" (click)="closeNav()" aria-label="Close menu">
+      <button class="drawer-close" type="button" (click)="isMobileMenuOpen.set(false)" aria-label="Close menu">
         <svg
           width="24"
           height="24"
@@ -138,7 +139,7 @@
         class="mobile-toggle"
         type="button"
         (click)="toggleNav()"
-        [attr.aria-expanded]="navOpen"
+        [attr.aria-expanded]="isMobileMenuOpen()"
         aria-controls="primary-navigation"
       >
         <span class="sr-only">Open navigation</span>
@@ -160,5 +161,5 @@
     </div>
   </div>
 
-  <div class="nav-overlay" [class.active]="navOpen" (click)="closeNav()" aria-hidden="true"></div>
+  <div class="nav-overlay" [class.active]="isMobileMenuOpen()" (click)="closeNav()" aria-hidden="true"></div>
 </header>
