@@ -316,12 +316,8 @@ export class Home implements AfterViewInit, OnDestroy {
 
     // Calculate total width of all bubbles + gaps
     const trackWidth = track.scrollWidth;
-    const containerWidth = this.bubblesContainer?.nativeElement?.offsetWidth || 0;
 
-    // Animation speed: move all content width in 20 seconds
-    const duration = 20;
-
-    // Create continuous animation using requestAnimationFrame for smooth scrolling
+    // Animation speed: 0.5px per frame
     let currentTranslate = 0;
     let isAnimating = true;
 

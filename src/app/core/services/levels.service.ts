@@ -7,23 +7,23 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export class LevelsService {
   constructor(private api: ApiService) {}
 
-  getAll(): Observable<any> {
+  getAll(): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.levels.getAll());
   }
 
-  create(payload: any): Observable<any> {
+  create(payload: unknown): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.levels.create(), payload);
   }
 
-  getById(id: string): Observable<any> {
+  getById(id: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.levels.getById(id));
   }
 
-  update(id: string, payload: any): Observable<any> {
+  update(id: string, payload: unknown): Observable<unknown> {
     return this.api.put(API_ENDPOINTS.levels.update(id), payload);
   }
 
-  delete(id: string): Observable<any> {
+  delete(id: string): Observable<unknown> {
     return this.api.delete(API_ENDPOINTS.levels.delete(id));
   }
 }

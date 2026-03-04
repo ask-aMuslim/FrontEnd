@@ -5,7 +5,7 @@ export enum Status {
   Inactive = 2,
 }
 
-enum EnrollmentStatus {
+export enum EnrollmentStatus {
   Active = 1,
   Completed = 2,
   Cancelled = 3,

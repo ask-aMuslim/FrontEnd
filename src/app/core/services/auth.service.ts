@@ -87,7 +87,7 @@ export class AuthService {
         // Navigate to login
         this.router.navigate(['/login']);
       }),
-      catchError((error) => {
+      catchError(() => {
         // Even if logout fails, tokens are cleared by facade
         this.router.navigate(['/login']);
         return of(undefined);
@@ -122,7 +122,7 @@ export class AuthService {
           expiresIn: 0
         } as AuthResponse;
       }),
-      tap((response) => {
+      tap(() => {
         // If the API actually returns tokens, they would be set here
         // For now, user needs to login after registration
       })
@@ -144,7 +144,7 @@ export class AuthService {
           expiresIn: 3600 // Default 1 hour
         } as AuthResponse;
       }),
-      tap((response) => {
+      tap(() => {
         // Update user state
         this._currentUser.set({
           name: payload.email,

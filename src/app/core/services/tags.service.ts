@@ -7,23 +7,23 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export class TagsService {
   constructor(private api: ApiService) {}
 
-  getAll(): Observable<any> {
+  getAll(): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.tags.getAll());
   }
 
-  create(payload: any): Observable<any> {
+  create(payload: unknown): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.tags.create(), payload);
   }
 
-  getById(id: string): Observable<any> {
+  getById(id: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.tags.getById(id));
   }
 
-  update(id: string, payload: any): Observable<any> {
+  update(id: string, payload: unknown): Observable<unknown> {
     return this.api.put(API_ENDPOINTS.tags.update(id), payload);
   }
 
-  delete(id: string): Observable<any> {
+  delete(id: string): Observable<unknown> {
     return this.api.delete(API_ENDPOINTS.tags.delete(id));
   }
 }

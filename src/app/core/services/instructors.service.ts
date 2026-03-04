@@ -6,23 +6,23 @@ import { InstructorFacade } from '../api/facades/instructor.facade';
 export class InstructorsService {
   private readonly facade = inject(InstructorFacade);
 
-  getAll(): Observable<any> {
+  getAll(): Observable<unknown> {
     return this.facade.getAllInstructors();
   }
 
-  getById(userId: string): Observable<any> {
+  getById(userId: string): Observable<unknown> {
     return this.facade.getInstructorById(userId);
   }
 
-  getByCourseId(courseId: string): Observable<any> {
+  getByCourseId(courseId: string): Observable<unknown> {
     return this.facade.getInstructorByCourseId(courseId);
   }
 
-  me(): Observable<any> {
+  me(): Observable<unknown> {
     return this.facade.me();
   }
 
-  update(payload: any): Observable<any> {
+  update(payload: unknown): Observable<unknown> {
     return this.facade.update(payload);
   }
 }

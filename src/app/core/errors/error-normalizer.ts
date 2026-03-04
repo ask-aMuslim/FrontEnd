@@ -9,31 +9,6 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiError, ApiErrorFactory } from './api-error.model';
 
-/**
- * ASP.NET Core ProblemDetails format
- * @see https://datatracker.ietf.org/doc/html/rfc7807
- */
-interface ProblemDetails {
-    type?: string;
-    title?: string;
-    status?: number;
-    detail?: string;
-    instance?: string;
-    traceId?: string;
-    errors?: Record<string, string | string[]>;
-}
-
-/**
- * Validation error format from ASP.NET Core
- */
-interface ValidationErrorResponse {
-    type?: string;
-    title?: string;
-    status?: number;
-    traceId?: string;
-    errors: Record<string, string[]>;
-}
-
 @Injectable({ providedIn: 'root' })
 export class ErrorNormalizer {
 
@@ -192,9 +167,9 @@ export class ErrorNormalizer {
                     errors[field] = value.map(String);
                 } else if (typeof value === 'string') {
                     errors[field] = [value];
-                } else if (Array.isArray((value as any)?.errors)) {
+                } else if (this.hasErrorsArray(value)) {
                     // Nested validation errors
-                    errors[field] = (value as any).errors.map(String);
+                    errors[field] = value.errors.map(String);
                 }
             }
         }
@@ -225,6 +200,18 @@ export class ErrorNormalizer {
         }
 
         return null;
+    }
+
+    /**
+     * Type guard for objects with an errors array
+     */
+    private hasErrorsArray(value: unknown): value is { errors: unknown[] } {
+        return (
+            typeof value === 'object' &&
+            value !== null &&
+            'errors' in value &&
+            Array.isArray((value as Record<string, unknown>)['errors'])
+        );
     }
 
     /**

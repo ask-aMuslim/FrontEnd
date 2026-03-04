@@ -12,7 +12,7 @@ export class QuizzesService {
     return this.facade.getAllQuizzes();
   }
 
-  create(payload: any): Observable<QuizReadDto> {
+  create(payload: unknown): Observable<QuizReadDto> {
     return this.facade.createQuiz(payload);
   }
 
@@ -20,7 +20,7 @@ export class QuizzesService {
     return this.facade.getQuizById(id);
   }
 
-  update(id: string, payload: any): Observable<void> {
+  update(id: string, payload: unknown): Observable<void> {
     return this.facade.updateQuiz(id, payload);
   }
 

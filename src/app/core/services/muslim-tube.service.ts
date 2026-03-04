@@ -8,32 +8,32 @@ export class MuslimTubeService {
   constructor(private api: ApiService) {}
 
   // Channels
-  getChannels(): Observable<any> {
+  getChannels(): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.muslimTube.channels.getAll());
   }
 
-  createChannel(payload: any): Observable<any> {
+  createChannel(payload: unknown): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.muslimTube.channels.create(), payload);
   }
 
-  deleteChannel(channelId: string): Observable<any> {
+  deleteChannel(channelId: string): Observable<unknown> {
     return this.api.delete(API_ENDPOINTS.muslimTube.channels.delete(channelId));
   }
 
-  resyncChannel(channelId: string): Observable<any> {
+  resyncChannel(channelId: string): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.muslimTube.channels.resync(channelId), {});
   }
 
-  getChannelVideos(channelId: string): Observable<any> {
+  getChannelVideos(channelId: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.muslimTube.channels.getVideos(channelId));
   }
 
   // Videos
-  getVideos(): Observable<any> {
+  getVideos(): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.muslimTube.videos.getAll());
   }
 
-  getVideoById(id: string): Observable<any> {
+  getVideoById(id: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.muslimTube.videos.getById(id));
   }
 }

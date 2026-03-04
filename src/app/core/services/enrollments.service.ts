@@ -11,7 +11,7 @@ import { EnrollmentFacade } from '../api/facades/enrollment.facade';
 export class EnrollmentsService {
   private readonly facade = inject(EnrollmentFacade);
 
-  getEnrollment(studentId?: string, courseId?: string): Observable<any> {
+  getEnrollment(studentId?: string, courseId?: string): Observable<unknown> {
     return this.facade.getEnrollment(studentId, courseId);
   }
 
@@ -19,11 +19,11 @@ export class EnrollmentsService {
     return this.facade.deleteEnrollment(studentId, courseId);
   }
 
-  getByCourse(courseId: string): Observable<any> {
+  getByCourse(courseId: string): Observable<unknown> {
     return this.facade.getStudentsByCourse(courseId);
   }
 
-  getByStudent(studentId: string): Observable<any> {
+  getByStudent(studentId: string): Observable<unknown> {
     return this.facade.getEnrolledCourses(studentId);
   }
 
@@ -31,7 +31,7 @@ export class EnrollmentsService {
     return this.facade.createEnrollment(payload);
   }
 
-  updateStatus(id: string, payload: any): Observable<any> {
+  updateStatus(): Observable<unknown> {
     // This endpoint not in Swagger spec, keep legacy implementation if needed
     throw new Error('updateStatus endpoint not available in generated API');
   }

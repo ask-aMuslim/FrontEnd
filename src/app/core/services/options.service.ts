@@ -7,19 +7,19 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export class OptionsService {
   constructor(private api: ApiService) {}
 
-  getByQuestion(questionId: string): Observable<any> {
+  getByQuestion(questionId: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.options.getByQuestion(questionId));
   }
 
-  create(payload: any): Observable<any> {
+  create(payload: unknown): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.options.create(), payload);
   }
 
-  update(id: string, payload: any): Observable<any> {
+  update(id: string, payload: unknown): Observable<unknown> {
     return this.api.put(API_ENDPOINTS.options.update(id), payload);
   }
 
-  delete(id: string): Observable<any> {
+  delete(id: string): Observable<unknown> {
     return this.api.delete(API_ENDPOINTS.options.delete(id));
   }
 }

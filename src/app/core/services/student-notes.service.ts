@@ -7,19 +7,19 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export class StudentNotesService {
   constructor(private api: ApiService) {}
 
-  getById(id: string): Observable<any> {
+  getById(id: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.studentNotes.getById(id));
   }
 
-  delete(id: string): Observable<any> {
+  delete(id: string): Observable<unknown> {
     return this.api.delete(API_ENDPOINTS.studentNotes.delete(id));
   }
 
-  getByLesson(lessonId: string): Observable<any> {
+  getByLesson(lessonId: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.studentNotes.getByLesson(lessonId));
   }
 
-  create(payload: any): Observable<any> {
+  create(payload: unknown): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.studentNotes.create(), payload);
   }
 }
