@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
 
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subject, combineLatest, forkJoin } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, switchMap } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import {

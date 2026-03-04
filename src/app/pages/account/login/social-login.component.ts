@@ -17,12 +17,12 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="social-buttons-group">
         <app-social-login-button
           provider="google"
-          (loginSuccess)="onLoginSuccess($event)"
+          (loginSuccess)="onLoginSuccess()"
           (loginError)="onLoginError($event)"
         />
         <app-social-login-button
           provider="facebook"
-          (loginSuccess)="onLoginSuccess($event)"
+          (loginSuccess)="onLoginSuccess()"
           (loginError)="onLoginError($event)"
         />
       </div>
@@ -89,7 +89,7 @@ export class SocialLoginComponent {
     private readonly router = inject(Router);
     private readonly authService = inject(AuthService);
 
-    onLoginSuccess(response: { token: string; user: Record<string, unknown> }): void {
+    onLoginSuccess(): void {
         // Token is already stored by the social auth service
         // Navigate to dashboard or home page
         this.router.navigate(['/home']).catch(() => {

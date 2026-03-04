@@ -1,6 +1,13 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+export interface Inquiry {
+    id: string;
+    subject: string;
+    status: string;
+    createdAt: string;
+}
+
 @Component({
     selector: 'app-my-inquiries',
     standalone: true,
@@ -10,5 +17,5 @@ import { RouterLink } from '@angular/router';
 })
 export class MyInquiriesComponent {
     // Skeleton component for inquiries
-    inquiries: any[] = [];
+    inquiries: Inquiry[] = [];
 }

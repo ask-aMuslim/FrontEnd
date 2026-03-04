@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, OnInit, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CourseNode {
