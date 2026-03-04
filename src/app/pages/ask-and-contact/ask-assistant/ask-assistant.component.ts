@@ -65,7 +65,7 @@ export class AskAssistantComponent {
   }
 
   selectSuggestion(value: string): void {
-    const cleanValue = value.replace(/[\.\u2026]+$/g, '').trim();
+    const cleanValue = value.replace(/[.\u2026]+$/g, '').trim();
     this.inputValue = cleanValue ? `${cleanValue} ` : '';
     this.hasSelectedSuggestion = true;
     this.isSuggestionsOpen = false;

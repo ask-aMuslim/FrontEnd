@@ -13,7 +13,8 @@
     "swagger:hash": "node scripts/swagger-hash.mjs",
     "swagger:check": "node scripts/swagger-hash.mjs --check",
     "swagger:update": "node scripts/swagger-hash.mjs --update",
-    "api:sync": "npm run swagger:check || (npm run generate:api && npm run swagger:update)"
+    "api:sync": "npm run swagger:check || (npm run generate:api && npm run swagger:update)",
+    "lint": "eslint ."
   },
   "prettier": {
     "printWidth": 100,
@@ -48,15 +49,22 @@
     "zone.js": "^0.15.1"
   },
   "devDependencies": {
+    "@angular-eslint/eslint-plugin": "^19.0.0",
+    "@angular-eslint/eslint-plugin-template": "^19.0.0",
+    "@angular-eslint/template-parser": "^19.0.0",
     "@angular/build": "^20.3.16",
     "@angular/cli": "20.3.16",
     "@angular/compiler-cli": "20.3.16",
     "@angular/platform-browser-dynamic": "20.3.16",
+    "@eslint/js": "^9.39.2",
     "@types/express": "^5.0.1",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^20.17.19",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
+    "@typescript-eslint/parser": "^8.55.0",
     "autoprefixer": "^10.4.22",
     "baseline-browser-mapping": "^2.9.11",
+    "eslint": "^9.39.2",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -68,6 +76,7 @@
     "postcss": "^8.5.6",
     "style-dictionary": "^5.1.1",
     "tailwindcss": "^4.1.17",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.55.0"
   }
 }

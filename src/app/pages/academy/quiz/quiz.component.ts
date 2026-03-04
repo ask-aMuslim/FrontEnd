@@ -1,4 +1,3 @@
-/* eslint-disable deprecation/deprecation */
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';

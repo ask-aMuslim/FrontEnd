@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 
@@ -9,7 +9,7 @@ export class ApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  get<T>(url: string, params?: Record<string, any>): Observable<T> {
+  get<T>(url: string, params?: Record<string, unknown>): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach((key) => {
@@ -24,13 +24,13 @@ export class ApiService {
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  post<T>(url: string, body: any): Observable<T> {
+  post<T>(url: string, body: unknown): Observable<T> {
     return this.http
       .post<T>(url, body, { headers: this.jsonHeaders })
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  put<T>(url: string, body: any): Observable<T> {
+  put<T>(url: string, body: unknown): Observable<T> {
     return this.http
       .put<T>(url, body, { headers: this.jsonHeaders })
       .pipe(retry(1), catchError(this.handleError));
@@ -42,7 +42,7 @@ export class ApiService {
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  private handleError(error: any) {
+  private handleError(error: HttpErrorResponse | { status?: number; message?: string; error?: { message?: string } }) {
     let errMsg = 'An unknown error occurred';
     if (error?.error?.message) {
       errMsg = error.error.message;

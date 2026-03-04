@@ -16,7 +16,7 @@ export interface StudentDto {
   organization?: string | null;
 }
 
-export interface CreateStudentRequest extends Partial<StudentDto> {}
+export type CreateStudentRequest = Partial<StudentDto>;
 
 export interface UpdateStudentRequest extends Partial<StudentDto> {
   id: Id;

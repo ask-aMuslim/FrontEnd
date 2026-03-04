@@ -157,7 +157,9 @@ export class MeetScholarComponent {
 
   private convertTo24Hour(time12h: string): string {
     const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
+    const parts = time.split(':');
+    let hours = parts[0];
+    const minutes = parts[1];
 
     if (hours === '12') {
       hours = '00';

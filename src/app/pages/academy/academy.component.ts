@@ -10,6 +10,7 @@ import {
     StageProgress,
     CourseProgress,
     CourseStatus,
+    AcademyCourse,
 } from '../../core/models/interfaces/academy-progress.model';
 
 /**
@@ -157,7 +158,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
     }
 
     private mapCourseWithProgress(
-        course: any,
+        course: AcademyCourse,
         courseProgress: CourseProgress[],
         stageLocked: boolean
     ): Course {

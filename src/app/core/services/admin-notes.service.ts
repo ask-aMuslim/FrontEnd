@@ -7,11 +7,11 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export class AdminNotesService {
   constructor(private api: ApiService) {}
 
-  getByStudent(studentId: string): Observable<any> {
+  getByStudent(studentId: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.adminNotes.getByStudent(studentId));
   }
 
-  create(payload: any): Observable<any> {
+  create(payload: unknown): Observable<unknown> {
     return this.api.post(API_ENDPOINTS.adminNotes.create(), payload);
   }
 }

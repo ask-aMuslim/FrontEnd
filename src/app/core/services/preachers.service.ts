@@ -7,19 +7,19 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export class PreachersService {
   constructor(private api: ApiService) {}
 
-  me(): Observable<any> {
+  me(): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.preachers.me());
   }
 
-  getById(userId: string): Observable<any> {
+  getById(userId: string): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.preachers.getById(userId));
   }
 
-  getAll(): Observable<any> {
+  getAll(): Observable<unknown> {
     return this.api.get(API_ENDPOINTS.preachers.getAll());
   }
 
-  update(payload: any): Observable<any> {
+  update(payload: unknown): Observable<unknown> {
     return this.api.put(API_ENDPOINTS.preachers.update(), payload);
   }
 }

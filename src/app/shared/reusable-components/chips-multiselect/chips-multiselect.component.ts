@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 
-export interface ChipOption<T = any> {
+export interface ChipOption<T = unknown> {
   value: T;
   label: string;
 }
@@ -23,7 +23,7 @@ export interface ChipOption<T = any> {
   styleUrls: ['./chips-multiselect.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChipsMultiselectComponent<T = any> implements OnDestroy {
+export class ChipsMultiselectComponent<T = unknown> implements OnDestroy {
   options = input.required<ChipOption<T>[]>();
   selected = input.required<ChipOption<T>[]>();
   placeholder = input('Select options');

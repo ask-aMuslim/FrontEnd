@@ -11,7 +11,7 @@ export class CoursesService {
     return this.facade.getAllCourses();
   }
 
-  create(payload: any): Observable<CourseReadByIdDto> {
+  create(payload: unknown): Observable<CourseReadByIdDto> {
     // Note: The facade's createCourse should return the created object
     // Verification needed if generated API returns generic response or typed DTO
     return this.facade.createCourse(payload);
@@ -21,7 +21,7 @@ export class CoursesService {
     return this.facade.getCourseById(id);
   }
 
-  update(id: string, payload: any): Observable<void> {
+  update(id: string, payload: unknown): Observable<void> {
     return this.facade.updateCourse(id, payload);
   }
 

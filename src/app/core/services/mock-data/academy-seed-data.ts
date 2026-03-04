@@ -19,6 +19,7 @@
 import {
     AcademyCourse,
     AcademyLesson,
+    AcademyLessonType,
     CourseStatus,
     LessonStatus,
     StudentProgress,
@@ -582,11 +583,11 @@ function generateAllLessons(): SeedLesson[] {
         if (course.id === 's1-mb-1') {
             lessons.push(...generatePrayerLessons(course.id, course.description || ''));
         } else if (course.id === 's1-ms-1') {
-            lessons.push(...generateSeerahLessons(course.id, course.description || ''));
+            lessons.push(...generateSeerahLessons(course.id));
         } else if (course.id === 's1-st-1') {
-            lessons.push(...generateEqualityLessons(course.id, course.description || ''));
+            lessons.push(...generateEqualityLessons(course.id));
         } else if (course.id === 's1-st-2') {
-            lessons.push(...generateWomenLessons(course.id, course.description || ''));
+            lessons.push(...generateWomenLessons(course.id));
         } else {
             // Generic lessons for other courses
             lessons.push(...generateGenericLessons(course));
@@ -716,7 +717,7 @@ function generatePrayerLessons(courseId: string, courseDescription: string): See
     ];
 }
 
-function generateSeerahLessons(courseId: string, courseDescription: string): SeedLesson[] {
+function generateSeerahLessons(courseId: string): SeedLesson[] {
     return [
         {
             id: `${courseId}-lesson-1`,
@@ -832,7 +833,7 @@ function generateSeerahLessons(courseId: string, courseDescription: string): See
     ];
 }
 
-function generateEqualityLessons(courseId: string, courseDescription: string): SeedLesson[] {
+function generateEqualityLessons(courseId: string): SeedLesson[] {
     return [
         {
             id: `${courseId}-lesson-1`,
@@ -927,7 +928,7 @@ function generateEqualityLessons(courseId: string, courseDescription: string): S
     ];
 }
 
-function generateWomenLessons(courseId: string, courseDescription: string): SeedLesson[] {
+function generateWomenLessons(courseId: string): SeedLesson[] {
     return [
         {
             id: `${courseId}-lesson-1`,
@@ -1047,7 +1048,7 @@ function generateGenericLessons(course: SeedCourse): SeedLesson[] {
             courseId: id,
             title: `${title} - ${type === 'quiz' ? 'Quiz' : 'Lesson ' + order}`,
             duration: '15:00',
-            type: type as any, // Cast to avoid complex union matching
+            type: type as AcademyLessonType, // Cast to proper union type
             order,
             description: `Learning materials for ${title}, part ${order}.`,
             content: (type === 'intro' ? {
@@ -1062,7 +1063,7 @@ function generateGenericLessons(course: SeedCourse): SeedLesson[] {
             } : {
                 type: 'video',
                 videoUrl: `https://example.com/videos/${id}-${order}.mp4`,
-            })) as any,
+            })) as SeedLessonContent,
         };
     });
 }
