@@ -1,0 +1,23 @@
+{
+	"servers": {
+		"postman": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@postman/postman-mcp-server@latest",
+				"--minimal"
+			],
+			"env": {
+				"POSTMAN_API_KEY": "PMAK-699e3aa9178d520001056580-cda5982bc60c4ca413e04f7e5dc950f74a"
+			}
+		},
+		"TalkToFigma": {
+			"command": "npx",
+			"args": [
+				"ai-figma-mcp@latest"
+			],
+			"type": "stdio"
+		}
+	}
+}

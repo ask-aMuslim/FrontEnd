@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CourseNode {
@@ -17,7 +17,9 @@ export interface CourseNode {
     templateUrl: './course-tree.component.html',
     styleUrls: ['./course-tree.component.scss']
 })
-export class CourseTreeComponent {
+export class CourseTreeComponent implements AfterViewInit, OnDestroy {
+    private el = inject(ElementRef);
+
     // Inputs from Academy Component
     nodes = input.required<CourseNode[]>();
     loading = input<boolean>(false);
@@ -26,6 +28,12 @@ export class CourseTreeComponent {
     // Outputs
     courseClick = output<CourseNode>();
     retryAction = output<void>();
+
+    // SVG Line state
+    svgPaths = signal<string[]>([]);
+
+    // Resize observer to handle dynamic window resizing naturally
+    private resizeObserver: ResizeObserver | null = null;
 
     layers = computed(() => {
         const nodeList = this.nodes();
@@ -61,8 +69,73 @@ export class CourseTreeComponent {
             layersArr[d].push(n);
         });
 
+        // Wait for rendering to complete after new layers are mapped to redraw lines
+        setTimeout(() => this.drawLines(), 50);
+
         return layersArr;
     });
+
+    ngAfterViewInit() {
+        if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+            this.resizeObserver = new ResizeObserver(() => {
+                this.drawLines();
+            });
+            this.resizeObserver.observe(this.el.nativeElement);
+        }
+    }
+
+    ngOnDestroy() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
+    }
+
+    @HostListener('window:resize')
+    onResize() {
+        this.drawLines();
+    }
+
+    drawLines() {
+        if (!this.el) return;
+        const container = this.el.nativeElement.querySelector('.tree-container');
+        if (!container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const paths: string[] = [];
+
+        // Use the native element querying isolated to this component's hierarchy
+        const nodeList = this.nodes();
+        for (const node of nodeList) {
+            if (!node.prerequisites || node.prerequisites.length === 0) continue;
+
+            const targetEl = container.querySelector(`#course-node-${node.id}`);
+            if (!targetEl) continue;
+
+            const targetRect = targetEl.getBoundingClientRect();
+            // child target center top
+            const targetX = targetRect.left - containerRect.left + (targetRect.width / 2);
+            const targetY = targetRect.top - containerRect.top;
+
+            for (const parentId of node.prerequisites) {
+                const parentEl = container.querySelector(`#course-node-${parentId}`);
+                if (!parentEl) continue;
+
+                const parentRect = parentEl.getBoundingClientRect();
+                // parent source center bottom
+                const parentX = parentRect.left - containerRect.left + (parentRect.width / 2);
+                const parentY = parentRect.bottom - containerRect.top;
+
+                // Construct a sleek smooth bezier curve (flow chart style) connecting parent to child
+                const verticalSpace = Math.abs(targetY - parentY);
+                const controlY = parentY + (verticalSpace * 0.5);
+
+                const d = `M ${parentX} ${parentY} C ${parentX} ${controlY}, ${targetX} ${controlY}, ${targetX} ${targetY}`;
+                paths.push(d);
+            }
+        }
+
+        this.svgPaths.set(paths);
+    }
 
     retry() {
         this.retryAction.emit();

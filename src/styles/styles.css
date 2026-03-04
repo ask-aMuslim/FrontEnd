@@ -120,3 +120,7 @@ h1 {
   font-size: 40px;
   font-weight: 700;
 }
+
+span.special-primary {
+  color: var(--color-button-primary-normal);
+}

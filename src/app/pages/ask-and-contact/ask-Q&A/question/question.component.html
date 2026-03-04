@@ -1,6 +1,7 @@
 <div class="flex flex-col gap-10">
   <div>
-    <span class="text-(--color-text-placeholder)">Ask “Q&A” / </span>
+    <a routerLink="/ask-and-contact/ask-qa" class="text-(--color-text-placeholder) hover:underline cursor-pointer">Ask Questions</a>
+    <span class="text-(--color-text-placeholder)"> / </span>
     <span class="text-(--color-button-secondary-normal)">{{ categories[0] || id }}</span>
   </div>
 
@@ -31,9 +32,7 @@
     </div>
   </div>
 
-  <div class="paragraph">
-    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">{{ description }}</p>
-  </div>
+
 
   @if (imageUrl) {
     <div class="overflow-hidden rounded-lg">

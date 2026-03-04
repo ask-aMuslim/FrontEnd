@@ -1,16 +1,16 @@
 
 import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { QasService } from '../../../../core/services/qas.service';
-import { asRecord, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
+import { asRecord, extractArray, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../../../core/helpers/media-url.helper';
 
 @Component({
   selector: 'app-question',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './question.component.html',
   styleUrls: ['./question.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,7 +20,6 @@ export class QuestionComponent implements OnDestroy {
 
   id = '';
   title = '';
-  description = '';
   answer = '';
   categories: string[] = [];
   imageUrl: string | null = null;
@@ -74,18 +73,26 @@ export class QuestionComponent implements OnDestroy {
     this.qasService.getById(id).pipe(takeUntil(this.destroy$)).subscribe({
       next: (response) => {
         const record = asRecord(response);
+        const data = getValue(record, 'data', 'Data') ? asRecord(getValue(record, 'data', 'Data')) : record;
 
-        const mappedTitle = toStringValue(getValue(record, 'questionText', 'QuestionText', 'title', 'Title'));
-        const mappedQuestion = toStringValue(getValue(record, 'description', 'Description', 'question', 'Question'));
-        const mappedAnswer = toStringValue(getValue(record, 'answerText', 'AnswerText', 'answer', 'Answer'));
+        const translations = extractArray(getValue(data, 'translations', 'Translations'));
+        const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+
+        const mappedTitle = toStringValue(
+          firstTranslation ? getValue(firstTranslation, 'questionText', 'QuestionText', 'question') : undefined,
+        ) ?? toStringValue(getValue(data, 'title', 'Title'));
+
+        const mappedAnswer = toStringValue(
+          firstTranslation ? getValue(firstTranslation, 'answerText', 'AnswerText', 'answer') : undefined,
+        ) ?? toStringValue(getValue(data, 'answerText', 'AnswerText', 'answer', 'Answer'));
+
         const mappedImage = toApiMediaUrl(
-          toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'questionImage', 'QuestionImage')),
+          toStringValue(getValue(data, 'imageUrl', 'ImageUrl', 'questionImage', 'QuestionImage')),
         );
 
         this.title = mappedTitle ?? this.title;
-        this.description = mappedQuestion ?? this.description;
         this.answer = mappedAnswer ?? this.answer;
-        this.categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags')) ?? this.categories;
+        this.categories = toStringArray(getValue(data, 'categories', 'Categories', 'tags', 'Tags')) ?? this.categories;
         this.imageUrl = mappedImage ?? null;
       },
       error: () => void 0,
@@ -101,10 +108,10 @@ export class QuestionComponent implements OnDestroy {
 
   async downloadPdf(): Promise<void> {
     try {
-      const { jsPDF } = await import('jspdf');
+      const jsPDF = (await import('jspdf')).jsPDF;
       const doc = new jsPDF();
       const titleText = this.title || 'Question';
-      const bodyText = (this.answer || '').trim() || (this.description || '').trim();
+      const bodyText = (this.answer || '').trim();
       doc.setFontSize(16);
       doc.text(titleText, 10, 10);
       doc.setFontSize(12);
@@ -116,7 +123,7 @@ export class QuestionComponent implements OnDestroy {
       // fallback: open print dialog for manual PDF
       const printWindow = globalThis.open('', '_blank');
       if (printWindow) {
-        const html = `<html><head><title>${this.title}</title></head><body><h1>${this.title}</h1><pre>${this.answer || this.description}</pre></body></html>`;
+        const html = `<html><head><title>${this.title}</title></head><body><h1>${this.title}</h1><pre>${this.answer}</pre></body></html>`;
         printWindow.document.open();
         printWindow.document.close();
         // populate body safely
@@ -161,7 +168,6 @@ export class QuestionComponent implements OnDestroy {
       const url = new URL(globalThis.location.href);
       // Ensure only the id (and categories) are present in the shared URL to avoid leaking content
       url.searchParams.delete('title');
-      url.searchParams.delete('description');
       url.searchParams.set('id', this.id);
       return url.toString();
     } catch {

@@ -40,21 +40,28 @@
 
   <!-- Data View -->
   @else {
-    <!-- Desktop: Dynamic tree layout (works with any number of courses and siblings) -->
-    <div class="hidden md:flex justify-center flex-col items-center pb-20 w-full max-w-[1200px] mx-auto text-left gap-12 mt-8">
-      @for (layer of layers(); track $index; let isLast = $last) {
-        <div class="relative z-10 flex flex-row flex-wrap justify-center items-center gap-12 w-full">
-          @for (node of layer; track node.id) {
-            <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node, format: 'desktop'}"></ng-container>
-          }
-        </div>
-        @if (!isLast) {
-          <div class="w-[2px] h-[48px] bg-gray-400 opacity-60 -my-6"></div>
+    <div class="tree-container relative w-full h-full min-h-[400px]">
+      
+      <!-- SVG Connectors Overlay (Desktop Only) -->
+      <svg class="hidden md:block absolute top-0 left-0 w-full h-full pointer-events-none z-0" style="min-height: 100%;">
+        @for (path of svgPaths(); track $index) {
+          <path [attr.d]="path" fill="none" stroke="#cbd5e1" stroke-width="2.5" class="svg-anim-path" stroke-linecap="round" />
         }
-      }
-    </div>
+      </svg>
 
-    <!-- Mobile Vertical Timeline -->
+      <!-- Desktop: Dynamic tree layout (works with any number of courses and siblings) -->
+      <div class="hidden md:flex justify-center flex-col items-center pb-20 w-full max-w-[1200px] mx-auto text-left gap-12 mt-8 z-10">
+        @for (layer of layers(); track $index; let isLast = $last) {
+          <div class="relative z-10 flex flex-row flex-wrap justify-center items-center gap-12 w-full">
+            @for (node of layer; track node.id) {
+              <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node, format: 'desktop'}"></ng-container>
+            }
+          </div>
+          <!-- Removed static line: dynamic SVG lines will connect prerequisites -->
+        }
+      </div>
+
+      <!-- Mobile Vertical Timeline -->
     <div class="md:hidden relative px-4 py-8">
       <div class="absolute left-[39px] top-12 bottom-12 w-0.5 bg-gradient-to-b from-primary-200 via-gray-300 to-transparent"></div>
       <div class="flex flex-col gap-8">
@@ -83,6 +90,7 @@
         }
       </div>
     </div>
+  </div>
   }
 
 </div>
