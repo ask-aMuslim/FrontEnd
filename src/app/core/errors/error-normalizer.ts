@@ -167,9 +167,9 @@ export class ErrorNormalizer {
                     errors[field] = value.map(String);
                 } else if (typeof value === 'string') {
                     errors[field] = [value];
-                } else if (Array.isArray((value as Record<string, unknown>)?.['errors'])) {
+                } else if (this.hasErrorsArray(value)) {
                     // Nested validation errors
-                    errors[field] = ((value as Record<string, unknown[]>)['errors']).map(String);
+                    errors[field] = value.errors.map(String);
                 }
             }
         }
@@ -200,6 +200,18 @@ export class ErrorNormalizer {
         }
 
         return null;
+    }
+
+    /**
+     * Type guard for objects with an errors array
+     */
+    private hasErrorsArray(value: unknown): value is { errors: unknown[] } {
+        return (
+            typeof value === 'object' &&
+            value !== null &&
+            'errors' in value &&
+            Array.isArray((value as Record<string, unknown>)['errors'])
+        );
     }
 
     /**

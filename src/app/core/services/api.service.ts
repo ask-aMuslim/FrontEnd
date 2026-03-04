@@ -42,7 +42,7 @@ export class ApiService {
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  private handleError(error: HttpErrorResponse | { status?: number; message?: string; error?: { message?: string } }) {
+  private handleError(error: HttpErrorResponse) {
     let errMsg = 'An unknown error occurred';
     if (error?.error?.message) {
       errMsg = error.error.message;
