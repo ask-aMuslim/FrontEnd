@@ -155,7 +155,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
                       courseId: course.id || '',
                       course: course.title || 'Unknown Course',
                       lesson: lesson.title || 'Untitled Lesson',
-                      duration: this.formatDuration(lesson),
+                      duration: this.formatDuration(),
                       badge: String.fromCharCode(65 + (index % 26)), // A, B, C...
                     }));
                     this.savedLessonsSignal.set([...currentLessons, ...newLessons]);
@@ -243,8 +243,8 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe();
   }
 
-  private formatDuration(lesson: LessonReadDto): string {
-    // Default duration format - could be enhanced with actual video duration
+  private formatDuration(): string {
+    // Static placeholder - actual video duration not yet available from API
     return '3 min';
   }
 

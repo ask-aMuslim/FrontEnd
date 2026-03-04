@@ -4,7 +4,6 @@ import {
     Output,
     EventEmitter,
     OnChanges,
-    SimpleChanges,
     ChangeDetectionStrategy,
     ElementRef,
     AfterViewChecked,
@@ -56,7 +55,7 @@ export class CourseTreeComponent implements OnChanges, AfterViewChecked {
 
     private recalcPaths = false;
 
-    ngOnChanges(_changes: SimpleChanges): void {
+    ngOnChanges(): void {
         this.buildTree();
         this.recalcPaths = true;
     }

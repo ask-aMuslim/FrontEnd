@@ -155,17 +155,18 @@ export class AskQaComponent implements OnInit {
     const tags = selectedCategoryName && this.selectedCategory !== 0 ? [selectedCategoryName] : undefined;
 
     this.qasService.getAll({ pageNumber, pageSize, tags: tags ? tags[0] : undefined }).subscribe({
-      next: (response: any) => {
+      next: (response: unknown) => {
         const mapped = this.mapQuestions(response);
         this.questions = mapped;
 
         // Extract pagination details from standard response structure if available
-        if (response && response.data) {
-          this.totalPages = response.data.totalPages || 1;
-          this.totalCount = response.data.totalCount || mapped.length;
-        } else if (response && response.totalPages) {
-          this.totalPages = response.totalPages || 1;
-          this.totalCount = response.totalCount || mapped.length;
+        const res = response as { data?: { totalPages?: number; totalCount?: number }; totalPages?: number; totalCount?: number };
+        if (res?.data) {
+          this.totalPages = res.data.totalPages ?? 1;
+          this.totalCount = res.data.totalCount ?? mapped.length;
+        } else if (res?.totalPages) {
+          this.totalPages = res.totalPages ?? 1;
+          this.totalCount = res.totalCount ?? mapped.length;
         } else {
           this.totalPages = 1;
           this.totalCount = mapped.length;

@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpContext } from '@angular/common/http';
-import { Observable, throwError, of, retry, catchError, timeout, timer, map } from 'rxjs';
-import { retryWhen, delay, take, mergeMap } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, catchError, timeout, timer, map } from 'rxjs';
+import { retryWhen, mergeMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
     StudentProfile,
     CreateStudentProfileRequest,
     UpdateStudentProfileRequest,
-    StudentProfileErrorResponse,
     ApiResponse,
 } from '../models/interfaces/student-profile.model';
 
@@ -281,17 +280,19 @@ export class StudentProfileService {
         );
     }
 
-    private isRetryable(error: any): boolean {
+    private isRetryable(error: unknown): boolean {
         if (error instanceof HttpErrorResponse) {
             return this.RETRYABLE_STATUS_CODES.includes(error.status);
         }
 
+        const err = error as { status?: number; retryable?: boolean };
         // Network errors are retryable
-        if (error?.status === 0) return true;
+        if (err?.status === 0) return true;
 
         // Check our custom error type
-        if (error?.retryable !== undefined) {
-            return error.retryable;
+        const isRetryable = err?.retryable;
+        if (isRetryable !== undefined) {
+            return isRetryable;
         }
 
         return false;
