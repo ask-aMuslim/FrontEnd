@@ -1,7 +1,15 @@
-import { Component, OnInit, inject, ElementRef, viewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, inject, ElementRef, viewChild, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subject, forkJoin, of, switchMap, tap, catchError, finalize, map } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
+import { StudentFacade } from '../../../api/facades/student.facade';
+import { EnrollmentFacade, EnrollmentReadDto } from '../../../api/facades/enrollment.facade';
+import { CourseFacade, CourseReadDto } from '../../../api/facades/course.facade';
+import { LessonFacade, LessonReadDto, LessonNote } from '../../../api/facades/lesson.facade';
+import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import { AcademyCourse, CourseProgress } from '../../../core/models/interfaces/academy-progress.model';
 
 interface SavedLesson {
   id: string;
@@ -20,15 +28,33 @@ interface Note {
   html: string;
 }
 
+interface CourseWithLessons {
+  course: CourseReadDto;
+  lessons: LessonReadDto[];
+}
+
+interface LessonWithNotes {
+  lesson: LessonReadDto;
+  notes: LessonNote[];
+  course: CourseReadDto;
+}
+
 @Component({
   selector: 'app-my-learning',
   imports: [InlineSvgDirective],
   templateUrl: './my-learning.component.html',
   styleUrls: ['./my-learning.component.scss'],
 })
-export class MyLearningComponent implements OnInit, AfterViewInit {
+export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
+  private readonly studentFacade = inject(StudentFacade);
+  private readonly enrollmentFacade = inject(EnrollmentFacade);
+  private readonly courseFacade = inject(CourseFacade);
+  private readonly lessonFacade = inject(LessonFacade);
+  private readonly academyProgressService = inject(AcademyProgressService);
   readonly scrollRow = viewChild<ElementRef<HTMLDivElement>>('scrollRow');
+
+  private readonly destroy$ = new Subject<void>();
 
   // Drag scroll state
   private isDragging = false;
@@ -39,54 +65,187 @@ export class MyLearningComponent implements OnInit, AfterViewInit {
   selectedCourseFilter = 'All Courses';
   selectedSortOrder = 'Latest';
 
-  savedLessons: SavedLesson[] = [
-    { id: '1', courseId: 'course-a', course: 'Course A', lesson: 'Lesson name', duration: '3 min', badge: 'A' },
-    { id: '2', courseId: 'course-a', course: 'Course A', lesson: 'Lesson name', duration: '3 min', badge: 'B' },
-    { id: '3', courseId: 'course-a', course: 'Course A', lesson: 'Lesson name', duration: '3 min', badge: 'C' },
-    { id: '4', courseId: 'course-a', course: 'Course A', lesson: 'Lesson name', duration: '3 min', badge: 'D' },
-    { id: '5', courseId: 'course-a', course: 'Course A', lesson: 'Lesson name', duration: '3 min', badge: 'E' },
-    { id: '6', courseId: 'course-a', course: 'Course A', lesson: 'Lesson name', duration: '3 min', badge: 'F' },
-  ];
+  // Loading and error states
+  isLoading = signal(false);
+  isLoadingNotes = signal(false);
+  error = signal<string | null>(null);
+  notesError = signal<string | null>(null);
 
-  allNotes: Note[] = [
-    {
-      id: '1',
-      course: 'Course A',
-      label: '{Lesson1} 8:20',
-      body: 'My note is written here. My note is written here. My note is written here. My note is written here.',
-      html: '',
-    },
-    {
-      id: '2',
-      course: 'Course A',
-      label: '{Lesson2} 10:45',
-      body: 'Important concept explained clearly. Important concept explained clearly.',
-      html: '',
-    },
-    {
-      id: '3',
-      course: 'Course B',
-      label: '{Lesson1} 8:20',
-      body: 'My note is written here. My note is written here. My note is written here. My note is written here.',
-      html: '',
-    },
-    {
-      id: '4',
-      course: 'Course B',
-      label: '{Lesson3} 2:15',
-      body: 'Review this section later. Review this section later.',
-      html: '',
-    },
-  ];
+  // Data signals
+  private readonly savedLessonsSignal = signal<SavedLesson[]>([]);
+  private readonly allNotesSignal = signal<Note[]>([]);
+  private readonly coursesSignal = signal<string[]>([]);
+  private readonly remainingCoursesSignal = signal<(AcademyCourse & { progress: CourseProgress })[]>([]);
+
+  // Computed signals
+  readonly savedLessons = computed(() => this.savedLessonsSignal());
+  readonly allNotes = computed(() => this.allNotesSignal());
+  readonly courses = computed(() => this.coursesSignal());
+  readonly remainingCourses = computed(() => this.remainingCoursesSignal());
+  readonly hasLessons = computed(() => this.savedLessonsSignal().length > 0);
+  readonly hasNotes = computed(() => this.allNotesSignal().length > 0);
+  readonly hasRemainingCourses = computed(() => this.remainingCoursesSignal().length > 0);
 
   filteredNotes: Note[] = [];
 
   ngOnInit(): void {
-    this.updateFilteredNotes();
+    this.loadStudentData();
   }
 
   ngAfterViewInit(): void {
     this.initDragScroll();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private loadStudentData(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    // Load remaining courses for the current stage
+    this.academyProgressService.getStudentProgress().pipe(
+      switchMap(progress => {
+        if (!progress) return of([]);
+        return this.academyProgressService.getStageCoursesWithProgress(progress.currentStage).pipe(
+          map(courses => courses.filter(c => c.progress.status !== 'completed'))
+        );
+      }),
+      tap(remaining => this.remainingCoursesSignal.set(remaining)),
+      takeUntil(this.destroy$)
+    ).subscribe();
+
+    this.studentFacade.me().pipe(
+      switchMap((profile) => {
+        if (!profile?.id) {
+          return of([]);
+        }
+        return this.enrollmentFacade.getEnrolledCoursesByStudent(profile.id);
+      }),
+      switchMap((enrollments: EnrollmentReadDto[]) => {
+        if (enrollments.length === 0) {
+          return of([]);
+        }
+
+        const courseIds = enrollments
+          .map((e) => e.courseId)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        const uniqueCourseIds = Array.from(new Set(courseIds));
+
+        if (uniqueCourseIds.length === 0) {
+          return of([]);
+        }
+
+        return forkJoin(
+          uniqueCourseIds.map((courseId) =>
+            this.courseFacade.getCourseById(courseId).pipe(
+              switchMap((course) => {
+                if (!course?.id) {
+                  return of(null);
+                }
+                return this.lessonFacade.getCourseLessons(course.id).pipe(
+                  tap((lessons) => {
+                    // Map saved lessons
+                    const currentLessons = this.savedLessonsSignal();
+                    const newLessons: SavedLesson[] = lessons.map((lesson, index) => ({
+                      id: lesson.id || `lesson-${index}`,
+                      courseId: course.id || '',
+                      course: course.title || 'Unknown Course',
+                      lesson: lesson.title || 'Untitled Lesson',
+                      duration: this.formatDuration(),
+                      badge: String.fromCharCode(65 + (index % 26)), // A, B, C...
+                    }));
+                    this.savedLessonsSignal.set([...currentLessons, ...newLessons]);
+                  }),
+                  map((lessons) => ({ course, lessons }))
+                );
+              }),
+              catchError(() => of(null))
+            )
+          )
+        );
+      }),
+      tap((coursesWithLessons) => {
+        const validCourses = coursesWithLessons.filter(
+          (item): item is CourseWithLessons => item !== null && item.course !== null
+        );
+
+        // Extract unique course names for filter dropdown
+        const courseNames = validCourses.map((item) => item.course.title).filter((name): name is string => !!name);
+        this.coursesSignal.set(Array.from(new Set(courseNames)));
+
+        // Load notes for all lessons
+        this.loadNotesForLessons(validCourses);
+      }),
+      catchError((err) => {
+        console.error('Error loading student data:', err);
+        this.error.set('Failed to load your learning data. Please try again.');
+        return of(null);
+      }),
+      finalize(() => this.isLoading.set(false)),
+      takeUntil(this.destroy$)
+    ).subscribe();
+  }
+
+  private loadNotesForLessons(coursesWithLessons: CourseWithLessons[]): void {
+    this.isLoadingNotes.set(true);
+    this.notesError.set(null);
+
+    const lessonNoteRequests = coursesWithLessons.flatMap((item) =>
+      item.lessons.map((lesson) =>
+        this.lessonFacade.getNotes(lesson.id || '').pipe(
+          map((notes): LessonWithNotes => ({
+            lesson,
+            notes,
+            course: item.course,
+          })),
+          catchError(() => of({ lesson, notes: [], course: item.course } as LessonWithNotes))
+        )
+      )
+    );
+
+    if (lessonNoteRequests.length === 0) {
+      this.isLoadingNotes.set(false);
+      return;
+    }
+
+    forkJoin(lessonNoteRequests)
+      .pipe(
+        tap((lessonWithNotesArray) => {
+          const allNotes: Note[] = [];
+
+          lessonWithNotesArray.forEach((item) => {
+            item.notes.forEach((note) => {
+              allNotes.push({
+                id: note.id,
+                course: item.course.title || 'Unknown Course',
+                label: `{${item.lesson.title}} ${new Date(note.createdAt).toLocaleTimeString()}`,
+                body: note.content,
+                html: '',
+              });
+            });
+          });
+
+          this.allNotesSignal.set(allNotes);
+          this.updateFilteredNotes();
+        }),
+        catchError((err) => {
+          console.error('Error loading notes:', err);
+          this.notesError.set('Failed to load your notes.');
+          return of(null);
+        }),
+        finalize(() => this.isLoadingNotes.set(false)),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
+  }
+
+  private formatDuration(): string {
+    // Static placeholder - actual video duration not yet available from API
+    return '3 min';
   }
 
   private initDragScroll(): void {
@@ -120,7 +279,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit {
   }
 
   updateFilteredNotes(): void {
-    let filtered = this.allNotes;
+    let filtered = this.allNotesSignal();
 
     if (this.selectedCourseFilter !== 'All Courses') {
       filtered = filtered.filter((note) => note.course === this.selectedCourseFilter);
@@ -135,7 +294,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit {
     }
 
     if (this.selectedSortOrder === 'Latest') {
-      filtered.reverse();
+      filtered = [...filtered].reverse();
     }
 
     this.filteredNotes = filtered;
@@ -168,5 +327,9 @@ export class MyLearningComponent implements OnInit, AfterViewInit {
   goToCourse(course: string): void {
     const courseSlug = course.toLowerCase().replaceAll(/\s+/g, '-');
     this.router.navigate(['/academy/course', courseSlug]);
+  }
+
+  retryLoad(): void {
+    this.loadStudentData();
   }
 }

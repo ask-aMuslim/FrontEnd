@@ -1,38 +1,35 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-// Removed unused imports
-// import {
-//   apiEnrollmentGetEnrollmentGet,
-// ...
-import { EnrollmentCreateDto } from '../api/generated/models';
-import { EnrollmentFacade } from '../api/facades/enrollment.facade';
+import { Observable, map } from 'rxjs';
+import { EnrollmentFacade, EnrollmentReadDto } from '../../api/facades/enrollment.facade';
+import type { CreateEnrollmentCommand } from '../../api/models';
 
 @Injectable({ providedIn: 'root' })
 export class EnrollmentsService {
   private readonly facade = inject(EnrollmentFacade);
 
-  getEnrollment(studentId?: string, courseId?: string): Observable<any> {
-    return this.facade.getEnrollment(studentId, courseId);
+  getAll(studentId?: string): Observable<EnrollmentReadDto[]> {
+    return this.facade.getAllEnrollments(studentId);
   }
 
-  delete(studentId: string, courseId: string): Observable<void> {
-    return this.facade.deleteEnrollment(studentId, courseId);
+  getEnrollment(id: string): Observable<EnrollmentReadDto | null> {
+    return this.facade.getEnrollment(id);
   }
 
-  getByCourse(courseId: string): Observable<any> {
-    return this.facade.getStudentsByCourse(courseId);
+  getStudentsByCourse(courseId: string): Observable<EnrollmentReadDto[]> {
+    return this.facade.getStudentsEnrolledInCourse(courseId);
   }
 
-  getByStudent(studentId: string): Observable<any> {
-    return this.facade.getEnrolledCourses(studentId);
+  getEnrolledCourses(studentId: string): Observable<EnrollmentReadDto[]> {
+    return this.facade.getEnrolledCoursesByStudent(studentId);
   }
 
-  create(payload: EnrollmentCreateDto): Observable<void> {
-    return this.facade.createEnrollment(payload);
+  create(payload: CreateEnrollmentCommand): Observable<boolean> {
+    return this.facade.createEnrollment(payload).pipe(
+      map(enrollment => enrollment !== null)
+    );
   }
 
-  updateStatus(id: string, payload: any): Observable<any> {
-    // This endpoint not in Swagger spec, keep legacy implementation if needed
-    throw new Error('updateStatus endpoint not available in generated API');
+  delete(id: string): Observable<boolean> {
+    return this.facade.deleteEnrollment(id);
   }
 }

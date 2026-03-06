@@ -130,7 +130,7 @@ $large-screen-adjustments: (
 }
 
 // Desktop only: Scattered bubbles with rotation animations - 4 left, 4 right
-@media (min-width: 1024px) {
+@media (min-width: 1200px) {
   .suggestion-bubbles {
     position: absolute;
     width: 100%;

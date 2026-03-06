@@ -10,39 +10,34 @@
  * @deprecated Use IdentityFacade and TokenService directly
  */
 
-import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, signal, inject } from '@angular/core';
 import { Observable, map, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 
 // New architecture imports
-import { IdentityFacade } from '../api/facades/identity.facade';
+import { IdentityFacade, UserRole } from '../../api/facades/identity.facade';
 import { TokenService } from '../auth/token.service';
-
-// Legacy imports (for social login - not in Swagger spec yet)
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { StudentFacade } from '../../api/facades/student.facade';
 
 // Types
-import { LoginViewModel } from '../api/generated/models';
 import { AuthResponse, RegisterRequest } from '../models/interfaces/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly facade = inject(IdentityFacade);
   private readonly tokenService = inject(TokenService);
-  private readonly legacyApi = inject(ApiService);
+  private readonly studentFacade = inject(StudentFacade);
   private readonly router = inject(Router);
 
   // Reactive authentication state using signals
   // These now delegate to TokenService
-  private _currentUser = signal<{ name: string; meta: string } | null>(null);
+  private _currentUser = signal<{ name: string; meta: string; imageUrl?: string | null } | null>(null);
 
   // Expose isAuthenticated from TokenService
   readonly isAuthenticated = this.tokenService.isAuthenticated;
   readonly currentUser = this._currentUser.asReadonly();
+  readonly error = this.facade.error;
 
   constructor() {
     this.initializeAuthState();
@@ -52,8 +47,7 @@ export class AuthService {
     // TokenService handles its own initialization from localStorage
     // We just need to set up the user info if authenticated
     if (this.tokenService.isAuthenticated()) {
-      const email = this.tokenService.userEmail();
-      this._currentUser.set(email ? { name: email, meta: 'Signed in' } : null);
+      this.hydrateCurrentUserFromProfile();
     }
   }
 
@@ -81,17 +75,14 @@ export class AuthService {
     // Clear local state
     this._currentUser.set(null);
 
-    // Call backend logout and clear tokens
     return this.facade.logout().pipe(
-      tap(() => {
-        // Navigate to login
-        this.router.navigate(['/login']);
+      catchError(() => of(undefined)),
+      finalize(() => {
+        this.tokenService.clearTokens();
+        this.studentFacade.clearCache();
+        void this.router.navigate(['/login']);
       }),
-      catchError((error) => {
-        // Even if logout fails, tokens are cleared by facade
-        this.router.navigate(['/login']);
-        return of(undefined);
-      })
+      map(() => void 0)
     );
   }
 
@@ -99,19 +90,21 @@ export class AuthService {
    * Register new user
    */
   register(payload: RegisterRequest): Observable<AuthResponse> {
-    let role: 'Student' | 'Instructor' | 'Admin' = 'Student';
-    if (payload.role === 1) {
+    // UserRole is a string union type: 'Student' | 'Instructor' | 'Admin'
+    // Default to 'Student' if not provided
+    let role: UserRole = 'Student';
+    if (payload.role === 2) {
       role = 'Instructor';
-    } else if (payload.role === 2) {
+    } else if (payload.role === 3) {
       role = 'Admin';
     }
 
     return this.facade.register({
-      Email: payload.email,
-      Password: payload.password,
-      FirstName: payload.firstName,
-      LastName: payload.lastName,
-      Role: role,
+      email: payload.email,
+      password: payload.password,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      role: role,
     }).pipe(
       map(() => {
         // The generated API returns void, but we need to return AuthResponse
@@ -122,7 +115,7 @@ export class AuthService {
           expiresIn: 0
         } as AuthResponse;
       }),
-      tap((response) => {
+      tap(() => {
         // If the API actually returns tokens, they would be set here
         // For now, user needs to login after registration
       })
@@ -132,65 +125,57 @@ export class AuthService {
   /**
    * Login user with credentials
    */
-  login(payload: LoginViewModel): Observable<AuthResponse> {
-    return this.facade.login(payload).pipe(
-      map(() => {
-        // The generated API returns void, but we need to return AuthResponse
-        // This is a temporary workaround until Swagger spec includes proper response types
-        // The actual tokens are handled by the HTTP response, not the generated client
+  login(email: string, password: string): Observable<AuthResponse> {
+    return this.facade.login(email, password).pipe(
+      map((response) => {
+        // The facade returns LoginResponse with token and user info
         return {
-          accessToken: this.tokenService.accessToken() || '',
-          refreshToken: this.tokenService.refreshToken() || '',
-          expiresIn: 3600 // Default 1 hour
+          accessToken: response.token || '',
+          refreshToken: '',
+          expiresIn: response.expiresIn ?? 3600
         } as AuthResponse;
       }),
-      tap((response) => {
-        // Update user state
-        this._currentUser.set({
-          name: payload.email,
-          meta: 'Signed in',
-        });
+      tap(() => {
+        this.studentFacade.clearCache();
+        this._currentUser.set({ name: email, meta: 'Signed in' });
+        this.hydrateCurrentUserFromProfile();
       })
     );
   }
 
   /**
    * Login with Google
-   * Note: This endpoint is not in Swagger spec, uses legacy API
    */
   loginGoogle(token: string): Observable<AuthResponse> {
-    return this.legacyApi.post<AuthResponse>(API_ENDPOINTS.auth.loginGoogle(), { token }).pipe(
-      tap((response) => {
-        // Store tokens in TokenService
-        if (response?.accessToken) {
-          this.tokenService.setTokens({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken ?? '',
-            expiresIn: response.expiresIn ?? 3600
-          });
-          this._currentUser.set({ name: 'Google User', meta: 'Signed in with Google' });
-        }
-      })
+    return this.facade.loginGoogle(token).pipe(
+      map((response) => ({
+        accessToken: response.token ?? '',
+        refreshToken: '',
+        expiresIn: response.expiresIn ?? 3600,
+      })),
+      tap(() => {
+        this.studentFacade.clearCache();
+        this._currentUser.set({ name: 'Google User', meta: 'Signed in with Google' });
+        this.hydrateCurrentUserFromProfile();
+      }),
     );
   }
 
   /**
    * Login with Facebook
-   * Note: This endpoint is not in Swagger spec, uses legacy API
    */
   loginFacebook(payload: { accessToken: string }): Observable<AuthResponse> {
-    return this.legacyApi.post<AuthResponse>(API_ENDPOINTS.auth.loginFacebook(), payload).pipe(
-      tap((response) => {
-        // Store tokens in TokenService
-        if (response?.accessToken) {
-          this.tokenService.setTokens({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken ?? '',
-            expiresIn: response.expiresIn ?? 3600
-          });
-          this._currentUser.set({ name: 'Facebook User', meta: 'Signed in with Facebook' });
-        }
-      })
+    return this.facade.loginFacebook(payload.accessToken).pipe(
+      map((response) => ({
+        accessToken: response.token ?? '',
+        refreshToken: '',
+        expiresIn: response.expiresIn ?? 3600,
+      })),
+      tap(() => {
+        this.studentFacade.clearCache();
+        this._currentUser.set({ name: 'Facebook User', meta: 'Signed in with Facebook' });
+        this.hydrateCurrentUserFromProfile();
+      }),
     );
   }
 
@@ -199,6 +184,10 @@ export class AuthService {
    */
   hasValidSession(): boolean {
     return this.tokenService.hasValidSession();
+  }
+
+  clearError(): void {
+    this.facade.clearError();
   }
 
   /**
@@ -213,5 +202,57 @@ export class AuthService {
    */
   getRefreshToken(): string | null {
     return this.tokenService.refreshToken();
+  }
+
+  private hydrateCurrentUserFromProfile(): void {
+    const fallbackEmail = this.tokenService.userEmail();
+    if (!fallbackEmail) {
+      this._currentUser.set(null);
+      return;
+    }
+
+    this._currentUser.set({ name: fallbackEmail, meta: 'Signed in' });
+
+    this.studentFacade.getMyProfile().pipe(
+      map((profile: unknown) => {
+        const profileRecord = this.asRecord(profile);
+
+        const firstName = this.getString(profileRecord, ['firstName', 'firstname', 'givenName']);
+        const lastName = this.getString(profileRecord, ['lastName', 'lastname', 'familyName']);
+        const fullNameFromParts = `${firstName} ${lastName}`.trim();
+        const fullName =
+          fullNameFromParts ||
+          this.getString(profileRecord, ['fullName', 'name', 'displayName']) ||
+          fallbackEmail;
+
+        const level = this.getString(profileRecord, ['level', 'studentLevel', 'stage']);
+        const meta = level ? `Level ${level}` : 'Student';
+        const imageUrl = this.getString(profileRecord, ['imageUrl', 'profileImageUrl', 'picture', 'avatarUrl']);
+
+        return { name: fullName, meta, imageUrl: imageUrl || null };
+      }),
+      catchError(() => of({ name: fallbackEmail, meta: 'Signed in' }))
+    ).subscribe((user: { name: string; meta: string; imageUrl?: string | null }) => {
+      this._currentUser.set(user);
+    });
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+  }
+
+  private getString(record: Record<string, unknown> | null, keys: string[]): string {
+    if (!record) {
+      return '';
+    }
+
+    for (const key of keys) {
+      const candidate = record[key];
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+
+    return '';
   }
 }

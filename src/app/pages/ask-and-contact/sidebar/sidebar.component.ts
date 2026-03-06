@@ -17,7 +17,7 @@ export class SidebarComponent {
   readonly menuItems: MenuItem[] = [
     {
       key: 'ask-qa',
-      label: 'Ask "Q&A"',
+      label: 'Ask Questions',
       href: '/ask-and-contact/ask-qa',
       icon: '/icons/icons-24/found.svg',
     },
@@ -45,7 +45,7 @@ export class SidebarComponent {
     this.isCollapsed = !this.isCollapsed;
   }
 
-  trackByKey(index: number, item: MenuItem): string {
+  trackByKey(_index: number, item: MenuItem): string {
     return item.key;
   }
 }

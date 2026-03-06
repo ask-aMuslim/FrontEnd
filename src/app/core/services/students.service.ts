@@ -1,32 +1,62 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { StudentFacade } from '../api/facades/student.facade';
+import { StudentFacade, StudentProfileDto, StudentCourseDto, UpdateProfileRequest } from '../../api/facades/student.facade';
 
 @Injectable({ providedIn: 'root' })
 export class StudentsService {
   private readonly facade = inject(StudentFacade);
 
-  getAll(): Observable<any> {
+  /**
+   * Get all students
+   * Uses facade which calls GET /api/Student
+   */
+  getAll(): Observable<StudentProfileDto[]> {
     return this.facade.getAllStudents();
   }
 
-  getById(userId: string): Observable<any> {
+  /**
+   * Get student by ID
+   * Uses facade which calls GET /api/Student/{id}
+   */
+  getById(userId: string): Observable<StudentProfileDto | null> {
     return this.facade.getStudentById(userId);
   }
 
-  getAllCourses(studentId?: string): Observable<any> {
-    return this.facade.getAllCourses(studentId);
+  /**
+   * Get all courses for a student
+   * Uses facade which calls GET /api/Student/GetAllCourses
+   */
+  getAllCourses(): Observable<StudentCourseDto[]> {
+    return this.facade.getStudentCourses();
   }
 
-  me(): Observable<any> {
+  /**
+   * Get current student's profile
+   * Uses facade which calls GET /api/Student/me
+   */
+  me(): Observable<StudentProfileDto | null> {
     return this.facade.me();
   }
 
-  dashboard(): Observable<any> {
-    return this.facade.dashboard();
+  /**
+   * Get profile (alias for me())
+   */
+  getProfile(): Observable<StudentProfileDto | null> {
+    return this.facade.getProfile();
   }
 
-  update(payload: any): Observable<any> {
-    return this.facade.update(payload);
+  /**
+   * Create or update the student's profile using the API. The server will
+   * create a new record if one does not exist yet.
+   */
+  createProfile(data: UpdateProfileRequest): Observable<StudentProfileDto | null> {
+    return this.facade.createProfile(data);
+  }
+
+  /**
+   * Update existing profile data.
+   */
+  updateProfile(data: UpdateProfileRequest): Observable<StudentProfileDto | null> {
+    return this.facade.updateProfile(data);
   }
 }

@@ -1,8 +1,30 @@
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  ViewChild,
+} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { EventsService } from '../../core/services/events.service';
+import { AuthService } from '../../core/services/auth.service';
+import { QasService } from '../../core/services/qas.service';
+import {
+  asRecord,
+  extractArray,
+  getValue,
+  toStringValue,
+  toStringArray,
+} from '../../core/helpers/api-response.helper';
+import { formatEventDateDisplay } from '../../core/helpers/event-display.helper';
+import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 interface HeroStat {
   value: string;
@@ -19,14 +41,16 @@ interface FeatureCard {
 }
 
 interface EventCard {
+  id: string;
   date: string;
   tag: string;
   title: string;
   bullets: string[];
   image: string;
   speaker: string;
+  speakerImage: string;
   speakerRole: string;
-  videoUrl: string;
+  detailUrl: string;
 }
 
 interface PillarItem {
@@ -42,7 +66,7 @@ interface PillarItem {
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
-export class Home implements AfterViewInit, OnDestroy {
+export class Home implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('bubblesContainer') bubblesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bubblesTrack') bubblesTrack?: ElementRef<HTMLDivElement>;
 
@@ -53,7 +77,7 @@ export class Home implements AfterViewInit, OnDestroy {
     { value: '250+ ', label: 'Scholars & Teachers' },
   ];
 
-  protected readonly heroBubbles: string[] = [
+  protected heroBubbles: string[] = [
     'Who is Allah?',
     'What is Islam?',
     'Is Islam peaceful?',
@@ -151,64 +175,12 @@ export class Home implements AfterViewInit, OnDestroy {
     },
   ];
 
-  protected readonly eventCards: EventCard[] = [
-    {
-      date: '29 December, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example2',
-    },
-    {
-      date: '20 October, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example3',
-    },
-    {
-      date: '20 October, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example1',
-    },
-    {
-      date: '20 October, 2025',
-      tag: 'Oxford Union',
-      title: 'Mehdi Hasan | Islam Is A Peaceful Religion | Oxford Union',
-      bullets: [
-        'The motion debated was "This House Believes Islam Is A Religion Of Peace."',
-        'Hasan was speaking for the affirmative side (i.e. defending Islam as a peaceful religion) against opponents who argued Islam is inherently violent or more violent than other religions.',
-        'The debate took place shortly after a violent incident (the Woolwich killing) which heightened sensitivity around Islam and violence.',
-      ],
-      image: '/images/events-picture.png',
-      speaker: 'Mehdi Hasan',
-      speakerRole: 'Indian-American broadcas...',
-      videoUrl: 'https://www.youtube.com/watch?v=example4',
-    },
-  ];
+  protected eventCards: EventCard[] = [];
+  protected currentEventPage = 1;
+  protected readonly eventsPerPage = 4;
+  protected totalEventPages = 1;
+  protected arrowRightIcon = '/icons/icons-24/arrow-right.svg';
+  protected arrowLeftIcon = '/icons/icons-24/arrow-left.svg';
 
   protected readonly imanPillars: PillarItem[] = [
     { number: '1', label: 'Belief in', name: 'Allah' },
@@ -234,14 +206,73 @@ export class Home implements AfterViewInit, OnDestroy {
   }
 
   private cleanupFns: (() => void)[] = [];
-  private readonly bubbleMarqueeId?: number;
-  private readonly lastFrameTime = 0;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   constructor(
-    private readonly host: ElementRef<HTMLElement>,
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
+    private readonly eventsService: EventsService,
+    private readonly authService: AuthService,
+    private readonly cdr: ChangeDetectorRef,
+    private readonly qasService: QasService,
   ) { }
+
+  protected get eventsCtaLabel(): string {
+    return this.authService.isAuthenticated() ? 'See All Events' : 'Join for Free';
+  }
+
+  protected get eventsCtaLink(): string {
+    return this.authService.isAuthenticated() ? '/events' : '/account';
+  }
+
+  ngOnInit(): void {
+    if (this.isBrowser) {
+      this.loadEventsSection();
+      this.loadHeroBubbles();
+    }
+  }
+
+  private loadHeroBubbles(): void {
+    this.qasService.getAll({ pageNumber: 1, pageSize: 50, tags: 'Hero Page Questions' }).subscribe({
+      next: (response) => {
+        const records = extractArray(response);
+        if (records.length > 0) {
+          const fetchedBubbles = records
+            .map(item => asRecord(item))
+            .filter(record => {
+              // Fallback client-side filter in case backend ignores the tags parameter
+              const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
+              return categories.length === 0 || categories.some(c =>
+                c.toLowerCase().includes('hero') ||
+                c.toLowerCase().includes('misconception')
+              );
+            })
+            .map(record => {
+              const translations = extractArray(getValue(record, 'translations', 'Translations'));
+              const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+              return toStringValue(
+                firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
+              ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
+            })
+            .filter(val => val.trim().length > 0);
+
+          if (fetchedBubbles.length > 0) {
+            this.heroBubbles = fetchedBubbles;
+            this.cdr.detectChanges();
+
+            // Re-setup bubbles animation if needed for the new elements
+            setTimeout(() => {
+              if (this.heroBubbles.length > 0) {
+                this.setupBubblesAnimation();
+              }
+            }, 100);
+          }
+        }
+      },
+      error: () => void 0,
+    });
+  }
 
   protected isSvgIcon(feature: FeatureCard): boolean {
     return typeof feature.icon === 'string' && feature.icon.trim().startsWith('<svg');
@@ -286,6 +317,90 @@ export class Home implements AfterViewInit, OnDestroy {
     void this.router.navigate(['/ask-and-contact'], { queryParams: { question: q } });
   }
 
+  private loadEventsSection(): void {
+    const pageNumber = this.currentEventPage;
+    const pageSize = this.eventsPerPage;
+
+    this.eventsService.getAll({ pageNumber, pageSize }).subscribe({
+      next: (response) => {
+        this.eventCards = this.mapEventCards(response);
+        this.calculateTotalEventPages(response);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.eventCards = [];
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private calculateTotalEventPages(response: unknown): void {
+    const records = extractArray(response);
+    this.totalEventPages = Math.max(1, Math.ceil(records.length / this.eventsPerPage));
+  }
+
+  protected goToEventPage(page: number): void {
+    if (!Number.isFinite(page)) return;
+    this.currentEventPage = Math.min(
+      Math.max(page, 1),
+      this.totalEventPages,
+    );
+    this.loadEventsSection();
+  }
+
+  protected nextEventPage(): void {
+    this.goToEventPage(this.currentEventPage + 1);
+  }
+
+  protected prevEventPage(): void {
+    this.goToEventPage(this.currentEventPage - 1);
+  }
+
+  protected showEventPagination(): boolean {
+    return this.totalEventPages > 1;
+  }
+
+  private mapEventCards(response: unknown): EventCard[] {
+    const records = extractArray(response);
+    return records.map((item, index) => this.mapEventCard(item, index));
+  }
+
+  private mapEventCard(item: unknown, index: number): EventCard {
+    const record = asRecord(item);
+    const id = toStringValue(getValue(record, 'id', 'Id')) ?? `event-${index + 1}`;
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
+    const description = toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    const speakerName = toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '';
+    const speakerImage =
+      toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
+      '/images/profile-picture-navbar.png';
+    const speakerRole = toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? '';
+    const image =
+      toApiMediaUrl(
+        toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
+      ) ??
+      '/images/events-image-placeholder.jpg';
+    const startDateValue = toStringValue(
+      getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
+    );
+    const date = formatEventDateDisplay(startDateValue);
+    const tag = toStringValue(getValue(record, 'tag', 'Tag')) ?? '';
+    const detailUrl = `/events/${id}`;
+
+    return {
+      id,
+      date,
+      tag,
+      title,
+      bullets: [description],
+      image,
+      speaker: speakerName,
+      speakerImage,
+      speakerRole,
+      detailUrl,
+    };
+  }
+
   ngAfterViewInit(): void {
     if (globalThis.window === undefined) {
       return;
@@ -316,10 +431,7 @@ export class Home implements AfterViewInit, OnDestroy {
 
     // Calculate total width of all bubbles + gaps
     const trackWidth = track.scrollWidth;
-    const containerWidth = this.bubblesContainer?.nativeElement?.offsetWidth || 0;
 
-    // Animation speed: move all content width in 20 seconds
-    const duration = 20;
 
     // Create continuous animation using requestAnimationFrame for smooth scrolling
     let currentTranslate = 0;

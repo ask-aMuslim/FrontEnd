@@ -45,17 +45,19 @@
               </p>
             </div>
             <!-- Answers Section -->
-            <div class="course-section">
-              <h2 class="section-title">At the end, you will find the answers of:</h2>
-              <p class="section-text">
-                @for (answer of course.answers; track answer; let last = $last) {
-                  {{ answer }}
-                  @if (!last) {
-                    <br />
+            @if (course.answers.length > 0) {
+              <div class="course-section">
+                <h2 class="section-title">At the end, you will find the answers of:</h2>
+                <p class="section-text">
+                  @for (answer of course.answers; track answer; let last = $last) {
+                    {{ answer }}
+                    @if (!last) {
+                      <br />
+                    }
                   }
-                }
-              </p>
-            </div>
+                </p>
+              </div>
+            }
           </div>
           <!-- Action Buttons -->
           <div class="course-actions">
@@ -133,5 +135,32 @@
         </aside>
       </div>
     </app-academy-page-shell>
+
+    @if (showSignInPrompt) {
+      <div
+        class="sign-in-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="academy-signin-title"
+      >
+        <div class="sign-in-modal__backdrop" (click)="closeSignInPrompt()"></div>
+        <div class="sign-in-modal__card">
+          <h2 id="academy-signin-title" class="sign-in-modal__title">
+            Sign in to begin this course
+          </h2>
+          <p class="sign-in-modal__text">
+            You can explore course overviews as a guest. To start lessons, please sign in.
+          </p>
+          <div class="sign-in-modal__actions">
+            <button type="button" class="btn btn-ghost" (click)="closeSignInPrompt()">
+              Not now
+            </button>
+            <button type="button" class="btn btn-primary" (click)="continueToSignIn()">
+              Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   }
 </div>

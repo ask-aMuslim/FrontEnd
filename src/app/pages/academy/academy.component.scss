@@ -515,10 +515,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
-    background: var(--colors-rare-grays-0);
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
   }
 }
 

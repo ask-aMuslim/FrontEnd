@@ -1,9 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
-import { EVENTS_SEED_DATA } from '../../core/services/mock-data/events-seed-data';
 import { EventsService } from '../../core/services/events.service';
 import type { EventCard } from './event-card/event-card.component';
+import {
+  asRecord,
+  extractArray,
+  getValue,
+  toBooleanValue,
+  toStringArray,
+  toStringValue,
+} from '../../core/helpers/api-response.helper';
+import { formatEventDateDisplay, formatEventTimeRangeDisplay } from '../../core/helpers/event-display.helper';
+import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 @Component({
   selector: 'app-events',
@@ -12,16 +21,9 @@ import type { EventCard } from './event-card/event-card.component';
   styleUrls: ['./events.component.scss'],
 })
 export class EventsComponent implements OnInit {
-  private static readonly fallbackTitle = 'Upcoming Event';
-  private static readonly fallbackDescription = 'Details will be available soon.';
-  private static readonly fallbackSpeakerName = 'Ask A Muslim';
-  private static readonly fallbackSpeakerRole = 'Islamic Scholar';
-  private static readonly fallbackImage = '/images/events-picture.png';
+  private static readonly fallbackImage = '/images/events-image-placeholder.jpg';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
-  private static readonly fallbackTag = '#Event';
   private static readonly idOffset = 1;
-
-  private readonly fallbackEvents = EVENTS_SEED_DATA;
 
   currentPage = 1;
   itemsPerPage = 6;
@@ -29,7 +31,10 @@ export class EventsComponent implements OnInit {
 
   eventCards: EventCard[] = [];
 
-  constructor(private readonly eventsService: EventsService) { }
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly cdr: ChangeDetectorRef,
+  ) { }
 
   ngOnInit(): void {
     this.loadEvents();
@@ -43,18 +48,21 @@ export class EventsComponent implements OnInit {
   prevPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.scrollToTopOfSection();
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.pages.length) {
       this.currentPage++;
+      this.scrollToTopOfSection();
     }
   }
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.pages.length) {
       this.currentPage = page;
+      this.scrollToTopOfSection();
     }
   }
 
@@ -76,42 +84,79 @@ export class EventsComponent implements OnInit {
     return this.eventCards.slice(startIndex, endIndex);
   }
 
+  get featuredEvent(): EventCard | null {
+    return this.eventCards.length > 0 ? this.eventCards[0] : null;
+  }
+
+  get featuredEventDay(): string {
+    const dateValue = this.featuredEvent?.date;
+    if (!dateValue) {
+      return '--';
+    }
+
+    const parsed = new Date(dateValue);
+    return Number.isNaN(parsed.getTime()) ? '--' : String(parsed.getDate()).padStart(2, '0');
+  }
+
+  get featuredEventMonth(): string {
+    const dateValue = this.featuredEvent?.date;
+    if (!dateValue) {
+      return '---';
+    }
+
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) {
+      return '---';
+    }
+
+    return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(parsed);
+  }
+
   private loadEvents(): void {
     this.eventsService.getAll().subscribe({
       next: (response) => {
-        const mapped = this.mapEvents(response);
-        this.eventCards = mapped.length > 0 ? mapped : this.fallbackEvents;
+        this.eventCards = this.mapEvents(response);
         this.updatePages();
+        this.cdr.detectChanges();
       },
       error: () => {
-        this.eventCards = this.fallbackEvents;
+        this.eventCards = [];
         this.updatePages();
+        this.cdr.detectChanges();
       },
     });
   }
 
   private mapEvents(response: unknown): EventCard[] {
-    const records = this.extractArray(response);
+    const records = extractArray(response);
     return records.map((item, index) => this.mapEvent(item, index));
   }
 
   private mapEvent(item: unknown, index: number): EventCard {
-    const record = this.asRecord(item);
-    const id = this.asString(record?.['id']) ?? `event-${index + EventsComponent.idOffset}`;
-    const title = this.asString(record?.['title']) ?? EventsComponent.fallbackTitle;
-    const description =
-      this.asString(record?.['description']) ?? EventsComponent.fallbackDescription;
-    const imageUrl = this.asString(record?.['imageUrl']) ?? EventsComponent.fallbackImage;
-    const imageAlt = this.asString(record?.['imageAlt']) ?? title;
-    const speakerName =
-      this.asString(record?.['speakerName']) ?? EventsComponent.fallbackSpeakerName;
+    const record = asRecord(item);
+    const id =
+      toStringValue(getValue(record, 'id', 'Id')) ?? `event-${index + EventsComponent.idOffset}`;
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
+    const description = toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    const imageUrl =
+      toApiMediaUrl(
+        toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
+      ) ??
+      EventsComponent.fallbackImage;
+    const imageAlt = toStringValue(getValue(record, 'imageAlt', 'ImageAlt')) ?? title;
+    const speakerName = toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '';
     const speakerImage =
-      this.asString(record?.['speakerImage']) ?? EventsComponent.fallbackSpeakerImage;
-    const speakerRole =
-      this.asString(record?.['speakerRole']) ?? EventsComponent.fallbackSpeakerRole;
-    const date = this.asString(record?.['date']) ?? 'TBD';
-    const tags = this.asStringArray(record?.['tags']);
-    const isRecorded = this.asBoolean(record?.['isRecorded']);
+      toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
+      EventsComponent.fallbackSpeakerImage;
+    const speakerRole = toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? '';
+    const startDateValue = toStringValue(
+      getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
+    );
+    const endDateValue = toStringValue(getValue(record, 'endDateTime', 'EndDateTime'));
+    const date = formatEventDateDisplay(startDateValue);
+    const timeRange = formatEventTimeRangeDisplay(startDateValue, endDateValue);
+    const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
+    const isRecorded = toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded'));
 
     return {
       id,
@@ -123,34 +168,14 @@ export class EventsComponent implements OnInit {
       speakerImage,
       speakerRole,
       date,
-      tags: tags.length > 0 ? tags : [EventsComponent.fallbackTag],
+      timeRange,
+      tags,
       isRecorded,
     };
   }
 
-  private extractArray(response: unknown): readonly unknown[] {
-    if (Array.isArray(response)) {
-      return response;
-    }
-    const record = this.asRecord(response);
-    const data = record?.['data'] ?? record?.['items'] ?? record?.['results'];
-    return Array.isArray(data) ? data : [];
-  }
-
-  private asRecord(value: unknown): Record<string, unknown> | null {
-    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
-  }
-
-  private asString(value: unknown): string | null {
-    return typeof value === 'string' && value.trim().length > 0 ? value : null;
-  }
-
-  private asStringArray(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
-  }
-
-  private asBoolean(value: unknown): boolean {
-    return value === true;
+  private scrollToTopOfSection(): void {
+    const section = globalThis.document?.getElementById('events-recorded-section');
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

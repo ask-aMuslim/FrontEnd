@@ -1,6 +1,26 @@
 .lesson-overview-container {
   width: 100%;
   background: var(--colors-rare-grays-0);
-  font-family: 'Poppins', -apple-system, Roboto, Helvetica, sans-serif;
+  font-family:
+    'Poppins',
+    -apple-system,
+    Roboto,
+    Helvetica,
+    sans-serif;
 }
-/* ... SCSS content preserved but simplified for migration ... */
+
+.redirect-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.redirect-content {
+  text-align: center;
+}
+
+.redirect-message {
+  font-size: 18px;
+  color: var(--colors-rare-grays-600, #6c757d);
+}

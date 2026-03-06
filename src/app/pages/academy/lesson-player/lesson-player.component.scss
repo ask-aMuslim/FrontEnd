@@ -10,6 +10,11 @@
   gap: 0;
 }
 
+// ─── Hide Save Buttons ───
+.action-buttons-header .btn-icon:first-child {
+  display: none;
+}
+
 // ─── Media Section ───
 .media-container {
   border-radius: 0.5rem;
@@ -544,8 +549,8 @@
 
   &.active {
     background: #fff8e1;
-    border-color: #ffbc0d;
-    color: #ffbc0d;
+    border-color: #8a5a00;
+    color: #8a5a00;
   }
 }
 
@@ -558,6 +563,9 @@
 // ─── Article Sections ───
 .article-header-container {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .article-icon {
@@ -568,6 +576,29 @@
   background: var(--color-card-surface-primary, #e8f5e8);
   border-radius: 0.5rem;
   width: max-content;
+  flex-shrink: 0;
+}
+
+.article-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.article-type {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-button-primary-normal, #156b40);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.article-description {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--colors-rare-grays-80, #343a40);
+  margin: 0;
 }
 
 .article-sections {
@@ -636,6 +667,9 @@
       font-weight: 500;
       line-height: 1;
       text-transform: capitalize;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .divider {

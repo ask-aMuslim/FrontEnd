@@ -1,94 +1,196 @@
 <div class="my-learning">
-  <div class="saved-lessons">
-    <h2 class="saved-lessons__title">Saved Lessons ({{ savedLessons.length }})</h2>
-    <div class="saved-lessons__divider"></div>
-    <div class="saved-lessons__row saved-lessons-row" #scrollRow>
-      @for (lesson of savedLessons; track lesson) {
-        <div class="saved-lessons__card">
-          <span class="saved-lessons__course">{{ lesson.course }}</span>
-          <div class="saved-lessons__meta">
-            <div class="saved-lessons__icon">
-              <div
-                [inlineSVG]="'/icons/icons-24/video-file.svg'"
-                class="saved-lessons__icon-svg"
-              ></div>
-            </div>
-            <div class="saved-lessons__text">
-              <span class="saved-lessons__lesson">{{ lesson.lesson }}</span>
-              <div class="saved-lessons__duration">
-                <div
-                  [inlineSVG]="'/icons/icons-16/duration.svg'"
-                  class="saved-lessons__duration-icon"
-                ></div>
-                <span class="saved-lessons__duration-text">{{ lesson.duration }}</span>
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="my-learning__loading">
+      <div class="my-learning__spinner"></div>
+      <p>Loading your learning data...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="my-learning__error">
+      <p>{{ error() }}</p>
+      <button class="my-learning__retry-btn" (click)="retryLoad()">Retry</button>
+    </div>
+  }
+
+  <!-- Content -->
+  @if (!isLoading() && !error()) {
+    <div class="saved-lessons" style="display: none;">
+      <h2 class="saved-lessons__title">Saved Lessons ({{ savedLessons().length }})</h2>
+      <div class="saved-lessons__divider"></div>
+
+      @if (hasLessons()) {
+        <div class="saved-lessons__row saved-lessons-row" #scrollRow>
+          @for (lesson of savedLessons(); track lesson.id) {
+            <div class="saved-lessons__card">
+              <span class="saved-lessons__course">{{ lesson.course }}</span>
+              <div class="saved-lessons__meta">
+                <div class="saved-lessons__icon">
+                  <div
+                    [inlineSVG]="'/icons/icons-24/video-file.svg'"
+                    class="saved-lessons__icon-svg"
+                  ></div>
+                </div>
+                <div class="saved-lessons__text">
+                  <span class="saved-lessons__lesson">{{ lesson.lesson }}</span>
+                  <div class="saved-lessons__duration">
+                    <div
+                      [inlineSVG]="'/icons/icons-16/duration.svg'"
+                      class="saved-lessons__duration-icon"
+                    ></div>
+                    <span class="saved-lessons__duration-text">{{ lesson.duration }}</span>
+                  </div>
+                </div>
               </div>
             </div>
+          }
+        </div>
+      } @else {
+        <div class="saved-lessons__empty">
+          <div class="saved-lessons__empty-icon">
+            <div
+              [inlineSVG]="'/icons/icons-24/video-file.svg'"
+              class="saved-lessons__empty-icon-svg"
+            ></div>
           </div>
+          <p class="saved-lessons__empty-text">No saved lessons yet</p>
+          <p class="saved-lessons__empty-hint">Start learning to see your lessons here</p>
         </div>
       }
     </div>
-  </div>
 
-  <div class="notes">
-    <div class="notes__header">
-      <h2 class="notes__title">Notes ({{ filteredNotes.length }})</h2>
-    </div>
-
-    <div class="notes__filters">
-      <label class="notes__search">
-        <div [inlineSVG]="'/icons/icons-24/search.svg'" class="notes__search-icon"></div>
-        <input
-          type="text"
-          placeholder="Search"
-          (input)="onSearchChange($event.target.value)"
-          class="notes__search-input"
-        />
-      </label>
-      <div class="notes__filter-group">
-        <button class="notes__filter-btn">
-          <span class="notes__filter-text">{{ selectedSortOrder }}</span>
-          <div [inlineSVG]="'/icons/icons-24/arrow-down.svg'" class="notes__filter-icon"></div>
-        </button>
-        <button class="notes__filter-btn">
-          <span class="notes__filter-text">{{ selectedCourseFilter }}</span>
-          <div [inlineSVG]="'/icons/icons-24/arrow-down.svg'" class="notes__filter-icon"></div>
-        </button>
+    <!-- Remaining Courses in Current Stage -->
+    <div class="remaining-courses mt-4 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-gray-900 border-l-4 border-blue-500 pl-3">Next Up in Your Current Stage</h2>
       </div>
+      
+      @if (hasRemainingCourses()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (course of remainingCourses(); track course.id) {
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-bold text-gray-900 line-clamp-1" [title]="course.title">{{ course.title }}</h3>
+                  <p class="text-sm font-medium text-blue-600">{{ course.categoryLabel }}</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+                <span class="text-sm text-gray-500 flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  {{ course.duration }}
+                </span>
+                <button (click)="goToCourse(course.id)" class="text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+                  Start Course
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="bg-gray-50 rounded-xl p-8 text-center border border-gray-100">
+          <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <h3 class="font-bold text-gray-900 mb-1">Awesome! You're caught up.</h3>
+          <p class="text-gray-500 text-sm">You have completed all courses in your current stage. Take the stage quiz to unlock the next level.</p>
+        </div>
+      }
     </div>
 
-    @if (getCoursesWithNotes().length > 0) {
-      <div class="notes__courses">
-        @for (course of getCoursesWithNotes(); track course) {
-          <div class="notes__course">
-            <div class="notes__course-header">
-              <h2 class="notes__course-title">{{ course }}:</h2>
-              <button (click)="goToCourse(course)" class="notes__course-action">
-                Go to Course
-                <div
-                  [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
-                  class="notes__course-action-icon"
-                ></div>
-              </button>
-            </div>
-            @for (note of getNotesByCourse(course); track note) {
-              <div class="notes__note-card">
-                <div class="notes__note-meta">
-                  <span class="notes__note-label">{{ note.label }}</span>
-                  <div [inlineSVG]="'/icons/icons-24/more.svg'" class="notes__note-menu-icon"></div>
+    <div class="notes">
+      <div class="notes__header">
+        <h2 class="notes__title">Notes ({{ filteredNotes.length }})</h2>
+      </div>
+
+      <div class="notes__filters">
+        <label class="notes__search">
+          <div [inlineSVG]="'/icons/icons-24/search.svg'" class="notes__search-icon"></div>
+          <input
+            type="text"
+            placeholder="Search"
+            (input)="onSearchChange($event.target.value)"
+            class="notes__search-input"
+          />
+        </label>
+        <div class="notes__filter-group">
+          <button class="notes__filter-btn">
+            <span class="notes__filter-text">{{ selectedSortOrder }}</span>
+            <div [inlineSVG]="'/icons/icons-24/arrow-down.svg'" class="notes__filter-icon"></div>
+          </button>
+          <button class="notes__filter-btn">
+            <span class="notes__filter-text">{{ selectedCourseFilter }}</span>
+            <div [inlineSVG]="'/icons/icons-24/arrow-down.svg'" class="notes__filter-icon"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Notes Loading State -->
+      @if (isLoadingNotes()) {
+        <div class="notes__loading">
+          <div class="my-learning__spinner"></div>
+          <p>Loading notes...</p>
+        </div>
+      }
+
+      <!-- Notes Error State -->
+      @if (notesError()) {
+        <div class="notes__error">
+          <p>{{ notesError() }}</p>
+        </div>
+      }
+
+      <!-- Notes Content -->
+      @if (!isLoadingNotes() && !notesError()) {
+        @if (getCoursesWithNotes().length > 0) {
+          <div class="notes__courses">
+            @for (course of getCoursesWithNotes(); track course) {
+              <div class="notes__course">
+                <div class="notes__course-header">
+                  <h2 class="notes__course-title">{{ course }}:</h2>
+                  <button (click)="goToCourse(course)" class="notes__course-action">
+                    Go to Course
+                    <div
+                      [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+                      class="notes__course-action-icon"
+                    ></div>
+                  </button>
                 </div>
-                <p class="notes__note-body">
-                  {{ note.body }}
-                  <span [innerHTML]="note.html"></span>
-                </p>
+                @for (note of getNotesByCourse(course); track note.id) {
+                  <div class="notes__note-card">
+                    <div class="notes__note-meta">
+                      <span class="notes__note-label">{{ note.label }}</span>
+                      <div
+                        [inlineSVG]="'/icons/icons-24/more.svg'"
+                        class="notes__note-menu-icon"
+                      ></div>
+                    </div>
+                    <p class="notes__note-body">
+                      {{ note.body }}
+                      <span [innerHTML]="note.html"></span>
+                    </p>
+                  </div>
+                }
               </div>
             }
           </div>
+        } @else {
+          <div class="notes__empty">
+            <div class="notes__empty-icon">
+              <div [inlineSVG]="'/icons/icons-24/articles.svg'" class="notes__empty-icon-svg"></div>
+            </div>
+            <p class="notes__empty-text">No notes yet</p>
+            <p class="notes__empty-hint">Take notes while watching lessons to see them here</p>
+          </div>
         }
-      </div>
-    } @else {
-      <div class="notes__empty">
-        <p>No notes found matching your criteria</p>
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 </div>

@@ -1,10 +1,12 @@
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
-import { CreateMeetingRequest } from '../../../core/models/interfaces/meeting-request.model';
+import type { CreateMeetingRequestCommand } from '../../../api/models';
 import { MeetingRequestsService } from '../../../core/services';
+import { TokenService } from '../../../core/auth/token.service';
 import { StepperComponent, Step } from './stepper/stepper.component';
 import { RequestStepComponent } from './request-step/request-step.component';
 import { DatetimeStepComponent } from './datetime-step/datetime-step.component';
@@ -41,7 +43,7 @@ interface TimeOption {
     RequestStepComponent,
     DatetimeStepComponent,
     ReviewStepComponent
-],
+  ],
   templateUrl: './meet-scholar.component.html',
   styleUrls: ['./meet-scholar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +52,7 @@ export class MeetScholarComponent {
   currentStep = signal(1);
   meetingForm: FormGroup;
   isSubmitting = signal(false);
+  submitError = signal<string | null>(null);
 
   steps: Step[] = [
     { label: 'Request', index: 1 },
@@ -84,8 +87,9 @@ export class MeetScholarComponent {
 
   constructor(
     private fb: FormBuilder,
-    private meetingRequestsService: MeetingRequestsService,
+    private readonly _meetingRequestsService: MeetingRequestsService,
     private router: Router,
+    private readonly tokenService: TokenService,
   ) {
     this.meetingForm = this.fb.group({
       name: ['', Validators.required],
@@ -157,7 +161,9 @@ export class MeetScholarComponent {
 
   private convertTo24Hour(time12h: string): string {
     const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
+    const timeParts = time.split(':');
+    let hours = timeParts[0];
+    const minutes = timeParts[1];
 
     if (hours === '12') {
       hours = '00';
@@ -229,73 +235,145 @@ export class MeetScholarComponent {
     const requiredControls = ['name', 'email', 'topic', 'message', 'durationMinutes'];
     const hasInvalidRequired = requiredControls.some((ctrl) => this.meetingForm.get(ctrl)?.invalid);
     const selectedLanguagesEmpty = this.selectedLanguages().length === 0;
+    const hasSelectedDateTime =
+      typeof this.meetingForm.value.scheduledDate === 'string' &&
+      this.meetingForm.value.scheduledDate.length > 0 &&
+      typeof this.meetingForm.value.scheduledTime === 'string' &&
+      this.meetingForm.value.scheduledTime.length > 0;
 
-    if (hasInvalidRequired || selectedLanguagesEmpty || this.isSubmitting()) {
+    if (hasInvalidRequired || selectedLanguagesEmpty || !hasSelectedDateTime || this.isSubmitting()) {
+      if (!hasSelectedDateTime) {
+        this.submitError.set('Please select both a date and time before submitting your booking.');
+      }
+      return;
+    }
+
+    if (!this.tokenService.isAuthenticated()) {
+      this.submitError.set('Please sign in before booking a meeting.');
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
+      });
       return;
     }
 
     this.isSubmitting.set(true);
+    this.submitError.set(null);
 
     const formValue = this.meetingForm.value;
-    let scheduledAt: string | undefined;
-    let scheduledDateTime: Date | undefined;
+    const date = new Date(formValue.scheduledDate);
+    const [hours, minutes] = String(formValue.scheduledTime).split(':');
+    date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+    const scheduledAt = date.toISOString();
+    const scheduledDateTime: Date = date;
 
-    if (formValue.scheduledDate && formValue.scheduledTime) {
-      const date = new Date(formValue.scheduledDate);
-      const [hours, minutes] = formValue.scheduledTime.split(':');
-      date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-      scheduledAt = date.toISOString();
-      scheduledDateTime = date;
-    }
-
-    const payload: CreateMeetingRequest = {
-      name: formValue.name,
-      email: formValue.email,
+    const payload: CreateMeetingRequestCommand = {
       topic: formValue.topic,
       message: formValue.message,
       languages: formValue.languages,
-      durationMinutes: formValue.durationMinutes,
       scheduledAt,
     };
 
-    // TODO: Remove this temporary bypass when API is ready
-    // For now, simulate successful submission and navigate to success page
-    console.log('Meeting request payload:', payload);
-
-    // Temporary: Skip API call and go directly to success
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.router.navigate(['/ask-and-contact/meet-scholar/success'], {
-        state: {
-          scheduledDateTime: scheduledDateTime ?? scheduledAt,
-          scheduledTime: formValue.scheduledTime,
-          durationMinutes: formValue.durationMinutes,
-          confirmationEmail: formValue.email,
-        },
-      });
-    }, 500);
-
-    // Uncomment when API endpoint is ready:
-    /*
-    this.meetingRequestsService.create(payload).subscribe({
+    this._meetingRequestsService.create(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.router.navigate(['/ask-and-contact/meet-scholar/success'], {
           state: {
-            scheduledDateTime: scheduledDateTime ?? scheduledAt,
+            scheduledDateTime,
             scheduledTime: formValue.scheduledTime,
             durationMinutes: formValue.durationMinutes,
             confirmationEmail: formValue.email,
           },
         });
       },
-      error: (error) => {
+      error: (error: unknown) => {
         this.isSubmitting.set(false);
-        console.error('Error submitting meeting request:', error);
-        alert('Failed to submit meeting request. Please try again.');
+        this.submitError.set(this.getSubmitErrorMessage(error));
+
+        if (this.extractErrorStatus(error) === 401) {
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
+          });
+        }
       },
     });
-    */
+  }
+
+  private getSubmitErrorMessage(error: unknown): string {
+    const status = this.extractErrorStatus(error);
+    const message = this.extractErrorMessage(error).toLowerCase();
+
+    if (status === 401 || message.includes('401') || message.includes('unauthorized') || message.includes('authentication')) {
+      return 'Please sign in before booking a meeting.';
+    }
+
+    if (status === 400) {
+      return 'Please review your booking details and try again.';
+    }
+
+    return 'Unable to submit your booking right now. Please try again shortly.';
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error instanceof HttpErrorResponse) {
+      const nestedMessage = this.extractErrorMessage(error.error);
+      return nestedMessage.length > 0 ? nestedMessage : error.message;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const record = error as Record<string, unknown>;
+      const candidates = [record['message'], record['detail'], record['error']];
+
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.length > 0) {
+          return candidate;
+        }
+      }
+
+      return this.extractErrorMessage(record['originalError']);
+    }
+
+    return '';
+  }
+
+  private extractErrorStatus(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+      const nestedHttpStatus = this.parseStatusCandidate(error.error);
+      return nestedHttpStatus ?? error.status;
+    }
+
+    return this.parseStatusCandidate(error);
+  }
+
+  private parseStatusCandidate(candidate: unknown): number | null {
+    if (candidate === null || candidate === undefined) {
+      return null;
+    }
+
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      return candidate;
+    }
+
+    if (typeof candidate === 'string') {
+      const parsed = Number(candidate);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    if (typeof candidate === 'object') {
+      const record = candidate as Record<string, unknown>;
+
+      const directStatus = this.parseStatusCandidate(record['statusCode'] ?? record['status']);
+      if (directStatus !== null) {
+        return directStatus;
+      }
+
+      return this.parseStatusCandidate(record['originalError'] ?? record['error']);
+    }
+
+    return null;
   }
 
   getTopicLabel(value: MeetingInquiryTopic | null): string {

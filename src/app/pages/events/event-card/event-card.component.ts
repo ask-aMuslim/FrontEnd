@@ -1,8 +1,8 @@
 import { Component, Input } from '@angular/core';
 
 import { Router } from '@angular/router';
-import { EventService } from '../event.service';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
+import { EventService } from '../event.service';
 
 export interface EventCard {
   id: number | string;
@@ -14,6 +14,7 @@ export interface EventCard {
   speakerImage: string;
   speakerRole: string;
   date: string;
+  timeRange?: string;
   tags: string[];
   isRecorded?: boolean;
 }
@@ -25,12 +26,35 @@ export interface EventCard {
   styleUrls: ['./event-card.component.scss'],
 })
 export class EventCardComponent {
+  private static readonly fallbackEventImage = '/images/events-image-placeholder.jpg';
+  private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
+
   @Input() event!: EventCard;
 
-  constructor(private router: Router, private eventService: EventService) {}
+  constructor(
+    private readonly router: Router,
+    private readonly eventService: EventService,
+  ) { }
 
   onCardClick(): void {
     this.eventService.setSelectedEvent(this.event);
-    this.router.navigate(['/events', this.event.id]);
+    void this.router.navigate(['/events', this.event.id]);
+  }
+
+  onEventImageError(event: Event): void {
+    this.setFallbackImage(event, EventCardComponent.fallbackEventImage);
+  }
+
+  onSpeakerImageError(event: Event): void {
+    this.setFallbackImage(event, EventCardComponent.fallbackSpeakerImage);
+  }
+
+  private setFallbackImage(event: Event, fallbackSrc: string): void {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement) || target.src.endsWith(fallbackSrc)) {
+      return;
+    }
+
+    target.src = fallbackSrc;
   }
 }

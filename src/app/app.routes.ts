@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { NotFound } from './pages/not-found/not-found';
 import { Home } from './pages/home/home';
+import { authGuard, guestGuard } from './core/guards';
 import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
 import { LoginComponent } from './core/auth/login/login.component';
 import { RegisterComponent } from './core/auth/register/register.component';
@@ -22,10 +23,11 @@ export const routes: Routes = [
   // default route
   { path: '', redirectTo: '/home', pathMatch: 'full' },
 
-  // Auth layout routes
+  // Auth layout routes (guest only — redirect to /home if authenticated)
   {
     path: '',
     component: AuthLayoutComponent,
+    canActivate: [guestGuard],
     children: [
       { path: 'login', component: LoginComponent, title: 'Login' },
       { path: 'register', component: RegisterComponent, title: 'Register' },
@@ -172,14 +174,21 @@ export const routes: Routes = [
           {
             path: 'course/:courseId/lesson/:lessonId',
             component: LessonPlayerComponent,
+            canActivate: [authGuard],
             title: 'Lesson Player',
           },
           {
             path: 'course/:courseId/quiz',
             component: QuizComponent,
+            canActivate: [authGuard],
             title: 'Quiz',
           },
-          { path: 'lesson/:id', component: LessonOverviewComponent, title: 'Lesson Overview' },
+          {
+            path: 'lesson/:id',
+            component: LessonOverviewComponent,
+            canActivate: [authGuard],
+            title: 'Lesson Overview'
+          },
         ],
       },
       {
@@ -189,7 +198,12 @@ export const routes: Routes = [
           { path: ':id', component: EventDetailComponent, title: 'Event Details' },
         ],
       },
-      { path: 'account', component: AccountComponent, title: 'Account' },
+      {
+        path: 'contact',
+        loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
+        title: 'Contact Us',
+      },
+      { path: 'account', component: AccountComponent, title: 'Account', canActivate: [authGuard] },
     ],
   },
 

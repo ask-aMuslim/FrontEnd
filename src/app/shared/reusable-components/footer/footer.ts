@@ -68,10 +68,10 @@ export class Footer {
     {
       title: 'Ask & Contact',
       links: [
-        { label: 'Ask', href: '/ask-and-contact/ask-qa', external: false },
+        { label: 'Ask Questions', href: '/ask-and-contact/ask-qa', external: false },
         // { label: 'Virtual Assistant', href: '/ask-and-contact/ask-assistant', external: false },
-        { label: 'Email your Inquiry', href: '/ask-and-contact/send-inquiry', external: false },
-        { label: 'Talk to a Scholar', href: '/ask-and-contact/meet-scholar', external: false },
+        { label: 'Meet Scholar', href: '/ask-and-contact/meet-scholar', external: false },
+        { label: 'Send Inquiry', href: '/ask-and-contact/send-inquiry', external: false },
       ],
     },
   ];
@@ -98,7 +98,7 @@ export class Footer {
     {
       icon: '/icons/icons-social-apps/threads.svg',
       label: 'askamuslim',
-      href: '',
+      href: 'https://www.threads.com/@askamuslim',
       ariaLabel: 'Visit our Threads profile',
     },
     {
@@ -109,8 +109,8 @@ export class Footer {
     },
     {
       icon: '/icons/icons-social-apps/gmail.svg',
-      label: 'contact@ask-a-muslim.com',
-      href: 'mailto:contact@ask-a-muslim.com',
+      label: 'info@askamuslim.com',
+      href: 'mailto:info@askamuslim.com',
       ariaLabel: 'Send us an email',
     },
   ];
