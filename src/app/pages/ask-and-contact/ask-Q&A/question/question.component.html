@@ -1,7 +1,8 @@
 <div class="flex flex-col gap-10">
   <div>
-    <span class="text-(--color-text-placeholder)">Ask “Q&A” / </span>
-    <span class="text-(--color-button-secondary-normal)">{{ id }}</span>
+    <a routerLink="/ask-and-contact/ask-qa" class="text-(--color-text-placeholder) hover:underline cursor-pointer">Ask Questions</a>
+    <span class="text-(--color-text-placeholder)"> / </span>
+    <span class="text-(--color-button-secondary-normal)">{{ categories[0] || id }}</span>
   </div>
 
   <div>
@@ -18,12 +19,12 @@
       </a>
 
       <div class="flex gap-8">
-        <button class="flex items-center gap-2 cursor-pointer" (click)="toggleSave()">
+        <button class="hidden" (click)="toggleSave()" aria-hidden="true" tabindex="-1">
           <img [src]="isSaved ? savedIcon : saveIcon" />
           <span class="label">Save</span>
         </button>
 
-        <button class="flex items-center gap-2 cursor-pointer">
+        <button class="flex items-center gap-2 cursor-pointer" (click)="share()">
           <img [src]="shareIcon" />
           <span class="label">Share</span>
         </button>
@@ -31,26 +32,26 @@
     </div>
   </div>
 
-  <div class="paragraph">
-    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">{{ description }}</p>
-  </div>
 
-  <div class="overflow-hidden rounded-lg">
-    <img [src]="eventImage" alt="" loading="lazy" />
-  </div>
+
+  @if (imageUrl) {
+    <div class="overflow-hidden rounded-lg">
+      <img [src]="imageUrl" [alt]="title" loading="lazy" (error)="onImageError($event)" />
+    </div>
+  }
 
   <div class="paragraph">
-    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">
-      {{ description }}<br /><br />{{ description }}<br /><br />{{ description }}
-    </p>
+    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">{{ answer }}</p>
   </div>
 
   <div class="flex justify-end mb-4">
-    <div
-      class="flex justify-center items-center w-[200px] h-14 border-[1.5px] border-(--color-text-placeholder) rounded-lg px-8 cursor-pointer hover:bg-(--color-card-surface-secondary) transition-colors"
+    <button
+      type="button"
+      class="flex justify-center items-center w-50 h-14 border-[1.5px] border-(--color-text-placeholder) rounded-lg px-8 cursor-pointer hover:bg-(--color-card-surface-secondary) transition-colors"
+      (click)="downloadPdf()"
     >
       <img [src]="downloadIcon" class="inline-block mr-2 w-6 h-6" />
       Download
-    </div>
+    </button>
   </div>
 </div>

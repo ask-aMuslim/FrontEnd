@@ -8,134 +8,151 @@
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          >
+        >
           <path
             d="M15 18L9 12L15 6"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            />
-          </svg>
-        </a>
-        <h1 class="login-title">Welcome Back</h1>
-      </div>
-      <img src="footer/footer-logo-big.svg" alt="Ask A Muslim Logo" class="header-logo" />
+          />
+        </svg>
+      </a>
+      <h1 class="login-title">Welcome Back</h1>
     </div>
+    <img src="/footer/footer-logo-big.svg" alt="Ask A Muslim Logo" class="header-logo" />
+  </div>
 
-    <div class="social-buttons">
-      <button type="button" class="social-btn social-btn--google">
-        <img src="/icons/icons-social-apps/google.svg" alt="Google" />
-        <span>Sign in with Google</span>
-      </button>
-      <button type="button" class="social-btn social-btn--facebook">
-        <img src="/icons/icons-social-apps/facebook.svg" alt="Facebook" />
-        <span>Sign in with Facebook</span>
-      </button>
-    </div>
+  <div class="social-buttons">
+    <button type="button" class="social-btn social-btn--google" (click)="onSocialSignIn('google')">
+      <img src="/icons/icons-social-apps/google.svg" alt="Google" />
+      <span>Sign in with Google</span>
+    </button>
+    <button type="button" class="social-btn social-btn--facebook" (click)="onSocialSignIn('facebook')">
+      <img src="/icons/icons-social-apps/facebook.svg" alt="Facebook" />
+      <span>Sign in with Facebook</span>
+    </button>
+  </div>
 
-    <div class="divider">
-      <span>or</span>
-    </div>
+  <div class="divider">
+    <span>or</span>
+  </div>
 
-    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
-      <div
-        class="form-group"
-        [class.form-group--error]="isFieldInvalid('email')"
-        [class.form-group--focused]="fieldFocused['email']"
+  <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+    @if (friendlyApiError) {
+      <div class="api-error" role="alert">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
         >
-        <label for="email" class="form-label">Email Address</label>
-        <div class="input-wrapper">
+          <path
+            d="M8 1C4.13 1 1 4.13 1 8s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm-.5 3h1v5h-1V4zm.5 8a.75.75 0 110-1.5.75.75 0 010 1.5z"
+            fill="currentColor"
+          />
+        </svg>
+        <span>{{ friendlyApiError }}</span>
+      </div>
+    }
+    <div
+      class="form-group"
+      [class.form-group--error]="isFieldInvalid('email')"
+      [class.form-group--focused]="fieldFocused['email']"
+    >
+      <label for="email" class="form-label">Email Address</label>
+      <div class="input-wrapper">
+        <input
+          type="email"
+          id="email"
+          name="email"
+          formControlName="email"
+          placeholder="email@example.com"
+          class="form-input"
+          (focus)="onFieldFocus('email')"
+          (blur)="onFieldBlur('email')"
+          autocomplete="email"
+        />
+        @if (isFieldInvalid('email')) {
+          <span class="form-error-tooltip">
+            {{ getFieldError('email') }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <div
+      class="form-group"
+      [class.form-group--error]="isFieldInvalid('password')"
+      [class.form-group--focused]="fieldFocused['password']"
+    >
+      <label for="password" class="form-label">Password</label>
+      <div class="input-wrapper">
+        <div class="password-wrapper">
           <input
-            type="email"
-            id="email"
-            name="email"
-            formControlName="email"
-            placeholder="email@example.com"
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            name="password"
+            formControlName="password"
+            placeholder="Password"
             class="form-input"
-            (focus)="onFieldFocus('email')"
-            (blur)="onFieldBlur('email')"
-            autocomplete="email"
-            />
-            @if (isFieldInvalid('email')) {
-              <span class="form-error-tooltip">
-                {{ getFieldError('email') }}
-              </span>
-            }
-          </div>
-        </div>
-
-        <div
-          class="form-group"
-          [class.form-group--error]="isFieldInvalid('password')"
-          [class.form-group--focused]="fieldFocused['password']"
+            [attr.autocomplete]="showPassword ? 'off' : 'current-password'"
+            (focus)="onFieldFocus('password')"
+            (blur)="onFieldBlur('password')"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePassword()"
+            tabindex="-1"
+            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
           >
-          <label for="password" class="form-label">Password</label>
-          <div class="input-wrapper">
-            <div class="password-wrapper">
-              <input
-                [type]="showPassword ? 'text' : 'password'"
-                id="password"
-                name="password"
-                formControlName="password"
-                placeholder="Password"
-                class="form-input"
-                [attr.autocomplete]="showPassword ? 'off' : 'current-password'"
-                (focus)="onFieldFocus('password')"
-                (blur)="onFieldBlur('password')"
-                />
-                <button
-                  type="button"
-                  class="password-toggle"
-                  (click)="togglePassword()"
-                  tabindex="-1"
-                  [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
-                  >
-                  <img
-                    [src]="showPassword ? '/icons/icons-24/eye.svg' : '/icons/icons-24/eye-off.svg'"
-                    alt
-                    />
-                  </button>
-                </div>
-                @if (isFieldInvalid('password')) {
-                  <span class="form-error-tooltip">
-                    {{ getFieldError('password') }}
-                  </span>
-                }
-              </div>
-            </div>
-
-            <div class="form-options">
-              <a [routerLink]="'/reset-password'" class="forgot-link ms-auto">Forgot Password?</a>
-            </div>
-
-            <button
-              type="submit"
-              class="submit-btn"
-              [class.submit-btn--loading]="isSubmitting"
-              [class.submit-btn--success]="submitSuccess"
-              [disabled]="isSubmitting"
-              >
-              @if (!isSubmitting && !submitSuccess) {
-                <span class="submit-btn__text">Sign In</span>
-              }
-              @if (isSubmitting) {
-                <span class="submit-btn__loading">
-                  <span class="spinner"></span>
-                  Signing In...
-                </span>
-              }
-              @if (submitSuccess) {
-                <span class="submit-btn__success">
-                  <span class="success-icon">✓</span>
-                  Welcome Back!
-                </span>
-              }
-            </button>
-          </form>
-
-          <p class="signup-link">
-            Don't have an account?
-            <a [routerLink]="'/register'" class="signup-link__cta">Create Account</a>
-          </p>
+            <img
+              [src]="showPassword ? '/icons/icons-24/eye.svg' : '/icons/icons-24/eye-off.svg'"
+              alt
+            />
+          </button>
         </div>
+        @if (isFieldInvalid('password')) {
+          <span class="form-error-tooltip">
+            {{ getFieldError('password') }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="form-options">
+      <a [routerLink]="'/reset-password'" class="forgot-link ms-auto">Forgot Password?</a>
+    </div>
+
+    <button
+      type="submit"
+      class="submit-btn"
+      [class.submit-btn--loading]="loading()"
+      [class.submit-btn--success]="submitSuccess"
+      [disabled]="loading()"
+    >
+      @if (!loading() && !submitSuccess) {
+        <span class="submit-btn__text">Sign In</span>
+      }
+      @if (loading()) {
+        <span class="submit-btn__loading">
+          <span class="spinner"></span>
+          Signing In...
+        </span>
+      }
+      @if (submitSuccess) {
+        <span class="submit-btn__success">
+          <span class="success-icon">✓</span>
+          Welcome Back!
+        </span>
+      }
+    </button>
+  </form>
+
+  <p class="signup-link">
+    Don't have an account?
+    <a [routerLink]="'/register'" class="signup-link__cta">Create Account</a>
+  </p>
+</div>

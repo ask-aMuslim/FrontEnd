@@ -1,60 +1,54 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
-import type { EventCard } from './event-card/event-card.component';
+import { Observable, map } from 'rxjs';
 import type { EventDetail } from './event-detail/event-detail.component';
 import { EventsService } from '../../core/services/events.service';
+import type { EventCard } from './event-card/event-card.component';
+import {
+  extractRecord,
+  getValue,
+  toBooleanValue,
+  toNumberValue,
+  toStringArray,
+  toStringValue,
+} from '../../core/helpers/api-response.helper';
+import { formatEventDateDisplay, formatEventTimeRangeDisplay } from '../../core/helpers/event-display.helper';
+import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EventService {
-  private selectedEventSubject = new BehaviorSubject<EventCard | null>(null);
-  selectedEvent$ = this.selectedEventSubject.asObservable();
+  private selectedEvent: EventCard | null = null;
 
   constructor(private readonly eventsService: EventsService) { }
 
   setSelectedEvent(event: EventCard): void {
-    this.selectedEventSubject.next(event);
+    this.selectedEvent = event;
   }
 
-  getSelectedEvent(): EventCard | null {
-    return this.selectedEventSubject.value;
-  }
+  getSelectedEventById(id: string): EventDetail | null {
+    if (!this.selectedEvent || String(this.selectedEvent.id) !== id) {
+      return null;
+    }
 
-  convertCardToDetail(card: EventCard): EventDetail {
     return {
-      id: card.id,
-      title: card.title,
-      description: card.description,
-      fullDescription: `${card.description}\n\nJoin us for this enlightening session. This comprehensive event will cover various aspects of Islamic teachings on this topic. All materials will be provided, and refreshments will be served.`,
-      imageUrl: card.imageUrl,
-      imageAlt: card.imageAlt,
-      speakerName: card.speakerName,
-      speakerImage: card.speakerImage,
-      speakerRole: card.speakerRole,
-      speakerBio: `${card.speakerName} is a renowned Islamic scholar with over 15 years of experience in teaching Islamic studies and specializes in various aspects of Islamic jurisprudence and contemporary Muslim life.`,
-      date: card.date,
-      time: '1:00 PM - 4:00 PM',
-      location: 'Live Session',
-      tags: card.tags,
-      isRecorded: card.isRecorded || false,
-      registrationDeadline: '1 day before event',
-      maxAttendees: 500,
-      currentAttendees: 342,
-      agenda: [
-        `Welcome and Introduction to ${card.title}`,
-        'Understanding Key Concepts and Principles',
-        'Interactive Discussion and Examples',
-        'Q&A session with our knowledgeable instructor',
-        'Practical Applications and Takeaways',
-        'Closing Remarks and Next Steps',
-      ],
-      outcomes: [
-        `Gain comprehensive understanding of ${card.title.toLowerCase()}`,
-        'Learn practical applications of Islamic principles',
-        'Develop better understanding through interactive discussion',
-        'Build connections with like-minded attendees',
-      ],
+      id: this.selectedEvent.id,
+      title: this.selectedEvent.title,
+      description: this.selectedEvent.description,
+      fullDescription: this.selectedEvent.description,
+      imageUrl: this.selectedEvent.imageUrl,
+      imageAlt: this.selectedEvent.imageAlt,
+      speakerName: this.selectedEvent.speakerName,
+      speakerImage: this.selectedEvent.speakerImage,
+      speakerRole: this.selectedEvent.speakerRole,
+      speakerBio: '',
+      date: this.selectedEvent.date,
+      time: '',
+      location: '',
+      tags: this.selectedEvent.tags,
+      isRecorded: this.selectedEvent.isRecorded === true,
+      agenda: [],
+      outcomes: [],
     };
   }
 
@@ -65,58 +59,55 @@ export class EventService {
   }
 
   private mapEventDetail(response: unknown): EventDetail | null {
-    const record = this.asRecord(response);
+    const record = extractRecord(response);
     if (!record) {
       return null;
     }
 
-    const title = this.asString(record['title']) ?? 'Event';
-    const description = this.asString(record['description']) ?? '';
-    const tags = this.asStringArray(record['tags']);
+    const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
+    const description = toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
+    const startDateValue = toStringValue(
+      getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
+    );
+    const endDateValue = toStringValue(getValue(record, 'endDateTime', 'EndDateTime'));
 
     return {
-      id: this.asString(record['id']) ?? 'event',
+      id: toStringValue(getValue(record, 'id', 'Id')) ?? 'event',
       title,
       description,
       fullDescription:
-        this.asString(record['fullDescription']) ??
-        (description ? `${description}` : 'Details will be available soon.'),
-      imageUrl: this.asString(record['imageUrl']) ?? '/images/events-picture.png',
-      imageAlt: this.asString(record['imageAlt']) ?? title,
-      speakerName: this.asString(record['speakerName']) ?? 'Ask A Muslim',
+        toStringValue(getValue(record, 'fullDescription', 'FullDescription')) ??
+        description,
+      imageUrl:
+        toApiMediaUrl(
+          toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'coverImageUrl', 'CoverImageUrl')),
+        ) ??
+        '/images/events-image-placeholder.jpg',
+      imageAlt: toStringValue(getValue(record, 'imageAlt', 'ImageAlt')) ?? title,
+      speakerName: toStringValue(getValue(record, 'speakerName', 'SpeakerName')) ?? '',
       speakerImage:
-        this.asString(record['speakerImage']) ?? '/images/profile-picture-navbar.png',
-      speakerRole: this.asString(record['speakerRole']) ?? 'Islamic Scholar',
+        toApiMediaUrl(toStringValue(getValue(record, 'speakerImage', 'SpeakerImage'))) ??
+        '/images/profile-picture-navbar.png',
+      speakerRole: toStringValue(getValue(record, 'speakerRole', 'SpeakerRole')) ?? '',
       speakerBio:
-        this.asString(record['speakerBio']) ??
-        'A trusted scholar dedicated to guiding the community with clarity and compassion.',
-      date: this.asString(record['date']) ?? 'TBD',
-      time: this.asString(record['time']) ?? 'TBD',
-      location: this.asString(record['location']) ?? 'TBD',
-      tags: tags.length > 0 ? tags : ['#Event'],
-      isRecorded: record['isRecorded'] === true,
-      registrationDeadline: this.asString(record['registrationDeadline']),
-      maxAttendees: this.asNumber(record['maxAttendees']),
-      currentAttendees: this.asNumber(record['currentAttendees']),
-      agenda: this.asStringArray(record['agenda']),
-      outcomes: this.asStringArray(record['outcomes']),
+        toStringValue(getValue(record, 'speakerBio', 'SpeakerBio')) ??
+        '',
+      date: formatEventDateDisplay(startDateValue),
+      time:
+        toStringValue(getValue(record, 'time', 'Time', 'startTime', 'StartTime')) ??
+        formatEventTimeRangeDisplay(startDateValue, endDateValue),
+      location: toStringValue(getValue(record, 'location', 'Location')) ?? '',
+      tags,
+      isRecorded: toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
+      registrationDeadline: toStringValue(
+        getValue(record, 'registrationDeadline', 'RegistrationDeadline'),
+      ) ?? undefined,
+      maxAttendees: toNumberValue(getValue(record, 'maxAttendees', 'MaxAttendees')) ?? undefined,
+      currentAttendees:
+        toNumberValue(getValue(record, 'currentAttendees', 'CurrentAttendees')) ?? undefined,
+      agenda: toStringArray(getValue(record, 'agenda', 'Agenda')),
+      outcomes: toStringArray(getValue(record, 'outcomes', 'Outcomes')),
     };
-  }
-
-  private asRecord(value: unknown): Record<string, unknown> | null {
-    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
-  }
-
-  private asString(value: unknown): string | undefined {
-    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
-  }
-
-  private asStringArray(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
-  }
-
-  private asNumber(value: unknown): number | undefined {
-    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   }
 }

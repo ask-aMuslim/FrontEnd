@@ -301,3 +301,50 @@
     }
   }
 }
+
+.sign-in-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  &__card {
+    position: relative;
+    z-index: 1;
+    width: min(90vw, 460px);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    background: var(--colors-rare-grays-0, #fff);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+  }
+
+  &__title {
+    margin: 0;
+    color: var(--colors-rare-grays-100, #1a1a1a);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  &__text {
+    margin: 0.75rem 0 0;
+    color: var(--colors-rare-grays-80, #343a40);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  &__actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}

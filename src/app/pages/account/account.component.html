@@ -3,7 +3,7 @@
   <div class="profile-header__overlay">
     <div class="section-block profile-header__block">
       <div class="profile-header__info">
-        <img [src]="userProfile.profileImage" alt="Profile image" class="profile-avatar" />
+        <img [src]="userProfile.profileImage || '/images/profile-placeholder.svg'" (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;" alt="Profile image" class="profile-avatar" />
         <div class="profile-details">
           <div class="profile-name-section">
             <div class="profile-name-row">
@@ -50,37 +50,39 @@
 <section class="section-container profile-content">
   <div class="section-block">
     <div class="profile-content__layout">
-      <!-- Verse of the Day -->
-      <div class="verse-card">
-        <div class="verse-card__header">
-          <div [inlineSVG]="'/icons/icons-24/bookmark.svg'" class="verse-card__icon"></div>
-          <h2 class="verse-card__label">Verse of the Day</h2>
-          <h2 class="verse-card__reference">
-            &#123;Sura: {{ currentVerse.sura }}, Aya: {{ currentVerse.aya }}&#125;
-          </h2>
+      <!-- Verse of the Day - Only shown when data is available from API -->
+      @if (currentVerse.text) {
+        <div class="verse-card">
+          <div class="verse-card__header">
+            <div [inlineSVG]="'/icons/icons-24/bookmark.svg'" class="verse-card__icon"></div>
+            <h2 class="verse-card__label">Verse of the Day</h2>
+            <h2 class="verse-card__reference">
+              &#123;Sura: {{ currentVerse.sura }}, Aya: {{ currentVerse.aya }}&#125;
+            </h2>
+          </div>
+          <h2 class="verse-card__arabic">{{ currentVerse.text }}</h2>
+          <h2 class="verse-card__translation">{{ currentVerse.textEnglish }}</h2>
+          <div class="verse-card__action">
+            <button class="verse-card__btn">
+              Understand More
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="verse-card__btn-icon"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.6"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
-        <h2 class="verse-card__arabic">{{ currentVerse.text }}</h2>
-        <h2 class="verse-card__translation">{{ currentVerse.textEnglish }}</h2>
-        <div class="verse-card__action">
-          <button class="verse-card__btn">
-            Understand More
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              class="verse-card__btn-icon"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.6"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+      }
 
       <div class="profile-grid">
         <!-- Left Side - Dynamic Tab Content -->
@@ -102,74 +104,74 @@
             <app-my-learning></app-my-learning>
           }
 
-          <!-- Saved Answers Tab -->
-          @if (activeTabIndex === 1) {
-            <app-saved-answers></app-saved-answers>
-          }
-
-          <!-- Chat List Tab -->
-          @if (activeTabIndex === 2) {
-            <app-chat-list></app-chat-list>
-          }
-
           <!-- About Tab -->
-          @if (activeTabIndex === 3) {
+          @if (activeTabIndex === 1) {
             <app-about></app-about>
+          }
+
+          <!-- My Inquiries Tab -->
+          @if (activeTabIndex === 2) {
+            <app-my-inquiries></app-my-inquiries>
           }
         </div>
 
         <!-- Right Side -->
         <div class="profile-sidebar">
-          <div class="upcoming-event-widget">
-            <h2 class="upcoming-event-widget__title">Upcoming Event</h2>
-            <div class="upcoming-event-card">
-              <div class="upcoming-event-card__meta">
-                <div class="upcoming-event-card__meta-item">
-                  <div
-                    [inlineSVG]="'/icons/icons-16/calendar.svg'"
-                    class="upcoming-event-card__meta-icon"
-                  ></div>
-                  <span class="upcoming-event-card__meta-text">{{ upcomingEvent.date }}</span>
+          @if (upcomingEvent) {
+            <div class="upcoming-event-widget">
+              <h2 class="upcoming-event-widget__title">Upcoming Event</h2>
+              <div class="upcoming-event-card">
+                <div class="upcoming-event-card__meta">
+                  <div class="upcoming-event-card__meta-item">
+                    <div
+                      [inlineSVG]="'/icons/icons-16/calendar.svg'"
+                      class="upcoming-event-card__meta-icon"
+                    ></div>
+                    <span class="upcoming-event-card__meta-text">{{ upcomingEvent.date }}</span>
+                  </div>
+                  <div class="upcoming-event-card__meta-item">
+                    <div
+                      [inlineSVG]="'/icons/icons-16/clock.svg'"
+                      class="upcoming-event-card__meta-icon"
+                    ></div>
+                    <span class="upcoming-event-card__meta-text">{{ upcomingEvent.time }}</span>
+                  </div>
                 </div>
-                <div class="upcoming-event-card__meta-item">
-                  <div
-                    [inlineSVG]="'/icons/icons-16/clock.svg'"
-                    class="upcoming-event-card__meta-icon"
-                  ></div>
-                  <span class="upcoming-event-card__meta-text">{{ upcomingEvent.time }}</span>
+                <h2 class="upcoming-event-card__title">{{ upcomingEvent.title }}</h2>
+                <div class="upcoming-event-card__speaker">
+                  <img
+                    [src]="upcomingEvent.speakerImage || '/images/profile-placeholder.svg'"
+                    (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
+                    alt="speaker"
+                    class="upcoming-event-card__speaker-image"
+                  />
+                  <div class="upcoming-event-card__speaker-info">
+                    <span class="upcoming-event-card__speaker-name">{{
+                      upcomingEvent.speaker
+                    }}</span>
+                    <span class="upcoming-event-card__speaker-role">{{
+                      upcomingEvent.speakerRole
+                    }}</span>
+                  </div>
                 </div>
-              </div>
-              <h2 class="upcoming-event-card__title">{{ upcomingEvent.title }}</h2>
-              <div class="upcoming-event-card__speaker">
-                <img
-                  [src]="upcomingEvent.speakerImage"
-                  alt="speaker"
-                  class="upcoming-event-card__speaker-image"
-                />
-                <div class="upcoming-event-card__speaker-info">
-                  <span class="upcoming-event-card__speaker-name">{{ upcomingEvent.speaker }}</span>
-                  <span class="upcoming-event-card__speaker-role">{{
-                    upcomingEvent.speakerRole
-                  }}</span>
-                </div>
-              </div>
-              <div class="upcoming-event-card__divider"></div>
-              <div class="upcoming-event-card__footer">
-                <button (click)="viewEventDetails()" class="upcoming-event-card__details-btn">
-                  View Details
-                </button>
-                <div class="upcoming-event-card__status">
-                  <div
-                    [inlineSVG]="'/icons/icons-24/done.svg'"
-                    class="upcoming-event-card__status-icon"
-                  ></div>
-                  <span class="upcoming-event-card__status-text">
-                    {{ upcomingEvent.isRegistered ? 'Registered' : 'Not Registered' }}
-                  </span>
+                <div class="upcoming-event-card__divider"></div>
+                <div class="upcoming-event-card__footer">
+                  <button (click)="viewEventDetails()" class="upcoming-event-card__details-btn">
+                    View Details
+                  </button>
+                  <div class="upcoming-event-card__status">
+                    <div
+                      [inlineSVG]="'/icons/icons-24/done.svg'"
+                      class="upcoming-event-card__status-icon"
+                    ></div>
+                    <span class="upcoming-event-card__status-text">
+                      {{ upcomingEvent.isRegistered ? 'Registered' : 'Not Registered' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          }
 
           <div class="mosque-widget">
             <h2 class="mosque-widget__title">Looking for a near Mosque?</h2>

@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 
 interface Video {
-  id: number;
+  id: string | number;
   image: string;
   duration: string;
   title: string;
@@ -21,7 +21,7 @@ interface Video {
 })
 export class VideoCardComponent {
   @Input() video!: Video;
-  @Output() videoClicked = new EventEmitter<number>();
+  @Output() videoClicked = new EventEmitter<string | number>();
 
   onCardClick(): void {
     this.videoClicked.emit(this.video.id);

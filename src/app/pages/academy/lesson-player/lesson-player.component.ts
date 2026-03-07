@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LessonContentService } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
@@ -13,7 +13,9 @@ import {
 import {
     AcademyCourse,
     AcademyLesson,
+    LessonProgress,
 } from '../../../core/models/interfaces/academy-progress.model';
+import { LessonType } from '../../../core/models/interfaces/enums.model';
 import {
     LessonContent,
     LessonData,
@@ -47,11 +49,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     currentLesson: AcademyLesson | undefined;
     nextAcademyLesson: AcademyLesson | undefined;
     previousAcademyLesson: AcademyLesson | undefined;
-    courseLessons: AcademyLesson[] = [];
+    courseLessons: Array<AcademyLesson & { progress: LessonProgress }> = [];
 
     lessonData: LessonData | null = null;
     lessonContent: LessonContent | null = null;
-    coarseLessons: LessonMetadata[] = [];
 
     isIntroLesson = false;
     activeTab: LessonPlayerTab = 'overview';
@@ -63,17 +64,13 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     previousLesson: LessonMetadata | undefined;
 
     noteText: string = '';
-    previousNotes: Array<{ timestamp: string; text: string }> = [
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' },
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' },
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' },
-        { timestamp: '[Lesson] 8:20', text: 'My note is written here. My note is written here. My note is written here. My note is written here.' }
-    ];
+    previousNotes: Array<{ timestamp: string; text: string }> = [];
     notesFilter: 'latest' | 'current-lesson' = 'latest';
     notesSearchQuery: string = '';
 
     lessonRating: number = 0;
     feedbackText: string = '';
+    feedbackSubmissionMessage: string | null = null;
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
@@ -85,7 +82,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         private readonly route: ActivatedRoute,
         private readonly router: Router,
         private readonly lessonContentService: LessonContentService,
-        private readonly academyProgressService: AcademyProgressService
+        private readonly academyProgressService: AcademyProgressService,
+        private readonly cdr: ChangeDetectorRef,
     ) { }
 
     get bannerImageUrl(): string {
@@ -125,6 +123,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             this.lessonId = params.get('lessonId') || '';
 
             if (this.courseId && this.lessonId) {
+                this.resetViewStateForRouteChange();
                 this.loadLessonData();
             }
         });
@@ -140,29 +139,53 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.isContentLoading = true;
         this.error = null;
 
-        this.currentCourse = this.academyProgressService.getCourseById(this.courseId);
-        this.currentLesson = this.academyProgressService.getLessonById(this.lessonId);
-        this.courseLessons = this.academyProgressService.getCourseLessons(this.courseId);
+        combineLatest([
+            this.academyProgressService.getAcademyCourseById(this.courseId),
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
+        ])
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: ([course, lessonsWithProgress]) => {
+                    const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
 
-        this.nextAcademyLesson = this.academyProgressService.getNextLesson(this.courseId, this.lessonId);
-        this.previousAcademyLesson = this.academyProgressService.getPreviousLesson(this.courseId, this.lessonId);
+                    if (!currentLesson) {
+                        this.error = 'Lesson not found';
+                        this.isLoading = false;
+                        this.isContentLoading = false;
+                        this.cdr.detectChanges();
+                        return;
+                    }
 
-        if (!this.currentCourse || !this.currentLesson) {
-            this.error = 'Lesson not found';
-            this.isLoading = false;
-            this.isContentLoading = false;
-            return;
-        }
+                    this.currentCourse = course;
+                    this.courseLessons = lessonsWithProgress.map((lesson) => ({
+                        ...lesson,
+                        progress: {
+                            ...lesson.progress,
+                            status: lesson.id === this.lessonId ? 'current' : lesson.progress.status
+                        }
+                    }));
+                    this.currentLesson = this.stripProgress(currentLesson);
+                    this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
+                    this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
+                    this.isIntroLesson = this.currentLesson.type === 'intro';
 
-        this.isIntroLesson = this.currentLesson.type === 'intro';
+                    this.cdr.detectChanges();
 
-        this.academyProgressService.updateLessonProgress({
-            lessonId: this.lessonId,
-            courseId: this.courseId,
-        }).pipe(takeUntil(this.destroy$)).subscribe();
+                    this.academyProgressService.updateLessonProgress({
+                        lessonId: this.lessonId,
+                        courseId: this.courseId,
+                    }).pipe(takeUntil(this.destroy$)).subscribe();
 
-        this.loadLessonContent();
-        this.loadCourseLessonsForSidebar();
+                    this.loadLessonContent();
+                    this.loadLessonNotes();
+                },
+                error: () => {
+                    this.error = 'Unable to load this lesson right now. Please try again.';
+                    this.isLoading = false;
+                    this.isContentLoading = false;
+                    this.cdr.detectChanges();
+                }
+            });
     }
 
     private loadLessonContent(): void {
@@ -175,29 +198,48 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.lessonContent = data.content;
                     this.nextLesson = data.nextLesson;
                     this.previousLesson = data.previousLesson;
+                    this.error = null;
                     this.isLoading = false;
                     this.isContentLoading = false;
+                    this.cdr.detectChanges();
                 },
-                error: (err) => {
-                    console.warn('Content service failed, using academy data:', err);
+                error: () => {
+                    this.error = 'Unable to load lesson content right now. Please try again.';
                     this.isLoading = false;
                     this.isContentLoading = false;
+                    this.cdr.detectChanges();
                 }
             });
     }
 
-    private loadCourseLessonsForSidebar(): void {
+    private loadLessonNotes(): void {
         this.lessonContentService
-            .getCourseLessons(this.courseId)
+            .getLessonNotes(this.lessonId)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (lessons: LessonMetadata[]) => {
-                    this.coarseLessons = lessons;
+                next: (notes) => {
+                    this.previousNotes = notes;
+                    this.cdr.detectChanges();
                 },
-                error: (err) => {
-                    console.error('Error loading course lessons:', err);
-                }
+                error: () => {
+                    this.previousNotes = [];
+                    this.cdr.detectChanges();
+                },
             });
+    }
+
+    private resetViewStateForRouteChange(): void {
+        this.error = null;
+        this.lessonData = null;
+        this.lessonContent = null;
+        this.currentCourse = undefined;
+        this.currentLesson = undefined;
+        this.nextAcademyLesson = undefined;
+        this.previousAcademyLesson = undefined;
+        this.nextLesson = undefined;
+        this.previousLesson = undefined;
+        this.courseLessons = [];
+        this.activeTab = 'overview';
     }
 
     get isIntroContent(): boolean { return this.lessonContent ? isIntroContent(this.lessonContent) : false; }
@@ -215,27 +257,24 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     goToNextLesson(): void {
         const nextId = this.nextAcademyLesson?.id || this.nextLesson?.id;
         if (nextId) {
-            this.router.navigate(['../lesson', nextId], { relativeTo: this.route });
+            this.router.navigate(['/academy/course', this.courseId, 'lesson', nextId]);
         }
     }
 
     goToPreviousLesson(): void {
         const prevId = this.previousAcademyLesson?.id || this.previousLesson?.id;
         if (prevId) {
-            this.router.navigate(['../lesson', prevId], { relativeTo: this.route });
+            this.router.navigate(['/academy/course', this.courseId, 'lesson', prevId]);
         }
     }
 
     goToLesson(lessonId: string): void {
-        this.router.navigate(['../lesson', lessonId], { relativeTo: this.route });
+        this.router.navigate(['/academy/course', this.courseId, 'lesson', lessonId]);
     }
 
     onSave(): void {
         if (this.lessonId) {
-            this.lessonContentService.saveLessonProgress(this.lessonId).subscribe({
-                next: () => console.log('Lesson saved successfully'),
-                error: (err) => console.error('Error saving lesson:', err)
-            });
+            this.lessonContentService.saveLessonProgress(this.lessonId).subscribe();
         }
     }
 
@@ -245,22 +284,41 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                 title: this.lessonContent.title,
                 text: this.lessonContent.description,
                 url: globalThis.location.href
-            }).catch(err => console.error('Error sharing:', err));
+            }).catch(() => void 0);
         } else {
-            navigator.clipboard.writeText(globalThis.location.href).then(() => {
-                console.log('Link copied to clipboard');
-            });
+            navigator.clipboard.writeText(globalThis.location.href).then(() => void 0);
         }
     }
 
     onDownload(): void {
-        console.log('Download initiated for lesson:', this.lessonId);
+        if (!this.lessonContent) {
+            return;
+        }
+
+        const fileName = `${this.lessonContent.title || 'lesson-content'}.txt`;
+        const text = [
+            this.lessonContent.title || 'Lesson Content',
+            '',
+            this.lessonContent.description || '',
+            '',
+            this.isArticleContent ? (this.articleContent?.sections || []).map(section => section.content).join('\n\n') : '',
+        ].join('\n');
+
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     }
 
-    isLessonCompleted(lesson: LessonMetadata): boolean { return lesson.status === 'completed'; }
-    isLessonCurrent(lesson: LessonMetadata): boolean { return lesson.status === 'current' || lesson.id === this.lessonId; }
-    isLessonPending(lesson: LessonMetadata): boolean { return lesson.status === 'pending'; }
-    canClickLesson(lesson: LessonMetadata): boolean { return lesson.status !== 'pending'; }
+    isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'completed'; }
+    isLessonCurrent(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.id === this.lessonId || lesson.progress.status === 'current'; }
+    isLessonPending(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'locked'; }
+    canClickLesson(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status !== 'locked'; }
 
     getLessonIcon(lesson: LessonMetadata): string {
         if (lesson.status === 'completed') return 'checked';
@@ -278,14 +336,28 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     addNote(): void {
-        if (this.noteText.trim()) {
-            const newNote = {
-                timestamp: `[Lesson] ${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2, '0')}`,
-                text: this.noteText
-            };
-            this.previousNotes.unshift(newNote);
-            this.noteText = '';
+        const trimmedNote = this.noteText.trim();
+        if (!trimmedNote) {
+            return;
         }
+
+        const now = new Date();
+        const timestamp = `[Lesson] ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        this.lessonContentService
+            .addLessonNote(this.lessonId, trimmedNote, timestamp)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (createdNote) => {
+                    this.previousNotes = [createdNote, ...this.previousNotes];
+                    this.noteText = '';
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.noteText = '';
+                    this.cdr.detectChanges();
+                },
+            });
     }
 
     deleteNote(index: number): void { this.previousNotes.splice(index, 1); }
@@ -294,9 +366,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     submitFeedback(): void {
         if (this.lessonRating > 0 || this.feedbackText.trim()) {
-            console.log('Feedback submitted:', { rating: this.lessonRating, feedback: this.feedbackText });
             this.feedbackText = '';
-            alert('Thank you for your feedback!');
+            this.feedbackSubmissionMessage = 'Thank you for your feedback!';
         }
     }
 
@@ -308,12 +379,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     get courseInfo(): { stage: number; code: string; title: string; stats: string } {
         const stage = this.currentCourse?.stageId || 0;
-        const code = (this.currentCourse?.id || '').split('-').slice(0, 2).join('-').toUpperCase() || '';
         const title = this.currentCourse?.title || '';
         const currentOrder = this.lessonData?.metadata.order || (this.currentLesson?.order || 0);
         return {
             stage,
-            code,
+            code: '',
             title,
             stats: `Lesson: ${currentOrder}/${this.courseLessons.length}`
         };
@@ -321,5 +391,35 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     get filteredNotes(): Array<{ timestamp: string; text: string }> {
         return this.previousNotes.filter(note => note.text.toLowerCase().includes(this.notesSearchQuery.toLowerCase()));
+    }
+
+    private stripProgress(lesson: AcademyLesson & { progress: LessonProgress }): AcademyLesson {
+        return {
+            id: lesson.id,
+            courseId: lesson.courseId,
+            title: lesson.title,
+            duration: lesson.duration,
+            type: lesson.type,
+            order: lesson.order,
+            description: lesson.description,
+        };
+    }
+
+    private resolveNextLesson(
+        lessons: Array<AcademyLesson & { progress: LessonProgress }>,
+        lessonId: string,
+    ): AcademyLesson | undefined {
+        const sorted = [...lessons].sort((a, b) => a.order - b.order);
+        const index = sorted.findIndex((lesson) => lesson.id === lessonId);
+        return index >= 0 && index < sorted.length - 1 ? this.stripProgress(sorted[index + 1]) : undefined;
+    }
+
+    private resolvePreviousLesson(
+        lessons: Array<AcademyLesson & { progress: LessonProgress }>,
+        lessonId: string,
+    ): AcademyLesson | undefined {
+        const sorted = [...lessons].sort((a, b) => a.order - b.order);
+        const index = sorted.findIndex((lesson) => lesson.id === lessonId);
+        return index > 0 ? this.stripProgress(sorted[index - 1]) : undefined;
     }
 }

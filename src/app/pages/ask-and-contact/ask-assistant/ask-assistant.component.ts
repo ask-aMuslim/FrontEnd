@@ -44,7 +44,7 @@ export class AskAssistantComponent {
   constructor(
     private readonly askAssistantService: AskAssistantService,
     private readonly cdr: ChangeDetectorRef,
-  ) {}
+  ) { }
 
   onInput(value: string): void {
     this.inputValue = value;

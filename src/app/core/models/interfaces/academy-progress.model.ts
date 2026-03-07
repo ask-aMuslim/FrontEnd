@@ -29,11 +29,24 @@ export type AcademyLessonType = 'intro' | 'video' | 'article' | 'quiz' | 'audio'
 export type CourseCategory = 'main-believes' | 'models-stories' | 'social-topics';
 
 /**
+ * Academy Stage from API (mapped from Level entity)
+ */
+export interface AcademyStageApi {
+    id: string;       // actual level UUID from API
+    number: number;   // 1-based index (order)
+    title: string;
+    description: string;
+    order: number;
+    difficulty: number;
+}
+
+/**
  * Academy Course Definition
  */
 export interface AcademyCourse {
     id: Id;
     stageId: number;
+    levelId?: string;  // actual level UUID from API
     title: string;
     category: CourseCategory;
     categoryLabel: string;
@@ -41,6 +54,8 @@ export interface AcademyCourse {
     duration: string;
     thumbnailUrl?: string;
     description?: string;
+    order?: number;
+    prerequisites?: Id[];
 }
 
 /**

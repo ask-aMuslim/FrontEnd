@@ -1,6 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
+import { StudentFacade } from '../../../api/facades/student.facade';
 
 @Component({
     selector: 'app-announcement-bar',
@@ -9,14 +11,21 @@ import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
     templateUrl: './announcement-bar.html',
     styleUrls: ['./announcement-bar.scss'],
 })
-export class AnnouncementBar implements OnInit {
+export class AnnouncementBar implements OnInit, OnDestroy {
     protected isVisible = false;
     protected isClosing = false;
     private readonly STORAGE_KEY = 'announcement-bar-dismissed-date';
     private readonly platformId = inject(PLATFORM_ID);
+    private readonly studentFacade = inject(StudentFacade);
+    private readonly destroy$ = new Subject<void>();
 
     ngOnInit(): void {
         this.checkVisibility();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
     }
 
     private checkVisibility(): void {
@@ -30,8 +39,28 @@ export class AnnouncementBar implements OnInit {
 
         // Show if never dismissed or if dismissed on a different day
         if (!dismissedDate || dismissedDate !== today) {
-            this.isVisible = true;
+            // Check if profile is complete
+            this.checkProfileCompletion();
         }
+    }
+
+    private checkProfileCompletion(): void {
+        this.studentFacade
+            .me()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (profile) => {
+                    // Show bar if profile is missing any key information
+                    const profileRecord = (profile as Record<string, unknown>) || {};
+                    const isIncomplete = !profile?.firstName || !profile?.lastName ||
+                        !profileRecord['profileImage'];
+                    this.isVisible = isIncomplete;
+                },
+                error: () => {
+                    // Show bar on error to encourage profile setup
+                    this.isVisible = true;
+                },
+            });
     }
 
     protected closeBar(): void {
@@ -56,3 +85,4 @@ export class AnnouncementBar implements OnInit {
         }, 400);
     }
 }
+

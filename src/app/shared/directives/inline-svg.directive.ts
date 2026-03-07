@@ -81,7 +81,6 @@ export class InlineSvgDirective implements OnChanges, OnDestroy {
       }
 
       this.renderer.setProperty(this.elementRef.nativeElement, 'innerHTML', '');
-      console.error('inlineSVG directive failed to load icon:', error);
     }
   }
 }

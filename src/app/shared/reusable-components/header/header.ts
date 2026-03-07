@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { toFriendlyAuthErrorMessage } from '../../../core/auth/auth-error-message.util';
 
 interface NavLink {
   label: string;
@@ -17,33 +18,56 @@ interface NavLink {
 })
 export class Header {
   protected readonly authService = inject(AuthService);
+  protected isLoggingOut = false;
 
   protected readonly navLinks: NavLink[] = [
     { label: 'Home', path: '/home' },
-    { label: 'Q&A', path: '/ask-and-contact/ask-qa' },
+    { label: 'Ask Questions', path: '/ask-and-contact/ask-qa' },
     { label: 'Academy', path: '/academy' },
     { label: 'Events', path: '/events' },
-    { label: 'Contact', path: '/ask-and-contact/send-inquiry' },
+    { label: 'Contact', path: '/contact' },
     // { label: 'MuslimTube', path: '/muslim-tube' },
   ];
 
-  protected navOpen = false;
+  protected isMobileMenuOpen = signal(false);
 
   protected toggleNav(): void {
-    this.navOpen = !this.navOpen;
+    this.isMobileMenuOpen.update(v => !v);
   }
 
   protected closeNav(): void {
-    this.navOpen = false;
+    this.resetMobileState();
   }
 
-  protected trackByLabel(index: number, item: NavLink): string {
+  private resetMobileState() {
+    this.isMobileMenuOpen.set(false);
+  }
+
+  protected trackByLabel(_index: number, item: NavLink): string {
     return item.label;
   }
 
   protected handleLogout(): void {
-    this.authService.logout();
-    this.closeNav();
+    if (this.isLoggingOut) {
+      return;
+    }
+
+    this.authService.clearError();
+    this.isLoggingOut = true;
+    this.authService.logout().subscribe({
+      next: () => {
+        this.isLoggingOut = false;
+        this.closeNav();
+      },
+      error: () => {
+        this.isLoggingOut = false;
+        this.closeNav();
+      },
+    });
+  }
+
+  protected get logoutErrorMessage(): string | null {
+    return toFriendlyAuthErrorMessage(this.authService.error());
   }
 
 }

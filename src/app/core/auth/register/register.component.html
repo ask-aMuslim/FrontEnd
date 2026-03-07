@@ -8,206 +8,256 @@
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          >
+        >
           <path
             d="M15 18L9 12L15 6"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            />
-          </svg>
-        </a>
-        <h1 class="register-title">Create an Account</h1>
+          />
+        </svg>
+      </a>
+      <h1 class="register-title">Create an Account</h1>
+    </div>
+    <img src="/footer/footer-logo-big.svg" alt="Ask A Muslim Logo" class="header-logo" />
+  </div>
+
+  <div class="social-buttons">
+    <button type="button" class="social-btn social-btn--google" (click)="onSocialSignIn('google')">
+      <img src="/icons/icons-social-apps/google.svg" alt="Google" />
+      <span>Sign in with Google</span>
+    </button>
+    <button type="button" class="social-btn social-btn--facebook" (click)="onSocialSignIn('facebook')">
+      <img src="/icons/icons-social-apps/facebook.svg" alt="Facebook" />
+      <span>Sign in with Facebook</span>
+    </button>
+  </div>
+
+  <div class="divider">
+    <span>or</span>
+  </div>
+
+  <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
+    @if (friendlyApiError) {
+      <div class="api-error" role="alert">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8 5v3m0 2.5h.007M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0Z"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        {{ friendlyApiError }}
       </div>
-      <img src="footer/footer-logo-big.svg" alt="Ask A Muslim Logo" class="header-logo" />
+    }
+
+    <div class="religion-selection" [class.religion-selection--error]="isFieldInvalid('religionType')">
+      <label class="religion-option" [class.selected]="religionType === 'muslim'">
+        <input
+          type="radio"
+          name="religionType"
+          value="muslim"
+          formControlName="religionType"
+          (change)="onReligionChange('muslim')"
+          class="religion-radio"
+        />
+        <span class="religion-radio-visual"></span>
+        <span class="religion-label">Muslim</span>
+      </label>
+      <label class="religion-option" [class.selected]="religionType === 'non-muslim'">
+        <input
+          type="radio"
+          name="religionType"
+          value="non-muslim"
+          formControlName="religionType"
+          (change)="onReligionChange('non-muslim')"
+          class="religion-radio"
+        />
+        <span class="religion-radio-visual"></span>
+        <span class="religion-label">Non-Muslim</span>
+      </label>
+    </div>
+    @if (isFieldInvalid('religionType')) {
+      <div class="religion-error">{{ getFieldError('religionType') }}</div>
+    }
+
+    <div
+      class="form-group"
+      [class.form-group--error]="isFieldInvalid('fullName')"
+      [class.form-group--focused]="fieldFocused['fullName']"
+    >
+      <label for="fullName" class="form-label">Full Name</label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="fullName"
+          name="fullName"
+          formControlName="fullName"
+          placeholder="Full Name"
+          class="form-input"
+          (focus)="onFieldFocus('fullName')"
+          (blur)="onFieldBlur('fullName')"
+          autocomplete="name"
+        />
+        @if (isFieldInvalid('fullName')) {
+          <span class="form-error-tooltip">
+            {{ getFieldError('fullName') }}
+          </span>
+        }
+      </div>
     </div>
 
-    <div class="social-buttons">
-      <button type="button" class="social-btn social-btn--google">
-        <img src="/icons/icons-social-apps/google.svg" alt="Google" />
-        <span>Sign in with Google</span>
-      </button>
-      <button type="button" class="social-btn social-btn--facebook">
-        <img src="/icons/icons-social-apps/facebook.svg" alt="Facebook" />
-        <span>Sign in with Facebook</span>
-      </button>
+    <div
+      class="form-group"
+      [class.form-group--error]="isFieldInvalid('email')"
+      [class.form-group--focused]="fieldFocused['email']"
+    >
+      <label for="email" class="form-label">Email Address</label>
+      <div class="input-wrapper">
+        <input
+          type="email"
+          id="email"
+          name="email"
+          formControlName="email"
+          placeholder="email@example.com"
+          class="form-input"
+          (focus)="onFieldFocus('email')"
+          (blur)="onFieldBlur('email')"
+          autocomplete="email"
+        />
+        @if (isFieldInvalid('email')) {
+          <span class="form-error-tooltip">
+            {{ getFieldError('email') }}
+          </span>
+        }
+      </div>
     </div>
 
-    <div class="divider">
-      <span>or</span>
-    </div>
-
-    <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
-      <div class="religion-selection">
-        <label class="religion-option" [class.selected]="religionType === 'muslim'">
+    <div
+      class="form-group"
+      [class.form-group--error]="isFieldInvalid('password')"
+      [class.form-group--focused]="fieldFocused['password']"
+    >
+      <label for="password" class="form-label">Password</label>
+      <div class="input-wrapper">
+        <div class="password-wrapper">
           <input
-            type="radio"
-            name="religionType"
-            value="muslim"
-            formControlName="religionType"
-            (change)="onReligionChange('muslim')"
-            class="religion-radio"
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            name="password"
+            formControlName="password"
+            placeholder="Password"
+            class="form-input"
+            (focus)="onFieldFocus('password')"
+            (blur)="onFieldBlur('password')"
+            [attr.autocomplete]="showPassword ? 'off' : 'new-password'"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePassword()"
+            tabindex="-1"
+            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <img
+              [src]="showPassword ? '/icons/icons-24/eye.svg' : '/icons/icons-24/eye-off.svg'"
+              alt
             />
-            <span class="religion-radio-visual"></span>
-            <span class="religion-label">Muslim</span>
-          </label>
-          <label class="religion-option" [class.selected]="religionType === 'non-muslim'">
-            <input
-              type="radio"
-              name="religionType"
-              value="non-muslim"
-              formControlName="religionType"
-              (change)="onReligionChange('non-muslim')"
-              class="religion-radio"
-              />
-              <span class="religion-radio-visual"></span>
-              <span class="religion-label">Non-Muslim</span>
-            </label>
-          </div>
+          </button>
+        </div>
+        @if (isFieldInvalid('password')) {
+          <span class="form-error-tooltip">
+            {{ getFieldError('password') }}
+          </span>
+        }
+      </div>
+    </div>
 
-          <div
-            class="form-group"
-            [class.form-group--error]="isFieldInvalid('fullName')"
-            [class.form-group--focused]="fieldFocused['fullName']"
-            >
-            <label for="fullName" class="form-label">Full Name</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                formControlName="fullName"
-                placeholder="Full Name"
-                class="form-input"
-                (focus)="onFieldFocus('fullName')"
-                (blur)="onFieldBlur('fullName')"
-                autocomplete="name"
-                />
-                @if (isFieldInvalid('fullName')) {
-                  <span class="form-error-tooltip">
-                    {{ getFieldError('fullName') }}
-                  </span>
-                }
-              </div>
-            </div>
+    <div
+      class="form-group"
+      [class.form-group--error]="isFieldInvalid('phoneNumber')"
+      [class.form-group--focused]="fieldFocused['phoneNumber']"
+    >
+      <label for="phoneNumber" class="form-label">Phone Number</label>
+      <div class="input-wrapper">
+        <input
+          type="tel"
+          id="phoneNumber"
+          name="phoneNumber"
+          formControlName="phoneNumber"
+          placeholder="01012345678"
+          class="form-input"
+          (focus)="onFieldFocus('phoneNumber')"
+          (blur)="onFieldBlur('phoneNumber')"
+          autocomplete="tel"
+        />
+        @if (isFieldInvalid('phoneNumber')) {
+          <span class="form-error-tooltip">
+            {{ getFieldError('phoneNumber') }}
+          </span>
+        }
+      </div>
+    </div>
 
-            <div
-              class="form-group"
-              [class.form-group--error]="isFieldInvalid('email')"
-              [class.form-group--focused]="fieldFocused['email']"
-              >
-              <label for="email" class="form-label">Email Address</label>
-              <div class="input-wrapper">
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  formControlName="email"
-                  placeholder="email@example.com"
-                  class="form-input"
-                  (focus)="onFieldFocus('email')"
-                  (blur)="onFieldBlur('email')"
-                  autocomplete="email"
-                  />
-                  @if (isFieldInvalid('email')) {
-                    <span class="form-error-tooltip">
-                      {{ getFieldError('email') }}
-                    </span>
-                  }
-                </div>
-              </div>
+    <div class="password-requirements">
+      <div class="requirement" [class.met]="hasMinLength">
+        <span class="requirement-icon">
+          @if (hasMinLength) {
+            ✓
+          } @else {
+            <img class="requirement-icon-img" src="/icons/icons-24/caution.svg" alt="Caution" />
+          }
+        </span>
+        <span>Be at least 8 Characters long</span>
+      </div>
+      <div class="requirement" [class.met]="hasNumber">
+        <span class="requirement-icon">
+          @if (hasNumber) {
+            ✓
+          } @else {
+            <img class="requirement-icon-img" src="/icons/icons-24/caution.svg" alt="Caution" />
+          }
+        </span>
+        <span>Contain at least one numerical character</span>
+      </div>
+    </div>
 
-              <div
-                class="form-group"
-                [class.form-group--error]="isFieldInvalid('password')"
-                [class.form-group--focused]="fieldFocused['password']"
-                >
-                <label for="password" class="form-label">Password</label>
-                <div class="input-wrapper">
-                  <div class="password-wrapper">
-                    <input
-                      [type]="showPassword ? 'text' : 'password'"
-                      id="password"
-                      name="password"
-                      formControlName="password"
-                      placeholder="Password"
-                      class="form-input"
-                      (focus)="onFieldFocus('password')"
-                      (blur)="onFieldBlur('password')"
-                      [attr.autocomplete]="showPassword ? 'off' : 'new-password'"
-                      />
-                      <button
-                        type="button"
-                        class="password-toggle"
-                        (click)="togglePassword()"
-                        tabindex="-1"
-                        [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
-                        >
-                        <img
-                          [src]="showPassword ? '/icons/icons-24/eye.svg' : '/icons/icons-24/eye-off.svg'"
-                          alt
-                          />
-                        </button>
-                      </div>
-                      @if (isFieldInvalid('password')) {
-                        <span class="form-error-tooltip">
-                          {{ getFieldError('password') }}
-                        </span>
-                      }
-                    </div>
-                  </div>
+    <button
+      type="submit"
+      class="submit-btn"
+      [class.submit-btn--loading]="loading()"
+      [class.submit-btn--success]="submitSuccess"
+      [disabled]="loading()"
+    >
+      @if (!loading() && !submitSuccess) {
+        <span class="submit-btn__text">Create Account</span>
+      }
+      @if (loading()) {
+        <span class="submit-btn__loading">
+          <span class="spinner"></span>
+          Creating Account...
+        </span>
+      }
+      @if (submitSuccess) {
+        <span class="submit-btn__success">
+          <span class="success-icon">✓</span>
+          Account Created!
+        </span>
+      }
+    </button>
+  </form>
 
-                  <div class="password-requirements">
-                    <div class="requirement" [class.met]="hasMinLength">
-                      <span class="requirement-icon">
-                        @if (hasMinLength) {
-                          ✓
-                        } @else {
-                          <img class="requirement-icon-img" src="/icons/icons-24/caution.svg" alt="Caution" />
-                        }
-                      </span>
-                      <span>Be at least 8 Characters long</span>
-                    </div>
-                    <div class="requirement" [class.met]="hasNumber">
-                      <span class="requirement-icon">
-                        @if (hasNumber) {
-                          ✓
-                        } @else {
-                          <img class="requirement-icon-img" src="/icons/icons-24/caution.svg" alt="Caution" />
-                        }
-                      </span>
-                      <span>Contain at least one numerical character</span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    class="submit-btn"
-                    [class.submit-btn--loading]="isSubmitting"
-                    [class.submit-btn--success]="submitSuccess"
-                    [disabled]="isSubmitting"
-                    >
-                    @if (!isSubmitting && !submitSuccess) {
-                      <span class="submit-btn__text">Create Account</span>
-                    }
-                    @if (isSubmitting) {
-                      <span class="submit-btn__loading">
-                        <span class="spinner"></span>
-                        Creating Account...
-                      </span>
-                    }
-                    @if (submitSuccess) {
-                      <span class="submit-btn__success">
-                        <span class="success-icon">✓</span>
-                        Account Created!
-                      </span>
-                    }
-                  </button>
-                </form>
-
-                <p class="signin-link">
-                  Already have an Account?
-                  <a [routerLink]="'/login'" class="signin-link__cta">Sign in</a>
-                </p>
-              </div>
+  <p class="signin-link">
+    Already have an Account?
+    <a [routerLink]="'/login'" class="signin-link__cta">Sign in</a>
+  </p>
+</div>

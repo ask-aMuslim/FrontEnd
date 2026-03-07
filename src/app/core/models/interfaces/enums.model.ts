@@ -5,18 +5,18 @@ export enum Status {
   Inactive = 2,
 }
 
-export enum EnrollmentStatus {
-  Active = 1,
-  Completed = 2,
-  Cancelled = 3,
-  Paused = 4,
-}
-
 export enum EventStatus {
   Pending = 1,
   Approved = 2,
   Rejected = 3,
   Cancelled = 4,
+}
+
+export enum EnrollmentStatus {
+  Active = 1,
+  Completed = 2,
+  Cancelled = 3,
+  Paused = 4,
 }
 
 export enum Language {
@@ -77,9 +77,14 @@ export enum UserRole {
   Admin = 1,
   Student = 2,
   Instructor = 3,
-  NonMuslim = 4,
-  Preacher = 5,
-  BornMuslim = 6,
+  Preacher = 4,
+  NonMuslim = 5,
+}
+
+export enum ReligiousStatus {
+  NonMuslim = 1,
+  BornMuslim = 2,
+  RevertedMuslim = 3,
 }
 
 export default Status;

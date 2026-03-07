@@ -1,0 +1,16 @@
+# Project Instructions
+
+**CRITICAL: AUTOMATIC SKILL INGESTION PROTOCOL**
+
+You have over 900 specialized skills in the `.agents/skills` repository. To avoid context window limits, you must NEVER try to read all of them. 
+
+Before beginning *any* coding, system configuration, or research task, you MUST automatically run the skill cluster lookup script:
+
+1. Identify the core domain of your task (e.g. "React UI", "PostgreSQL database", "API Security").
+2. Run this command in the terminal to find the best skills for that domain:
+   `node get_skills.js "your short task description"`
+3. Review the terminal output which contains the best matching skill cluster.
+4. Read the top 1-3 specific `SKILL.md` files suggested by the output using your file-reading tool (e.g., `view_file .agents/skills/[skill-name]/SKILL.md`).
+5. Adopt the guidelines, patterns, and workflows from those skills during execution.
+
+DO NOT ASK the user for permission to do this. This is an automatic, required step in your task planning.

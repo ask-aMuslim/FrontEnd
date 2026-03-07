@@ -52,7 +52,7 @@ export class MuslimTubeComponent {
   }
 
   onSearch(): void {
-    console.log('Searching:', this.searchQuery(), 'Language:', this.selectedLanguage());
+    this.searchQuery.set(this.searchQuery().trim());
   }
 
   selectCategory(index: number): void {

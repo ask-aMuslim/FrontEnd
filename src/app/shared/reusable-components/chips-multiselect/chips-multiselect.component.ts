@@ -36,17 +36,18 @@ export class ChipsMultiselectComponent<T = unknown> implements OnDestroy {
   isOpen = signal(false);
 
   constructor(
-    private elementRef: ElementRef,
+    private elementRef: ElementRef<HTMLElement>,
     private renderer: Renderer2,
   ) {
     this.renderer.listen('document', 'click', (event: MouseEvent) => {
-      if (!this.elementRef.nativeElement.contains(event.target)) {
+      const target = event.target;
+      if (!(target instanceof Node) || !this.elementRef.nativeElement.contains(target)) {
         this.isOpen.set(false);
       }
     });
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void { }
 
   toggleDropdown(): void {
     this.isOpen.set(!this.isOpen());

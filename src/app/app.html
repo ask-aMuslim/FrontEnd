@@ -1,1 +1,10 @@
 <router-outlet></router-outlet>
+
+@if (globalIsLoading()) {
+  <div class="global-loading-overlay" aria-live="polite" aria-busy="true" role="status">
+    <div class="global-loading-overlay__content">
+      <span class="global-loading-overlay__spinner" aria-hidden="true"></span>
+      <span class="global-loading-overlay__text">Loading...</span>
+    </div>
+  </div>
+}

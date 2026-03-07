@@ -8,7 +8,7 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'src/app/core/api/generated/**'
+      - 'src/app/api/**'
       - 'ng-openapi-gen.json'
       - '.github/workflows/api-contract.yml'
   pull_request:
@@ -26,9 +26,9 @@ on:
         type: boolean
 
 env:
-  SWAGGER_URL: 'https://ask-a-muslim.runasp.net/swagger/v1/swagger.json'
-  GENERATED_DIR: 'src/app/core/api/generated'
-  HASH_FILE: 'src/app/core/api/swagger.hash'
+  SWAGGER_URL: 'https://aam-api.ask-a-muslim.com/api/specification.json'
+  GENERATED_DIR: 'src/app/api'
+  HASH_FILE: 'src/app/api/swagger.hash'
   NODE_VERSION: '20.x'
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       contract_changed: ${{ steps.check-hash.outputs.changed }}
-      current_hash: ${{ steps.check-hash.outputs.current_hash }}
+      current_hash: ${{ steps.generate-hash.outputs.current_hash }}
     
     steps:
       - name: Checkout repository
@@ -314,7 +314,7 @@ jobs:
             The backend Swagger specification has changed. The API client has been regenerated.
             
             ### Action Required
-            1. Review the generated code changes in \`src/app/core/api/generated/\`
+            1. Review the generated code changes in \`src/app/api/\`
             2. Update any affected facade services
             3. Test affected features
             4. Commit the changes if everything works
@@ -342,7 +342,7 @@ jobs:
           echo "The backend Swagger specification has changed."
           echo ""
           echo "Required actions:"
-          echo "1. Review the regenerated API client in src/app/core/api/generated/"
+          echo "1. Review the regenerated API client in src/app/api/"
           echo "2. Update affected facade services if needed"
           echo "3. Test affected features"
           echo "4. Commit the updated generated files and swagger.hash"

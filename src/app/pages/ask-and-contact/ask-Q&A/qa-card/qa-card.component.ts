@@ -21,13 +21,12 @@ export interface QuestionCard {
 export class QaCardComponent {
   @Input({ required: true }) question!: QuestionCard;
 
-  constructor(private readonly router: Router) {}
+  constructor(private readonly router: Router) { }
 
   openQuestion(): void {
+    // Only pass the question id and categories to avoid leaking the answer/content in the URL
     const queryParams = {
       id: this.question.id,
-      title: this.question.title,
-      description: this.question.description,
       categories: JSON.stringify(this.question.categories ?? []),
     };
     void this.router.navigate(['/ask-and-contact/ask-qa/question'], { queryParams });

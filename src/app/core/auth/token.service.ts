@@ -13,6 +13,8 @@ import { HttpClient, HttpContext } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { IS_REFRESH_REQUEST, SKIP_AUTH } from '../http/context-tokens';
 
+const AUTH_REFRESH_PATH = '/api/Authentication/refresh';
+
 /** Storage key for auth data */
 const AUTH_STORAGE_KEY = 'aam_auth';
 
@@ -213,8 +215,7 @@ export class TokenService {
                 // Token expired - clear storage
                 this.clearStorage();
             }
-        } catch (error) {
-            console.warn('[TokenService] Failed to restore tokens from storage:', error);
+        } catch {
             this.clearStorage();
         }
     }
@@ -227,8 +228,8 @@ export class TokenService {
 
         try {
             localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
-        } catch (error) {
-            console.warn('[TokenService] Failed to persist tokens:', error);
+        } catch {
+            // Storage write failed silently
         }
     }
 
@@ -240,8 +241,8 @@ export class TokenService {
 
         try {
             localStorage.removeItem(AUTH_STORAGE_KEY);
-        } catch (error) {
-            console.warn('[TokenService] Failed to clear storage:', error);
+        } catch {
+            // Storage clear failed silently
         }
     }
 
@@ -255,20 +256,49 @@ export class TokenService {
         refreshToken: string;
         expiresIn: number;
     }> {
-        // Use the refresh endpoint - adjust path based on actual API
-        // This skips auth interceptor to avoid infinite loop
+        const normalizedBaseUrl = environment.apiBaseUrl.replaceAll(/\/+$/g, '');
+        const refreshUrls = [
+            `${normalizedBaseUrl}${AUTH_REFRESH_PATH}`,
+            `${normalizedBaseUrl}/api/Identity/Refresh`
+        ];
+
+        return this.tryRefreshUrls(refreshUrls, refreshToken);
+    }
+
+    private tryRefreshUrls(
+        refreshUrls: readonly string[],
+        refreshToken: string
+    ): Observable<{
+        accessToken: string;
+        refreshToken: string;
+        expiresIn: number;
+    }> {
+        if (refreshUrls.length === 0) {
+            return throwError(() => new Error('No refresh endpoint configured'));
+        }
+
+        const [currentUrl, ...remainingUrls] = refreshUrls;
+
         return this.http.post<{
             accessToken: string;
             refreshToken: string;
             expiresIn: number;
         }>(
-            `${environment.apiBaseUrl}/api/Identity/Refresh`,
+            currentUrl,
             { refreshToken },
             {
                 context: new HttpContext()
                     .set(IS_REFRESH_REQUEST, true)
                     .set(SKIP_AUTH, true)
             }
+        ).pipe(
+            catchError((error: unknown) => {
+                if (remainingUrls.length === 0) {
+                    return throwError(() => error);
+                }
+
+                return this.tryRefreshUrls(remainingUrls, refreshToken);
+            })
         );
     }
 }

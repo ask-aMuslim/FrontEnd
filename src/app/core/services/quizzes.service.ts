@@ -1,30 +1,32 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { QuizFacade } from '../api/facades/quiz.facade';
-import { QuizReadDto } from '../api/generated/models';
+import { Observable, map } from 'rxjs';
+import { QuizFacade, QuizReadDto, QuizCreateDto, QuizUpdateDto, QuizQuery } from '../../api/facades/quiz.facade';
 
-@Injectable({ providedIn: 'root' })
 @Injectable({ providedIn: 'root' })
 export class QuizzesService {
   private readonly facade = inject(QuizFacade);
 
-  getAll(): Observable<QuizReadDto[]> {
-    return this.facade.getAllQuizzes();
+  getAll(query?: QuizQuery): Observable<QuizReadDto[]> {
+    return this.facade.getAllQuizzes(query);
   }
 
-  create(payload: unknown): Observable<QuizReadDto> {
-    return this.facade.createQuiz(payload);
-  }
-
-  getById(id: string): Observable<QuizReadDto> {
+  getById(id: string): Observable<QuizReadDto | null> {
     return this.facade.getQuizById(id);
   }
 
-  update(id: string, payload: unknown): Observable<void> {
-    return this.facade.updateQuiz(id, payload);
+  create(payload: QuizCreateDto): Observable<boolean> {
+    return this.facade.createQuiz(payload).pipe(
+      map(quiz => quiz !== null)
+    );
   }
 
-  delete(id: string): Observable<void> {
+  update(id: string, payload: QuizUpdateDto): Observable<boolean> {
+    return this.facade.updateQuiz(id, payload).pipe(
+      map(quiz => quiz !== null)
+    );
+  }
+
+  delete(id: string): Observable<boolean> {
     return this.facade.deleteQuiz(id);
   }
 }

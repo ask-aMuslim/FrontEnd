@@ -80,6 +80,22 @@
   margin-left: auto;
 }
 
+.desktop-user-actions,
+.mobile-user-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.logout-error {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--color-error);
+  max-width: 200px;
+}
+
 .user-card {
   display: flex;
   align-items: center;
@@ -96,16 +112,29 @@
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  /* ensure text container never collapses completely after logout/login */
+  min-width: 100px !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  max-width: 240px;
+  white-space: nowrap;
 }
 
 .user-name {
   color: #000401;
   font-weight: 600;
+  white-space: nowrap;
+  /* allow text to overflow naturally instead of hiding completely */
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .user-meta {
   color: var(--color-button-primary-normal);
   font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .user-avatar {
@@ -207,6 +236,23 @@
       transform: translateY(-1px);
     }
   }
+
+  &--logout {
+    color: var(--color-button-primary-normal);
+    border: 1.5px solid var(--color-button-primary-normal);
+    background: transparent;
+
+    &:hover:not(:disabled) {
+      background: rgba(21, 107, 64, 0.06);
+      border-color: var(--color-button-primary-hovering);
+      color: var(--color-button-primary-hovering);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
 }
 
 .sr-only {
@@ -219,16 +265,6 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-@media (min-width: 961px) and (max-width: 1200px) {
-  .user-card .user-name {
-    display: none;
-  }
-
-  .user-card .user-meta {
-    display: none;
-  }
 }
 
 @media (max-width: 960px) {
@@ -310,6 +346,10 @@
     display: none;
   }
 
+  .header-right .desktop-user-actions {
+    display: none;
+  }
+
   .header-right .auth-buttons {
     display: none;
   }
@@ -320,6 +360,15 @@
     padding-top: 1.25rem;
     padding-bottom: 1.25rem;
     border-top: 1px solid rgba(17, 17, 17, 0.08);
+  }
+
+  .mobile-user-actions {
+    margin-bottom: 0.75rem;
+
+    .auth-btn {
+      width: 100%;
+      text-align: center;
+    }
   }
 
   .mobile-user-card .user-card {

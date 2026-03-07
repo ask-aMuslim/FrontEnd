@@ -1,7 +1,16 @@
 import { Component, inject, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { IdentityFacade } from '../../../api/facades/identity.facade';
+import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 
 @Component({
   selector: 'app-reset-password',
@@ -11,15 +20,19 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
   styleUrls: ['./reset-password.component.scss'],
 })
 export class ResetPasswordComponent implements OnDestroy {
-  private fb = inject(FormBuilder);
-  private platformId = inject(PLATFORM_ID);
-  private isBrowser = isPlatformBrowser(this.platformId);
+  private readonly fb = inject(FormBuilder);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
+  private readonly identityFacade = inject(IdentityFacade);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+
+  protected readonly apiError = this.identityFacade.error;
+  protected readonly loading = this.identityFacade.isLoading;
 
   protected currentStep: 1 | 2 | 3 = 1;
   protected emailForm: FormGroup;
   protected otpForm: FormGroup;
   protected passwordForm: FormGroup;
-  protected isSubmitting = false;
   protected fieldFocused: { [key: string]: boolean } = {};
   protected fieldTouched: { [key: string]: boolean } = {};
   protected showPassword = false;
@@ -33,21 +46,24 @@ export class ResetPasswordComponent implements OnDestroy {
   protected userEmail = '';
 
   constructor() {
-    // Validators temporarily removed for development
     this.emailForm = this.fb.group({
-      email: ['']
+      email: ['', [Validators.required, Validators.email]],
     });
 
-    // Validators temporarily removed for development
     this.otpForm = this.fb.group({
-      otp: ['']
+      otp: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
     });
 
-    // Validators temporarily removed for development
-    this.passwordForm = this.fb.group({
-      password: [''],
-      confirmPassword: ['']
-    });
+    this.passwordForm = this.fb.group(
+      {
+        password: [
+          '',
+          [Validators.required, Validators.minLength(8), Validators.pattern(/.*\d.*/)],
+        ],
+        confirmPassword: ['', [Validators.required]],
+      },
+      { validators: this.passwordMatchValidator },
+    );
   }
 
   ngOnDestroy(): void {
@@ -106,7 +122,7 @@ export class ResetPasswordComponent implements OnDestroy {
 
     if (fieldName === 'confirmPassword') {
       if (field.hasError('required')) return 'Please confirm your password';
-      if (!this.passwordsMatch) return 'Passwords do not match';
+      if (form.hasError('passwordMismatch')) return 'Passwords do not match';
     }
 
     return '';
@@ -121,20 +137,27 @@ export class ResetPasswordComponent implements OnDestroy {
   }
 
   protected onEmailSubmit(): void {
-    if (this.emailForm.valid && !this.isSubmitting) {
-      this.isSubmitting = true;
-      this.userEmail = this.emailForm.get('email')?.value;
-
-      setTimeout(() => {
-        this.isSubmitting = false;
-        this.currentStep = 2;
-        this.startOtpTimer();
-        console.log('Email sent to:', this.userEmail);
-      }, 1000);
-    } else {
+    if (this.emailForm.invalid || this.loading()) {
       this.emailForm.get('email')?.markAsTouched();
       this.fieldTouched['email'] = true;
+      return;
     }
+
+    const email = String(this.emailForm.get('email')?.value ?? '').trim();
+    this.identityFacade.clearError();
+
+    this.identityFacade.requestPasswordResetOtp(email).subscribe({
+      next: () => {
+        this.userEmail = email;
+        this.currentStep = 2;
+        this.otpDigits = ['', '', '', '', '', ''];
+        this.otpForm.reset({ otp: '' });
+        this.startOtpTimer();
+      },
+      error: () => {
+        this.fieldTouched['email'] = true;
+      },
+    });
   }
 
   protected onOtpInput(index: number, event: Event): void {
@@ -155,6 +178,7 @@ export class ResetPasswordComponent implements OnDestroy {
     }
 
     this.otpForm.patchValue({ otp: this.otpDigits.join('') });
+    this.otpForm.get('otp')?.markAsDirty();
   }
 
   protected onOtpKeydown(index: number, event: KeyboardEvent): void {
@@ -209,42 +233,70 @@ export class ResetPasswordComponent implements OnDestroy {
 
   protected resendOtp(): void {
     if (this.canResendOtp) {
-      console.log('Resending OTP to:', this.userEmail);
+      this.identityFacade.clearError();
       this.otpDigits = ['', '', '', '', '', ''];
-      this.otpForm.reset();
-      this.startOtpTimer();
+      this.otpForm.reset({ otp: '' });
+
+      this.identityFacade.requestPasswordResetOtp(this.userEmail).subscribe({
+        next: () => {
+          this.startOtpTimer();
+        },
+        error: () => {
+          this.canResendOtp = true;
+        },
+      });
     }
   }
 
   protected onOtpSubmit(): void {
-    if (this.otpForm.valid && !this.isSubmitting) {
-      this.isSubmitting = true;
+    if (this.otpForm.invalid || this.loading()) {
+      this.otpForm.get('otp')?.markAsTouched();
+      this.fieldTouched['otp'] = true;
+      return;
+    }
 
-      setTimeout(() => {
-        this.isSubmitting = false;
+    const otp = this.otpDigits.join('');
+    this.identityFacade.clearError();
+
+    this.identityFacade.verifyPasswordResetOtp(this.userEmail, otp).subscribe({
+      next: () => {
         this.currentStep = 3;
-        console.log('OTP verified:', this.otpForm.get('otp')?.value);
         if (this.timerInterval) {
           clearInterval(this.timerInterval);
         }
-      }, 1000);
-    }
+      },
+      error: () => {
+        this.fieldTouched['otp'] = true;
+      },
+    });
   }
 
   protected onPasswordSubmit(): void {
-    if (this.passwordForm.valid && this.isPasswordValid && this.passwordsMatch && !this.isSubmitting) {
-      this.isSubmitting = true;
-
-      setTimeout(() => {
-        this.isSubmitting = false;
-        console.log('Password reset successful');
-      }, 1500);
-    } else {
+    if (this.passwordForm.invalid || !this.isPasswordValid || !this.passwordsMatch || this.loading()) {
       Object.keys(this.passwordForm.controls).forEach(key => {
         this.passwordForm.get(key)?.markAsTouched();
         this.fieldTouched[key] = true;
       });
+      return;
     }
+
+    const otp = this.otpDigits.join('');
+    const password = String(this.passwordForm.get('password')?.value ?? '');
+
+    this.identityFacade.clearError();
+    this.identityFacade
+      .resetPassword(this.userEmail, otp, password)
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login'], {
+            queryParams: { reset: 'success' },
+          });
+        },
+        error: () => {
+          this.fieldTouched['password'] = true;
+          this.fieldTouched['confirmPassword'] = true;
+        },
+      });
   }
 
   protected trackByIndex(index: number): number {
@@ -252,8 +304,24 @@ export class ResetPasswordComponent implements OnDestroy {
   }
 
   protected goToPreviousStep(): void {
+    this.identityFacade.clearError();
     if (this.currentStep > 1) {
       this.currentStep = (this.currentStep - 1) as 1 | 2 | 3;
     }
+  }
+
+  protected get friendlyApiError(): string | null {
+    return toFriendlyAuthErrorMessage(this.apiError());
+  }
+
+  private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
+    const password = String(group.get('password')?.value ?? '');
+    const confirmPassword = String(group.get('confirmPassword')?.value ?? '');
+
+    if (!password || !confirmPassword) {
+      return null;
+    }
+
+    return password === confirmPassword ? null : { passwordMismatch: true };
   }
 }

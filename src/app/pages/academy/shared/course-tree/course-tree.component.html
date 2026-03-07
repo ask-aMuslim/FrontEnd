@@ -1,0 +1,98 @@
+<div class="tree-wrapper">
+  <!-- SVG overlay for connection lines -->
+  <svg
+    #svgOverlay
+    class="tree-svg-overlay"
+    aria-hidden="true"
+    [attr.width]="'100%'"
+    [attr.height]="'100%'"
+  >
+    @for (path of svgPaths; track path; let i = $index) {
+      <path
+        [attr.d]="path"
+        fill="none"
+        class="tree-connection-path"
+      />
+    }
+  </svg>
+
+  <!-- Tier rows -->
+  <div class="tree-tiers">
+    @for (tier of tiers; track $index; let tierIdx = $index) {
+      <div class="tree-tier">
+        @for (node of tier; track node.course.id) {
+          <div
+            class="tree-node-wrapper"
+          >
+            <div
+              [id]="'course-node-' + node.course.id"
+              class="tree-node"
+              [ngClass]="{
+                'status-completed': node.course.status === 'completed',
+                'status-in-progress': node.course.status === 'in-progress',
+                'status-locked': node.course.status === 'locked',
+                'status-available': node.course.status === 'available'
+              }"
+              [attr.role]="'button'"
+              [attr.tabindex]="node.course.status !== 'locked' ? 0 : -1"
+              [attr.aria-label]="node.course.title + ', ' + node.course.status"
+              (click)="onCourseClick(node.course)"
+              (keydown.enter)="onCourseClick(node.course)"
+              (keydown.space)="onCourseClick(node.course)"
+            >
+              <!-- Lock overlay -->
+              @if (node.course.status === 'locked') {
+                <div class="node-lock-overlay">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M17 11H7C5.89543 11 5 11.8954 5 13V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V13C19 11.8954 18.1046 11 17 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 16C12.5523 16 13 15.5523 13 15C13 14.4477 12.5523 14 12 14C11.4477 14 11 14.4477 11 15C11 15.5523 11.4477 16 12 16Z" fill="currentColor"/>
+                    <path d="M8 11V7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              }
+
+              <!-- Category badge -->
+              <span class="node-category">{{ node.course.categoryLabel }}</span>
+
+              <!-- Course title -->
+              <h4 class="node-title">{{ node.course.title }}</h4>
+
+              <!-- Meta info -->
+              <div class="node-meta">
+                <span class="meta-lessons">{{ node.course.lessons }} lessons</span>
+                <span class="meta-separator">·</span>
+                <span class="meta-duration">{{ node.course.duration }}</span>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="node-progress">
+                <div class="node-progress-track">
+                  <div
+                    class="node-progress-fill"
+                    [style.width.%]="node.course.progress"
+                  ></div>
+                </div>
+                <span class="node-progress-label">{{ node.course.progress }}%</span>
+              </div>
+
+              <!-- Completed badge -->
+              @if (node.course.status === 'completed') {
+                <div class="node-completed-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Completed</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Vertical spacing between tiers -->
+      @if (tierIdx < tiers.length - 1) {
+        <div class="tier-gap" aria-hidden="true"></div>
+      }
+    }
+  </div>
+</div>

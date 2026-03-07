@@ -1,8 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { LessonReadDto } from '../api/generated/models';
+import { Observable, map } from 'rxjs';
+import { LessonFacade, LessonReadDto, CreateLessonRequest, UpdateLessonRequest } from '../../api/facades/lesson.facade';
 import { Id } from '../models/interfaces/base.model';
-import { LessonFacade } from '../api/facades/lesson.facade';
 
 /**
  * Service to handle all lesson-related API calls
@@ -23,7 +22,7 @@ export class LessonsService {
   /**
    * Get lesson by ID with full content details
    */
-  getById(id: Id): Observable<LessonReadDto> {
+  getById(id: Id): Observable<LessonReadDto | null> {
     return this.facade.getLessonById(String(id));
   }
 
@@ -37,50 +36,79 @@ export class LessonsService {
   /**
    * Create a new lesson
    */
-  create(payload: { Title: string; CourseId: string; Content?: string; ExternalVideoUrl?: string; body?: { Thumbnail?: Blob; Video?: Blob } }): Observable<LessonReadDto> {
-    return this.facade.createLesson(payload);
+  create(payload: CreateLessonRequest): Observable<boolean> {
+    return this.facade.createLesson(payload).pipe(
+      map(lesson => lesson !== null)
+    );
   }
 
   /**
    * Update an existing lesson
    */
-  update(id: Id, payload: { Title: string; Content?: string; ExternalVideoUrl?: string; body?: { Thumbnail?: Blob; Video?: Blob } }): Observable<void> {
-    return this.facade.updateLesson(String(id), payload);
+  update(id: Id, payload: UpdateLessonRequest): Observable<boolean> {
+    return this.facade.updateLesson(String(id), payload).pipe(
+      map(lesson => lesson !== null)
+    );
   }
 
   /**
    * Delete a lesson
    */
-  delete(id: Id): Observable<void> {
+  delete(id: Id): Observable<boolean> {
     return this.facade.deleteLesson(String(id));
   }
 
   /**
    * Save lesson progress for current student
+   * Note: Backend endpoint not verified - placeholder implementation
    */
   saveProgress(lessonId: Id, progress: { completed: boolean; currentTime?: number }): Observable<void> {
-    return this.facade.saveProgress(String(lessonId), progress);
+    return this.facade.saveProgress(String(lessonId), {
+      lessonId: String(lessonId),
+      progress: progress.currentTime ?? 0,
+      completed: progress.completed
+    }).pipe(
+      map(() => void 0)
+    );
   }
 
   /**
    * Get student notes for a lesson
+   * Note: Backend endpoint not verified - placeholder implementation
    */
   getNotes(lessonId: Id): Observable<Array<{ id: Id; timestamp: string; text: string; createdAt: string }>> {
-    // Cast strict type from facade to service specific type if needed
-    return this.facade.getNotes(String(lessonId)) as Observable<Array<{ id: Id; timestamp: string; text: string; createdAt: string }>>;
+    return this.facade.getNotes(String(lessonId)).pipe(
+      map(notes => notes.map(note => ({
+        id: note.id,
+        timestamp: '', // Note: LessonNote doesn't have timestamp
+        text: note.content,
+        createdAt: note.createdAt
+      })))
+    );
   }
 
   /**
    * Add a note to a lesson
+   * Note: Backend endpoint not verified - placeholder implementation
    */
-  addNote(lessonId: Id, note: { timestamp: string; text: string }): Observable<{ id: Id; timestamp: string; text: string; createdAt: string }> {
-    return this.facade.addNote(String(lessonId), note) as Observable<{ id: Id; timestamp: string; text: string; createdAt: string }>;
+  addNote(lessonId: Id, note: { timestamp: string; text: string }): Observable<{ id: Id; timestamp: string; text: string; createdAt: string } | null> {
+    return this.facade.addNote(String(lessonId), note.text).pipe(
+      map(result => result ? {
+        id: result.id,
+        timestamp: '',
+        text: result.content,
+        createdAt: result.createdAt
+      } : null)
+    );
   }
 
   /**
    * Delete a note
+   * Note: Backend endpoint not verified - placeholder implementation
    */
   deleteNote(noteId: Id): Observable<void> {
-    return this.facade.deleteNote(String(noteId));
+    return this.facade.deleteNote(String(noteId)).pipe(
+      map(() => void 0)
+    );
   }
 }

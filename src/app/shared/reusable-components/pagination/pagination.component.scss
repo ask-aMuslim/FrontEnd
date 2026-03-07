@@ -1,0 +1,80 @@
+.app-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.25rem;
+
+  @media (min-width: 640px) {
+    flex-wrap: nowrap;
+  }
+}
+
+.app-pagination__arrow {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background: transparent;
+  border: none;
+
+  &:hover {
+    background: var(--color-card-surface-primary);
+  }
+}
+
+.app-pagination__arrow-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+
+  &--disabled {
+    ::ng-deep path {
+      stroke: var(--color-text-placeholder);
+    }
+  }
+
+  &--active {
+    ::ng-deep path {
+      stroke: var(--color-text-body);
+    }
+  }
+}
+
+.app-pagination__page {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+  background: transparent;
+
+  &:hover {
+    border-color: var(--color-button-primary-normal);
+    background: var(--color-card-surface-primary);
+  }
+
+  &--active {
+    background: var(--color-card-surface-primary);
+    border-color: var(--color-button-primary-normal);
+    color: var(--color-button-primary-normal);
+  }
+}
+
+.app-pagination__page-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
