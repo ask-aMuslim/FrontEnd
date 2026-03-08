@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 interface ResourceCard {
     readonly id: string;
@@ -34,7 +33,7 @@ interface NewMuslimCard {
 @Component({
     selector: 'app-resources-page',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule],
     templateUrl: './resources-page.component.html',
     styleUrl: './resources-page.component.scss',
 })
