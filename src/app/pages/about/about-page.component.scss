@@ -313,6 +313,7 @@
   grid-template-columns: 1rem 1fr;
   column-gap: 0.5rem;
   min-height: 2.9375rem;
+  align-items: center; /* vertically center rail and content */
 }
 
 .about-timeline__item:not(:first-child) {
@@ -323,16 +324,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+  justify-content: center; /* center dot/connector vertically */
+  height: 100%; /* fill timeline item grid row */
+  position: relative; /* enable absolute positioning of dot */
 }
 
 .about-timeline__item:not(:first-child) .about-timeline__rail::before {
   content: "";
   position: absolute;
-  top: -3rem;
-  left: 0.4375rem;
+  /* length equals half the distance between consecutive dot centers */
+  top: -3.09375rem; /* -(margin + itemHeight)/2 */
+  left: 0.5rem; /* center of 1rem rail column */
   width: 2px;
-  height: 3rem;
+  height: 3.09375rem;
   background: var(--color-button-secondary-normal);
   z-index: 0;
 }
@@ -340,7 +344,7 @@
   content: "";
   position: absolute;
   top: 1rem; /* small gap below dot */
-  left: 0.4375rem;
+  left: 0.5rem;
   width: 2px;
   height: 1.25rem; /* shorter than regular connector */
   background: var(--color-button-secondary-normal);
@@ -348,9 +352,7 @@
 }
 
 /* dot indicator styling - green point centered between lines */
-.about-timeline__rail {
-  position: relative; /* enable absolute positioning of dot */
-}
+/* merged into earlier declaration */
 
 .about-timeline__dot {
   width: 0.75rem;
@@ -360,9 +362,10 @@
 
   /* center exactly in middle of rail (between before/after segments) */
   position: absolute;
-  left: 0.4375rem; /* align with connector line */
+  left: 0.5rem; /* align with connector line */
   top: 50%;
   transform: translate(-50%, -50%);
+  /* dot remains centered within rail which is now centered in item */
   z-index: 1;
 }
 
@@ -371,7 +374,7 @@
   flex: 1;
   min-height: 1.3125rem;
   background: var(--color-button-secondary-normal);
-  margin: 0.4375rem 0 0;
+  margin: 0.5rem 0 0;
 }
 
 .about-timeline__content {
@@ -449,12 +452,10 @@
 
 .about-serve {
   position: relative; /* for pseudo */
-  // background: var(--color-background-base);
   padding: clamp(4rem, 8vw, 6rem) 0;
   /* remove visible border per design requirement */
   border: none;
   border-radius: 16px;
-  // margin: clamp(2rem, 4vw, 3rem);
 }
 
 .about-serve::before {
