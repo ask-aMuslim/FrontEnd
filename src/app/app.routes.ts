@@ -42,6 +42,19 @@ export const routes: Routes = [
     children: [
       { path: 'home', component: Home, title: 'Home' },
       {
+        path: 'about',
+        loadComponent: () => import('./pages/about/about-page.component').then(m => m.AboutPageComponent),
+        title: 'About',
+      },
+      {
+        path: 'resources',
+        loadComponent: () =>
+          import('./pages/resources/resources-page.component').then(
+            (m) => m.ResourcesPageComponent,
+          ),
+        title: 'Resources',
+      },
+      {
         path: 'ask-and-contact',
         component: AskAndContactComponent,
         title: 'Ask & Contact',

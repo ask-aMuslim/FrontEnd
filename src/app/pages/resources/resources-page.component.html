@@ -1,0 +1,162 @@
+<div class="resources-page">
+  <section
+    class="resources-hero full-width-section"
+    aria-labelledby="resources-hero-title"
+  >
+    <div class="resources-hero__pattern" aria-hidden="true"></div>
+    <!-- single centered gate below subtitle -->
+    <div class="section-container">
+      <div class="resources-hero__content">
+        <p class="resources-hero__eyebrow" aria-label="About guidance">
+          <span>{{ hero.eyebrowSecondary }}</span>
+        </p>
+
+        <h1 id="resources-hero-title">{{ hero.title }}</h1>
+        <p class="resources-hero__subtitle">{{ hero.subtitle }}</p>
+
+        <img
+          src="/icons/gate.svg"
+          class="hero-gate--single"
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  </section>
+
+  @for (gallery of galleries; track trackByGalleryId($index, gallery)) {
+    <section
+      class="resources-gallery"
+      [class.resources-gallery--surface]="gallery.surface === 'surface'"
+      [attr.aria-label]="gallery.title"
+    >
+      <div class="section-container">
+        <div class="section-block section-block--wide">
+          <div
+            class="resources-tabs"
+            role="tablist"
+            [attr.aria-label]="gallery.title + ' categories'"
+          >
+            @for (tab of gallery.tabs; track trackByTabId($index, tab)) {
+              <button
+                type="button"
+                role="tab"
+                class="resources-tab"
+                [class.resources-tab--active]="
+                  isGalleryTabActive(gallery.id, tab.id)
+                "
+                [attr.aria-selected]="isGalleryTabActive(gallery.id, tab.id)"
+                [attr.tabindex]="
+                  isGalleryTabActive(gallery.id, tab.id) ? 0 : -1
+                "
+                (click)="selectGalleryTab(gallery.id, tab.id)"
+                (keydown)="onGalleryTabKeydown($event, gallery, tab.id)"
+              >
+                <span>{{ tab.label }}</span>
+              </button>
+            }
+          </div>
+
+          <div
+            class="resources-grid"
+            [class.fade-in]="animationClasses()[gallery.id]"
+            role="list"
+            aria-label="Resource cards"
+          >
+            @for (
+              card of visibleCardsByGallery()[gallery.id];
+              track trackByCardId($index, card)
+            ) {
+              <article class="resource-card" role="listitem">
+                <div class="resource-card__media">
+                  <img
+                    [src]="card.imageSrc"
+                    [alt]="card.imageAlt"
+                    loading="lazy"
+                  />
+                </div>
+
+                <div class="resource-card__content">
+                  <h2>{{ card.title }}</h2>
+                  <p>{{ card.subtitle }}</p>
+
+                  <div class="resource-card__actions">
+                    <button
+                      type="button"
+                      class="resources-button resources-button--outline resources-button--wide"
+                    >
+                      Read Article
+                    </button>
+                    <button
+                      type="button"
+                      class="resources-icon-button"
+                      aria-label="Read article details"
+                    >
+                      <img
+                        src="/icons/icons-24/arrow-right.svg"
+                        alt=""
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+
+          <div class="resources-gallery__footer">
+            <button
+              type="button"
+              class="resources-button resources-button--outline"
+            >
+              Check More
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="new-muslim" aria-labelledby="new-muslim-title">
+    <div class="new-muslim__pattern" aria-hidden="true"></div>
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <header class="new-muslim__header">
+          <p>Find the Right Message for You</p>
+          <h2 id="new-muslim-title">New Muslim Resources</h2>
+        </header>
+
+        <div
+          class="new-muslim__grid"
+          role="list"
+          aria-label="New Muslim resources list"
+        >
+          @for (
+            card of newMuslimCards;
+            track trackByNewMuslimCardId($index, card)
+          ) {
+            <article
+              class="new-muslim-card"
+              [class.new-muslim-card--full]="card.column === 'full'"
+              role="listitem"
+              tabindex="0"
+            >
+              <div class="new-muslim-card__text">
+                <h3>{{ card.title }}</h3>
+              </div>
+
+              <span class="new-muslim-card__icon" aria-hidden="true">
+                <img src="/icons/icons-24/arrow-right.svg" alt="" />
+              </span>
+            </article>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="resources-footer-spacer" aria-hidden="true">
+    <div class="section-container">
+      <div class="section-block section-block--wide"></div>
+    </div>
+  </section>
+</div>

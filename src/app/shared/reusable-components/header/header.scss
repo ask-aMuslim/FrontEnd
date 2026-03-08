@@ -11,7 +11,8 @@
 }
 
 .nav-shell {
-  max-width: 1200px;
+  /* allow header to stretch full width; previous max-width caused layout issues on large displays */
+  width: 100%;
   margin: 0 auto;
   padding: 0.75rem clamp(1rem, 4vw, 2.5rem);
   display: flex;
@@ -21,8 +22,22 @@
   position: relative;
 }
 
+.brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  width: clamp(96px, 11vw, 140px);
+  min-width: 96px;
+  line-height: 0;
+}
+
 .brand img {
-  height: 58px;
+  width: 100%;
+  height: auto;
+  max-height: 64px;
+  object-fit: contain;
+  display: block;
 }
 
 .primary-nav {
@@ -267,14 +282,16 @@
   border: 0;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1500px) {
   .nav-shell {
     flex-wrap: nowrap;
     align-items: center;
   }
 
   .brand {
-    flex: 1;
+    flex: 0 0 auto;
+    width: clamp(88px, 24vw, 118px);
+    min-width: 88px;
   }
 
   .primary-nav {
@@ -404,7 +421,7 @@
   }
 }
 
-@media (min-width: 641px) and (max-width: 960px) {
+@media (min-width: 641px) and (max-width: 1500px) {
   .primary-nav {
     width: 52%;
     max-width: 52vw;
@@ -425,7 +442,8 @@
 
 /* (desktop user card reused inside the mobile drawer; no separate mobile-only card styles required) */
 
-@media (min-width: 961px) {
+/* hide hamburger when screen wider than drawer breakpoint */
+@media (min-width: 1501px) {
   .mobile-toggle {
     display: none;
   }

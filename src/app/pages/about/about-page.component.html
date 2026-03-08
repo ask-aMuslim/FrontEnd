@@ -1,0 +1,238 @@
+<div class="about-page">
+  <section
+    class="about-hero full-width-section"
+    aria-labelledby="about-hero-title"
+  >
+    <div class="about-hero__pattern" aria-hidden="true"></div>
+    <!-- decorative gate icon (single instance) placed under subtitle -->
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <div
+          class="section-shell about-section-shell about-section-shell--hero"
+        >
+          <div class="about-hero__content">
+            <p class="about-hero__pill" aria-label="About Ask A Muslim">
+              <span>About</span>
+              <span>Ask A Muslim</span>
+            </p>
+
+            <h1 id="about-hero-title" class="about-hero__title">
+              Bridging Gaps, Building
+              <br />
+              Understanding
+            </h1>
+
+            <p class="about-hero__subtitle">
+              Spreading the One Message of all the Prophets!
+              <br />
+              The Worship of One God!
+            </p>
+
+            <img
+              src="/icons/gate.svg"
+              class="hero-gate--single"
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-story" aria-labelledby="about-story-title">
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <div class="section-shell about-section-shell">
+          <div class="about-section-heading">
+            <p class="about-eyebrow">From Ohio to the World</p>
+            <h2 id="about-story-title">Our Story</h2>
+          </div>
+
+          <div class="about-story__layout">
+            <figure class="about-story__media">
+              <img
+                class="about-story__quote about-story__quote--top"
+                src="/icons/quote.svg"
+                aria-hidden="true"
+                alt=""
+              />
+              <img
+                class="about-story__photo"
+                src="/images/about-our_story.png"
+                alt="Community outreach and dawah activities"
+                loading="lazy"
+              />
+              <img
+                class="about-story__quote about-story__quote--bottom"
+                src="/icons/quote.svg"
+                aria-hidden="true"
+                alt=""
+              />
+            </figure>
+
+            <div class="about-story__body">
+              <p class="about-story__lead">
+                What started as a local initiative has grown into a movement to
+                bridge gaps and build understanding.
+                <br />
+                Today, Ask A Muslim is proud to serve communities not only in
+                our home state, but also across the Midwest, Canada, and the
+                world.
+              </p>
+
+              <ol class="about-timeline" aria-label="Ask A Muslim timeline">
+                @for (
+                  item of timelineItems;
+                  track trackByYear($index, item);
+                  let isLast = $last
+                ) {
+                  <li
+                    class="about-timeline__item"
+                    [class.about-timeline__item--last]="isLast"
+                  >
+                    <div class="about-timeline__rail" aria-hidden="true">
+                      <span class="about-timeline__dot"></span>
+                      @if (!isLast) {
+                        <span class="about-timeline__connector"></span>
+                      }
+                    </div>
+                    <div class="about-timeline__content">
+                      <h3>{{ item.year }}</h3>
+                      <p>{{ item.description }}</p>
+                    </div>
+                  </li>
+                }
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-mission" aria-labelledby="about-mission-title">
+    <div class="about-mission__pattern" aria-hidden="true"></div>
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <div class="section-shell about-section-shell">
+          <div class="about-section-heading">
+            <p class="about-eyebrow">Values Intact</p>
+            <h2 id="about-mission-title">Our Mission</h2>
+          </div>
+
+          <div class="about-mission__card">
+            <p>
+              Ask A Muslim's mission is to share the authentic message of Islam,
+              offer accurate and accessible answers to common questions, and
+              build meaningful bridges between Muslims and the wider community.
+            </p>
+          </div>
+
+          <div class="about-mission__cta">
+            <a
+              class="about-button about-button--outline"
+              href="https://www.onemessagefoundation.com/free-quran"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Request Free Quran
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-serve" aria-labelledby="about-serve-title">
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <div class="section-shell about-section-shell">
+          <div class="about-serve__icon" aria-hidden="true">
+            <img src="/icons/gate.svg" alt="" />
+          </div>
+
+          <div class="about-section-heading">
+            <p class="about-eyebrow">Find the Right Message for You</p>
+            <h2 id="about-serve-title">How can we best serve you?</h2>
+          </div>
+
+          <div class="about-serve__grid">
+            @for (
+              card of audienceCards;
+              track trackByAudienceTitle($index, card)
+            ) {
+              <article
+                class="about-audience-card"
+                [class.about-audience-card--light]="card.variant === 'light'"
+                [class.about-audience-card--white]="card.variant !== 'light'"
+              >
+                <h3>{{ card.title }}</h3>
+              </article>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section
+    class="about-achievements"
+    aria-labelledby="about-achievements-title"
+  >
+    <div
+      class="about-achievements__fade about-achievements__fade--top"
+      aria-hidden="true"
+    ></div>
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <div class="section-shell about-section-shell">
+          <div class="about-section-heading">
+            <p class="about-eyebrow">Making a Difference</p>
+            <h2 id="about-achievements-title">Our Achievements</h2>
+          </div>
+
+          <div
+            class="about-achievements__stats"
+            role="list"
+            aria-label="Achievement stats"
+          >
+            @for (
+              stat of achievementStats;
+              track trackByStatLabel($index, stat)
+            ) {
+              <article class="about-stat-card" role="listitem">
+                <span class="about-stat-card__icon" aria-hidden="true">
+                  <img [src]="stat.icon" alt="" />
+                </span>
+                <h3>{{ stat.value }}</h3>
+                <p>{{ stat.label }}</p>
+              </article>
+            }
+          </div>
+
+          <div
+            class="about-achievements__highlights"
+            role="list"
+            aria-label="Achievement highlights"
+          >
+            @for (
+              highlight of achievementHighlights;
+              track trackByHighlightText($index, highlight)
+            ) {
+              <article class="about-highlight-card" role="listitem">
+                <span class="about-highlight-card__badge" aria-hidden="true">
+                  <img src="/star.svg" alt="" />
+                </span>
+                <p>{{ highlight.text }}</p>
+              </article>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="about-achievements__fade about-achievements__fade--bottom"
+      aria-hidden="true"
+    ></div>
+  </section>
+</div>
