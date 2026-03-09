@@ -1,14 +1,27 @@
 <div class="flex flex-col gap-10">
   <div>
-    <a routerLink="/ask-and-contact/ask-qa" class="text-(--color-text-placeholder) hover:underline cursor-pointer">Ask Questions</a>
+    <a
+      routerLink="/ask-and-contact/ask-qa"
+      class="text-(--color-text-placeholder) hover:underline cursor-pointer"
+      >Ask Questions</a
+    >
     <span class="text-(--color-text-placeholder)"> / </span>
-    <span class="text-(--color-button-secondary-normal)">{{ categories[0] || id }}</span>
+    <span class="text-(--color-button-secondary-normal)">{{
+      categories[0] || title
+    }}</span>
   </div>
 
   <div>
-    <h1 class="question flex-1">
-      {{ title }}
-    </h1>
+    @if (questionHtml) {
+      <div
+        class="question rich-content rich-content--question flex-1"
+        [innerHTML]="questionHtml"
+      ></div>
+    } @else {
+      <h1 class="question flex-1">
+        {{ title }}
+      </h1>
+    }
 
     <div class="flex justify-between w-full">
       <a
@@ -19,12 +32,20 @@
       </a>
 
       <div class="flex gap-8">
-        <button class="hidden" (click)="toggleSave()" aria-hidden="true" tabindex="-1">
+        <button
+          class="hidden"
+          (click)="toggleSave()"
+          aria-hidden="true"
+          tabindex="-1"
+        >
           <img [src]="isSaved ? savedIcon : saveIcon" />
           <span class="label">Save</span>
         </button>
 
-        <button class="flex items-center gap-2 cursor-pointer" (click)="share()">
+        <button
+          class="flex items-center gap-2 cursor-pointer"
+          (click)="share()"
+        >
           <img [src]="shareIcon" />
           <span class="label">Share</span>
         </button>
@@ -32,16 +53,19 @@
     </div>
   </div>
 
-
-
   @if (imageUrl) {
     <div class="overflow-hidden rounded-lg">
-      <img [src]="imageUrl" [alt]="title" loading="lazy" (error)="onImageError($event)" />
+      <img
+        [src]="imageUrl"
+        [alt]="title"
+        loading="lazy"
+        (error)="onImageError($event)"
+      />
     </div>
   }
 
   <div class="paragraph">
-    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">{{ answer }}</p>
+    <app-tiptap-viewer [content]="answerViewerContent"></app-tiptap-viewer>
   </div>
 
   <div class="flex justify-end mb-4">

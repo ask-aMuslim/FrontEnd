@@ -1,0 +1,24 @@
+﻿{
+    "levelId":  "926c0543-8bc0-4df6-b7c2-08de7d7507d6",
+    "courseId":  "b95b3920-ec47-4fe1-95bb-08de7d75373a",
+    "lessonIds":  [
+                      "633179a6-27f8-4a58-ca17-08de7bdbd477",
+                      "ccbdd9d1-fc06-476a-ca18-08de7bdbd477",
+                      "7c42d96e-4a6c-496f-ca19-08de7bdbd477"
+                  ],
+    "quizCourseIds":  [
+                          "936bd8f7-2fc0-4467-95bc-08de7d75373a",
+                          "bc61c883-bae6-4b7b-95bd-08de7d75373a",
+                          "646788f7-c318-4504-95be-08de7d75373a"
+                      ],
+    "quizIds":  [
+                    "43b9465c-10da-42e3-0793-08de7d756fe3",
+                    "2e6a3b1c-5daf-488c-0794-08de7d756fe3",
+                    "0b5bc6f8-8239-4c85-0795-08de7d756fe3",
+                    "fff3febf-3b19-4b6f-0796-08de7d756fe3",
+                    "fb4d24ff-8bf1-47cb-0797-08de7d756fe3",
+                    "d850e800-d248-41ed-0798-08de7d756fe3"
+                ],
+    "questionCount":  30,
+    "optionCount":  120
+}

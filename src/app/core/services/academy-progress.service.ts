@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, BehaviorSubject, of, forkJoin } from 'rxjs';
-import { map, catchError, tap, switchMap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap, shareReplay } from 'rxjs/operators';
 import {
     StudentProgress,
     StageProgress,
@@ -57,6 +57,9 @@ export class AcademyProgressService {
     readonly progress$ = this.progressSubject.asObservable();
     private academyCoursesCache: AcademyCourse[] = [];
     private academyStagesCache: AcademyStageApi[] = [];
+    private academyStagesRequest$: Observable<AcademyStageApi[]> | null = null;
+    private academyCoursesRequest$: Observable<AcademyCourse[]> | null = null;
+    private studentProgressRequest$: Observable<StudentProgress> | null = null;
     private readonly lessonsCache = new Map<string, AcademyLesson[]>();
 
     constructor() {
@@ -75,34 +78,58 @@ export class AcademyProgressService {
      * Fetches from GET /api/Levels with published status.
      */
     getAcademyStages(forceRefresh = false): Observable<AcademyStageApi[]> {
+        if (forceRefresh) {
+            this.academyStagesCache = [];
+            this.academyStagesRequest$ = null;
+        }
+
         if (!forceRefresh && this.academyStagesCache.length > 0) {
             return of(this.academyStagesCache);
         }
-        return this.levelFacade.getAllLevels().pipe(
+
+        if (this.academyStagesRequest$) {
+            return this.academyStagesRequest$;
+        }
+
+        this.academyStagesRequest$ = this.levelFacade.getAllLevels().pipe(
             map(levels => levels
                 .filter(l => l.isPublished !== false) // include all unless explicitly not published
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((level, index) => this.mapLevelToStage(level, index + 1))
             ),
             tap(stages => { this.academyStagesCache = stages; }),
-            catchError(() => of([]))
+            catchError(() => of([])),
+            shareReplay(1)
         );
+
+        return this.academyStagesRequest$;
     }
 
     /**
      * Get complete student progress.
      * Builds progress from API-backed enrollments, courses, and lessons.
      */
-    getStudentProgress(): Observable<StudentProgress> {
-        return this.getAcademyCourses().pipe(
+    getStudentProgress(forceRefresh = false): Observable<StudentProgress> {
+        if (forceRefresh) {
+            this.studentProgressRequest$ = null;
+        }
+
+        if (this.studentProgressRequest$) {
+            return this.studentProgressRequest$;
+        }
+
+        this.studentProgressRequest$ = this.getAcademyCourses().pipe(
             switchMap(courses =>
                 this.studentFacade.me().pipe(
                     switchMap(student => this.buildProgressForStudent(courses, student?.id)),
                     catchError(() => of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null)))
                 )
             ),
-            tap(progress => this.progressSubject.next(progress))
+            tap(progress => this.progressSubject.next(progress)),
+            shareReplay(1)
         );
+
+        return this.studentProgressRequest$;
     }
 
     private buildProgressForStudent(courses: AcademyCourse[], studentId?: string): Observable<StudentProgress> {
@@ -187,7 +214,7 @@ export class AcademyProgressService {
                 this.getStudentProgress().pipe(
                     switchMap((progress) =>
                         this.getAcademyCoursesByLevel(levelId).pipe(
-                            map((courses) => courses.map((course) => this.withCourseProgress(course, progress.courseProgress)))
+                            map((courses) => this.attachProgressToCourses(courses, progress.courseProgress))
                         )
                     )
                 )
@@ -199,12 +226,21 @@ export class AcademyProgressService {
      * Get all academy courses with API data. Fetches all levels then all courses per level.
      */
     getAcademyCourses(forceRefresh = false): Observable<AcademyCourse[]> {
+        if (forceRefresh) {
+            this.academyCoursesCache = [];
+            this.academyCoursesRequest$ = null;
+        }
+
         const useCache = !forceRefresh && this.academyCoursesCache.length > 0;
         if (useCache) {
             return of(this.academyCoursesCache);
         }
 
-        return this.getAcademyStages().pipe(
+        if (this.academyCoursesRequest$) {
+            return this.academyCoursesRequest$;
+        }
+
+        this.academyCoursesRequest$ = this.getAcademyStages().pipe(
             switchMap(stages => {
                 if (stages.length === 0) {
                     // fallback to unfiltered course fetch if no levels yet
@@ -214,7 +250,7 @@ export class AcademyProgressService {
                 }
                 const courseRequests = stages.map(stage =>
                     this.courseFacade.getCoursesByLevel(stage.id).pipe(
-                        map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c, stage.id, stage.number))),
+                        map(courses => this.mapCoursesForStage(courses, stage.id, stage.number)),
                         catchError(() => of([] as AcademyCourse[]))
                     )
                 );
@@ -223,8 +259,11 @@ export class AcademyProgressService {
                 );
             }),
             tap(courses => { this.academyCoursesCache = courses; }),
-            catchError(() => of([]))
+            catchError(() => of([])),
+            shareReplay(1)
         );
+
+        return this.academyCoursesRequest$;
     }
 
     /**
@@ -321,7 +360,10 @@ export class AcademyProgressService {
                 completed: true,
                 currentTime: request.lastPosition,
             }).pipe(
-                map(() => this.buildLessonProgress(request.lessonId, request.courseId, true))
+                map(() => {
+                    this.invalidateProgressCache();
+                    return this.buildLessonProgress(request.lessonId, request.courseId, true);
+                })
             );
         }
 
@@ -330,7 +372,10 @@ export class AcademyProgressService {
                 completed: false,
                 currentTime: request.lastPosition,
             }).pipe(
-                map(() => this.buildLessonProgress(request.lessonId, request.courseId, false))
+                map(() => {
+                    this.invalidateProgressCache();
+                    return this.buildLessonProgress(request.lessonId, request.courseId, false);
+                })
             );
         }
 
@@ -444,7 +489,10 @@ export class AcademyProgressService {
         recentLesson: RecentLessonInfo | null,
     ): StudentProgress {
         const sortedStageIds = Array.from(new Set(courses.map(course => course.stageId))).sort((a, b) => a - b);
-        const unlockedStageIds = new Set<number>(sortedStageIds.filter(stageId => stageId === 1));
+        const firstStageWithCourses = sortedStageIds[0];
+        const unlockedStageIds = new Set<number>(
+            firstStageWithCourses !== undefined ? [firstStageWithCourses] : []
+        );
 
         const courseProgress = courses.map((course) => {
             const isEnrolled = enrolledCourseIds.has(String(course.id));
@@ -475,7 +523,7 @@ export class AcademyProgressService {
 
             return {
                 stageNumber: stageId,
-                isUnlocked: stageId === 1,
+                isUnlocked: unlockedStageIds.has(stageId),
                 quizPassed: false,
                 completedCourses: stageCourses.filter(item => item.progress >= 100).length,
                 totalCourses: stageCourses.length,
@@ -557,6 +605,17 @@ export class AcademyProgressService {
                 quizPassed: false,
             },
         };
+    }
+
+    private attachProgressToCourses(
+        courses: AcademyCourse[],
+        courseProgress: CourseProgress[],
+    ): (AcademyCourse & { progress: CourseProgress })[] {
+        return courses.map((course) => this.withCourseProgress(course, courseProgress));
+    }
+
+    private mapCoursesForStage(courses: CourseReadDto[], levelId: string, stageNumber: number): AcademyCourse[] {
+        return courses.map((course) => this.mapCourseDtoToAcademyCourse(course, levelId, stageNumber));
     }
 
     private mapLevelToStage(level: LevelReadDto, index: number): AcademyStageApi {
@@ -644,5 +703,9 @@ export class AcademyProgressService {
         }
 
         return `${hours}h ${minutes}m`;
+    }
+
+    private invalidateProgressCache(): void {
+        this.studentProgressRequest$ = null;
     }
 }

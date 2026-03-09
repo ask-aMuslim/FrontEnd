@@ -69,6 +69,18 @@ export class CourseComponent implements OnInit, OnDestroy {
     backgroundImageUrl =
         '/backgrounds/course-background.png'; // Default background image for all courses (can be customized per course if needed)
 
+    get hasPlayableLesson(): boolean {
+        return !!this.course?.lessonsList.some(
+            (lesson) => !lesson.isLocked && lesson.type !== 'quiz',
+        );
+    }
+
+    get hasQuizLesson(): boolean {
+        return !!this.course?.lessonsList.some(
+            (lesson) => !lesson.isLocked && lesson.type === 'quiz',
+        );
+    }
+
     readonly breadcrumbs: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
     ];
@@ -209,6 +221,10 @@ export class CourseComponent implements OnInit, OnDestroy {
             return;
         }
 
+        if (!this.hasPlayableLesson) {
+            return;
+        }
+
         const firstLesson = this.course.lessonsList.find((lesson) => !lesson.isLocked);
         if (firstLesson) {
             this.router.navigate(['lesson', firstLesson.id], { relativeTo: this.route });
@@ -225,6 +241,10 @@ export class CourseComponent implements OnInit, OnDestroy {
         }
 
         if (this.course && !this.course.isLocked) {
+            if (!this.hasQuizLesson) {
+                return;
+            }
+
             // Updated path from academy routes
             this.router.navigate(['quiz'], { relativeTo: this.route });
         }

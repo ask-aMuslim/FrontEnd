@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ElementRef, viewChild, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject, forkJoin, of, switchMap, tap, catchError, finalize, map } from 'rxjs';
+import { Observable, Subject, forkJoin, of, switchMap, tap, catchError, finalize, map } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
@@ -140,32 +140,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         return forkJoin(
-          uniqueCourseIds.map((courseId) =>
-            this.courseFacade.getCourseById(courseId).pipe(
-              switchMap((course) => {
-                if (!course?.id) {
-                  return of(null);
-                }
-                return this.lessonFacade.getCourseLessons(course.id).pipe(
-                  tap((lessons) => {
-                    // Map saved lessons
-                    const currentLessons = this.savedLessonsSignal();
-                    const newLessons: SavedLesson[] = lessons.map((lesson, index) => ({
-                      id: lesson.id || `lesson-${index}`,
-                      courseId: course.id || '',
-                      course: course.title || 'Unknown Course',
-                      lesson: lesson.title || 'Untitled Lesson',
-                      duration: this.formatDuration(),
-                      badge: String.fromCharCode(65 + (index % 26)), // A, B, C...
-                    }));
-                    this.savedLessonsSignal.set([...currentLessons, ...newLessons]);
-                  }),
-                  map((lessons) => ({ course, lessons }))
-                );
-              }),
-              catchError(() => of(null))
-            )
-          )
+          uniqueCourseIds.map((courseId) => this.fetchCourseWithLessons(courseId))
         );
       }),
       tap((coursesWithLessons) => {
@@ -180,14 +155,42 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
         // Load notes for all lessons
         this.loadNotesForLessons(validCourses);
       }),
-      catchError((err) => {
-        console.error('Error loading student data:', err);
+      catchError(() => {
         this.error.set('Failed to load your learning data. Please try again.');
         return of(null);
       }),
       finalize(() => this.isLoading.set(false)),
       takeUntil(this.destroy$)
     ).subscribe();
+  }
+
+  private fetchCourseWithLessons(courseId: string): Observable<CourseWithLessons | null> {
+    return this.courseFacade.getCourseById(courseId).pipe(
+      switchMap((course) => {
+        if (!course?.id) {
+          return of(null);
+        }
+        return this.lessonFacade.getCourseLessons(course.id).pipe(
+          tap((lessons) => this.appendSavedLessons(course, lessons)),
+          map((lessons) => ({ course, lessons }))
+        );
+      }),
+      catchError(() => of(null))
+    );
+  }
+
+  private appendSavedLessons(course: CourseReadDto, lessons: LessonReadDto[]): void {
+    const currentLessons = this.savedLessonsSignal();
+    const newLessons: SavedLesson[] = lessons.map((lesson, index) => ({
+      id: lesson.id || `lesson-${index}`,
+      courseId: course.id || '',
+      course: course.title || 'Unknown Course',
+      lesson: lesson.title || 'Untitled Lesson',
+      duration: this.formatDuration(),
+      badge: String.fromCodePoint(65 + (index % 26)), // A, B, C...
+    }));
+
+    this.savedLessonsSignal.set([...currentLessons, ...newLessons]);
   }
 
   private loadNotesForLessons(coursesWithLessons: CourseWithLessons[]): void {
@@ -223,7 +226,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
                 id: note.id,
                 course: item.course.title || 'Unknown Course',
                 label: `{${item.lesson.title}} ${new Date(note.createdAt).toLocaleTimeString()}`,
-                body: note.content,
+                body: note.content ?? note.text ?? '',
                 html: '',
               });
             });
@@ -232,8 +235,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
           this.allNotesSignal.set(allNotes);
           this.updateFilteredNotes();
         }),
-        catchError((err) => {
-          console.error('Error loading notes:', err);
+        catchError(() => {
           this.notesError.set('Failed to load your notes.');
           return of(null);
         }),

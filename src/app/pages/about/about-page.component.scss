@@ -303,83 +303,83 @@
   list-style: none;
   margin: 2rem 0 0;
   padding: 0;
-  display: grid;
-  gap: 0;
   max-width: 30.5rem;
 }
 
+/* Each list item is a flex column:
+   [bridge (non-first)] + [row: rail | content] */
 .about-timeline__item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bridge: the connector segment that runs BETWEEN the bottom of the
+   previous item's connector and the top of the next item's dot */
+.about-timeline__bridge {
+  display: flex;
+  width: 1rem;
+  height: 3rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.about-timeline__bridge-line {
+  display: block;
+  width: 2px;
+  flex: 1 0 0;
+  border-radius: 0 0 8px 8px; /* square top (joins connector above), rounded bottom */
+  background: var(--color-button-secondary-normal);
+}
+
+/* The row that holds [rail | content] side by side */
+.about-timeline__row {
   display: grid;
   grid-template-columns: 1rem 1fr;
   column-gap: 0.5rem;
-  min-height: 2.9375rem;
-  align-items: center; /* vertically center rail and content */
+  align-items: start;
 }
 
-.about-timeline__item:not(:first-child) {
-  margin-top: 3.25rem;
-}
-
+/* Rail column: dot-row (fixed height) + connector (grows) */
 .about-timeline__rail {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* center dot/connector vertically */
-  height: 100%; /* fill timeline item grid row */
-  position: relative; /* enable absolute positioning of dot */
+  align-self: stretch; /* stretch to full row height so connector fills it */
 }
 
-.about-timeline__item:not(:first-child) .about-timeline__rail::before {
-  content: "";
-  position: absolute;
-  /* length equals half the distance between consecutive dot centers */
-  top: -3.09375rem; /* -(margin + itemHeight)/2 */
-  left: 0.5rem; /* center of 1rem rail column */
-  width: 2px;
-  height: 3.09375rem;
-  background: var(--color-button-secondary-normal);
-  z-index: 0;
+/* Fixed-height container that vertically centers the dot inline with year text */
+.about-timeline__dot-row {
+  display: flex;
+  height: 1.4rem; /* matches year line-height (1rem × 1.4) */
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
 }
-.about-timeline__item--last .about-timeline__rail::after {
-  content: "";
-  position: absolute;
-  top: 1rem; /* small gap below dot */
-  left: 0.5rem;
-  width: 2px;
-  height: 1.25rem; /* shorter than regular connector */
-  background: var(--color-button-secondary-normal);
-  z-index: 0;
-}
-
-/* dot indicator styling - green point centered between lines */
-/* merged into earlier declaration */
 
 .about-timeline__dot {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 1rem;
+  height: 1rem;
   border-radius: 50%;
   background: var(--color-button-primary-normal);
-
-  /* center exactly in middle of rail (between before/after segments) */
-  position: absolute;
-  left: 0.5rem; /* align with connector line */
-  top: 50%;
-  transform: translate(-50%, -50%);
-  /* dot remains centered within rail which is now centered in item */
-  z-index: 1;
+  flex-shrink: 0;
 }
 
+/* Connector line that runs below the dot */
 .about-timeline__connector {
+  display: block;
   width: 2px;
-  flex: 1;
-  min-height: 1.3125rem;
+  flex: 1 0 0; /* grow to fill remaining rail height */
   background: var(--color-button-secondary-normal);
-  margin: 0.5rem 0 0;
+  border-radius: 8px; /* rounded all — works for middle & last items */
+}
+
+/* First item's connector has square bottom to visually join the bridge-line below */
+.about-timeline__connector--first {
+  border-radius: 8px 8px 0 0;
 }
 
 .about-timeline__content {
-  padding-bottom: 0;
-
   h3 {
     margin: 0;
     font-size: 1rem;
@@ -398,10 +398,6 @@
   }
 }
 
-.about-timeline__item--last .about-timeline__content {
-  padding-bottom: 0;
-}
-
 /* 3) MISSION */
 
 .about-mission {
@@ -410,13 +406,23 @@
   padding: clamp(4rem, 8vw, 6rem) 0;
 }
 
+.about-mission::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/backgrounds/what-is-islam-section-background.svg");
+  background-repeat: repeat;
+  background-position: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .about-mission__pattern {
   position: absolute;
   inset: 0;
-  background-image: url("/backgrounds/texture.svg");
-  background-size: cover;
+  background-image: url("/backgrounds/what-is-islam-section-background.svg");
   background-position: center;
-  opacity: 0.08;
+  // opacity: 0.08;
   pointer-events: none;
 }
 
@@ -456,17 +462,6 @@
   /* remove visible border per design requirement */
   border: none;
   border-radius: 16px;
-}
-
-.about-serve::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url(/backgrounds/what-is-islam-section-background.svg);
-  background-repeat: repeat;
-  background-position: center;
-  z-index: 0;
-  pointer-events: none;
 }
 
 /* ensure internal content sits above pseudo */
@@ -752,15 +747,6 @@
   .about-story__quote--bottom {
     right: 0.5rem;
     bottom: -0.25rem;
-  }
-
-  .about-timeline__item:not(:first-child) {
-    margin-top: 1.5rem;
-  }
-
-  .about-timeline__item:not(:first-child) .about-timeline__rail::before {
-    top: -1.5rem;
-    height: 1.25rem;
   }
 }
 

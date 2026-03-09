@@ -84,21 +84,32 @@
                 @for (
                   item of timelineItems;
                   track trackByYear($index, item);
+                  let isFirst = $first;
                   let isLast = $last
                 ) {
                   <li
                     class="about-timeline__item"
                     [class.about-timeline__item--last]="isLast"
                   >
-                    <div class="about-timeline__rail" aria-hidden="true">
-                      <span class="about-timeline__dot"></span>
-                      @if (!isLast) {
-                        <span class="about-timeline__connector"></span>
-                      }
-                    </div>
-                    <div class="about-timeline__content">
-                      <h3>{{ item.year }}</h3>
-                      <p>{{ item.description }}</p>
+                    @if (!isFirst) {
+                      <div class="about-timeline__bridge" aria-hidden="true">
+                        <span class="about-timeline__bridge-line"></span>
+                      </div>
+                    }
+                    <div class="about-timeline__row">
+                      <div class="about-timeline__rail" aria-hidden="true">
+                        <div class="about-timeline__dot-row">
+                          <span class="about-timeline__dot"></span>
+                        </div>
+                        <span
+                          class="about-timeline__connector"
+                          [class.about-timeline__connector--first]="isFirst"
+                        ></span>
+                      </div>
+                      <div class="about-timeline__content">
+                        <h3>{{ item.year }}</h3>
+                        <p>{{ item.description }}</p>
+                      </div>
                     </div>
                   </li>
                 }
