@@ -4,7 +4,6 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { SocialAuthServiceConfig, SOCIAL_AUTH_CONFIG, GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-social-login';
 
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideApiConfiguration } from './api/api-configuration';
 import { environment } from '../environments/environment';
 
@@ -43,7 +42,6 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled'
       })
     ),
-    provideClientHydration(withEventReplay()),
     // HTTP client with functional interceptors
     provideHttpClient(
       withFetch(),

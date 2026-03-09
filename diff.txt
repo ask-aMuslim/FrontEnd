@@ -1,0 +1,948 @@
+diff --git a/.env.local b/.env.local
+new file mode 100644
+index 0000000..fa2df8f
+--- /dev/null
++++ b/.env.local
+@@ -0,0 +1,2 @@
++FIGMA_ACCESS_TOKEN=figd_uxYGmAsQgor_taJmIv-fo5OLZaBgQS1KBeQ_nJtC
++FIGMA_FILE_ID=5DlCjylpz0zdJ9XeO3Ndj3
+diff --git a/.github/DEPLOYMENT.md b/.github/DEPLOYMENT.md
+new file mode 100644
+index 0000000..32692c9
+--- /dev/null
++++ b/.github/DEPLOYMENT.md
+@@ -0,0 +1,99 @@
++# Quick Deployment Reference - Frontend
++
++## 🚀 Deploy to Production
++
++### Method 1: Automatic (Recommended)
++```bash
++# Merge your changes to production branch
++git checkout production
++git merge main  # or your feature branch
++git push origin production
++
++# GitHub Actions will automatically deploy! 🎉
++# View progress at: https://github.com/ask-aMuslim/FrontEnd/actions
++```
++
++### Method 2: Manual Deployment
++```bash
++# SSH into server
++ssh azmy@164.68.111.197
++
++# Run deployment script
++cd /srv/docker/web/FrontEnd/.github/workflows
++./deploy-manual.sh
++```
++
++### Method 3: Direct Commands
++```bash
++# SSH into server
++ssh azmy@164.68.111.197
++
++# Pull and rebuild
++cd /srv/docker/web/FrontEnd && git pull origin production
++cd /srv/docker && docker compose build web && docker compose up -d web
++```
++
++## 📊 Check Deployment Status
++
++```bash
++# On server
++docker compose ps web
++docker compose logs web --tail 50 -f
++
++# Check health
++docker inspect web --format='{{.State.Health.Status}}'
++```
++
++## 🔧 Setup Required (One-time)
++
++### 1. Add GitHub Secrets
++Go to: https://github.com/ask-aMuslim/FrontEnd/settings/secrets/actions
++
++Add these secrets:
++- `SERVER_HOST`: 164.68.111.197
++- `SERVER_USER`: azmy
++- `SSH_PRIVATE_KEY`: Your deployment SSH private key (same as API)
++- `SSH_PORT`: 22 (optional)
++
++### 2. SSH Key Already Set Up
++You can use the same SSH key from the API deployment:
++```bash
++cat ~/.ssh/github_key
++# Copy the entire output to GitHub Secrets
++```
++
++## 🆘 Troubleshooting
++
++### Deployment Failed
++```bash
++# Check GitHub Actions logs first!
++# Then SSH and check:
++docker compose logs web --tail 200
++docker compose ps web
++```
++
++### Rollback
++```bash
++ssh azmy@164.68.111.197
++cd /srv/docker/web/FrontEnd
++git log --oneline -10  # Find commit to rollback to
++git reset --hard <commit-hash>
++cd /srv/docker
++docker compose build web && docker compose up -d web
++```
++
++## 📝 Pre-deployment Checklist
++
++- [ ] Changes tested locally
++- [ ] Build successful (`npm run build` or similar)
++- [ ] Environment variables updated (if needed)
++- [ ] Dependencies updated in package.json
++- [ ] Code reviewed and approved
++- [ ] Merged to production branch
++
++## 🔗 Useful Links
++
++- Repository: https://github.com/ask-aMuslim/FrontEnd
++- Actions: https://github.com/ask-aMuslim/FrontEnd/actions
++- Server: ssh://azmy@164.68.111.197
++- Web Endpoint: http://164.68.111.197 (or your domain)
+diff --git a/.github/workflows/deploy-manual.sh b/.github/workflows/deploy-manual.sh
+new file mode 100755
+index 0000000..c11ed2e
+--- /dev/null
++++ b/.github/workflows/deploy-manual.sh
+@@ -0,0 +1,54 @@
++#!/bin/bash
++# Manual deployment script for Web/Frontend
++# Usage: ./deploy-manual.sh
++
++set -e  # Exit on error
++
++echo "🚀 Starting manual Web deployment..."
++
++# Colors for output
++RED='\033[0;31m'
++GREEN='\033[0;32m'
++YELLOW='\033[1;33m'
++NC='\033[0m' # No Color
++
++# Navigate to Web directory
++cd /srv/docker/web/FrontEnd
++
++echo -e "${YELLOW}📥 Pulling latest code from production branch...${NC}"
++git fetch origin
++git reset --hard origin/production
++
++# Navigate to docker directory
++cd /srv/docker
++
++echo -e "${YELLOW}🔨 Rebuilding Web Docker image...${NC}"
++docker compose build web
++
++echo -e "${YELLOW}♻️ Restarting Web container...${NC}"
++docker compose up -d web
++
++# Wait for health check
++echo -e "${YELLOW}⏳ Waiting for Web to become healthy...${NC}"
++for i in {1..30}; do
++  if docker compose ps web | grep -q "healthy"; then
++    echo -e "${GREEN}✅ Web is healthy and running!${NC}"
++    break
++  fi
++  echo "Waiting... ($i/30)"
++  sleep 2
++done
++
++# Show final status
++echo -e "${YELLOW}📊 Deployment Status:${NC}"
++docker compose ps web
++
++# Check if healthy
++if docker compose ps web | grep -q "healthy"; then
++  echo -e "${GREEN}✨ Deployment completed successfully!${NC}"
++  exit 0
++else
++  echo -e "${RED}❌ Deployment may have issues. Check logs:${NC}"
++  echo "docker compose logs web --tail 100"
++  exit 1
++fi
+diff --git a/.github/workflows/deploy-production.yml b/.github/workflows/deploy-production.yml
+new file mode 100644
+index 0000000..31372e1
+--- /dev/null
++++ b/.github/workflows/deploy-production.yml
+@@ -0,0 +1,73 @@
++name: Deploy Web to Production
++
++on:
++  push:
++    branches:
++      - production
++
++jobs:
++  deploy:
++    name: Deploy to Production Server
++    runs-on: ubuntu-latest
++    
++    steps:
++      - name: Checkout code
++        uses: actions/checkout@v4
++      
++      - name: Setup SSH Key
++        run: |
++          mkdir -p ~/.ssh
++          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
++          chmod 600 ~/.ssh/deploy_key
++          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
++        
++      - name: Deploy to Server via SSH
++        run: |
++          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
++            echo "🚀 Starting web deployment..."
++            
++            # Navigate to Web directory
++            cd /srv/docker/web/FrontEnd
++            
++            # Pull latest changes
++            echo "📥 Pulling latest code from production branch..."
++            git fetch origin
++            git reset --hard origin/production
++            
++            # Navigate to docker directory
++            cd /srv/docker
++            
++            # Rebuild and restart Web container
++            echo "🔨 Rebuilding Web Docker image..."
++            docker compose build web
++            
++            echo "♻️ Restarting Web container..."
++            docker compose up -d web
++            
++            # Wait for health check
++            echo "⏳ Waiting for Web to become healthy..."
++            for i in {1..30}; do
++              if docker compose ps web | grep -q "healthy"; then
++                echo "✅ Web is healthy and running!"
++                break
++              fi
++              echo "Waiting... ($i/30)"
++              sleep 2
++            done
++            
++            # Show final status
++            echo "📊 Deployment Status:"
++            docker compose ps web
++            
++            echo "✨ Deployment completed successfully!"
++          EOF
++            
++      - name: Notify Deployment Status
++        if: always()
++        run: |
++          if [ ${{ job.status }} == 'success' ]; then
++            echo "✅ Deployment succeeded!"
++          else
++            echo "❌ Deployment failed!"
++            exit 1
++          fi
+diff --git a/.gitignore b/.gitignore
+index b4c5910..0383c3a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,47 +1,28 @@
+-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
++# Angular specific
++/dist/
++/out-tsc/
++/tmp/
++/coverage/
++/e2e/test-output/
++/.angular/
++.angular/
+ 
+-# Compiled output
+-/dist
+-/tmp
+-/out-tsc
+-/bazel-out
++# Node modules and dependency files
++/node_modules/
++/package-lock.json
++/yarn.lock
+ 
+-# Node
+-/node_modules
+-npm-debug.log
+-yarn-error.log
++# Environment files
++/.env
+ 
+-# IDEs and editors
+-.idea/
+-.project
+-.classpath
+-.c9/
+-*.launch
+-.settings/
+-*.sublime-workspace
++# Angular CLI and build artefacts
++/.angular-cli.json
++/.ng/
+ 
+-# Visual Studio Code
+-.vscode/*
+-!.vscode/settings.json
+-!.vscode/tasks.json
+-!.vscode/launch.json
+-!.vscode/extensions.json
+-.history/*
++# TypeScript cache
++*.tsbuildinfo
+ 
+-# Miscellaneous
+-/.angular/cache
+-.sass-cache/
+-/connect.lock
+-/coverage
+-/libpeerconnection.log
+-testem.log
+-/typings
+-__screenshots__/
+-
+-# System files
+-.DS_Store
+-Thumbs.db
+-
+-# Environment variables
+-.env.local
+-.env
++# Logs
++npm-debug.log*
++yarn-debug.log*
++yarn-error.log*
+diff --git a/.idea/.gitignore b/.idea/.gitignore
+new file mode 100644
+index 0000000..ab1f416
+--- /dev/null
++++ b/.idea/.gitignore
+@@ -0,0 +1,10 @@
++# Default ignored files
++/shelf/
++/workspace.xml
++# Ignored default folder with query files
++/queries/
++# Datasource local storage ignored files
++/dataSources/
++/dataSources.local.xml
++# Editor-based HTTP Client requests
++/httpRequests/
+diff --git a/.idea/AskAMuslim.iml b/.idea/AskAMuslim.iml
+new file mode 100644
+index 0000000..c956989
+--- /dev/null
++++ b/.idea/AskAMuslim.iml
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module type="WEB_MODULE" version="4">
++  <component name="NewModuleRootManager">
++    <content url="file://$MODULE_DIR$" />
++    <orderEntry type="inheritedJdk" />
++    <orderEntry type="sourceFolder" forTests="false" />
++  </component>
++</module>
+\ No newline at end of file
+diff --git a/.idea/modules.xml b/.idea/modules.xml
+new file mode 100644
+index 0000000..44004f0
+--- /dev/null
++++ b/.idea/modules.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ProjectModuleManager">
++    <modules>
++      <module fileurl="file://$PROJECT_DIR$/.idea/AskAMuslim.iml" filepath="$PROJECT_DIR$/.idea/AskAMuslim.iml" />
++    </modules>
++  </component>
++</project>
+\ No newline at end of file
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+index 0000000..35eb1dd
+--- /dev/null
++++ b/.idea/vcs.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file
+diff --git a/.vscode/mcp.json b/.vscode/mcp.json
+new file mode 100644
+index 0000000..4680fd4
+--- /dev/null
++++ b/.vscode/mcp.json
+@@ -0,0 +1,23 @@
++{
++	"servers": {
++		"postman": {
++			"type": "stdio",
++			"command": "npx",
++			"args": [
++				"-y",
++				"@postman/postman-mcp-server@latest",
++				"--minimal"
++			],
++			"env": {
++				"POSTMAN_API_KEY": "PMAK-699e3aa9178d520001056580-cda5982bc60c4ca413e04f7e5dc950f74a"
++			}
++		},
++		"TalkToFigma": {
++			"command": "npx",
++			"args": [
++				"ai-figma-mcp@latest"
++			],
++			"type": "stdio"
++		}
++	}
++}
+\ No newline at end of file
+diff --git a/LICENSE b/LICENSE
+new file mode 100644
+index 0000000..e3c5940
+--- /dev/null
++++ b/LICENSE
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2025 Ask A Muslim
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/README.md b/README.md
+index 91510df..bc004ca 100644
+--- a/README.md
++++ b/README.md
+@@ -1,59 +1 @@
+-# AskAMuslim
+-
+-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.7.
+-
+-## Development server
+-
+-To start a local development server, run:
+-
+-```bash
+-ng serve
+-```
+-
+-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+-
+-## Code scaffolding
+-
+-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+-
+-```bash
+-ng generate component component-name
+-```
+-
+-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+-
+-```bash
+-ng generate --help
+-```
+-
+-## Building
+-
+-To build the project run:
+-
+-```bash
+-ng build
+-```
+-
+-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+-
+-## Running unit tests
+-
+-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+-
+-```bash
+-ng test
+-```
+-
+-## Running end-to-end tests
+-
+-For end-to-end (e2e) testing, run:
+-
+-```bash
+-ng e2e
+-```
+-
+-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+-
+-## Additional Resources
+-
+-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
++# FrontEnd
+\ No newline at end of file
+diff --git a/angular.json b/angular.json
+index e61838c..0e597c1 100644
+--- a/angular.json
++++ b/angular.json
+@@ -40,12 +40,7 @@
+               "node_modules/flowbite/dist/flowbite.css",
+               "src/styles/tokens/variables.css",
+               "src/styles/styles.css"
+-            ],
+-            "server": "src/main.server.ts",
+-            "outputMode": "server",
+-            "ssr": {
+-              "entry": "src/server.ts"
+-            }
++            ]
+           },
+           "configurations": {
+             "production": {
+diff --git a/docs/SOCIAL_LOGIN_BEST_PRACTICES.md b/docs/SOCIAL_LOGIN_BEST_PRACTICES.md
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/docs/SOCIAL_LOGIN_IMPLEMENTATION_PLAN.md b/docs/SOCIAL_LOGIN_IMPLEMENTATION_PLAN.md
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/src/app/core/Layouts/app-layout/app-layout.component.html b/src/app/core/layouts/app-layout/app-layout.component.html
+similarity index 100%
+rename from src/app/core/Layouts/app-layout/app-layout.component.html
+rename to src/app/core/layouts/app-layout/app-layout.component.html
+diff --git a/src/app/core/Layouts/app-layout/app-layout.component.scss b/src/app/core/layouts/app-layout/app-layout.component.scss
+similarity index 100%
+rename from src/app/core/Layouts/app-layout/app-layout.component.scss
+rename to src/app/core/layouts/app-layout/app-layout.component.scss
+diff --git a/src/app/core/Layouts/app-layout/app-layout.component.spec.ts b/src/app/core/layouts/app-layout/app-layout.component.spec.ts
+similarity index 100%
+rename from src/app/core/Layouts/app-layout/app-layout.component.spec.ts
+rename to src/app/core/layouts/app-layout/app-layout.component.spec.ts
+diff --git a/src/app/core/Layouts/app-layout/app-layout.component.ts b/src/app/core/layouts/app-layout/app-layout.component.ts
+similarity index 100%
+rename from src/app/core/Layouts/app-layout/app-layout.component.ts
+rename to src/app/core/layouts/app-layout/app-layout.component.ts
+diff --git a/src/app/core/Layouts/auth-layout/auth-layout.component.html b/src/app/core/layouts/auth-layout/auth-layout.component.html
+similarity index 100%
+rename from src/app/core/Layouts/auth-layout/auth-layout.component.html
+rename to src/app/core/layouts/auth-layout/auth-layout.component.html
+diff --git a/src/app/core/Layouts/auth-layout/auth-layout.component.scss b/src/app/core/layouts/auth-layout/auth-layout.component.scss
+similarity index 100%
+rename from src/app/core/Layouts/auth-layout/auth-layout.component.scss
+rename to src/app/core/layouts/auth-layout/auth-layout.component.scss
+diff --git a/src/app/core/Layouts/auth-layout/auth-layout.component.spec.ts b/src/app/core/layouts/auth-layout/auth-layout.component.spec.ts
+similarity index 100%
+rename from src/app/core/Layouts/auth-layout/auth-layout.component.spec.ts
+rename to src/app/core/layouts/auth-layout/auth-layout.component.spec.ts
+diff --git a/src/app/core/Layouts/auth-layout/auth-layout.component.ts b/src/app/core/layouts/auth-layout/auth-layout.component.ts
+similarity index 100%
+rename from src/app/core/Layouts/auth-layout/auth-layout.component.ts
+rename to src/app/core/layouts/auth-layout/auth-layout.component.ts
+diff --git a/src/app/pages/academy/course-tree/course-tree.component.html b/src/app/pages/academy/course-tree/course-tree.component.html
+index 80d7fc4..24132f1 100644
+--- a/src/app/pages/academy/course-tree/course-tree.component.html
++++ b/src/app/pages/academy/course-tree/course-tree.component.html
+@@ -40,21 +40,28 @@
+ 
+   <!-- Data View -->
+   @else {
+-    <!-- Desktop: Dynamic tree layout (works with any number of courses and siblings) -->
+-    <div class="hidden md:flex justify-center flex-col items-center pb-20 w-full max-w-[1200px] mx-auto text-left gap-12 mt-8">
+-      @for (layer of layers(); track $index; let isLast = $last) {
+-        <div class="relative z-10 flex flex-row flex-wrap justify-center items-center gap-12 w-full">
+-          @for (node of layer; track node.id) {
+-            <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node, format: 'desktop'}"></ng-container>
+-          }
+-        </div>
+-        @if (!isLast) {
+-          <div class="w-[2px] h-[48px] bg-gray-400 opacity-60 -my-6"></div>
++    <div class="tree-container relative w-full h-full min-h-[400px]">
++      
++      <!-- SVG Connectors Overlay (Desktop Only) -->
++      <svg class="hidden md:block absolute top-0 left-0 w-full h-full pointer-events-none z-0" style="min-height: 100%;">
++        @for (path of svgPaths(); track $index) {
++          <path [attr.d]="path" fill="none" stroke="#cbd5e1" stroke-width="2.5" class="svg-anim-path" stroke-linecap="round" />
+         }
+-      }
+-    </div>
++      </svg>
++
++      <!-- Desktop: Dynamic tree layout (works with any number of courses and siblings) -->
++      <div class="hidden md:flex justify-center flex-col items-center pb-20 w-full max-w-[1200px] mx-auto text-left gap-12 mt-8 z-10">
++        @for (layer of layers(); track $index; let isLast = $last) {
++          <div class="relative z-10 flex flex-row flex-wrap justify-center items-center gap-12 w-full">
++            @for (node of layer; track node.id) {
++              <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node, format: 'desktop'}"></ng-container>
++            }
++          </div>
++          <!-- Removed static line: dynamic SVG lines will connect prerequisites -->
++        }
++      </div>
+ 
+-    <!-- Mobile Vertical Timeline -->
++      <!-- Mobile Vertical Timeline -->
+     <div class="md:hidden relative px-4 py-8">
+       <div class="absolute left-[39px] top-12 bottom-12 w-0.5 bg-gradient-to-b from-primary-200 via-gray-300 to-transparent"></div>
+       <div class="flex flex-col gap-8">
+@@ -83,6 +90,7 @@
+         }
+       </div>
+     </div>
++  </div>
+   }
+ 
+ </div>
+diff --git a/src/app/pages/academy/course-tree/course-tree.component.scss b/src/app/pages/academy/course-tree/course-tree.component.scss
+index c93c4d4..b177827 100644
+--- a/src/app/pages/academy/course-tree/course-tree.component.scss
++++ b/src/app/pages/academy/course-tree/course-tree.component.scss
+@@ -1,8 +1,8 @@
+ .course-tree-wrapper {
+   font-family: inherit;
+   
+-  .animate-spin {
+-    animation: spin 1s linear infinite;
++  .error-state, .empty-state {
++    animation: fadeIn 0.4s ease-out;
+   }
+ }
+ 
+@@ -11,6 +11,30 @@
+   to { transform: rotate(360deg); }
+ }
+ 
++@keyframes fadeIn {
++  from { opacity: 0; transform: translateY(10px); }
++  to { opacity: 1; transform: translateY(0); }
++}
++
++/* SVG Line Drawing Animation */
++.svg-anim-path {
++  stroke-dasharray: 1000;
++  stroke-dashoffset: 1000;
++  animation: drawLine 1s ease-in-out forwards;
++  /* Add a subtle drop shadow to the connecting lines for depth */
++  filter: drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.05));
++  
++  /* Use a sleek gradient-like color by utilizing stroke-opacity */
++  stroke: #94a3b8; /* slate-400 */
++}
++
++@keyframes drawLine {
++  to {
++    stroke-dashoffset: 0;
++  }
++}
++
++
+ /* Enhancing Node Styles */
+ .course-node-card {
+   outline: none;
+diff --git a/src/app/pages/academy/course-tree/course-tree.component.ts b/src/app/pages/academy/course-tree/course-tree.component.ts
+index aa842d6..722f2a2 100644
+--- a/src/app/pages/academy/course-tree/course-tree.component.ts
++++ b/src/app/pages/academy/course-tree/course-tree.component.ts
+@@ -1,4 +1,4 @@
+-import { Component, ChangeDetectionStrategy, input, output, OnInit, computed } from '@angular/core';
++import { Component, ChangeDetectionStrategy, input, output, OnInit, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy } from '@angular/core';
+ import { CommonModule } from '@angular/common';
+ 
+ export interface CourseNode {
+@@ -17,7 +17,9 @@ export interface CourseNode {
+     templateUrl: './course-tree.component.html',
+     styleUrls: ['./course-tree.component.scss']
+ })
+-export class CourseTreeComponent {
++export class CourseTreeComponent implements AfterViewInit, OnDestroy {
++    private el = inject(ElementRef);
++
+     // Inputs from Academy Component
+     nodes = input.required<CourseNode[]>();
+     loading = input<boolean>(false);
+@@ -27,6 +29,12 @@ export class CourseTreeComponent {
+     courseClick = output<CourseNode>();
+     retryAction = output<void>();
+ 
++    // SVG Line state
++    svgPaths = signal<string[]>([]);
++
++    // Resize observer to handle dynamic window resizing naturally
++    private resizeObserver: ResizeObserver | null = null;
++
+     layers = computed(() => {
+         const nodeList = this.nodes();
+         const nodeMap = new Map(nodeList.map(n => [n.id, n]));
+@@ -61,9 +69,74 @@ export class CourseTreeComponent {
+             layersArr[d].push(n);
+         });
+ 
++        // Wait for rendering to complete after new layers are mapped to redraw lines
++        setTimeout(() => this.drawLines(), 50);
++
+         return layersArr;
+     });
+ 
++    ngAfterViewInit() {
++        if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
++            this.resizeObserver = new ResizeObserver(() => {
++                this.drawLines();
++            });
++            this.resizeObserver.observe(this.el.nativeElement);
++        }
++    }
++
++    ngOnDestroy() {
++        if (this.resizeObserver) {
++            this.resizeObserver.disconnect();
++        }
++    }
++
++    @HostListener('window:resize')
++    onResize() {
++        this.drawLines();
++    }
++
++    drawLines() {
++        if (!this.el) return;
++        const container = this.el.nativeElement.querySelector('.tree-container');
++        if (!container) return;
++
++        const containerRect = container.getBoundingClientRect();
++        const paths: string[] = [];
++
++        // Use the native element querying isolated to this component's hierarchy
++        const nodeList = this.nodes();
++        for (const node of nodeList) {
++            if (!node.prerequisites || node.prerequisites.length === 0) continue;
++
++            const targetEl = container.querySelector(`#course-node-${node.id}`);
++            if (!targetEl) continue;
++
++            const targetRect = targetEl.getBoundingClientRect();
++            // child target center top
++            const targetX = targetRect.left - containerRect.left + (targetRect.width / 2);
++            const targetY = targetRect.top - containerRect.top;
++
++            for (const parentId of node.prerequisites) {
++                const parentEl = container.querySelector(`#course-node-${parentId}`);
++                if (!parentEl) continue;
++
++                const parentRect = parentEl.getBoundingClientRect();
++                // parent source center bottom
++                const parentX = parentRect.left - containerRect.left + (parentRect.width / 2);
++                const parentY = parentRect.bottom - containerRect.top;
++
++                // Construct a sleek smooth bezier curve (flow chart style) connecting parent to child
++                const verticalSpace = Math.abs(targetY - parentY);
++                const controlY = parentY + (verticalSpace * 0.5);
++
++                const d = `M ${parentX} ${parentY} C ${parentX} ${controlY}, ${targetX} ${controlY}, ${targetX} ${targetY}`;
++                paths.push(d);
++            }
++        }
++
++        this.svgPaths.set(paths);
++    }
++
+     retry() {
+         this.retryAction.emit();
+     }
+diff --git a/src/app/pages/ask-and-contact/ask-Q&A/ask-qa.component.html b/src/app/pages/ask-and-contact/ask-Q&A/ask-qa.component.html
+index 7292fe1..fb7213c 100644
+--- a/src/app/pages/ask-and-contact/ask-Q&A/ask-qa.component.html
++++ b/src/app/pages/ask-and-contact/ask-Q&A/ask-qa.component.html
+@@ -52,7 +52,7 @@
+           class="flex w-full items-center justify-center rounded-lg border border-(--color-card-surface-secondary-2) bg-(--color-card-surface-primary) p-6"
+         >
+           <p class="text-center text-base text-(--color-text-caption)">
+-            No Q&amp;A entries were found for “{{ selectedCategoryName }}”. Try another category.
++            No questions were found for “{{ selectedCategoryName }}”. Try another category.
+           </p>
+         </div>
+       } @else {
+diff --git a/src/app/pages/ask-and-contact/ask-Q&A/question-search-result/question-search-result.component.html b/src/app/pages/ask-and-contact/ask-Q&A/question-search-result/question-search-result.component.html
+index 502f1f0..86ed644 100644
+--- a/src/app/pages/ask-and-contact/ask-Q&A/question-search-result/question-search-result.component.html
++++ b/src/app/pages/ask-and-contact/ask-Q&A/question-search-result/question-search-result.component.html
+@@ -26,7 +26,7 @@
+         We couldn't find any questions that match “{{ query }}”. Try another keyword or browse all
+         questions.
+       </p>
+-      <button type="button" class="browse-btn" (click)="onClear()">Back to Q&A</button>
++      <button type="button" class="browse-btn" (click)="onClear()">Back to Ask Questions</button>
+     </div>
+   }
+ 
+diff --git a/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.html b/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.html
+index 8330a18..92fb9ea 100644
+--- a/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.html
++++ b/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.html
+@@ -1,6 +1,7 @@
+ <div class="flex flex-col gap-10">
+   <div>
+-    <span class="text-(--color-text-placeholder)">Ask “Q&A” / </span>
++    <a routerLink="/ask-and-contact/ask-qa" class="text-(--color-text-placeholder) hover:underline cursor-pointer">Ask Questions</a>
++    <span class="text-(--color-text-placeholder)"> / </span>
+     <span class="text-(--color-button-secondary-normal)">{{ categories[0] || id }}</span>
+   </div>
+ 
+@@ -31,9 +32,7 @@
+     </div>
+   </div>
+ 
+-  <div class="paragraph">
+-    <p class="text-base leading-[160%] text-text-body whitespace-pre-line">{{ description }}</p>
+-  </div>
++
+ 
+   @if (imageUrl) {
+     <div class="overflow-hidden rounded-lg">
+diff --git a/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.ts b/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.ts
+index b68b0b9..febf134 100644
+--- a/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.ts
++++ b/src/app/pages/ask-and-contact/ask-Q&A/question/question.component.ts
+@@ -1,16 +1,16 @@
+ 
+ import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
+-import { ActivatedRoute, Router } from '@angular/router';
++import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+ import { Subject } from 'rxjs';
+ import { takeUntil } from 'rxjs/operators';
+ import { QasService } from '../../../../core/services/qas.service';
+-import { asRecord, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
++import { asRecord, extractArray, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
+ import { toApiMediaUrl } from '../../../../core/helpers/media-url.helper';
+ 
+ @Component({
+   selector: 'app-question',
+   standalone: true,
+-  imports: [],
++  imports: [RouterLink],
+   templateUrl: './question.component.html',
+   styleUrls: ['./question.component.scss'],
+   changeDetection: ChangeDetectionStrategy.OnPush,
+@@ -20,7 +20,6 @@ export class QuestionComponent implements OnDestroy {
+ 
+   id = '';
+   title = '';
+-  description = '';
+   answer = '';
+   categories: string[] = [];
+   imageUrl: string | null = null;
+@@ -74,18 +73,26 @@ export class QuestionComponent implements OnDestroy {
+     this.qasService.getById(id).pipe(takeUntil(this.destroy$)).subscribe({
+       next: (response) => {
+         const record = asRecord(response);
++        const data = getValue(record, 'data', 'Data') ? asRecord(getValue(record, 'data', 'Data')) : record;
++
++        const translations = extractArray(getValue(data, 'translations', 'Translations'));
++        const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
++
++        const mappedTitle = toStringValue(
++          firstTranslation ? getValue(firstTranslation, 'questionText', 'QuestionText', 'question') : undefined,
++        ) ?? toStringValue(getValue(data, 'title', 'Title'));
++
++        const mappedAnswer = toStringValue(
++          firstTranslation ? getValue(firstTranslation, 'answerText', 'AnswerText', 'answer') : undefined,
++        ) ?? toStringValue(getValue(data, 'answerText', 'AnswerText', 'answer', 'Answer'));
+ 
+-        const mappedTitle = toStringValue(getValue(record, 'questionText', 'QuestionText', 'title', 'Title'));
+-        const mappedQuestion = toStringValue(getValue(record, 'description', 'Description', 'question', 'Question'));
+-        const mappedAnswer = toStringValue(getValue(record, 'answerText', 'AnswerText', 'answer', 'Answer'));
+         const mappedImage = toApiMediaUrl(
+-          toStringValue(getValue(record, 'imageUrl', 'ImageUrl', 'questionImage', 'QuestionImage')),
++          toStringValue(getValue(data, 'imageUrl', 'ImageUrl', 'questionImage', 'QuestionImage')),
+         );
+ 
+         this.title = mappedTitle ?? this.title;
+-        this.description = mappedQuestion ?? this.description;
+         this.answer = mappedAnswer ?? this.answer;
+-        this.categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags')) ?? this.categories;
++        this.categories = toStringArray(getValue(data, 'categories', 'Categories', 'tags', 'Tags')) ?? this.categories;
+         this.imageUrl = mappedImage ?? null;
+       },
+       error: () => void 0,
+@@ -101,10 +108,10 @@ export class QuestionComponent implements OnDestroy {
+ 
+   async downloadPdf(): Promise<void> {
+     try {
+-      const { jsPDF } = await import('jspdf');
++      const jsPDF = (await import('jspdf')).jsPDF;
+       const doc = new jsPDF();
+       const titleText = this.title || 'Question';
+-      const bodyText = (this.answer || '').trim() || (this.description || '').trim();
++      const bodyText = (this.answer || '').trim();
+       doc.setFontSize(16);
+       doc.text(titleText, 10, 10);
+       doc.setFontSize(12);
+@@ -116,7 +123,7 @@ export class QuestionComponent implements OnDestroy {
+       // fallback: open print dialog for manual PDF
+       const printWindow = globalThis.open('', '_blank');
+       if (printWindow) {
+-        const html = `<html><head><title>${this.title}</title></head><body><h1>${this.title}</h1><pre>${this.answer || this.description}</pre></body></html>`;
++        const html = `<html><head><title>${this.title}</title></head><body><h1>${this.title}</h1><pre>${this.answer}</pre></body></html>`;
+         printWindow.document.open();
+         printWindow.document.close();
+         // populate body safely
+@@ -161,7 +168,6 @@ export class QuestionComponent implements OnDestroy {
+       const url = new URL(globalThis.location.href);
+       // Ensure only the id (and categories) are present in the shared URL to avoid leaking content
+       url.searchParams.delete('title');
+-      url.searchParams.delete('description');
+       url.searchParams.set('id', this.id);
+       return url.toString();
+     } catch {
+diff --git a/src/app/pages/home/home.html b/src/app/pages/home/home.html
+index 83c2e76..92f72da 100644
+--- a/src/app/pages/home/home.html
++++ b/src/app/pages/home/home.html
+@@ -4,8 +4,8 @@
+     <div class="section-block section-block--wide">
+       <div class="hero-content">
+         <div class="mb-3 text-center text-sm font-semibold tracking-wider text-(--color-text-caption) uppercase">
+-          One God | One Message | Many Prophets
+-        </div>
++          One <span class="special-primary">God</span> | One <span class="special-primary">Message</span> | Many <span class="special-primary">Prophets</span>
++        </div>  
+         <div
+           class="mx-auto rounded-full border border-(--colors-green-30) text-(--color-text-caption) bg-transparent px-4 py-1 text-sm font-medium hint"
+         >
+diff --git a/src/styles/styles.css b/src/styles/styles.css
+index bfa3c81..631a0e6 100644
+--- a/src/styles/styles.css
++++ b/src/styles/styles.css
+@@ -119,4 +119,8 @@ h1 {
+   color: var(--color-text-title);
+   font-size: 40px;
+   font-weight: 700;
++}
++
++span.special-primary {
++  color: var(--color-button-primary-normal);
+ }
+\ No newline at end of file

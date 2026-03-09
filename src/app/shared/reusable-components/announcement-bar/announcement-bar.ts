@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Component, OnInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { StudentFacade } from '../../../api/facades/student.facade';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-announcement-bar',
@@ -17,6 +18,7 @@ export class AnnouncementBar implements OnInit, OnDestroy {
     private readonly STORAGE_KEY = 'announcement-bar-dismissed-date';
     private readonly platformId = inject(PLATFORM_ID);
     private readonly studentFacade = inject(StudentFacade);
+    private readonly authService = inject(AuthService);
     private readonly destroy$ = new Subject<void>();
 
     ngOnInit(): void {
@@ -45,6 +47,11 @@ export class AnnouncementBar implements OnInit, OnDestroy {
     }
 
     private checkProfileCompletion(): void {
+        if (!this.authService.isAuthenticated()) {
+            this.isVisible = false;
+            return;
+        }
+
         this.studentFacade
             .me()
             .pipe(takeUntil(this.destroy$))
@@ -57,8 +64,7 @@ export class AnnouncementBar implements OnInit, OnDestroy {
                     this.isVisible = isIncomplete;
                 },
                 error: () => {
-                    // Show bar on error to encourage profile setup
-                    this.isVisible = true;
+                    this.isVisible = false;
                 },
             });
     }
