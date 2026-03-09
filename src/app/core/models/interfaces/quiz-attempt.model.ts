@@ -18,8 +18,10 @@ export interface CreateQuizAttemptRequest {
 
 export interface CompleteQuizAttemptRequest {
   attemptId: Id;
-  score: number;
-  isPassed: boolean;
+  answers: Array<{
+    questionId: Id;
+    selectedOptionId: Id;
+  }>;
 }
 
 export default QuizAttemptDto;

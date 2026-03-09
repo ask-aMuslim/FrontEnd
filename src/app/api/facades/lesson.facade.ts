@@ -22,7 +22,9 @@ export type UpdateLessonRequest = Record<string, unknown>;
 
 export interface LessonNote {
     id: string;
-    content: string;
+    content?: string;
+    text?: string;
+    studentId?: string;
     createdAt: string;
 }
 
@@ -62,8 +64,13 @@ export class LessonFacade {
         return extractData(this.api.get<unknown>(`/api/StudentNotes/by-lesson/${lessonId}`), []).pipe(map(asArray<LessonNote>));
     }
 
-    addNote(lessonId: string, content: string): Observable<LessonNote | null> {
-        return extractData(this.api.post<unknown>('/api/StudentNotes', { lessonId, content }), null);
+    addNote(lessonId: string, studentId: string, text: string): Observable<LessonNote | null> {
+        return extractData(this.api.post<unknown>('/api/StudentNotes', {
+            lessonId,
+            studentId,
+            text,
+            timestamp: Date.now(),
+        }), null);
     }
 
     deleteNote(noteId: string): Observable<boolean> {

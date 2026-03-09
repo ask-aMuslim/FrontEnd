@@ -9,6 +9,8 @@ import { AcademyProgressService } from '../../../core/services/academy-progress.
 import { ScrollService } from '../../../core/services/scroll.service';
 import { QuestionsService } from '../../../core/services/questions.service';
 import { OptionsService } from '../../../core/services/options.service';
+import { QuizAttemptsService } from '../../../core/services/quiz-attempts.service';
+import { QuizAnswerDto } from '../../../api/models/quiz-answer-dto';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
@@ -39,7 +41,6 @@ interface QuizAnswer {
 }
 
 type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
-type QuizTarget = 1 | 2 | 3;
 
 @Component({
     selector: 'app-quiz',
@@ -98,6 +99,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     // Quiz data
     readonly questions = signal<QuizQuestion[]>([]);
     readonly activeQuizId = signal<string | null>(null);
+    readonly activeAttemptId = signal<string | null>(null);
     readonly answers = signal<QuizAnswer[]>([]);
 
     // Computed values
@@ -176,6 +178,7 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
+    private isFinishingQuiz = false;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -183,6 +186,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         private readonly quizzesService: QuizzesService,
         private readonly questionsService: QuestionsService,
         private readonly optionsService: OptionsService,
+        private readonly quizAttemptsService: QuizAttemptsService,
         private readonly academyProgressService: AcademyProgressService,
         private readonly scrollService: ScrollService,
         @Inject(PLATFORM_ID) private readonly platformId: object
@@ -345,6 +349,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         if (this.questions().length === 0) {
             return;
         }
+        this.isFinishingQuiz = false;
         this.quizState.set('in-progress');
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
@@ -355,14 +360,14 @@ export class QuizComponent implements OnInit, OnDestroy {
         // Timer starts with quiz - 10 minutes total for entire quiz
         this.startTimer();
 
-        const payload = this.buildQuizCreationPayload();
-        if (payload) {
-            this.quizzesService
-                .create(payload)
+        const quizId = this.activeQuizId();
+        if (quizId) {
+            this.quizAttemptsService
+                .startAttemptForQuiz(quizId)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
-                    next: () => void 0,
-                    error: () => void 0,
+                    next: (attemptId) => this.activeAttemptId.set(attemptId),
+                    error: () => this.activeAttemptId.set(null),
                 });
         }
     }
@@ -454,6 +459,10 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     private finishQuiz(): void {
+        if (this.isFinishingQuiz) {
+            return;
+        }
+        this.isFinishingQuiz = true;
         this.stopTimer();
 
         // Calculate completion time
@@ -475,6 +484,22 @@ export class QuizComponent implements OnInit, OnDestroy {
         };
         localStorage.setItem(storageKey, JSON.stringify(quizData));
 
+        const attemptId = this.activeAttemptId();
+        if (attemptId) {
+            this.activeAttemptId.set(null);
+            const answersPayload = this.buildQuizAnswerPayload();
+            const allQuestionsAnswered = answersPayload.length === this.questions().length;
+            if (allQuestionsAnswered) {
+                this.quizAttemptsService
+                    .completeAttempt(attemptId, answersPayload)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: () => void 0,
+                        error: () => void 0,
+                    });
+            }
+        }
+
     }
 
     retakeQuiz(): void {
@@ -486,6 +511,8 @@ export class QuizComponent implements OnInit, OnDestroy {
             isSkipped: false
         }));
         this.answers.set(resetAnswers);
+        this.activeAttemptId.set(null);
+        this.isFinishingQuiz = false;
         // Scroll to top when starting to retake quiz
         this.scrollService.scrollToTop();
         this.startQuiz();
@@ -608,36 +635,15 @@ export class QuizComponent implements OnInit, OnDestroy {
         return 'video';
     }
 
-    private buildQuizCreationPayload(): Record<string, unknown> | null {
-        if (this.lessonId) {
-            return {
-                title: 'Lesson Quiz',
-                lessonId: this.lessonId,
-                targetType: 3 as QuizTarget,
-                target: 3 as QuizTarget,
-            };
-        }
-
-        if (this.courseId) {
-            return {
-                title: 'Course Quiz',
-                courseId: this.courseId,
-                targetType: 2 as QuizTarget,
-                target: 2 as QuizTarget,
-            };
-        }
-
-        const levelId = String(this.courseInfo().stage);
-        if (levelId) {
-            return {
-                title: 'Level Quiz',
-                levelId,
-                targetType: 1 as QuizTarget,
-                target: 1 as QuizTarget,
-            };
-        }
-
-        return null;
+    private buildQuizAnswerPayload(): QuizAnswerDto[] {
+        return this.answers()
+            .filter((answer): answer is QuizAnswer & { selectedOptionId: string } =>
+                typeof answer.selectedOptionId === 'string' && answer.selectedOptionId.length > 0
+            )
+            .map((answer) => ({
+                questionId: answer.questionId,
+                selectedOptionId: answer.selectedOptionId,
+            }));
     }
 
     private mapApiQuestion(

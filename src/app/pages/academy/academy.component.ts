@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy
 
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, combineLatest } from 'rxjs';
-import { takeUntil, switchMap } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import {
     AcademyCourse,
@@ -97,58 +97,20 @@ export class AcademyComponent implements OnInit, OnDestroy {
     }
 
     private loadAcademyData(): void {
-        // First load stages (levels) from API, then load courses and progress
-        this.academyProgressService.getAcademyStages()
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap(apiStages =>
-                    combineLatest([
-                        this.academyProgressService.getStudentProgress(),
-                        this.academyProgressService.getAcademyCourses(),
-                    ]).pipe(
-                        // map to stages
-                        switchMap(([progress, courses]) => {
-                            this.stages = this.buildStagesFromApi(
-                                apiStages,
-                                progress.stageProgress,
-                                progress.courseProgress,
-                                courses
-                            );
-
-                            if (progress.recentLesson) {
-                                this.recentLesson = this.mapRecentLesson(progress.recentLesson);
-                                this.hasRecentLesson = true;
-                            }
-
-                            this.error = null;
-                            this.isLoading = false;
-                            this.cdr.detectChanges();
-
-                            return [];
-                        })
-                    )
-                )
-            )
-            .subscribe({
-                error: () => {
-                    this.error = 'Unable to load academy content right now. Please try again.';
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                },
-            });
-
-        // Load in parallel – getAcademyCourses internally waits for stages
         combineLatest([
-            this.academyProgressService.getStudentProgress(),
-            this.academyProgressService.getAcademyCourses(),
             this.academyProgressService.getAcademyStages(),
+            this.academyProgressService.getAcademyCourses(),
+            this.academyProgressService.getStudentProgress(),
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([progress, courses, apiStages]) => {
+                next: ([apiStages, courses, progress]) => {
                     if (progress.recentLesson) {
                         this.recentLesson = this.mapRecentLesson(progress.recentLesson);
                         this.hasRecentLesson = true;
+                    } else {
+                        this.recentLesson = null;
+                        this.hasRecentLesson = false;
                     }
 
                     this.stages = this.buildStagesFromApi(
@@ -200,10 +162,18 @@ export class AcademyComponent implements OnInit, OnDestroy {
             const stageCourses = courses.filter(course =>
                 course.stageId === stageData.number || course.levelId === stageData.id
             );
+            const stageCourseIds = new Set(stageCourses.map((course) => course.id));
 
-            const allCourses = stageCourses
-                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                .map((c) => this.mapCourseWithProgress(c, courseProgress, isLocked));
+            const sortedStageCourses = [...stageCourses];
+            sortedStageCourses.sort((a: AcademyCourse, b: AcademyCourse) => (a.order ?? 0) - (b.order ?? 0));
+            let allCourses = sortedStageCourses
+                .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress, isLocked, stageCourseIds));
+
+            // Safety valve: if a stage is unlocked but no course is actionable, open the first course.
+            if (!isLocked && allCourses.length > 0 && allCourses.every((course) => course.status === 'locked')) {
+                const [firstCourse, ...rest] = allCourses;
+                allCourses = [{ ...firstCourse, status: 'available' }, ...rest];
+            }
 
             return {
                 id: stageData.id,
@@ -219,18 +189,20 @@ export class AcademyComponent implements OnInit, OnDestroy {
     private mapCourseWithProgress(
         course: AcademyCourse,
         courseProgress: CourseProgress[],
-        stageLocked: boolean
+        stageLocked: boolean,
+        stageCourseIds: Set<string>,
     ): Course {
         const progress = courseProgress.find((cp) => cp.courseId === course.id);
 
         // Evaluate dynamic API prerequisites
-        let hasUnfinishedPrereqs = false;
-        if (course.prerequisites && course.prerequisites.length > 0) {
-            hasUnfinishedPrereqs = course.prerequisites.some(prereqId => {
-                const prereqProgress = courseProgress.find(cp => cp.courseId === prereqId);
-                return !prereqProgress || prereqProgress.status !== 'completed';
-            });
-        }
+        const effectivePrerequisites = (course.prerequisites ?? []).filter(
+            (prereqId) => prereqId !== course.id && stageCourseIds.has(prereqId),
+        );
+
+        const hasUnfinishedPrereqs = effectivePrerequisites.some(prereqId => {
+            const prereqProgress = courseProgress.find(cp => cp.courseId === prereqId);
+            return prereqProgress?.status !== 'completed';
+        });
 
         const isCurrentlyLocked = stageLocked || hasUnfinishedPrereqs;
 

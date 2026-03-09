@@ -36,7 +36,11 @@
             <div class="course-section">
               <h2 class="section-title">Lessons:</h2>
               <p class="section-text">
-                @for (lesson of course.lessons; track lesson; let last = $last) {
+                @for (
+                  lesson of course.lessons;
+                  track lesson;
+                  let last = $last
+                ) {
                   {{ lesson }}
                   @if (!last) {
                     <br />
@@ -47,9 +51,15 @@
             <!-- Answers Section -->
             @if (course.answers.length > 0) {
               <div class="course-section">
-                <h2 class="section-title">At the end, you will find the answers of:</h2>
+                <h2 class="section-title">
+                  At the end, you will find the answers of:
+                </h2>
                 <p class="section-text">
-                  @for (answer of course.answers; track answer; let last = $last) {
+                  @for (
+                    answer of course.answers;
+                    track answer;
+                    let last = $last
+                  ) {
                     {{ answer }}
                     @if (!last) {
                       <br />
@@ -82,7 +92,8 @@
                     ></path>
                   </svg>
                   <p class="hint-text">
-                    You must finish the quizzes of all the previous courses to unlock this course.
+                    You must finish the quizzes of all the previous courses to
+                    unlock this course.
                   </p>
                 </div>
                 <button class="btn btn-disabled" disabled>Begin</button>
@@ -91,10 +102,18 @@
             <!-- Unlocked State -->
             @if (!course.isLocked) {
               <div class="unlocked-state">
-                <button (click)="onTakeQuizClick()" class="btn btn-ghost">
+                <button
+                  (click)="onTakeQuizClick()"
+                  class="btn btn-ghost"
+                  [disabled]="!hasQuizLesson"
+                >
                   <span>Take the Quiz</span>
                 </button>
-                <button (click)="onBeginClick()" class="btn btn-primary">
+                <button
+                  (click)="onBeginClick()"
+                  class="btn btn-primary"
+                  [disabled]="!hasPlayableLesson"
+                >
                   <span>Begin</span>
                 </button>
               </div>
@@ -143,19 +162,31 @@
         aria-modal="true"
         aria-labelledby="academy-signin-title"
       >
-        <div class="sign-in-modal__backdrop" (click)="closeSignInPrompt()"></div>
+        <div
+          class="sign-in-modal__backdrop"
+          (click)="closeSignInPrompt()"
+        ></div>
         <div class="sign-in-modal__card">
           <h2 id="academy-signin-title" class="sign-in-modal__title">
             Sign in to begin this course
           </h2>
           <p class="sign-in-modal__text">
-            You can explore course overviews as a guest. To start lessons, please sign in.
+            You can explore course overviews as a guest. To start lessons,
+            please sign in.
           </p>
           <div class="sign-in-modal__actions">
-            <button type="button" class="btn btn-ghost" (click)="closeSignInPrompt()">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              (click)="closeSignInPrompt()"
+            >
               Not now
             </button>
-            <button type="button" class="btn btn-primary" (click)="continueToSignIn()">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="continueToSignIn()"
+            >
               Sign In
             </button>
           </div>
