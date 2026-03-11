@@ -204,6 +204,7 @@
   border-radius: 9999px;
   object-fit: cover;
   transition: transform 0.3s;
+  display: none; /* Temporarily hidden until backend implements speaker image */
 
   &:hover {
     transform: scale(1.05);

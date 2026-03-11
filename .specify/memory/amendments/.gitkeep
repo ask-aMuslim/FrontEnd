@@ -1,0 +1,16 @@
+# Amendment History Directory
+
+This directory stores all constitutional amendments.
+
+**File naming format:** `YYYY-MM-DD-amendment-name.md`
+
+**Example:** `2026-03-12-allow-optional-onfocus.md`
+
+Each amendment should document:
+
+- What rule changed
+- Why it changed
+- When it takes effect
+- Impact on existing code
+
+See `.specify/README.md` for amendment process.

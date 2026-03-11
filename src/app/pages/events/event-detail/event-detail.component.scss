@@ -1,1 +1,7 @@
 // Event Detail Component Styles
+
+/* Temporarily hide speaker image until backend implements it */
+:host ::ng-deep .speaker-image,
+:host ::ng-deep img[alt="Speaker"] {
+  display: none !important;
+}
