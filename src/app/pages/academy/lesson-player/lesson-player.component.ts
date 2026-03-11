@@ -30,7 +30,6 @@ import {
     isArticleContent,
     isIntroContent
 } from '../../../core/models/interfaces/lesson-content.model';
-import { LessonType } from '../../../core/models/interfaces/enums.model';
 
 @Component({
     selector: 'app-lesson-player',

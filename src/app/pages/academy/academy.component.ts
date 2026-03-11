@@ -11,7 +11,6 @@ import {
     StageProgress,
     CourseProgress,
     CourseStatus,
-    AcademyCourse,
 } from '../../core/models/interfaces/academy-progress.model';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { CourseTreeComponent, CourseNode as TreeCourse } from './course-tree/course-tree.component';
