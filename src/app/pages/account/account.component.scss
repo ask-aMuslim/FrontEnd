@@ -149,6 +149,30 @@
   }
 }
 
+.profile-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--color-border-brand-low);
+  border-radius: 9999px;
+  background: var(--color-background-white);
+  color: var(--color-text-caption);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-button-primary-normal);
+    color: var(--color-button-primary-normal);
+    background: var(--color-card-surface-secondary);
+  }
+}
+
 .profile-bio {
   font-size: 0.875rem;
   color: var(--color-text-caption);

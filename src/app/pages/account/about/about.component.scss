@@ -28,7 +28,7 @@
 .about-message--error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #dc2626;
+  color: #111111;
 }
 
 .about-message__dismiss {
@@ -96,13 +96,17 @@
 }
 
 .about-section__title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -8px;
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-button-primary-normal), transparent);
+  background: linear-gradient(
+    90deg,
+    var(--color-button-primary-normal),
+    transparent
+  );
   transition: width 0.3s ease-in-out;
 }
 
@@ -217,25 +221,6 @@
   @media (min-width: 640px) {
     font-size: 1rem;
   }
-}
-
-.about-actions__logout {
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  background: var(--color-critical);
-  color: white;
-  border: none;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease;
-
-  @media (min-width: 640px) {
-    width: 10rem;
-  }
-}
-
-.about-actions__logout:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .animate-fade-in {

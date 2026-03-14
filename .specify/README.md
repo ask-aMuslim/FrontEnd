@@ -53,11 +53,10 @@ cat .specify/memory/constitution.md
 
 **Key sections to understand:**
 
-1. **Core Tech Stack** - Angular 20, Signals, TypeScript strict
-2. **Architecture Patterns** - Standalone components, Facades, Signals
-3. **Unbreakable Rules** - 10 rules that guard code quality
-4. **Governance & Versioning** - How we review & commit
-5. **Execution Guidelines** - How AI agents must behave
+1. **Core Principles** - non-negotiable engineering rules
+2. **Architecture & Boundaries** - module ownership and layering
+3. **Development Workflow & Quality Gates** - Analyze/Plan/Implement/Verify + required checks
+4. **Governance** - amendment process, semver policy, and compliance review
 
 ### Step 2: Review Latest Amendments
 
@@ -120,7 +119,7 @@ npm run api:sync
 Before starting ANY task:
 
 1. **Read this README** (you're reading it! ✅)
-2. **Read `memory/constitution.md`** - know all 10 unbreakable rules
+2. **Read `memory/constitution.md`** - know all core principles
 3. **Check amendments** - understand what changed
 4. **Verify baseline** - `npm run build` passes
 5. **Know the workflow** - use appropriate `.agents/workflows/*.md`
@@ -156,7 +155,7 @@ When making architectural decisions:
 
 ### Project Health Dashboard
 
-- ✅ **Constitution:** Version 1.0, Last Updated: 2026-03-11
+- ✅ **Constitution:** Version 2.0.0, Last Updated: 2026-03-14
 - ✅ **Compliance Level:** STRICT (agents follow without deviation)
 - ✅ **Build Status:** Zero TypeScript errors (baseline: `npm run build`)
 - ✅ **Test Coverage:** >= 75% (baseline: `npm run test`)
@@ -168,6 +167,7 @@ When making architectural decisions:
 | Date       | Change                                    | Type       |
 | ---------- | ----------------------------------------- | ---------- |
 | 2026-03-11 | Constitution v1.0 created                 | Governance |
+| 2026-03-14 | Constitution v2.0.0 amended and synced    | Governance |
 | 2026-03-11 | Spec 0: Baseline Verification initialized | Spec       |
 
 ---
@@ -262,16 +262,16 @@ Your project has **Zero-Drift Governance** when:
 
 ## 📞 Questions?
 
-| Question                      | Answer                                      | Contact           |
-| ----------------------------- | ------------------------------------------- | ----------------- |
-| "What's the tech stack?"      | Read `memory/constitution.md` Section 2     | Tech Lead         |
-| "How do I write a spec?"      | Read `.agents/workflows/speckit.specify.md` | Architecture Team |
-| "Can I break the rules?"      | Only with constitution amendment            | Tech Lead         |
-| "What's an unbreakable rule?" | Read `memory/constitution.md` Section 3     | Tech Lead         |
+| Question                   | Answer                                                                  | Contact           |
+| -------------------------- | ----------------------------------------------------------------------- | ----------------- |
+| "What's the tech stack?"   | Read `memory/constitution.md` Core Principles and Architecture sections | Tech Lead         |
+| "How do I write a spec?"   | Read `.agents/workflows/speckit.specify.md`                             | Architecture Team |
+| "Can I break the rules?"   | Only with constitution amendment                                        | Tech Lead         |
+| "What's a core principle?" | Read `memory/constitution.md` Core Principles                           | Tech Lead         |
 
 ---
 
 **Status:** 🟢 ACTIVE  
-**Governance Version:** 1.0  
-**Last Updated:** 2026-03-11  
+**Governance Version:** 2.0.0  
+**Last Updated:** 2026-03-14  
 **Maintained By:** AskAMuslim Architecture Team
