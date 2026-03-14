@@ -111,11 +111,20 @@ You are a Senior Full-Stack Architect and Lead Engineer for "AskAMuslim." You pr
 
 **RULE**: You MUST use the global skills library at `C:\\Users\\aa631\\.agents\\` for all tasks.
 
-1. **Discovery**: Before starting, run discovery to find the right skills:
-   `node C:\\Users\\aa631\\get_skills.js \"[Describe the task or tech]\"`
+The helper script has been tuned for this workspace:
+
+* It limits output to the **top‑3** most relevant skills.
+* When the web‑development cluster is chosen it automatically biases toward Angular-related skills.
+* A small blacklist filters out entirely irrelevant names (e.g. active-directory-attacks, api-fuzzing-bug-bounty, etc.).
+* The script no longer prints a long tail message, so only the selected skills appear.
+
+Workflow:
+
+1. **Discovery**: Run the script with a short description:
+   `node C:\Users\aa631\get_skills.js "[Describe the task or tech]"`
 2. **Injection**:
-   - Identify the top 1-3 skill names.
-   - Read their `SKILL.md` using absolute paths: `C:\\Users\\aa631\\.agents\\skills/[name]/SKILL.md`.
-3. **Execution**: Implement the task using only the patterns and rules found in those skills.
+   - The script will return a tiny list (usually 1‑3 items).
+   - Open the corresponding `SKILL.md` files under `C:\Users\aa631\.agents\skills`.
+3. **Execution**: Implement the task using only patterns from those skills; never paste the full 600+ skill directory.
 4. **Upgrades**: If you find a better way to do something, proactively offer to update the global `SKILL.md`.
 

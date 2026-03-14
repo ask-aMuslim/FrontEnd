@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AuthService } from '../../core/services/auth.service';
 
 interface TimelineItem {
     year: string;
@@ -30,6 +31,8 @@ interface AchievementHighlight {
     styleUrl: './about-page.component.scss',
 })
 export class AboutPageComponent {
+    protected readonly authService = inject(AuthService);
+
     protected readonly timelineItems: readonly TimelineItem[] = [
         {
             year: '2013',

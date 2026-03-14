@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { toFriendlyAuthErrorMessage } from '../../../core/auth/auth-error-message.util';
 
 interface NavLink {
   label: string;
@@ -18,7 +17,6 @@ interface NavLink {
 })
 export class Header {
   protected readonly authService = inject(AuthService);
-  protected isLoggingOut = false;
 
   protected readonly navLinks: NavLink[] = [
     { label: 'Home', path: '/home' },
@@ -47,29 +45,6 @@ export class Header {
 
   protected trackByLabel(_index: number, item: NavLink): string {
     return item.label;
-  }
-
-  protected handleLogout(): void {
-    if (this.isLoggingOut) {
-      return;
-    }
-
-    this.authService.clearError();
-    this.isLoggingOut = true;
-    this.authService.logout().subscribe({
-      next: () => {
-        this.isLoggingOut = false;
-        this.closeNav();
-      },
-      error: () => {
-        this.isLoggingOut = false;
-        this.closeNav();
-      },
-    });
-  }
-
-  protected get logoutErrorMessage(): string | null {
-    return toFriendlyAuthErrorMessage(this.authService.error());
   }
 
 }

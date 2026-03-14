@@ -108,7 +108,7 @@ export class Footer {
       ariaLabel: 'Visit our TikTok profile',
     },
     {
-      icon: '/icons/icons-social-apps/gmail.svg',
+      icon: '/icons/icons-24/mail.svg',
       label: 'info@askamuslim.com',
       href: 'mailto:info@askamuslim.com',
       ariaLabel: 'Send us an email',

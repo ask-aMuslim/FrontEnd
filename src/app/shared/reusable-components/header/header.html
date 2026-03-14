@@ -47,21 +47,14 @@
   <!-- Auth Buttons Template (for guest users) -->
   <ng-template #authButtonsTemplate>
     <div class="auth-buttons">
-      <a [routerLink]="'/register'" class="auth-btn auth-btn--register" (click)="closeNav()">
-        Start Your Journey
+      <a
+        [routerLink]="'/register'"
+        class="auth-btn auth-btn--register"
+        (click)="closeNav()"
+      >
+        Explore Islam
       </a>
     </div>
-  </ng-template>
-
-  <ng-template #logoutButtonTemplate>
-    <button
-      type="button"
-      class="auth-btn auth-btn--logout"
-      [disabled]="isLoggingOut"
-      (click)="handleLogout()"
-    >
-      Logout
-    </button>
   </ng-template>
 
   <div class="nav-shell">
@@ -75,7 +68,12 @@
       id="primary-navigation"
       aria-label="Primary navigation"
     >
-      <button class="drawer-close" type="button" (click)="isMobileMenuOpen.set(false)" aria-label="Close menu">
+      <button
+        class="drawer-close"
+        type="button"
+        (click)="isMobileMenuOpen.set(false)"
+        aria-label="Close menu"
+      >
         <svg
           width="24"
           height="24"
@@ -93,46 +91,32 @@
       </button>
       <ul>
         @for (link of navLinks; track trackByLabel($index, link)) {
-          <li
-            [routerLink]="link.path"
-            routerLinkActive="active"
-            #rla="routerLinkActive"
-            (click)="closeNav()"
-            [attr.aria-current]="rla.isActive ? 'page' : null"
-            class="nav-item"
-          >
-            <a class="nav-link">
-              {{ link.label }}
-            </a>
-          </li>
+        <li
+          [routerLink]="link.path"
+          routerLinkActive="active"
+          #rla="routerLinkActive"
+          (click)="closeNav()"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
+          class="nav-item"
+        >
+          <a class="nav-link"> {{ link.label }} </a>
+        </li>
         }
       </ul>
       <div class="mobile-user-card">
         @if (authService.isAuthenticated()) {
-          <div class="mobile-user-actions">
-            <ng-container *ngTemplateOutlet="logoutButtonTemplate"></ng-container>
-            @if (logoutErrorMessage) {
-              <p class="logout-error" role="alert">{{ logoutErrorMessage }}</p>
-            }
-          </div>
-          <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+        <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
         } @else {
-          <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+        <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
         }
       </div>
     </nav>
 
     <div class="header-right">
       @if (authService.isAuthenticated()) {
-        <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
-        <div class="desktop-user-actions">
-          <ng-container *ngTemplateOutlet="logoutButtonTemplate"></ng-container>
-          @if (logoutErrorMessage) {
-            <p class="logout-error" role="alert">{{ logoutErrorMessage }}</p>
-          }
-        </div>
+      <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
       } @else {
-        <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+      <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
       }
 
       <button
@@ -161,5 +145,10 @@
     </div>
   </div>
 
-  <div class="nav-overlay" [class.active]="isMobileMenuOpen()" (click)="closeNav()" aria-hidden="true"></div>
+  <div
+    class="nav-overlay"
+    [class.active]="isMobileMenuOpen()"
+    (click)="closeNav()"
+    aria-hidden="true"
+  ></div>
 </header>

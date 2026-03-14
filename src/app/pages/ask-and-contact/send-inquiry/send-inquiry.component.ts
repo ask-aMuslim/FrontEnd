@@ -18,6 +18,7 @@ import type { CreateInquiryRequestCommand } from '../../../api/models';
 import { Router } from '@angular/router';
 import { InquiryRequestsService } from '../../../core/services';
 import { TokenService } from '../../../core/auth/token.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -77,7 +78,12 @@ export class SendInquiryComponent implements OnInit, OnChanges {
     private readonly router: Router,
     private readonly inquiryRequestsService: InquiryRequestsService,
     private readonly tokenService: TokenService,
+    protected readonly authService: AuthService,
   ) { }
+
+  protected get inquiryUserName(): string {
+    return this.authService.currentUser()?.name ?? 'Guest';
+  }
 
   ngOnInit(): void {
     const providedForm = this.form();

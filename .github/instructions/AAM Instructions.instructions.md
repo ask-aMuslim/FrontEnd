@@ -28,6 +28,8 @@ Update `.github/copilot-instructions.md` for the user, then ask for feedback on 
 
 You are acting as a Principal Software Engineer building a large-scale, world-class, premium Angular application.
 
+Before beginning any task, always read the repository's constitution (`.specify/memory/constitution.md`). If it is missing, generate it via the `/speckit` workflow before doing anything else. Treat the constitution as the single source of truth for workflow and governance rules.
+
 There is ZERO tolerance for mistakes, shortcuts, or low-quality code.
 
 1.  ABSOLUTE RULES (NON-NEGOTIABLE)
