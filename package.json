@@ -15,6 +15,7 @@
     "swagger:check": "node scripts/swagger-hash.mjs --check",
     "swagger:update": "node scripts/swagger-hash.mjs --update",
     "api:sync": "npm run swagger:check || (npm run generate:api && npm run swagger:update)",
+    "speckit": "node speckit.js",
     "lint": "eslint ."
   },
   "dependencies": {

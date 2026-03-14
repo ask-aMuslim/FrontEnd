@@ -9,11 +9,17 @@ Based on Figma Node 2284:21719
       <!-- 1. Brand & Newsletter Column -->
       <div class="footer-brand-col">
         <a routerLink="/" class="footer-logo-link">
-          <img src="/footer/footer-logo-big.svg" alt="Ask A Muslim" class="footer-logo" />
+          <img
+            src="/footer/footer-logo-big.svg"
+            alt="Ask A Muslim"
+            class="footer-logo"
+          />
         </a>
 
         <div class="newsletter-section">
-          <p class="footer-copy">Subscribe to our newsletter to receive the latest updates.</p>
+          <p class="footer-copy">
+            Subscribe to our newsletter to receive the latest updates.
+          </p>
           <form
             class="footer-subscribe"
             (submit)="onSubscribe($event)"
@@ -21,7 +27,9 @@ Based on Figma Node 2284:21719
             id="newsletter"
           >
             <div class="newsletter-row">
-              <label class="sr-only" for="footer-email">Your email address</label>
+              <label class="sr-only" for="footer-email"
+                >Your email address</label
+              >
               <input
                 id="footer-email"
                 class="newsletter-input"
@@ -35,7 +43,11 @@ Based on Figma Node 2284:21719
           </form>
         </div>
 
-        <a href="https://www.launchgood.com/v4/campaign/ask_a_muslim_dawah_organization_annual_fundraiser" target="_blank" class="donate-btn">
+        <a
+          href="https://www.launchgood.com/v4/campaign/ask_a_muslim_dawah_organization_annual_fundraiser"
+          target="_blank"
+          class="donate-btn"
+        >
           <span>Donate</span>
           <svg
             width="24"
@@ -57,22 +69,22 @@ Based on Figma Node 2284:21719
 
       <!-- 2. & 3. Navigation Columns (Trusted Channels, Ask & Contact) -->
       @for (column of footerColumns; track column.title) {
-        <div class="footer-nav-col">
-          <h3 class="column-title">{{ column.title }}</h3>
-          <ul class="nav-links">
-            @for (link of column.links; track trackByLabel($index, link)) {
-              <li>
-                @if (link.external) {
-                  <a [href]="link.href" target="_blank" rel="noopener noreferrer">
-                    {{ link.label }}
-                  </a>
-                } @else {
-                  <a [routerLink]="link.href">{{ link.label }}</a>
-                }
-              </li>
+      <div class="footer-nav-col">
+        <h3 class="column-title">{{ column.title }}</h3>
+        <ul class="nav-links">
+          @for (link of column.links; track trackByLabel($index, link)) {
+          <li>
+            @if (link.external) {
+            <a [href]="link.href" target="_blank" rel="noopener noreferrer">
+              {{ link.label }}
+            </a>
+            } @else {
+            <a [routerLink]="link.href">{{ link.label }}</a>
             }
-          </ul>
-        </div>
+          </li>
+          }
+        </ul>
+      </div>
       }
 
       <!-- 4. Social Media Column -->
@@ -80,20 +92,20 @@ Based on Figma Node 2284:21719
         <h3 class="column-title">Find us on</h3>
         <ul class="social-links-list">
           @for (social of socialLinks; track trackByLabel($index, social)) {
-            <li>
-              <a
-                [href]="social.href"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="social-link-item"
-                [attr.aria-label]="social.ariaLabel"
-              >
-                <span class="social-icon">
-                  <img [src]="social.icon" alt="" aria-hidden="true" />
-                </span>
-                <span class="social-label">{{ social.label }}</span>
-              </a>
-            </li>
+          <li>
+            <a
+              [href]="social.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link-item"
+              [attr.aria-label]="social.ariaLabel"
+            >
+              <span class="social-icon">
+                <img [src]="social.icon" alt="" aria-hidden="true" />
+              </span>
+              <span class="social-label">{{ social.label }}</span>
+            </a>
+          </li>
           }
         </ul>
       </div>
@@ -105,20 +117,27 @@ Based on Figma Node 2284:21719
     <!-- Bottom Section: Copyright + App Buttons -->
     <div class="footer-bottom">
       <p class="copyright-text">
-        © {{ currentYear }} Ask A Muslim | US Registered 501(c)(3) Non-Profit Organization | EIN:
-        30-0862642
+        © {{ currentYear }} Ask A Muslim | US Registered 501(c)(3) Non-Profit
+        Organization | EIN: 30-0862642
       </p>
 
       <div class="app-downloads">
-        @for (app of appDownloads; track trackByLabel($index, app)) {
-          <div class="app-download">
-            <a [href]="app.href" class="app-pill" [attr.aria-label]="app.text">
-              <img [src]="app.icon" alt="" class="app-icon" />
-              <span>{{ app.text }}</span>
-            </a>
-            <img [src]="app.qrCode" [alt]="app.text + ' QR code'" class="app-qr" />
-          </div>
-        }
+        @for (app of appDownloads; track trackByLabel($index, app); let isLast =
+        $last) {
+        <div class="app-download">
+          <a [href]="app.href" class="app-pill" [attr.aria-label]="app.text">
+            <img [src]="app.icon" alt="" class="app-icon" />
+            <span>{{ app.text }}</span>
+          </a>
+          <img
+            [src]="app.qrCode"
+            [alt]="app.text + ' QR code'"
+            class="app-qr"
+          />
+        </div>
+        @if (!isLast) {
+        <span class="app-download-separator" aria-hidden="true"></span>
+        } }
       </div>
     </div>
   </div>

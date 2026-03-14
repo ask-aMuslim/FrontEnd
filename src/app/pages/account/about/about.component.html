@@ -9,7 +9,9 @@
   @if (error) {
     <div class="about-message about-message--error animate-fade-in">
       <span>{{ error }}</span>
-      <button class="about-message__dismiss" (click)="clearMessages()">×</button>
+      <button class="about-message__dismiss" (click)="clearMessages()">
+        ×
+      </button>
     </div>
   }
 
@@ -83,7 +85,9 @@
           </div>
           <div class="about-section__field">
             <span class="about-section__label">Date of Birth</span>
-            <p class="about-section__value">{{ about.dateOfBirth }} ({{ about.age }} years old)</p>
+            <p class="about-section__value">
+              {{ about.dateOfBirth }} ({{ about.age }} years old)
+            </p>
           </div>
           <div class="about-section__field">
             <span class="about-section__label">Languages Speaks</span>
@@ -157,10 +161,12 @@
   <div class="about-actions">
     <div class="about-actions__row">
       <div class="about-actions__link">
-        <div [inlineSVG]="'/icons/icons-social-apps/google.svg'" class="about-actions__icon"></div>
+        <div
+          [inlineSVG]="'/icons/icons-social-apps/google.svg'"
+          class="about-actions__icon"
+        ></div>
         <span class="about-actions__text">Connected with Google</span>
       </div>
-      <button class="about-actions__logout" (click)="logout()">Logout</button>
     </div>
     <div class="about-actions__row">
       <div class="about-actions__link">
@@ -170,7 +176,6 @@
         ></div>
         <span class="about-actions__text">Connected with Facebook</span>
       </div>
-      <button class="about-actions__logout" (click)="logout()">Logout</button>
     </div>
   </div>
 </div>

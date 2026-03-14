@@ -59,6 +59,10 @@ interface PillarItem {
   name: string;
 }
 
+interface ServeAudienceCard {
+  title: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -139,7 +143,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       description:
         'Curated articles, e-books, and toolkits reviewed by our research team to deepen your understanding.',
       cta: 'Read',
-      href: '/ask-and-contact',
+      href: '/resources',
     },
     {
       icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -201,6 +205,19 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 
   protected readonly adviceQuote = `“Grab a pen & paper, and list down whatever questions you thought of.
     After that, go to the scholars of your religion and get the answers of your list, then go to the nearest mosque and ask for a scholar to answer your same list.”`;
+
+  protected readonly serveAudienceCards: readonly ServeAudienceCard[] = [
+    { title: 'I’m a Christian' },
+    { title: 'I’m Jewish' },
+    { title: 'I’m a Polytheist' },
+    { title: 'I’m an Atheist' },
+    { title: 'I’m an Agnostic' },
+    { title: 'I’m a New Muslim' },
+    { title: 'I’m Just Curious' },
+    { title: 'I’m a Seeker' },
+    { title: 'I’m a Women in Islam' },
+  ];
+
   protected trackByIndex(index: number): number {
     return index;
   }
@@ -213,7 +230,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
     private readonly eventsService: EventsService,
-    private readonly authService: AuthService,
+    protected readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef,
     private readonly qasService: QasService,
   ) { }

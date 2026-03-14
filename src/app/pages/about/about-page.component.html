@@ -6,7 +6,7 @@
     <div class="about-hero__pattern" aria-hidden="true"></div>
     <!-- decorative gate icon (single instance) placed under subtitle -->
     <div class="section-container">
-      <div class="section-block section-block--wide">
+      <div class="section-block">
         <div
           class="section-shell about-section-shell about-section-shell--hero"
         >
@@ -31,6 +31,7 @@
             <img
               src="/icons/gate.svg"
               class="hero-gate--single"
+              alt=""
               aria-hidden="true"
             />
           </div>
@@ -41,7 +42,7 @@
 
   <section class="about-story" aria-labelledby="about-story-title">
     <div class="section-container">
-      <div class="section-block section-block--wide">
+      <div class="section-block">
         <div class="section-shell about-section-shell">
           <div class="about-section-heading">
             <p class="about-eyebrow">From Ohio to the World</p>
@@ -124,7 +125,7 @@
   <section class="about-mission" aria-labelledby="about-mission-title">
     <div class="about-mission__pattern" aria-hidden="true"></div>
     <div class="section-container">
-      <div class="section-block section-block--wide">
+      <div class="section-block">
         <div class="section-shell about-section-shell">
           <div class="about-section-heading">
             <p class="about-eyebrow">Values Intact</p>
@@ -154,37 +155,39 @@
     </div>
   </section>
 
-  <section class="about-serve" aria-labelledby="about-serve-title">
-    <div class="section-container">
-      <div class="section-block section-block--wide">
-        <div class="section-shell about-section-shell">
-          <div class="about-serve__icon" aria-hidden="true">
-            <img src="/icons/gate.svg" alt="" />
-          </div>
+  @if (authService.isAuthenticated()) {
+    <section class="about-serve" aria-labelledby="about-serve-title">
+      <div class="section-container">
+        <div class="section-block">
+          <div class="section-shell about-section-shell">
+            <div class="about-serve__icon" aria-hidden="true">
+              <img src="/icons/gate.svg" alt="" />
+            </div>
 
-          <div class="about-section-heading">
-            <p class="about-eyebrow">Find the Right Message for You</p>
-            <h2 id="about-serve-title">How can we best serve you?</h2>
-          </div>
+            <div class="about-section-heading">
+              <p class="about-eyebrow">Find the Right Message for You</p>
+              <h2 id="about-serve-title">How can we best serve you?</h2>
+            </div>
 
-          <div class="about-serve__grid">
-            @for (
-              card of audienceCards;
-              track trackByAudienceTitle($index, card)
-            ) {
-              <article
-                class="about-audience-card"
-                [class.about-audience-card--light]="card.variant === 'light'"
-                [class.about-audience-card--white]="card.variant !== 'light'"
-              >
-                <h3>{{ card.title }}</h3>
-              </article>
-            }
+            <div class="about-serve__grid">
+              @for (
+                card of audienceCards;
+                track trackByAudienceTitle($index, card)
+              ) {
+                <article
+                  class="about-audience-card"
+                  [class.about-audience-card--light]="card.variant === 'light'"
+                  [class.about-audience-card--white]="card.variant !== 'light'"
+                >
+                  <h3>{{ card.title }}</h3>
+                </article>
+              }
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <section
     class="about-achievements"
@@ -195,7 +198,7 @@
       aria-hidden="true"
     ></div>
     <div class="section-container">
-      <div class="section-block section-block--wide">
+      <div class="section-block">
         <div class="section-shell about-section-shell">
           <div class="about-section-heading">
             <p class="about-eyebrow">Making a Difference</p>

@@ -1,14 +1,26 @@
 <section class="section-container profile-header">
-  <img src="/backgrounds/profile-background.png" alt="Profile background" class="profile-cover" />
+  <img
+    src="/backgrounds/profile-background.png"
+    alt="Profile background"
+    class="profile-cover"
+  />
   <div class="profile-header__overlay">
     <div class="section-block profile-header__block">
       <div class="profile-header__info">
-        <img [src]="userProfile.profileImage || '/images/profile-placeholder.svg'" (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;" alt="Profile image" class="profile-avatar" />
+        <img
+          [src]="userProfile.profileImage || '/images/profile-placeholder.svg'"
+          (error)="
+            $event.target.src = '/images/profile-placeholder.svg';
+            $event.target.onerror = null
+          "
+          alt="Profile image"
+          class="profile-avatar"
+        />
         <div class="profile-details">
           <div class="profile-name-section">
             <div class="profile-name-row">
               <h2 class="profile-name">{{ userProfile.name }}</h2>
-              @if (userProfile.gender === 'Male') {
+              @if (userProfile.gender === "Male") {
                 <span class="profile-gender-badge profile-gender-badge--male">
                   <div
                     [inlineSVG]="'/icons/icons-24/male.svg'"
@@ -17,7 +29,7 @@
                   {{ userProfile.religion }}
                 </span>
               }
-              @if (userProfile.gender === 'Female') {
+              @if (userProfile.gender === "Female") {
                 <span class="profile-gender-badge profile-gender-badge--female">
                   <div
                     [inlineSVG]="'/icons/icons-24/female.svg'"
@@ -26,14 +38,58 @@
                   {{ userProfile.religion }}
                 </span>
               }
+              <button
+                class="profile-logout-btn"
+                type="button"
+                (click)="logout()"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M16 17L21 12L16 7"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M21 12H9"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>Logout</span>
+              </button>
             </div>
             <span class="profile-bio">{{ userProfile.bio }}</span>
           </div>
-          <button (click)="continueLearnig()" class="button profile-continue-btn">
-            <span class="profile-continue-btn__label profile-continue-btn__label--desktop">
+          <button
+            (click)="continueLearnig()"
+            class="button profile-continue-btn"
+          >
+            <span
+              class="profile-continue-btn__label profile-continue-btn__label--desktop"
+            >
               Continue Learning
             </span>
-            <span class="profile-continue-btn__label profile-continue-btn__label--mobile">
+            <span
+              class="profile-continue-btn__label profile-continue-btn__label--mobile"
+            >
               Continue
             </span>
             <div
@@ -54,14 +110,20 @@
       @if (currentVerse.text) {
         <div class="verse-card">
           <div class="verse-card__header">
-            <div [inlineSVG]="'/icons/icons-24/bookmark.svg'" class="verse-card__icon"></div>
+            <div
+              [inlineSVG]="'/icons/icons-24/bookmark.svg'"
+              class="verse-card__icon"
+            ></div>
             <h2 class="verse-card__label">Verse of the Day</h2>
             <h2 class="verse-card__reference">
-              &#123;Sura: {{ currentVerse.sura }}, Aya: {{ currentVerse.aya }}&#125;
+              &#123;Sura: {{ currentVerse.sura }}, Aya:
+              {{ currentVerse.aya }}&#125;
             </h2>
           </div>
           <h2 class="verse-card__arabic">{{ currentVerse.text }}</h2>
-          <h2 class="verse-card__translation">{{ currentVerse.textEnglish }}</h2>
+          <h2 class="verse-card__translation">
+            {{ currentVerse.textEnglish }}
+          </h2>
           <div class="verse-card__action">
             <button class="verse-card__btn">
               Understand More
@@ -127,21 +189,33 @@
                       [inlineSVG]="'/icons/icons-16/calendar.svg'"
                       class="upcoming-event-card__meta-icon"
                     ></div>
-                    <span class="upcoming-event-card__meta-text">{{ upcomingEvent.date }}</span>
+                    <span class="upcoming-event-card__meta-text">{{
+                      upcomingEvent.date
+                    }}</span>
                   </div>
                   <div class="upcoming-event-card__meta-item">
                     <div
                       [inlineSVG]="'/icons/icons-16/clock.svg'"
                       class="upcoming-event-card__meta-icon"
                     ></div>
-                    <span class="upcoming-event-card__meta-text">{{ upcomingEvent.time }}</span>
+                    <span class="upcoming-event-card__meta-text">{{
+                      upcomingEvent.time
+                    }}</span>
                   </div>
                 </div>
-                <h2 class="upcoming-event-card__title">{{ upcomingEvent.title }}</h2>
+                <h2 class="upcoming-event-card__title">
+                  {{ upcomingEvent.title }}
+                </h2>
                 <div class="upcoming-event-card__speaker">
                   <img
-                    [src]="upcomingEvent.speakerImage || '/images/profile-placeholder.svg'"
-                    (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
+                    [src]="
+                      upcomingEvent.speakerImage ||
+                      '/images/profile-placeholder.svg'
+                    "
+                    (error)="
+                      $event.target.src = '/images/profile-placeholder.svg';
+                      $event.target.onerror = null
+                    "
                     alt="speaker"
                     class="upcoming-event-card__speaker-image"
                   />
@@ -156,7 +230,10 @@
                 </div>
                 <div class="upcoming-event-card__divider"></div>
                 <div class="upcoming-event-card__footer">
-                  <button (click)="viewEventDetails()" class="upcoming-event-card__details-btn">
+                  <button
+                    (click)="viewEventDetails()"
+                    class="upcoming-event-card__details-btn"
+                  >
                     View Details
                   </button>
                   <div class="upcoming-event-card__status">
@@ -165,7 +242,11 @@
                       class="upcoming-event-card__status-icon"
                     ></div>
                     <span class="upcoming-event-card__status-text">
-                      {{ upcomingEvent.isRegistered ? 'Registered' : 'Not Registered' }}
+                      {{
+                        upcomingEvent.isRegistered
+                          ? "Registered"
+                          : "Not Registered"
+                      }}
                     </span>
                   </div>
                 </div>

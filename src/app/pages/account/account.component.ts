@@ -8,6 +8,7 @@ import { AboutComponent } from './about/about.component';
 import { MyInquiriesComponent } from './my-inquiries/my-inquiries.component';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { StudentFacade } from '../../api/facades/student.facade';
+import { AuthService } from '../../core/services/auth.service';
 import type { StudentProfile } from '../../api/facades/student.facade';
 import { EventsService } from '../../core/services/events.service';
 import { asRecord, extractArray, getValue, toStringValue } from '../../core/helpers/api-response.helper';
@@ -51,6 +52,7 @@ interface Verse {
 })
 export class AccountComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private readonly academyProgressService = inject(AcademyProgressService);
   private readonly studentFacade = inject(StudentFacade);
   private readonly eventsService = inject(EventsService);
@@ -119,6 +121,16 @@ export class AccountComponent implements OnInit, OnDestroy {
     if (this.upcomingEvent) {
       this.upcomingEvent.isRegistered = !this.upcomingEvent.isRegistered;
     }
+  }
+
+  logout(): void {
+    this.studentFacade.clearCache();
+    this.authService.logout().subscribe({
+      next: () => void 0,
+      error: () => {
+        void this.router.navigate(['/login']);
+      },
+    });
   }
 
   private loadProfile(): void {

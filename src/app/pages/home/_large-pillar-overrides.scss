@@ -12,16 +12,17 @@
     justify-content: center;
   }
 
-  /* Hexagon (6 pillars) - scale down slightly */
+  /* Hexagon (6 pillars) - maintain design size at large screens */
   .iman-arc {
     .pillar-card {
-      width: 160px;
-      height: 160px;
+      /* keep same 228px size as defined in home.scss for consistency */
+      width: 228px;
+      height: 228px;
 
       .hexagon,
       .pillar-hexagon {
-        width: 160px;
-        height: 160px;
+        width: 228px;
+        height: 228px;
       }
 
       .pillar-card-title {
@@ -36,16 +37,16 @@
     }
   }
 
-  /* Pentagon (5 pillars) - scale down accordingly */
+  /* Pentagon (5 pillars) - match hexagon dimensions exactly */
   .islam-arc {
     .pillar-card {
-      width: 160px;
-      height: 160px;
+      width: 228px;
+      height: 228px;
 
       .pentagon,
       .pillar-pentagon {
-        width: 160px;
-        height: 160px;
+        width: 228px;
+        height: 228px;
       }
 
       .pillar-card-title {

@@ -1,11 +1,9 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
 import { EditPersonalInformationComponent } from './edit-personal-information/edit-personal-information.component';
 import { EditContactInformationComponent } from './edit-contact-information/edit-contact-information.component';
-import { AuthService } from '../../../core/services/auth.service';
 import { StudentFacade } from '../../../api/facades/student.facade';
 import type { StudentProfile, UpdateStudentProfileRequest } from '../../../api/facades/student.facade';
 import { ProfileError } from '../../../core/services/student-profile.service';
@@ -44,8 +42,6 @@ export interface AboutModel {
   styleUrls: ['./about.component.scss'],
 })
 export class AboutComponent implements OnInit, OnDestroy {
-  private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
   private readonly studentFacade = inject(StudentFacade);
   private readonly destroy$ = new Subject<void>();
 
@@ -144,7 +140,7 @@ export class AboutComponent implements OnInit, OnDestroy {
     if (!dateOfBirth) return null;
 
     const dob = new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) return null;
+    if (Number.isNaN(dob.getTime())) return null;
 
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
@@ -341,13 +337,4 @@ export class AboutComponent implements OnInit, OnDestroy {
     }
   }
 
-  logout(): void {
-    this.studentFacade.clearCache();
-    this.authService.logout().subscribe({
-      next: () => void 0,
-      error: () => {
-        void this.router.navigate(['/login']);
-      },
-    });
-  }
 }
