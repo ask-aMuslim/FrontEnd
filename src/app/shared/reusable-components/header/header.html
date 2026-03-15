@@ -9,8 +9,8 @@
         class="user-avatar"
       />
       <div class="user-text">
-        <span class="user-name">{{ authService.currentUser()?.name }}</span>
-        <span class="user-meta">{{ authService.currentUser()?.meta }}</span>
+        <span class="user-name">{{ authService.getCurrentUserName() }}</span>
+        <span class="user-meta">{{ authService.getCurrentUserMeta() }}</span>
       </div>
       <button class="user-alert" type="button">
         <svg

@@ -102,17 +102,15 @@
             <!-- Unlocked State -->
             @if (!course.isLocked) {
               <div class="unlocked-state">
-                <button
-                  (click)="onTakeQuizClick()"
-                  class="btn btn-ghost"
-                  [disabled]="!hasQuizLesson"
-                >
-                  <span>Take the Quiz</span>
-                </button>
+                @if (hasQuizLesson) {
+                  <button (click)="onTakeQuizClick()" class="btn btn-ghost">
+                    <span>Take the Quiz</span>
+                  </button>
+                }
                 <button
                   (click)="onBeginClick()"
                   class="btn btn-primary"
-                  [disabled]="!hasPlayableLesson"
+                  [disabled]="isUserAuthenticated && !hasPlayableLesson"
                 >
                   <span>Begin</span>
                 </button>

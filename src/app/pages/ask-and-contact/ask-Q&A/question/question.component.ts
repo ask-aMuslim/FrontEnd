@@ -26,6 +26,7 @@ export class QuestionComponent implements OnDestroy {
   answer = '';
   answerViewerContent: unknown = null;
   questionHtml: SafeHtml | null = null;
+  private answerHtmlRaw: string | null = null;
   categories: string[] = [];
   imageUrl: string | null = null;
   isSaved = false;
@@ -116,6 +117,7 @@ export class QuestionComponent implements OnDestroy {
         const renderedAnswer = this.resolveRichHtml(mappedAnswer, mappedAnswerJson);
 
         this.questionHtml = renderedTitle ? this.toSafeHtml(renderedTitle) : null;
+        this.answerHtmlRaw = renderedAnswer;
         this.answerViewerContent = mappedAnswerJsonValue ?? renderedAnswer ?? mappedAnswer ?? null;
 
         this.title = this.extractTextFromHtml(renderedTitle ?? mappedTitle ?? this.title) || this.title;
@@ -226,25 +228,9 @@ export class QuestionComponent implements OnDestroy {
     const type = typeof record['type'] === 'string' ? record['type'] : null;
     const content = this.renderChildContent(record['content']);
 
-    if (type === 'text') {
-      const textValue = this.escapeHtml(typeof record['text'] === 'string' ? record['text'] : '');
-      return this.applyMarks(textValue, record['marks']);
-    }
-
-    if (type === 'hardBreak') {
-      return '<br/>';
-    }
-
-    if (type === 'heading') {
-      const attrs = record['attrs'];
-      const attrsRecord = attrs && typeof attrs === 'object' ? (attrs as Record<string, unknown>) : null;
-      const levelRaw = typeof attrsRecord?.['level'] === 'number' ? attrsRecord['level'] : 2;
-      const level = Math.min(6, Math.max(1, levelRaw));
-      return `<h${level}>${content}</h${level}>`;
-    }
-
-    if (type === 'doc') {
-      return content;
+    const renderedByType = this.renderNodeByType(type, record, content);
+    if (renderedByType !== null) {
+      return renderedByType;
     }
 
     const wrapped = this.wrapNode(type, content);
@@ -253,6 +239,54 @@ export class QuestionComponent implements OnDestroy {
     }
 
     return content || null;
+  }
+
+  private renderNodeByType(type: string | null, record: Record<string, unknown>, content: string): string | null {
+    switch (type) {
+      case 'text':
+        return this.renderTextNode(record);
+      case 'hardBreak':
+        return '<br/>';
+      case 'image':
+        return this.renderImageNode(record);
+      case 'heading':
+        return this.renderHeadingNode(record, content);
+      case 'doc':
+        return content;
+      default:
+        return null;
+    }
+  }
+
+  private renderTextNode(record: Record<string, unknown>): string {
+    const textValue = this.escapeHtml(typeof record['text'] === 'string' ? record['text'] : '');
+    return this.applyMarks(textValue, record['marks']);
+  }
+
+  private renderImageNode(record: Record<string, unknown>): string | null {
+    const attrs = record['attrs'];
+    const attrsRecord = attrs && typeof attrs === 'object' ? (attrs as Record<string, unknown>) : null;
+    const srcRaw = typeof attrsRecord?.['src'] === 'string' ? attrsRecord['src'] : '';
+
+    if (!srcRaw) {
+      return null;
+    }
+
+    const normalizedSrc = toApiMediaUrl(srcRaw) ?? srcRaw;
+    const src = this.escapeHtml(normalizedSrc);
+    const alt = this.escapeHtml(typeof attrsRecord?.['alt'] === 'string' ? attrsRecord['alt'] : this.title || 'Answer image');
+    const title = this.escapeHtml(typeof attrsRecord?.['title'] === 'string' ? attrsRecord['title'] : '');
+    const titleAttr = title ? ` title="${title}"` : '';
+
+    return `<img src="${src}" alt="${alt}" loading="lazy"${titleAttr} />`;
+  }
+
+  private renderHeadingNode(record: Record<string, unknown>, content: string): string {
+    const attrs = record['attrs'];
+    const attrsRecord = attrs && typeof attrs === 'object' ? (attrs as Record<string, unknown>) : null;
+    const levelRaw = typeof attrsRecord?.['level'] === 'number' ? attrsRecord['level'] : 2;
+    const level = Math.min(6, Math.max(1, levelRaw));
+    return `<h${level}>${content}</h${level}>`;
   }
 
   private wrapNode(type: string | null, content: string): string | null {
@@ -385,9 +419,9 @@ export class QuestionComponent implements OnDestroy {
   private toSafeHtml(value: string): SafeHtml {
     const sanitized = DOMPurify.sanitize(value, {
       ALLOWED_TAGS: [
-        'p', 'div', 'span', 'strong', 'em', 'u', 's', 'b', 'i', 'br', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a',
+        'p', 'div', 'span', 'strong', 'em', 'u', 's', 'b', 'i', 'br', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style', 'src', 'alt', 'title', 'width', 'height', 'loading'],
       FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
       KEEP_CONTENT: true,
     });
@@ -422,14 +456,62 @@ export class QuestionComponent implements OnDestroy {
   async downloadPdf(): Promise<void> {
     try {
       const jsPDF = (await import('jspdf')).jsPDF;
-      const doc = new jsPDF();
+      const html2canvas = (await import('html2canvas')).default;
+      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
       const titleText = this.title || 'Question';
-      const bodyText = (this.answer || '').trim();
-      doc.setFontSize(16);
-      doc.text(titleText, 10, 10);
-      doc.setFontSize(12);
-      const split = doc.splitTextToSize(bodyText, 180);
-      doc.text(split, 10, 20);
+
+      const exportContainer = document.createElement('div');
+      exportContainer.style.position = 'fixed';
+      exportContainer.style.left = '-10000px';
+      exportContainer.style.top = '0';
+      exportContainer.style.width = '794px';
+      exportContainer.style.background = '#ffffff';
+      exportContainer.style.color = '#111827';
+      exportContainer.style.padding = '32px';
+      exportContainer.style.fontFamily = 'Arial, sans-serif';
+      exportContainer.style.lineHeight = '1.65';
+
+      const answerHtml = this.answerHtmlRaw ?? this.escapeHtml(this.answer || '').replaceAll('\n', '<br/>');
+      const questionImage = this.imageUrl
+        ? `<img src="${this.escapeHtml(this.imageUrl)}" alt="${this.escapeHtml(titleText)}" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0 20px;" />`
+        : '';
+
+      exportContainer.innerHTML = `
+        <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
+        ${questionImage}
+        <div style="font-size:16px;line-height:1.75;">${answerHtml}</div>
+      `;
+
+      document.body.appendChild(exportContainer);
+      await this.waitForImages(exportContainer);
+
+      const canvas = await html2canvas(exportContainer, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      exportContainer.remove();
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const imageHeight = (canvas.height * pageWidth) / canvas.width;
+
+      let heightLeft = imageHeight;
+      let position = 0;
+
+      doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imageHeight;
+        doc.addPage();
+        doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
+        heightLeft -= pageHeight;
+      }
+
       const safeTitle = titleText.replaceAll(/[^a-z0-9-]/gi, '_').slice(0, 60);
       doc.save(`${safeTitle || 'question'}.pdf`);
     } catch {
@@ -455,6 +537,28 @@ export class QuestionComponent implements OnDestroy {
         printWindow.print();
       }
     }
+  }
+
+  private async waitForImages(container: HTMLElement): Promise<void> {
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      images.map(
+        (image) =>
+          new Promise<void>((resolve) => {
+            if (image.complete) {
+              resolve();
+              return;
+            }
+
+            image.addEventListener('load', () => resolve(), { once: true });
+            image.addEventListener('error', () => resolve(), { once: true });
+          }),
+      ),
+    );
   }
 
   async share(): Promise<void> {

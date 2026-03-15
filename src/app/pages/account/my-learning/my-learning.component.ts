@@ -326,9 +326,30 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
     return Array.from(courses);
   }
 
-  goToCourse(course: string): void {
-    const courseSlug = course.toLowerCase().replaceAll(/\s+/g, '-');
-    this.router.navigate(['/academy/course', courseSlug]);
+  goToCourse(courseRef: string): void {
+    const exactIdMatch = this.remainingCoursesSignal().find((course) => course.id === courseRef);
+    if (exactIdMatch) {
+      void this.router.navigate(['/academy/course', exactIdMatch.id]);
+      return;
+    }
+
+    const normalizedRef = courseRef.trim().toLowerCase();
+    const titleMatch = this.remainingCoursesSignal().find(
+      (course) => course.title.trim().toLowerCase() === normalizedRef,
+    );
+
+    if (titleMatch) {
+      void this.router.navigate(['/academy/course', titleMatch.id]);
+      return;
+    }
+
+    const fallbackCourseId = this.savedLessonsSignal().find(
+      (lesson) => lesson.course.trim().toLowerCase() === normalizedRef,
+    )?.courseId;
+
+    if (fallbackCourseId) {
+      void this.router.navigate(['/academy/course', fallbackCourseId]);
+    }
   }
 
   retryLoad(): void {

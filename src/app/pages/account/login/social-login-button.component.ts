@@ -90,8 +90,8 @@ export class SocialLoginButtonComponent {
 
   getProviderIcon(): string {
     return this.provider === 'google'
-      ? '/icons/social-apps/google.svg'
-      : '/icons/social-apps/facebook.svg';
+      ? '/icons/icons-social-apps/google.svg'
+      : '/icons/icons-social-apps/facebook.svg';
   }
 
   getButtonText(): string {

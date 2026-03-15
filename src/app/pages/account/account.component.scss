@@ -5,6 +5,8 @@
 // ─── Profile Header ───
 .profile-header {
   position: relative;
+  padding-right: 0;
+  padding-left: 0;
 }
 
 .profile-cover {
@@ -229,7 +231,6 @@
   padding-bottom: 3rem;
   padding-top: 6rem;
   margin-top: 4rem;
-
   @media (min-width: 640px) {
     padding-top: 7rem;
     margin-top: 5rem;
@@ -382,6 +383,7 @@
   flex-direction: column;
   gap: 1.5rem;
   overflow-x: hidden;
+  overflow-y: hidden;
 
   @media (min-width: 640px) {
     gap: 2rem;
@@ -541,6 +543,7 @@
   border-radius: 9999px;
   object-fit: cover;
   transition: transform 0.3s;
+  display: none;
 
   &:hover {
     transform: scale(1.1) rotate(6deg);

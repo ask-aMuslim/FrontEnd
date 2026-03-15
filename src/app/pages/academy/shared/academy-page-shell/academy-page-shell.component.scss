@@ -8,7 +8,7 @@
   overflow: hidden;
   position: absolute;
   left: 0;
-  z-index: -1;
+  z-index: 0;
 }
 
 .academy-banner-image {
@@ -21,6 +21,8 @@
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .academy-breadcrumb {
@@ -28,7 +30,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 24px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 
   ol {
     display: flex;
@@ -250,12 +252,12 @@
 }
 
 .academy-page-shell.variant-lesson {
-  font-family: var(--font-family-english, 'Poppins'), sans-serif;
+  font-family: var(--font-family-english, "Poppins"), sans-serif;
   background: var(--colors-rare-grays-0, #fff);
 
   .academy-page-banner {
     height: 256px;
-    background: linear-gradient(135deg, #156b40 0%, #0c4e2d 100%);
+    background: none;
   }
 
   .academy-page-body {

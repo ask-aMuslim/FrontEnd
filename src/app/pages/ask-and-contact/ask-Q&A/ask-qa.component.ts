@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
 import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
 import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
@@ -9,6 +10,11 @@ import { PaginationComponent } from '../../../shared/reusable-components/paginat
 import { QasService } from '../../../core/services/qas.service';
 import { asRecord, extractArray, getValue, toNumberValue, toStringArray, toStringValue } from '../../../core/helpers/api-response.helper';
 import { TagsService } from '../../../core/services/tags.service';
+
+interface TagFilterOption {
+  id: string;
+  name: string;
+}
 
 @Component({
   selector: 'app-ask-qa',
@@ -29,12 +35,17 @@ export class AskQaComponent implements OnInit {
   private static readonly fallbackIdPrefix = 'Q-';
   private static readonly idOffset = 1;
   private static readonly defaultPageSize = 10;
+  private static readonly tagFetchPageSize = 100;
+  private static readonly minimumTotalPages = 1;
 
   private readonly qasService = inject(QasService);
   private readonly tagsService = inject(TagsService);
+  private tagFilterOptions: TagFilterOption[] = [];
+  private allFilteredQuestions: QuestionCard[] = [];
+  private loadedTagId: string | null = null;
   categories: string[] = [...QA_CATEGORIES];
   selectedCategory = 0;
-  currentPage = PAGINATION.DEFAULT_PAGE;
+  currentPage: number = PAGINATION.DEFAULT_PAGE;
   itemsPerPage = AskQaComponent.defaultPageSize;
   totalPages = 1;
   totalCount = 0;
@@ -65,7 +76,7 @@ export class AskQaComponent implements OnInit {
   }
 
   get paginatedFilteredQuestions(): QuestionCard[] {
-    return this.questions;
+    return this.selectedCategory === 0 ? this.questions : this.getTagPaginatedQuestions();
   }
 
   get pages(): number[] {
@@ -83,6 +94,15 @@ export class AskQaComponent implements OnInit {
 
   get selectedCategoryName(): string {
     return this.categories[this.selectedCategory] ?? '';
+  }
+
+  private get selectedCategoryTagId(): string | null {
+    if (this.selectedCategory === 0) {
+      return null;
+    }
+
+    const option = this.tagFilterOptions[this.selectedCategory - 1];
+    return option?.id ?? null;
   }
 
   onSearch(): void {
@@ -149,28 +169,33 @@ export class AskQaComponent implements OnInit {
   }
 
   private loadQuestions(): void {
+    const selectedTagId = this.selectedCategoryTagId;
+    if (selectedTagId && this.selectedCategoryName) {
+      if (this.loadedTagId === selectedTagId && this.allFilteredQuestions.length > 0) {
+        this.questions = this.getTagPaginatedQuestions();
+        this.cdr.markForCheck();
+        if (this.searchQuery && !this.hasSearched) {
+          this.onSearch();
+        }
+        return;
+      }
+
+      this.loadAllTagQuestions(selectedTagId);
+      return;
+    }
+
+    this.loadedTagId = null;
+    this.allFilteredQuestions = [];
     const pageNumber = this.currentPage;
     const pageSize = this.itemsPerPage;
-    const selectedCategoryName = this.selectedCategoryName;
-    const tags = selectedCategoryName && this.selectedCategory !== 0 ? [selectedCategoryName] : undefined;
-
-    this.qasService.getAll({ pageNumber, pageSize, tags: tags ? tags[0] : undefined }).subscribe({
+    this.qasService.getAll({ pageNumber, pageSize }).subscribe({
       next: (response: unknown) => {
         const mapped = this.mapQuestions(response);
         this.questions = mapped;
 
-        // Extract pagination details from standard response structure if available
-        const res = response as { data?: { totalPages?: number; totalCount?: number }; totalPages?: number; totalCount?: number };
-        if (res?.data) {
-          this.totalPages = res.data.totalPages ?? 1;
-          this.totalCount = res.data.totalCount ?? mapped.length;
-        } else if (res?.totalPages) {
-          this.totalPages = res.totalPages ?? 1;
-          this.totalCount = res.totalCount ?? mapped.length;
-        } else {
-          this.totalPages = 1;
-          this.totalCount = mapped.length;
-        }
+        const { totalPages, totalCount } = this.extractPagination(response, mapped.length);
+        this.totalPages = totalPages;
+        this.totalCount = totalCount;
 
         this.cdr.markForCheck();
 
@@ -182,12 +207,108 @@ export class AskQaComponent implements OnInit {
     });
   }
 
+  private loadAllTagQuestions(tagId: string): void {
+    const pageSize = AskQaComponent.tagFetchPageSize;
+
+    this.qasService.getAll({ pageNumber: 1, pageSize, tagIds: tagId }).pipe(
+      switchMap((firstResponse) => {
+        const firstPageQuestions = this.mapQuestions(firstResponse);
+        const pagination = this.extractPagination(firstResponse, firstPageQuestions.length);
+        const totalPages = pagination.totalPages;
+
+        if (totalPages <= AskQaComponent.minimumTotalPages) {
+          return of({
+            allQuestions: firstPageQuestions,
+            totalCount: pagination.totalCount || firstPageQuestions.length,
+          });
+        }
+
+        const remainingPageRequests: Observable<QuestionCard[]>[] = Array.from(
+          { length: totalPages - 1 },
+          (_item, index) => this.qasService
+            .getAll({ pageNumber: index + 2, pageSize, tagIds: tagId })
+            .pipe(map((response) => this.mapQuestions(response))),
+        );
+
+        return forkJoin(remainingPageRequests).pipe(
+          map((remainingPages) => {
+            const allQuestions = [
+              ...firstPageQuestions,
+              ...remainingPages.flat(),
+            ];
+            return {
+              allQuestions,
+              totalCount: pagination.totalCount || allQuestions.length,
+            };
+          }),
+        );
+      }),
+      catchError(() => of({ allQuestions: [], totalCount: 0 })),
+    ).subscribe(({ allQuestions, totalCount }) => {
+      this.loadedTagId = tagId;
+      this.allFilteredQuestions = allQuestions;
+      this.totalCount = totalCount > 0 ? totalCount : allQuestions.length;
+      this.totalPages = Math.max(
+        AskQaComponent.minimumTotalPages,
+        Math.ceil(this.totalCount / this.itemsPerPage),
+      );
+
+      if (this.currentPage > this.totalPages) {
+        this.currentPage = this.totalPages;
+      }
+
+      this.questions = this.getTagPaginatedQuestions();
+      this.cdr.markForCheck();
+
+      if (this.searchQuery && !this.hasSearched) {
+        this.onSearch();
+      }
+    });
+  }
+
+  private getTagPaginatedQuestions(): QuestionCard[] {
+    const start = (this.currentPage - PAGINATION.DEFAULT_PAGE) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    return this.allFilteredQuestions.slice(start, end);
+  }
+
+  private extractPagination(response: unknown, fallbackCount: number): { totalPages: number; totalCount: number } {
+    const result = response as {
+      data?: { totalPages?: number; totalCount?: number; pageCount?: number; itemCount?: number };
+      totalPages?: number;
+      totalCount?: number;
+      pageCount?: number;
+      itemCount?: number;
+    };
+
+    const nested = result?.data;
+    const totalPages =
+      nested?.totalPages ??
+      nested?.pageCount ??
+      result?.totalPages ??
+      result?.pageCount ??
+      AskQaComponent.minimumTotalPages;
+
+    const totalCount =
+      nested?.totalCount ??
+      nested?.itemCount ??
+      result?.totalCount ??
+      result?.itemCount ??
+      fallbackCount;
+
+    return {
+      totalPages: Math.max(AskQaComponent.minimumTotalPages, totalPages),
+      totalCount,
+    };
+  }
+
   private loadCategories(): void {
     this.tagsService.getAll({ pageNumber: 1, pageSize: 100 }).subscribe({
       next: (response) => {
         const mapped = this.mapCategories(response);
         if (mapped.length > 0) {
-          this.categories = ['All Categories', ...mapped];
+          this.tagFilterOptions = mapped;
+          this.categories = ['All Categories', ...mapped.map((tag) => tag.name)];
           this.selectedCategory = PAGINATION.DEFAULT_PAGE - 1;
         }
         this.cdr.markForCheck();
@@ -196,19 +317,20 @@ export class AskQaComponent implements OnInit {
     });
   }
 
-  private mapCategories(response: unknown): string[] {
+  private mapCategories(response: unknown): TagFilterOption[] {
     const records = extractArray(response);
-    const uniqueCategories = new Set<string>();
+    const uniqueCategories = new Map<string, TagFilterOption>();
 
     records.forEach((item) => {
       const record = asRecord(item);
+      const id = toStringValue(getValue(record, 'id', 'Id'));
       const name = toStringValue(getValue(record, 'name', 'Name', 'title', 'Title'));
-      if (name && name !== 'Hero Page Questions') {
-        uniqueCategories.add(name);
+      if (id && name && name !== 'Hero Page Questions') {
+        uniqueCategories.set(id, { id, name });
       }
     });
 
-    return Array.from(uniqueCategories);
+    return Array.from(uniqueCategories.values());
   }
 
   private scrollToTopOfSection(): void {

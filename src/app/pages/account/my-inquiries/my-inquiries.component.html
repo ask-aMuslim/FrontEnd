@@ -1,14 +1,40 @@
-<div class="my-inquiries flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm border border-gray-100">
-  <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
-    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-    </svg>
+<section class="my-inquiries">
+  <div class="my-inquiries__header">
+    <h2>My Inquiries</h2>
+    <button
+      routerLink="/ask-and-contact/send-inquiry"
+      class="my-inquiries__cta"
+    >
+      Send an Inquiry
+    </button>
   </div>
-  <h2 class="text-xl font-bold text-gray-900 mb-2">My Inquiries</h2>
-  <p class="text-gray-500 text-center max-w-sm mb-6">
-    You haven't sent any inquiries to the Support Center yet. When you do, they will appear here.
-  </p>
-  <button routerLink="/ask-and-contact/send-inquiry" class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-    Send an Inquiry
-  </button>
-</div>
+
+  @if (isLoading) {
+    <div class="my-inquiries__state">Loading your inquiries...</div>
+  }
+
+  @if (!isLoading && error) {
+    <div class="my-inquiries__state my-inquiries__state--error">
+      <p>{{ error }}</p>
+      <button type="button" (click)="retry()">Retry</button>
+    </div>
+  }
+
+  @if (!isLoading && !error && inquiries.length === 0) {
+    <div class="my-inquiries__state">You haven't sent any inquiries yet.</div>
+  }
+
+  @if (!isLoading && !error && inquiries.length > 0) {
+    <div class="my-inquiries__list">
+      @for (inquiry of inquiries; track inquiry.id) {
+        <article class="my-inquiries__item">
+          <div class="my-inquiries__item-top">
+            <h3>{{ inquiry.subject }}</h3>
+            <span class="my-inquiries__status">{{ inquiry.status }}</span>
+          </div>
+          <p class="my-inquiries__date">{{ inquiry.createdAt }}</p>
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { EventsService } from '../../core/services/events.service';
 import { AuthService } from '../../core/services/auth.service';
 import { QasService } from '../../core/services/qas.service';
+import { EventCardComponent, type EventCard as SharedEventCard } from '../events/event-card/event-card.component';
 import {
   asRecord,
   extractArray,
@@ -40,19 +41,6 @@ interface FeatureCard {
   status?: 'soon';
 }
 
-interface EventCard {
-  id: string;
-  date: string;
-  tag: string;
-  title: string;
-  bullets: string[];
-  image: string;
-  speaker: string;
-  speakerImage: string;
-  speakerRole: string;
-  detailUrl: string;
-}
-
 interface PillarItem {
   number: string;
   label: string;
@@ -66,7 +54,7 @@ interface ServeAudienceCard {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, EventCardComponent],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
@@ -179,7 +167,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     },
   ];
 
-  protected eventCards: EventCard[] = [];
+  protected eventCards: SharedEventCard[] = [];
   protected currentEventPage = 1;
   protected readonly eventsPerPage = 4;
   protected totalEventPages = 1;
@@ -377,12 +365,12 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     return this.totalEventPages > 1;
   }
 
-  private mapEventCards(response: unknown): EventCard[] {
+  private mapEventCards(response: unknown): SharedEventCard[] {
     const records = extractArray(response);
     return records.map((item, index) => this.mapEventCard(item, index));
   }
 
-  private mapEventCard(item: unknown, index: number): EventCard {
+  private mapEventCard(item: unknown, index: number): SharedEventCard {
     const record = asRecord(item);
     const id = toStringValue(getValue(record, 'id', 'Id')) ?? `event-${index + 1}`;
     const title = toStringValue(getValue(record, 'title', 'Title')) ?? '';
@@ -401,20 +389,20 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
     );
     const date = formatEventDateDisplay(startDateValue);
-    const tag = toStringValue(getValue(record, 'tag', 'Tag')) ?? '';
-    const detailUrl = `/events/${id}`;
+    const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
 
     return {
       id,
-      date,
-      tag,
       title,
-      bullets: [description],
-      image,
-      speaker: speakerName,
-      speakerImage,
+      description,
+      imageUrl: image,
+      imageAlt: title,
+      speakerName: speakerName,
+      speakerImage: speakerImage,
       speakerRole,
-      detailUrl,
+      date,
+      tags,
+      isRecorded: false,
     };
   }
 

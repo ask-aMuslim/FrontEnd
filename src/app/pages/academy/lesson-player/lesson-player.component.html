@@ -54,7 +54,11 @@
       <!-- Video Content -->
       @if (isVideoContent && lessonContent) {
         <div class="media-container video-container">
-          <video controls class="video-player" [poster]="videoContent?.thumbnailUrl">
+          <video
+            controls
+            class="video-player"
+            [poster]="videoContent?.thumbnailUrl"
+          >
             <source [src]="videoContent?.videoUrl" type="video/mp4" />
             <track kind="captions" srclang="en" label="English" />
             Your browser does not support the video tag.
@@ -147,7 +151,21 @@
           <div class="article-header-content">
             <p class="article-type">Article</p>
             @if (articleContent.description) {
-              <p class="article-description">{{ articleContent.description }}</p>
+              <p class="article-description">
+                {{ articleContent.description }}
+              </p>
+            }
+
+            @for (section of articleContent.sections; track section) {
+              <div class="article-section">
+                @if (section.header) {
+                  <h2 class="section-header">{{ section.header }}</h2>
+                }
+                <div
+                  class="section-content"
+                  [innerHTML]="section.content"
+                ></div>
+              </div>
             }
           </div>
         </div>
@@ -155,7 +173,9 @@
 
       <!-- Lesson Title and Actions -->
       <div class="lesson-header">
-        <h1 class="lesson-title">{{ lessonContent?.title || currentLesson?.title }}</h1>
+        <h1 class="lesson-title">
+          {{ lessonContent?.title || currentLesson?.title }}
+        </h1>
         <div class="action-buttons-header">
           <button class="btn-icon" (click)="onSave()" title="Save">
             <svg
@@ -227,7 +247,7 @@
             [class.active]="activeTab === 'overview'"
             (click)="setActiveTab('overview')"
           >
-            {{ isIntroContent ? 'Course Overview' : 'Overview' }}
+            {{ isIntroContent ? "Course Overview" : "Overview" }}
           </button>
           <button
             class="tab"
@@ -249,7 +269,7 @@
         <!-- Tab Content -->
         <div class="tab-content">
           <!-- Overview Tab -->
-          @if (activeTab === 'overview') {
+          @if (activeTab === "overview") {
             <div class="tab-pane">
               <!-- Intro Content Overview -->
               @if (isIntroContent && introContent) {
@@ -261,7 +281,10 @@
                   <div class="learning-objectives-section">
                     <h3 class="section-heading">What You'll Learn</h3>
                     <ul class="objectives-list">
-                      @for (objective of introContent.objectives; track objective) {
+                      @for (
+                        objective of introContent.objectives;
+                        track objective
+                      ) {
                         <li class="objective-item">
                           <svg
                             width="20"
@@ -294,7 +317,13 @@
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <circle cx="12" cy="12" r="10" stroke="#156B40" stroke-width="2" />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="#156B40"
+                          stroke-width="2"
+                        />
                         <polyline
                           points="12,6 12,12 16,14"
                           stroke="#156B40"
@@ -306,7 +335,9 @@
                     </div>
                     <div class="info-details">
                       <span class="info-label">Duration</span>
-                      <span class="info-value">{{ introContent.duration }}</span>
+                      <span class="info-value">{{
+                        introContent.duration
+                      }}</span>
                     </div>
                   </div>
                   <div class="info-card">
@@ -336,7 +367,9 @@
                     </div>
                     <div class="info-details">
                       <span class="info-label">Lessons</span>
-                      <span class="info-value">{{ courseLessons.length }} lessons</span>
+                      <span class="info-value"
+                        >{{ courseLessons.length }} lessons</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -344,7 +377,7 @@
               <!-- Regular Lesson Overview -->
               @if (!isIntroContent) {
                 <p class="tab-description">{{ lessonContent?.description }}</p>
-                <div class="lesson-metadata">
+                <div class="lesson-metadata" style="display: none">
                   <div class="metadata-item">
                     <span>English</span>
                   </div>
@@ -360,7 +393,7 @@
           }
 
           <!-- Notes Tab -->
-          @if (activeTab === 'notes') {
+          @if (activeTab === "notes") {
             <div class="tab-pane notes-pane">
               <div class="note-input-wrapper">
                 <textarea
@@ -370,7 +403,11 @@
                   rows="5"
                 ></textarea>
                 <div class="note-action">
-                  <button class="btn-icon-add" (click)="addNote()" [disabled]="!noteText.trim()">
+                  <button
+                    class="btn-icon-add"
+                    (click)="addNote()"
+                    [disabled]="!noteText.trim()"
+                  >
                     <span>Add</span>
                   </button>
                 </div>
@@ -394,7 +431,9 @@
                     <div class="note-item">
                       <div class="note-header">
                         <span class="note-timestamp">{{ note.timestamp }}</span>
-                        <button class="btn-more" (click)="deleteNote(i)">Delete</button>
+                        <button class="btn-more" (click)="deleteNote(i)">
+                          Delete
+                        </button>
                       </div>
                       <p class="note-text">{{ note.text }}</p>
                     </div>
@@ -405,7 +444,7 @@
           }
 
           <!-- Feedback Tab -->
-          @if (activeTab === 'feedback') {
+          @if (activeTab === "feedback") {
             <div class="tab-pane feedback-pane">
               <div class="feedback-section">
                 <h3 class="feedback-title">Rate the lesson's content</h3>
@@ -448,33 +487,17 @@
         </div>
       </div>
 
-      <!-- Article Content Sections -->
-      @if (isArticleContent && lessonContent) {
-        <div class="article-sections">
-          @for (section of articleContent?.sections; track section) {
-            <div class="article-section">
-              @if (section.header) {
-                <h2 class="section-header">{{ section.header }}</h2>
-              }
-              <div class="section-content" [innerHTML]="section.content"></div>
-            </div>
-          }
-        </div>
-      }
-
       <!-- Navigation Buttons -->
       <div class="navigation-buttons">
-        <button
-          class="btn btn-outlined"
-          (click)="goToPreviousLesson()"
-          [disabled]="!previousAcademyLesson && !previousLesson"
-        >
-          <span>Previous Lesson</span>
-        </button>
+        @if (previousAcademyLesson || previousLesson) {
+          <button class="btn btn-outlined" (click)="goToPreviousLesson()">
+            <span>Previous Lesson</span>
+          </button>
+        }
 
         @if (nextAcademyLesson || nextLesson) {
           <button class="btn btn-primary" (click)="goToNextLesson()">
-            <span>{{ isIntroContent ? 'Begin' : 'Next Lesson' }}</span>
+            <span>{{ isIntroContent ? "Begin" : "Next Lesson" }}</span>
           </button>
         }
       </div>
@@ -486,18 +509,26 @@
       <div class="course-info-card">
         <div class="course-header">
           <span class="stage-label">Stage {{ courseInfo.stage }}</span>
-          <h3 class="sidebar-title" [title]="courseInfo.title">{{ courseInfo.title }}</h3>
+          <h3 class="sidebar-title" [title]="courseInfo.title">
+            {{ courseInfo.title }}
+          </h3>
         </div>
         <div class="divider"></div>
         <div class="course-stats">
           <p class="stat-item">{{ courseInfo.stats }}</p>
-          <p class="stat-item">Duration: {{ currentCourse?.duration || '4h 10m' }}</p>
+          <p class="stat-item">
+            Duration: {{ currentCourse?.duration || "4h 10m" }}
+          </p>
         </div>
       </div>
 
       <div class="lessons-list">
         @for (lesson of courseLessons; track lesson.id; let i = $index) {
-          @if (i === courseLessons.length - 1 && courseLessons.length > 0 && lesson.type === 'quiz') {
+          @if (
+            i === courseLessons.length - 1 &&
+            courseLessons.length > 0 &&
+            lesson.type === "quiz"
+          ) {
             <div class="ready-divider">
               <div class="divider-line"></div>
               <span class="ready-text">Ready?</span>

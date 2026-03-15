@@ -14,6 +14,7 @@ import { Content, Editor, JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import Image from '@tiptap/extension-image';
 
 @Component({
   selector: 'app-tiptap-viewer',
@@ -40,7 +41,7 @@ export class TiptapViewerComponent implements OnInit, OnChanges, OnDestroy {
 
     this.editor = new Editor({
       element: this.editorHostRef.nativeElement,
-      extensions: [StarterKit, TextStyle, Color],
+      extensions: [StarterKit, TextStyle, Color, Image],
       content: normalized,
       editable: false,
       injectCSS: false,
