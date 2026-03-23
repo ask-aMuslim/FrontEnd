@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { ApiConfiguration } from '../api-configuration';
 
 export interface SocialAuthResponse {
     token: string;
@@ -25,6 +26,7 @@ export interface FacebookAccessTokenPayload {
 @Injectable({ providedIn: 'root' })
 export class SocialAuthFacade {
     private readonly http = inject(HttpClient);
+    private readonly config = inject(ApiConfiguration);
 
     /**
      * Login with Google ID Token
@@ -36,9 +38,8 @@ export class SocialAuthFacade {
 
         const payload: GoogleIdTokenPayload = { idToken };
 
-        // use relative path to align with other facades and avoid duplicating apiBaseUrl prefix
         return this.http.post<SocialAuthResponse>(
-            '/api/Authentication/login/google',
+            `${this.config.rootUrl}/api/Authentication/login/google`,
             payload
         ).pipe(
             tap((response) => this.validateResponse(response)),
@@ -57,7 +58,7 @@ export class SocialAuthFacade {
         const payload: FacebookAccessTokenPayload = { accessToken };
 
         return this.http.post<SocialAuthResponse>(
-            '/api/Authentication/login/facebook',
+            `${this.config.rootUrl}/api/Authentication/login/facebook`,
             payload
         ).pipe(
             tap((response) => this.validateResponse(response)),
