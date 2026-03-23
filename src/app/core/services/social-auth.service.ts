@@ -19,8 +19,13 @@ export class SocialAuthenticationService {
                 if (!idToken) {
                     return throwError(() => new Error('No ID token received from Google'));
                 }
-                return this.socialAuthFacade.loginWithGoogle(idToken);
-            }),
+                return this.handleGoogleToken(idToken);
+            })
+        );
+    }
+
+    handleGoogleToken(idToken: string): Observable<SocialAuthResponse> {
+        return this.socialAuthFacade.loginWithGoogle(idToken).pipe(
             switchMap((response) => this.storeSessionToken(response))
         );
     }

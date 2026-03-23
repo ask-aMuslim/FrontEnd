@@ -91,7 +91,7 @@ export class Footer {
     },
     {
       icon: '/icons/icons-social-apps/youtube.svg',
-      label: 'AskAMuslim',
+      label: 'askamuslim',
       href: 'https://www.youtube.com/@AskAMuslim',
       ariaLabel: 'Visit our YouTube channel',
     },

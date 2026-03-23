@@ -5,11 +5,14 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { IdentityFacade } from '../../../api/facades/identity.facade';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 import { environment } from '../../../../environments/environment';
+import { SocialAuthenticationService } from '../../services/social-auth.service';
+
+import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, GoogleSigninButtonModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
@@ -23,6 +26,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   protected readonly loading = this.facade.isLoading;
   protected readonly apiError = this.facade.error;
+  private readonly socialAuthService = inject(SocialAuthenticationService);
+  private readonly abacrittAuthService = inject(SocialAuthService);
 
   protected loginForm: FormGroup;
   protected showPassword = false;
@@ -43,6 +48,24 @@ export class LoginComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.submitSuccess = false;
     this.facade.clearError();
+
+    // Listen for Google Sign-In Success
+    this.abacrittAuthService.authState.subscribe((user) => {
+      if (user && user.provider === 'GOOGLE' && user.idToken) {
+        // Send the Google token to our backend via the service
+        this.socialAuthService.handleGoogleToken(user.idToken).subscribe({
+          next: () => {
+            this.submitSuccess = true;
+            const returnUrl = this.route.snapshot.queryParams['returnUrl'] as string | undefined;
+            void this.router.navigateByUrl(returnUrl ?? '/home');
+          },
+          error: (err: any) => {
+            this.submitSuccess = false;
+            console.error('Google login failed', err);
+          }
+        });
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -121,15 +144,21 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected onSocialSignIn(provider: 'google' | 'facebook'): void {
     if (!this.isBrowser) return;
 
-    const path = provider === 'google'
-      ? '/api/Authentication/login/google'
-      : '/api/Authentication/login/facebook';
+    const loginMethod = provider === 'google'
+      ? this.socialAuthService.signInWithGoogle()
+      : this.socialAuthService.signInWithFacebook();
 
-    // Prefix with apiBaseUrl only when it is an absolute URL (dev/prod direct).
-    // When apiBaseUrl is a relative path (e.g. '/api'), keep the path relative so
-    // the Angular dev-server proxy or same-host deployment forwards it correctly.
-    const baseUrl = environment.apiBaseUrl.startsWith('http') ? environment.apiBaseUrl : '';
-    globalThis.location.href = `${baseUrl}${path}`;
+    loginMethod.subscribe({
+      next: () => {
+        this.submitSuccess = true;
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] as string | undefined;
+        void this.router.navigateByUrl(returnUrl ?? '/home');
+      },
+      error: (error) => {
+        this.submitSuccess = false;
+        console.error(`${provider} login failed`, error);
+      },
+    });
   }
 
   protected get friendlyApiError(): string | null {

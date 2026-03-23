@@ -53,7 +53,7 @@ $lessonPayloads = @(
 )
 $lessonIds=@()
 foreach($lp in $lessonPayloads){
-  $l=Post-Api '/api/Lessons' @{ courseId=$courseId; title=$lp.title; description=$lp.description; contentJson=$lp.contentJson; type=$lp.type; contentUrl=$lp.contentUrl; transcript=$lp.transcript; thumbnailUrl='https://example.com/lesson.png'; order=$lp.order; isPublished=$true }
+  $l=Post-Api '/api/Lessons' @{ courseId=$courseId; title=$lp.title; description=$lp.description; contentJson=$lp.contentJson; type=$lp.type; contentUrl=$lp.contentUrl; transcript=$lp.transcript; thumbnailUrl=''; order=$lp.order; isPublished=$true }
   $lessonIds += (Get-Id $l)
 }
 

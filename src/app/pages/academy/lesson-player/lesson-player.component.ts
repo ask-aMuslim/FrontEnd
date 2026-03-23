@@ -92,6 +92,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         if (this.isIntroContent && this.introContent?.thumbnailUrl) {
             return this.introContent.thumbnailUrl;
         }
+        if (this.currentCourse?.thumbnailUrl) {
+            return this.currentCourse.thumbnailUrl;
+        }
         return LessonPlayerComponent.defaultBannerUrl;
     }
 
