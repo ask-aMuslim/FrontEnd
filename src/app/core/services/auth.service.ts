@@ -223,11 +223,7 @@ export class AuthService {
         return;
       }
 
-      if (!fallbackEmail) {
-        return;
-      }
-
-      this._currentUser.set({ name: fallbackEmail, meta: 'Signed in' });
+      this._currentUser.set({ name: fallbackEmail || 'User', meta: 'Signed in' });
       this.hydrateCurrentUserFromProfile();
     });
   }
