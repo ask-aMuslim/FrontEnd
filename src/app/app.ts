@@ -36,8 +36,8 @@ export class App {
 
     if (isPlatformBrowser(this.platformId)) {
       AOS.init({
-        duration: 800,
-        easing: 'ease-in-out',
+        duration: 500,
+        easing: 'ease-out-quad',
         once: true,
         offset: 50
       });

@@ -249,8 +249,8 @@ export class AcademyProgressService {
                     );
                 }
                 const courseRequests = stages.map(stage =>
-                    this.courseFacade.getCoursesByLevel(stage.id).pipe(
-                        map(courses => this.mapCoursesForStage(courses, stage.id, stage.number)),
+                    this.courseFacade.getRoadmap(stage.id).pipe(
+                        map(courses => this.mapCoursesForStage(courses as any[], stage.id, stage.number)),
                         catchError(() => of([] as AcademyCourse[]))
                     )
                 );
@@ -271,8 +271,8 @@ export class AcademyProgressService {
      */
     getAcademyCoursesByLevel(levelId: string): Observable<AcademyCourse[]> {
         const stageNumber = this.academyStagesCache.find(s => s.id === levelId)?.number ?? 1;
-        return this.courseFacade.getCoursesByLevel(levelId).pipe(
-            map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c, levelId, stageNumber))),
+        return this.courseFacade.getRoadmap(levelId).pipe(
+            map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c as any, levelId, stageNumber))),
             catchError(() => of([]))
         );
     }
@@ -646,7 +646,10 @@ export class AcademyProgressService {
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
             order: course.order,
-            prerequisites: course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []
+            prerequisites: [
+                ...(course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []),
+                ...(course.prerequisiteIds ?? [])
+            ]
         };
     }
 

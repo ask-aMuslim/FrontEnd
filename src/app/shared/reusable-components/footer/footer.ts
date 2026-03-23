@@ -68,7 +68,7 @@ export class Footer {
     {
       title: 'Ask & Contact',
       links: [
-        { label: 'Ask "Q&A"', href: '/ask-and-contact/ask-qa', external: false },
+        { label: 'Ask Questions', href: '/ask-and-contact/ask-qa', external: false },
         // { label: 'Virtual Assistant', href: '/ask-and-contact/ask-assistant', external: false },
         { label: 'Meet Scholar', href: '/ask-and-contact/meet-scholar', external: false },
         { label: 'Send Inquiry', href: '/ask-and-contact/send-inquiry', external: false },

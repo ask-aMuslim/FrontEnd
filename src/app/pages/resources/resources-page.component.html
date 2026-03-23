@@ -28,6 +28,7 @@
       class="resources-gallery"
       [class.resources-gallery--surface]="gallery.surface === 'surface'"
       [attr.aria-label]="gallery.title"
+      data-aos="fade-up"
     >
       <div class="section-container">
         <div class="section-block section-block--wide">
@@ -116,7 +117,11 @@
     </section>
   }
 
-  <section class="new-muslim" aria-labelledby="new-muslim-title">
+  <section
+    class="new-muslim"
+    aria-labelledby="new-muslim-title"
+    data-aos="fade-up"
+  >
     <div class="new-muslim__pattern" aria-hidden="true"></div>
     <div class="section-container">
       <div class="section-block section-block--wide">

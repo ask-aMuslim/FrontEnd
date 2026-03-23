@@ -66,7 +66,7 @@ export const routes: Routes = [
               import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
                 (m) => m.AskQaComponent,
               ),
-            title: 'Ask "Q&A"',
+            title: 'Ask Questions',
           },
           {
             path: 'ask-qa/question',

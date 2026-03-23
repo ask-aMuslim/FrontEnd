@@ -19,6 +19,7 @@ import { finalize } from 'rxjs/operators';
 import { IdentityFacade, UserRole } from '../../api/facades/identity.facade';
 import { TokenService } from '../auth/token.service';
 import { StudentFacade } from '../../api/facades/student.facade';
+import { SocialAuthenticationService } from './social-auth.service';
 
 // Types
 import { AuthResponse, RegisterRequest } from '../models/interfaces/auth.model';
@@ -52,6 +53,8 @@ export class AuthService {
     }
   }
 
+  private readonly socialAuthService = inject(SocialAuthenticationService);
+
   /**
    * Set authenticated user state (for manual state updates)
    * @deprecated Use TokenService.setTokens() instead
@@ -75,6 +78,11 @@ export class AuthService {
   logout(): Observable<void> {
     // Clear local state
     this._currentUser.set(null);
+
+    // Also clear social auth state (Google/Facebook) to prevent auto-login bounce
+    this.socialAuthService.signOut().subscribe({
+      error: () => { /* ignore */ }
+    });
 
     return this.facade.logout().pipe(
       catchError(() => of(undefined)),
