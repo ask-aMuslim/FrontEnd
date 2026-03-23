@@ -29,6 +29,8 @@ export class SocialAuthFacade {
             return throwError(() => new Error('Invalid Google ID token provided'));
         }
 
+        console.log('Google ID Token to be sent to backend:', idToken);
+
         return loginWithGoogle(this.http, this.config.rootUrl, { body: { idToken } }).pipe(
             map(response => this.mapToSocialAuthResponse(response.body)),
             tap(mappedResponse => this.validateResponse(mappedResponse)),
