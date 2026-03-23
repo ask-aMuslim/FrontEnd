@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CourseNode {
@@ -35,6 +35,15 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
     // Resize observer to handle dynamic window resizing naturally
     private resizeObserver: ResizeObserver | null = null;
 
+    constructor() {
+        // Automatically redraw lines whenever the tree layers change
+        effect(() => {
+            const _ = this.layers(); // track layers
+            // Small delay to ensure DOM is rendered after signal change
+            setTimeout(() => this.drawLines(), 100);
+        });
+    }
+
     layers = computed(() => {
         const nodeList = this.nodes();
         const nodeMap = new Map(nodeList.map(n => [n.id, n]));
@@ -69,9 +78,6 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
             layersArr[d].push(n);
         });
 
-        // Wait for rendering to complete after new layers are mapped to redraw lines
-        setTimeout(() => this.drawLines(), 50);
-
         return layersArr;
     });
 
@@ -82,6 +88,8 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
             });
             this.resizeObserver.observe(this.el.nativeElement);
         }
+        // Initial draw after view initialization
+        setTimeout(() => this.drawLines(), 300);
     }
 
     ngOnDestroy() {
@@ -100,41 +108,43 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
         const container = this.el.nativeElement.querySelector('.tree-container');
         if (!container) return;
 
-        const containerRect = container.getBoundingClientRect();
-        const paths: string[] = [];
+        requestAnimationFrame(() => {
+            const containerRect = container.getBoundingClientRect();
+            const paths: string[] = [];
 
-        // Use the native element querying isolated to this component's hierarchy
-        const nodeList = this.nodes();
-        for (const node of nodeList) {
-            if (!node.prerequisites || node.prerequisites.length === 0) continue;
+            // Use the native element querying isolated to this component's hierarchy
+            const nodeList = this.nodes();
+            for (const node of nodeList) {
+                if (!node.prerequisites || node.prerequisites.length === 0) continue;
 
-            const targetEl = container.querySelector(`#course-node-${node.id}`);
-            if (!targetEl) continue;
+                const targetEl = container.querySelector(`#course-node-${node.id}`);
+                if (!targetEl) continue;
 
-            const targetRect = targetEl.getBoundingClientRect();
-            // child target center top
-            const targetX = targetRect.left - containerRect.left + (targetRect.width / 2);
-            const targetY = targetRect.top - containerRect.top;
+                const targetRect = targetEl.getBoundingClientRect();
+                // child target center top
+                const targetX = targetRect.left - containerRect.left + (targetRect.width / 2);
+                const targetY = targetRect.top - containerRect.top;
 
-            for (const parentId of node.prerequisites) {
-                const parentEl = container.querySelector(`#course-node-${parentId}`);
-                if (!parentEl) continue;
+                for (const parentId of node.prerequisites) {
+                    const parentEl = container.querySelector(`#course-node-${parentId}`);
+                    if (!parentEl) continue;
 
-                const parentRect = parentEl.getBoundingClientRect();
-                // parent source center bottom
-                const parentX = parentRect.left - containerRect.left + (parentRect.width / 2);
-                const parentY = parentRect.bottom - containerRect.top;
+                    const parentRect = parentEl.getBoundingClientRect();
+                    // parent source center bottom
+                    const parentX = parentRect.left - containerRect.left + (parentRect.width / 2);
+                    const parentY = parentRect.bottom - containerRect.top;
 
-                // Construct a sleek smooth bezier curve (flow chart style) connecting parent to child
-                const verticalSpace = Math.abs(targetY - parentY);
-                const controlY = parentY + (verticalSpace * 0.5);
+                    // Construct a sleek smooth bezier curve (flow chart style) connecting parent to child
+                    const verticalSpace = Math.abs(targetY - parentY);
+                    const controlY = parentY + (verticalSpace * 0.5);
 
-                const d = `M ${parentX} ${parentY} C ${parentX} ${controlY}, ${targetX} ${controlY}, ${targetX} ${targetY}`;
-                paths.push(d);
+                    const d = `M ${parentX} ${parentY} C ${parentX} ${controlY}, ${targetX} ${controlY}, ${targetX} ${targetY}`;
+                    paths.push(d);
+                }
             }
-        }
 
-        this.svgPaths.set(paths);
+            this.svgPaths.set(paths);
+        });
     }
 
     retry() {

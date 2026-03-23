@@ -19,6 +19,7 @@ export interface CourseReadDto {
     order?: number;
     isPublished?: boolean;
     prerequisites?: RoadmapCourseDto[];
+    prerequisiteIds?: string[];
     [key: string]: unknown;
 }
 
@@ -35,6 +36,7 @@ export interface RoadmapCourseDto {
     isCompleted?: boolean;
     isLocked?: boolean;
     prerequisites?: RoadmapCourseDto[];
+    prerequisiteIds?: string[];
     levelId?: string;
     [key: string]: unknown;
 }

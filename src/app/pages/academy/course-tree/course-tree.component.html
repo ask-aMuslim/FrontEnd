@@ -67,6 +67,7 @@
 <!-- Reusable Node Template -->
 <ng-template #nodeTemplate let-node>
   <button 
+    [id]="'course-node-' + node.id"
     class="course-node-card text-left transition-all duration-300 rounded-2xl border p-5 md:p-6 relative group focus:outline-none flex flex-col items-start bg-white w-[280px] sm:w-[300px] md:w-[340px] min-h-[160px] md:h-[180px]"
     [class]="{
       'border-green-200 shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-green-300 cursor-pointer': node.status === 'completed',
