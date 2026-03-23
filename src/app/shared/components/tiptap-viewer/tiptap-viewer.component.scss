@@ -38,3 +38,11 @@
   padding-inline-start: 0.75rem;
   color: var(--color-text-caption);
 }
+
+:host ::ng-deep .tiptap-viewer .ProseMirror img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem auto;
+  border-radius: 0.5rem;
+}

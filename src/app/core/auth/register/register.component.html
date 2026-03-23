@@ -24,10 +24,9 @@
   </div>
 
   <div class="social-buttons">
-    <button type="button" class="social-btn social-btn--google" (click)="onSocialSignIn('google')">
-      <img src="/icons/icons-social-apps/google.svg" alt="Google" />
-      <span>Sign in with Google</span>
-    </button>
+    <div class="google-btn-wrapper" style="display: flex; justify-content: center; width: 100%;">
+      <asl-google-signin-button type="standard" size="large" [width]="300"></asl-google-signin-button>
+    </div>
     <button type="button" class="social-btn social-btn--facebook" (click)="onSocialSignIn('facebook')">
       <img src="/icons/icons-social-apps/facebook.svg" alt="Facebook" />
       <span>Sign in with Facebook</span>

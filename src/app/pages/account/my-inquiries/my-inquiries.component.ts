@@ -1,5 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Subject, of, switchMap } from 'rxjs';
+import { catchError, finalize, takeUntil } from 'rxjs/operators';
+import { StudentFacade } from '../../../api/facades/student.facade';
+import { InquiryRequestsService } from '../../../core/services/inquiry-requests.service';
+import { asRecord, extractArray, getValue, toStringValue } from '../../../core/helpers/api-response.helper';
 
 export interface Inquiry {
     id: string;
@@ -15,7 +20,100 @@ export interface Inquiry {
     templateUrl: './my-inquiries.component.html',
     styleUrls: ['./my-inquiries.component.scss']
 })
-export class MyInquiriesComponent {
-    // Skeleton component for inquiries
+export class MyInquiriesComponent implements OnInit, OnDestroy {
     inquiries: Inquiry[] = [];
+    isLoading = false;
+    error: string | null = null;
+
+    private readonly destroy$ = new Subject<void>();
+
+    constructor(
+        private readonly studentFacade: StudentFacade,
+        private readonly inquiryRequestsService: InquiryRequestsService,
+    ) { }
+
+    ngOnInit(): void {
+        this.loadInquiries();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    retry(): void {
+        this.loadInquiries();
+    }
+
+    private loadInquiries(): void {
+        this.isLoading = true;
+        this.error = null;
+
+        this.studentFacade.me().pipe(
+            switchMap((profile) => {
+                if (!profile?.id) {
+                    return of([] as Inquiry[]);
+                }
+
+                return this.inquiryRequestsService.getByRequester(profile.id).pipe(
+                    catchError(() => of([])),
+                    switchMap((response) => of(this.mapInquiries(response))),
+                );
+            }),
+            finalize(() => {
+                this.isLoading = false;
+            }),
+            takeUntil(this.destroy$),
+        ).subscribe({
+            next: (inquiries) => {
+                this.inquiries = inquiries;
+            },
+            error: () => {
+                this.error = 'Unable to load your inquiries right now.';
+            },
+        });
+    }
+
+    private mapInquiries(response: unknown): Inquiry[] {
+        const records = extractArray(response);
+
+        return records
+            .map((item) => {
+                const record = asRecord(item);
+                const id = toStringValue(getValue(record, 'id', 'Id'));
+                if (!id) {
+                    return null;
+                }
+
+                const topic = toStringValue(getValue(record, 'topic', 'Topic'));
+                const message = toStringValue(getValue(record, 'message', 'Message'));
+                const status = toStringValue(getValue(record, 'status', 'Status')) ?? 'Pending';
+                const createdRaw = toStringValue(getValue(record, 'createdAt', 'CreatedAt'));
+
+                return {
+                    id,
+                    subject: topic ?? message ?? 'Inquiry',
+                    status,
+                    createdAt: this.formatDate(createdRaw),
+                } satisfies Inquiry;
+            })
+            .filter((inquiry): inquiry is Inquiry => inquiry !== null);
+    }
+
+    private formatDate(value: string | null): string {
+        if (!value) {
+            return 'Unknown date';
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toLocaleDateString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
+    }
 }

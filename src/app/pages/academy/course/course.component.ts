@@ -81,6 +81,10 @@ export class CourseComponent implements OnInit, OnDestroy {
         );
     }
 
+    get isUserAuthenticated(): boolean {
+        return this.authService.isAuthenticated();
+    }
+
     readonly breadcrumbs: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
     ];
@@ -150,7 +154,9 @@ export class CourseComponent implements OnInit, OnDestroy {
         courseProgress: CourseProgress | undefined,
         lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[]
     ): CourseDetails {
-        const isLocked = courseProgress?.status === 'locked';
+        const isLocked = this.isUserAuthenticated
+            ? courseProgress?.status === 'locked'
+            : false;
 
         return {
             id: courseData.id,
@@ -192,6 +198,19 @@ export class CourseComponent implements OnInit, OnDestroy {
         lesson: AcademyLesson & { progress: LessonProgress },
         courseLocked: boolean
     ): Lesson {
+        if (!this.isUserAuthenticated) {
+            return {
+                id: lesson.id,
+                title: lesson.title,
+                duration: lesson.duration,
+                type: lesson.type,
+                isLocked: false,
+                isCompleted: false,
+                isCurrent: false,
+                hasNotification: false,
+            };
+        }
+
         const isLocked = courseLocked || lesson.progress.status === 'locked';
         const isCompleted = lesson.progress.isCompleted;
         const isCurrent = lesson.progress.status === 'current';

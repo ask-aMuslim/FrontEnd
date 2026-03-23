@@ -67,6 +67,7 @@ export interface ArticleLessonContent {
 export interface ArticleSection {
   header: string;
   content: string;
+  contentJson?: unknown;
 }
 
 /**

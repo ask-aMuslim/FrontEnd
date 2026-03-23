@@ -228,19 +228,25 @@ export class LessonContentService {
 
       case LessonType.Article:
       case LessonType.Document:
-        return {
-          id: String(lessonDto.id ?? ''),
-          type: LessonType.Article,
-          title: lessonDto.title ?? '',
-          description: (lessonDto as { description?: string }).description || '',
-          sections: [
-            {
-              header: '',
-              content: lessonDto.content || ''
-            }
-          ],
-          language: 'English'
-        } as ArticleLessonContent;
+        {
+          const contentJson = lessonDto['contentJson'] ?? lessonDto['ContentJson'];
+          const content = this.resolveArticleSectionContent(contentJson, lessonDto.content || '');
+
+          return {
+            id: String(lessonDto.id ?? ''),
+            type: LessonType.Article,
+            title: lessonDto.title ?? '',
+            description: (lessonDto as { description?: string }).description || '',
+            sections: [
+              {
+                header: '',
+                content,
+                contentJson,
+              }
+            ],
+            language: 'English'
+          } as ArticleLessonContent;
+        }
 
       default:
         return {
@@ -283,5 +289,103 @@ export class LessonContentService {
       order: 0,
       hasFeedback: false
     };
+  }
+
+  private resolveArticleSectionContent(contentJson: unknown, fallbackContent: string): string {
+    const fromJson = this.tryResolveContentJson(contentJson);
+    if (fromJson) {
+      return fromJson;
+    }
+
+    return fallbackContent;
+  }
+
+  private tryResolveContentJson(value: unknown): string | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      if (this.containsHtml(trimmed)) {
+        return trimmed;
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        return this.renderStructuredJson(parsed);
+      } catch {
+        return `<p>${this.escapeHtml(trimmed).replaceAll('\n', '<br/>')}</p>`;
+      }
+    }
+
+    return this.renderStructuredJson(value);
+  }
+
+  private renderStructuredJson(value: unknown): string | null {
+    const plainText = this.collectStructuredText(value).trim();
+    if (!plainText) {
+      return null;
+    }
+
+    return `<p>${this.escapeHtml(plainText).replaceAll('\n', '<br/>')}</p>`;
+  }
+
+  private collectStructuredText(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((entry) => this.collectStructuredText(entry)).join('\n');
+    }
+
+    if (typeof value !== 'object') {
+      return '';
+    }
+
+    const record = value as Record<string, unknown>;
+    const type = typeof record['type'] === 'string' ? record['type'] : null;
+
+    if (type === 'text') {
+      return typeof record['text'] === 'string' ? record['text'] : '';
+    }
+
+    if (type === 'hardBreak') {
+      return '\n';
+    }
+
+    const childContent = this.collectStructuredText(record['content']);
+    if (type === 'paragraph' || type === 'heading' || type === 'listItem') {
+      return childContent ? `${childContent}\n` : '';
+    }
+
+    const otherValues = Object.entries(record)
+      .filter(([key]) => key !== 'content' && key !== 'type' && key !== 'text')
+      .map(([, entry]) => this.collectStructuredText(entry))
+      .join('\n');
+
+    return `${childContent}${otherValues}`;
+  }
+
+  private containsHtml(value: string): boolean {
+    return /<\/?[a-z][\s\S]*>/i.test(value);
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
   }
 }

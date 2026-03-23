@@ -17,7 +17,7 @@ export class SidebarComponent {
   readonly menuItems: MenuItem[] = [
     {
       key: 'ask-qa',
-      label: 'Ask Questions',
+      label: 'Ask "Q&A"',
       href: '/ask-and-contact/ask-qa',
       icon: '/icons/icons-24/found.svg',
     },

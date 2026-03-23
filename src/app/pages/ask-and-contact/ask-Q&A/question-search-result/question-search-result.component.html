@@ -3,16 +3,25 @@
     <div class="search-results__title">
       <p class="search-results__eyebrow">Search results</p>
       <h2 class="search-results__summary">
-        Showing {{ results.length }} result{{ results.length === 1 ? '' : 's' }} for “{{ query }}”
+        Showing {{ results.length }} result{{
+          results.length === 1 ? "" : "s"
+        }}
+        for “{{ query }}”
       </h2>
     </div>
 
-    <button type="button" class="clear-btn" (click)="onClear()">Clear search</button>
+    <button type="button" class="clear-btn" (click)="onClear()">
+      Clear search
+    </button>
   </div>
 
   @if (hasResults) {
     <div class="search-results__list">
-      @for (question of results; track trackByQuestionId($index, question); let isLast = $last) {
+      @for (
+        question of results;
+        track trackByQuestionId($index, question);
+        let isLast = $last
+      ) {
         <app-qa-card [question]="question" />
         @if (!isLast) {
           <div class="search-results__divider"></div>
@@ -23,11 +32,12 @@
     <div class="search-results__empty">
       <h3 class="search-results__empty-title">No results found</h3>
       <p class="search-results__empty-description">
-        We couldn't find any questions that match “{{ query }}”. Try another keyword or browse all
-        questions.
+        We couldn't find any questions that match “{{ query }}”. Try another
+        keyword or browse all questions.
       </p>
-      <button type="button" class="browse-btn" (click)="onClear()">Back to Ask Questions</button>
+      <button type="button" class="browse-btn" (click)="onClear()">
+        Back to Ask "Q&A"
+      </button>
     </div>
   }
-
 </div>

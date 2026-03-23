@@ -10,7 +10,7 @@
  * @deprecated Use IdentityFacade and TokenService directly
  */
 
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, effect, signal, inject } from '@angular/core';
 import { Observable, map, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -41,6 +41,7 @@ export class AuthService {
 
   constructor() {
     this.initializeAuthState();
+    this.setupAuthHydrationEffect();
   }
 
   private initializeAuthState(): void {
@@ -202,6 +203,33 @@ export class AuthService {
    */
   getRefreshToken(): string | null {
     return this.tokenService.refreshToken();
+  }
+
+  getCurrentUserName(): string {
+    return this._currentUser()?.name || this.tokenService.userEmail() || 'User';
+  }
+
+  getCurrentUserMeta(): string {
+    return this._currentUser()?.meta || (this.tokenService.isAuthenticated() ? 'Signed in' : 'Guest');
+  }
+
+  private setupAuthHydrationEffect(): void {
+    effect(() => {
+      const authenticated = this.tokenService.isAuthenticated();
+      const fallbackEmail = this.tokenService.userEmail();
+
+      if (!authenticated) {
+        this._currentUser.set(null);
+        return;
+      }
+
+      if (!fallbackEmail) {
+        return;
+      }
+
+      this._currentUser.set({ name: fallbackEmail, meta: 'Signed in' });
+      this.hydrateCurrentUserFromProfile();
+    });
   }
 
   private hydrateCurrentUserFromProfile(): void {

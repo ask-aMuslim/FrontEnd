@@ -68,7 +68,7 @@ export class Footer {
     {
       title: 'Ask & Contact',
       links: [
-        { label: 'Ask Questions', href: '/ask-and-contact/ask-qa', external: false },
+        { label: 'Ask "Q&A"', href: '/ask-and-contact/ask-qa', external: false },
         // { label: 'Virtual Assistant', href: '/ask-and-contact/ask-assistant', external: false },
         { label: 'Meet Scholar', href: '/ask-and-contact/meet-scholar', external: false },
         { label: 'Send Inquiry', href: '/ask-and-contact/send-inquiry', external: false },
@@ -91,7 +91,7 @@ export class Footer {
     },
     {
       icon: '/icons/icons-social-apps/youtube.svg',
-      label: 'AskAMuslim',
+      label: 'askamuslim',
       href: 'https://www.youtube.com/@AskAMuslim',
       ariaLabel: 'Visit our YouTube channel',
     },

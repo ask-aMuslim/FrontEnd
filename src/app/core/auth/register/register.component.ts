@@ -5,13 +5,15 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { IdentityFacade, RegistrationData, UserRole } from '../../../api/facades/identity.facade';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
+import { SocialAuthenticationService } from '../../services/social-auth.service';
+import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
 
 type RegisterField = 'religionType' | 'fullName' | 'email' | 'phoneNumber' | 'password';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule],
+  imports: [ReactiveFormsModule, RouterModule, GoogleSigninButtonModule],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
@@ -23,6 +25,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   protected readonly loading = this.facade.isLoading;
   protected readonly apiError = this.facade.error;
+  private readonly socialAuthService = inject(SocialAuthenticationService);
+  private readonly abacrittAuthService = inject(SocialAuthService);
 
   registerForm!: FormGroup;
   showPassword = false;
@@ -55,6 +59,22 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.submitSuccess = false;
     this.facade.clearError();
+
+    // Listen for Google Sign-In Success
+    this.abacrittAuthService.authState.subscribe((user) => {
+      if (user && user.provider === 'GOOGLE' && user.idToken) {
+        this.socialAuthService.handleGoogleToken(user.idToken).subscribe({
+          next: () => {
+            this.submitSuccess = true;
+            void this.router.navigate(['/home']);
+          },
+          error: (err: any) => {
+            this.submitSuccess = false;
+            console.error('Google registration failed', err);
+          }
+        });
+      }
+    });
 
     this.registerForm = this.fb.group({
       religionType: ['', [Validators.required]],
@@ -166,12 +186,20 @@ export class RegisterComponent implements OnInit, OnDestroy {
   protected onSocialSignIn(provider: 'google' | 'facebook'): void {
     if (!this.isBrowser) return;
 
-    const path = provider === 'google'
-      ? '/api/Authentication/login/google'
-      : '/api/Authentication/login/facebook';
+    const loginMethod = provider === 'google'
+      ? this.socialAuthService.signInWithGoogle()
+      : this.socialAuthService.signInWithFacebook();
 
-    const baseUrl = environment.apiBaseUrl.startsWith('http') ? environment.apiBaseUrl : '';
-    globalThis.location.href = `${baseUrl}${path}`;
+    loginMethod.subscribe({
+      next: () => {
+        this.submitSuccess = true;
+        void this.router.navigate(['/home']);
+      },
+      error: (error) => {
+        this.submitSuccess = false;
+        console.error(`${provider} login failed`, error);
+      },
+    });
   }
 
   protected get friendlyApiError(): string | null {
