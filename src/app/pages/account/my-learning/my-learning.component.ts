@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ElementRef, viewChild, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, Subject, forkJoin, of, switchMap, tap, catchError, finalize, map } from 'rxjs';
+import { Observable, Subject, forkJoin, of, switchMap, tap, catchError, finalize, map, take } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
@@ -113,11 +113,16 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
           map(courses => courses.filter(c => c.progress.status !== 'completed'))
         );
       }),
+      catchError(() => {
+        this.error.set('Unable to load your stage progress right now.');
+        return of([]);
+      }),
       tap(remaining => this.remainingCoursesSignal.set(remaining)),
       takeUntil(this.destroy$)
     ).subscribe();
 
     this.studentFacade.me().pipe(
+      take(1),
       switchMap((profile) => {
         if (!profile?.id) {
           return of([]);

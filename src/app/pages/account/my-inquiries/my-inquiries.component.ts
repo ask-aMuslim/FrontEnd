@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subject, of, switchMap } from 'rxjs';
+import { Subject, of, switchMap, take } from 'rxjs';
 import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import { StudentFacade } from '../../../api/facades/student.facade';
 import { InquiryRequestsService } from '../../../core/services/inquiry-requests.service';
@@ -50,12 +50,14 @@ export class MyInquiriesComponent implements OnInit, OnDestroy {
         this.error = null;
 
         this.studentFacade.me().pipe(
+            take(1),
             switchMap((profile) => {
-                if (!profile?.id) {
+                const requesterId = this.resolveRequesterId(profile);
+                if (!requesterId) {
                     return of([] as Inquiry[]);
                 }
 
-                return this.inquiryRequestsService.getByRequester(profile.id).pipe(
+                return this.inquiryRequestsService.getByRequester(requesterId).pipe(
                     catchError(() => of([])),
                     switchMap((response) => of(this.mapInquiries(response))),
                 );
@@ -115,5 +117,21 @@ export class MyInquiriesComponent implements OnInit, OnDestroy {
             month: 'short',
             year: 'numeric',
         });
+    }
+
+    private resolveRequesterId(profile: { id?: unknown; userId?: unknown } | null): string | null {
+        if (!profile) {
+            return null;
+        }
+
+        if (typeof profile.userId === 'string' && profile.userId.length > 0) {
+            return profile.userId;
+        }
+
+        if (typeof profile.id === 'string' && profile.id.length > 0) {
+            return profile.id;
+        }
+
+        return null;
     }
 }

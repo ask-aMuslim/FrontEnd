@@ -144,7 +144,7 @@
           let isLast = $last
         ) {
           <div class="stage-wrapper">
-            <div class="stage-container" [class.locked]="stage.isLocked">
+            <div class="stage-container">
               <h3 class="stage-title">{{ stage.title }}</h3>
               <app-course-tree 
                 [nodes]="stage.treeCourses"
@@ -159,13 +159,7 @@
             <p class="stage-description">{{ stage.description }}</p>
           </div>
           @if (!isLast) {
-            <div class="stage-connector">
-              <div class="connector-line">
-                @if (stages[i + 1].isLocked) {
-                  <img src="/academy/lock.png" alt="Locked stage" class="lock-icon" />
-                }
-              </div>
-            </div>
+              <div class="connector-line"></div>
           }
         }
       </div>

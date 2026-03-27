@@ -5,7 +5,6 @@
       <div class="hero-content">
         <div
           class="mb-3 text-center text-sm font-semibold tracking-wider text-(--color-text-caption) uppercase"
-          style="display: none"
         >
           One <span class="special-primary">God</span> | One
           <span class="special-primary">Message</span> | Many
@@ -85,7 +84,7 @@
     <div class="section-block">
       <div class="section-shell">
         <div class="section-heading" data-aos="fade-up">
-          <h2 class="eyebrow">What is "Ask a Muslim"</h2>
+          <h2 class="eyebrow">What is "Ask A Muslim"</h2>
           <p>
             A trusted platform to answer questions and guide Muslims &amp;
             non-Muslims
@@ -139,11 +138,11 @@
     </div>
   </section>
 
-  <section class="events-section">
+  <section class="events-section" style="display: none">
     <div class="section-block">
       <div class="section-shell section-shell--raised">
         <div class="section-heading" data-aos="fade-up">
-          <h2 class="eyebrow">Events and Sessions</h2>
+          <h2 class="eyebrow">Events And Sessions</h2>
           <p>
             Check out latest &amp; upcoming offline &amp; online events, and
             join to gain the right answers form scholars.
@@ -1268,75 +1267,55 @@
     </div>
   </section>
 
-  <!-- About Quran Section - Exact Figma Design -->
-  <section class="about-quran-section">
+  <section class="about-quran-section" aria-labelledby="about-quran-title">
     <div class="section-block section-block--wide">
       <div class="section-shell about-quran-shell">
-        <!-- Heading -->
-        <div class="about-quran-heading" data-aos="fade-up">
-          <h2>About Quran</h2>
-          <p>
-            Did you know that non-Arabic speaking children between ages 6 & 7
-            around the world can memorize Qur'an?
-          </p>
-        </div>
+        <article class="about-quran-banner" data-aos="fade-up">
+          <div class="about-quran-banner-content">
+            <p class="about-quran-kicker">About Quran</p>
+            <h2 id="about-quran-title">
+              The Quran is the final revelation of God to humankind.
+            </h2>
 
-        <!-- Content Container -->
-        <div class="quran-content" data-aos="fade-up">
-          <!-- Left Text Content -->
-          <div class="quran-text-left">
-            <p>
+            <p class="about-quran-text">
               From the <span>Scrolls</span> of Abraham to the
               <span>Psalms</span> of David, from the <span>Torah</span> of Moses
               to the <span>Gospel</span> of Jesus, the <span>Quran</span> is the
-              final revelation of God to Mankind.
+              preserved final revelation.
             </p>
-            <p>
-              As the only scripture that has been preserved in its original
-              form, the Quran is
-              <span>the literal word of God</span> transmitted through the Angel
-              Gabriel to Prophet Muhammad, the final messenger of God.
-            </p>
-            <p>
-              The Quran serves as the ultimate source of truth, guidance, and
-              morality for billions worldwide.
-            </p>
-          </div>
 
-          <!-- Right Quote Box -->
-          <div class="quran-quote-box">
-            <p class="quran-quote">
-              "<br />One <span>God</span><br />One <span>Message</span
-              ><br />Many <span>Prophets</span><br />"
+            <p class="about-quran-text">
+              One <span>God</span>, one <span>Message</span>, many
+              <span>Prophets</span> — a timeless source of truth, guidance, and
+              mercy.
             </p>
-          </div>
-        </div>
 
-        <!-- Button -->
-        <div class="quran-button-container">
-          <a
-            class="button quran-button"
-            href="https://www.onemessagefoundation.com/free-quran"
-            target="_blank"
-          >
-            Get Free Qur'an
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <a
+              class="quran-banner-button"
+              href="https://www.onemessagefoundation.com/free-quran"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <path
-                d="M15 3H21M21 3V9M21 3L10 14M18 13V19C18 19.5304 17.7893 20.0391 17.4142 20.4142C17.0391 20.7893 16.5304 21 16 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V8C3 7.46957 3.21071 6.96086 3.58579 6.58579C3.96086 6.21071 4.46957 6 5 6H11"
-                stroke="var(--color-button-primary-normal)"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </a>
-        </div>
+              Get Free Qur'an
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M15 3H21M21 3V9M21 3L10 14M18 13V19C18 19.5304 17.7893 20.0391 17.4142 20.4142C17.0391 20.7893 16.5304 21 16 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V8C3 7.46957 3.21071 6.96086 3.58579 6.58579C3.96086 6.21071 4.46957 6 5 6H11"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          </div>
+        </article>
       </div>
     </div>
   </section>

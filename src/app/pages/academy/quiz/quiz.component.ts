@@ -214,10 +214,30 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
             this.courseId = params.get('courseId') || '';
             this.lessonId = params.get('lessonId') || '';
+            this.resetQuizStateForRoute();
             this.loadCourseInfo();
             this.loadQuizData();
             this.checkPreviousCompletion();
         });
+    }
+
+    private resetQuizStateForRoute(): void {
+        this.stopTimer();
+        this.isFinishingQuiz = false;
+        this.quizStartTime = 0;
+
+        this.quizState.set('intro');
+        this.currentQuestionIndex.set(0);
+        this.timeRemaining.set(this.quizConfig.timePerQuestion);
+        this.showHint.set(false);
+        this.selectedOptionId.set(null);
+
+        this.activeQuizId.set(null);
+        this.activeAttemptId.set(null);
+        this.questions.set([]);
+        this.answers.set([]);
+
+        this.quizCompletionTime.set(0);
     }
 
     private checkPreviousCompletion(): void {
@@ -297,6 +317,26 @@ export class QuizComponent implements OnInit, OnDestroy {
 
         this.quizzesService.getAll(query)
             .pipe(
+                switchMap((quizzes) => {
+                    const hasQuizzes = quizzes.length > 0;
+                    const canFallbackToQuizLesson = !hasQuizzes && !this.lessonId && !!this.courseId;
+
+                    if (!canFallbackToQuizLesson) {
+                        return of(quizzes);
+                    }
+
+                    return this.academyProgressService.getAcademyLessons(this.courseId).pipe(
+                        map((lessons) => lessons.find((lesson) => lesson.type === 'quiz')?.id ?? null),
+                        switchMap((quizLessonId) => {
+                            if (!quizLessonId) {
+                                return of(quizzes);
+                            }
+
+                            return this.quizzesService.getAll({ lessonId: quizLessonId, pageSize: 50 });
+                        }),
+                        catchError(() => of(quizzes)),
+                    );
+                }),
                 switchMap((quizzes) => {
                     const activeQuiz = quizzes[0];
                     if (!activeQuiz?.id) {

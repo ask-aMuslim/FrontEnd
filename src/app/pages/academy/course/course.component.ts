@@ -44,7 +44,10 @@ interface CourseDetails {
     completedLessons: number;
     duration: string;
     isLocked: boolean;
+    hasUnmetPrerequisites: boolean;
+    unmetPrerequisiteNames: string[];
     lessonsList: Lesson[];
+    prerequisitesList: { id: string; title: string; isCompleted: boolean }[];
 }
 
 @Component({
@@ -79,6 +82,14 @@ export class CourseComponent implements OnInit, OnDestroy {
         return !!this.course?.lessonsList.some(
             (lesson) => !lesson.isLocked && lesson.type === 'quiz',
         );
+    }
+
+    private getUnlockedQuizLessonId(): string | null {
+        const quizLesson = this.course?.lessonsList.find(
+            (lesson) => !lesson.isLocked && lesson.type === 'quiz',
+        );
+
+        return quizLesson?.id ?? null;
     }
 
     get isUserAuthenticated(): boolean {
@@ -124,15 +135,19 @@ export class CourseComponent implements OnInit, OnDestroy {
         combineLatest([
             this.academyProgressService.getAcademyCourseById(this.courseId),
             this.academyProgressService.getCourseProgress(this.courseId),
-            this.academyProgressService.getCourseLessonsWithProgress(this.courseId)
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
+            this.academyProgressService.getAcademyCourses(),
+            this.academyProgressService.getStudentProgress()
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([courseData, courseProgress, lessonsWithProgress]) => {
+                next: ([courseData, courseProgress, lessonsWithProgress, allCourses, studentProgress]) => {
                     this.course = this.buildCourseDetails(
                         courseData,
                         courseProgress,
-                        lessonsWithProgress
+                        lessonsWithProgress,
+                        allCourses,
+                        studentProgress.courseProgress
                     );
                     this.error = null;
                     this.isLoading = false;
@@ -152,11 +167,43 @@ export class CourseComponent implements OnInit, OnDestroy {
     private buildCourseDetails(
         courseData: AcademyCourse,
         courseProgress: CourseProgress | undefined,
-        lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[]
+        lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[],
+        allCourses: AcademyCourse[],
+        allCourseProgress: CourseProgress[]
     ): CourseDetails {
         const isLocked = this.isUserAuthenticated
             ? courseProgress?.status === 'locked'
             : false;
+
+        // Calculate unmet prerequisites - enrich with data from allCourses if API response is thin
+        const fullCourseFromList = allCourses.find(c => c.id === courseData.id);
+        const effectivePrereqIds = (courseData.prerequisites && courseData.prerequisites.length > 0)
+            ? courseData.prerequisites
+            : (fullCourseFromList?.prerequisites ?? []);
+
+        const unmetPrerequisiteIds = effectivePrereqIds.filter(prereqId => {
+            if (prereqId === courseData.id) return false;
+            const progress = allCourseProgress.find(cp => cp.courseId === prereqId);
+            return progress?.status !== 'completed';
+        });
+
+        const unmetPrerequisiteNames = unmetPrerequisiteIds
+            .map(id => allCourses.find(c => c.id === id)?.title)
+            .filter((name): name is string => !!name);
+
+        const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+
+        const prerequisitesList = effectivePrereqIds
+            .filter(prereqId => prereqId !== courseData.id)
+            .map(id => {
+                const title = allCourses.find(c => c.id === id)?.title || 'Unknown Course';
+                const progress = allCourseProgress.find(cp => cp.courseId === id);
+                return {
+                    id,
+                    title,
+                    isCompleted: progress?.status === 'completed'
+                };
+            });
 
         return {
             id: courseData.id,
@@ -173,9 +220,12 @@ export class CourseComponent implements OnInit, OnDestroy {
             completedLessons: lessonsWithProgress.filter((l) => l.progress.isCompleted).length,
             duration: courseData.duration,
             isLocked,
+            hasUnmetPrerequisites,
+            unmetPrerequisiteNames,
             lessonsList: lessonsWithProgress.map((lesson) =>
-                this.mapLessonForDisplay(lesson, isLocked)
+                this.mapLessonForDisplay(lesson, isLocked || hasUnmetPrerequisites)
             ),
+            prerequisitesList,
         };
     }
 
@@ -236,7 +286,7 @@ export class CourseComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.course || this.course.isLocked) {
+        if (!this.course || this.course.isLocked || this.course.hasUnmetPrerequisites) {
             return;
         }
 
@@ -259,13 +309,17 @@ export class CourseComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (this.course && !this.course.isLocked) {
+        if (this.course && !this.course.isLocked && !this.course.hasUnmetPrerequisites) {
             if (!this.hasQuizLesson) {
                 return;
             }
 
-            // Updated path from academy routes
-            this.router.navigate(['quiz'], { relativeTo: this.route });
+            const quizLessonId = this.getUnlockedQuizLessonId();
+            if (!quizLessonId) {
+                return;
+            }
+
+            this.router.navigate(['quiz', quizLessonId], { relativeTo: this.route });
         }
     }
 
@@ -280,8 +334,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
         if (!lesson.isLocked) {
             if (lesson.type === 'quiz') {
-                // Updated path from academy routes
-                this.router.navigate(['quiz'], { relativeTo: this.route });
+                this.router.navigate(['quiz', lesson.id], { relativeTo: this.route });
             } else {
                 // Updated path from academy routes
                 this.router.navigate(['lesson', lesson.id], { relativeTo: this.route });

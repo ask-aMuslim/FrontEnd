@@ -28,6 +28,7 @@ interface Course extends TreeCourse {
     duration: string;
     progress: number;
     status: CourseStatus;
+    hasUnmetPrerequisites: boolean;
     thumbnailUrl?: string;
 }
 
@@ -214,7 +215,8 @@ export class AcademyComponent implements OnInit, OnDestroy {
             lessons: course.lessons,
             duration: course.duration,
             progress: progress?.progress ?? 0,
-            status: isCurrentlyLocked ? 'locked' : (progress?.status ?? 'available'),
+            status: progress?.status === 'locked' ? 'available' : (progress?.status ?? 'available'),
+            hasUnmetPrerequisites: stageLocked || hasUnfinishedPrereqs,
             thumbnailUrl: course.thumbnailUrl,
             prerequisites: course.prerequisites ?? []
         };
@@ -234,9 +236,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
     }
 
     onCourseClick(course: Course | { id: string; status: string }): void {
-        if (course.status !== 'locked' && course.status !== 'unknown') {
-            this.router.navigate(['course', course.id], { relativeTo: this.route });
-        }
+        this.router.navigate(['course', course.id], { relativeTo: this.route });
     }
 
     trackByStageNumber(_index: number, stage: Stage): number {
