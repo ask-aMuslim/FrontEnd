@@ -1,3 +1,7 @@
+---
+description: Spec-Driven Development — define a new feature spec (what & why). Creates /specs/N-feature-name/spec.md following the project constitution.
+---
+
 # Speckit Workflow: Creating Specifications (.speckit.specify)
 
 ## Overview

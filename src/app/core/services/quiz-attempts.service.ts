@@ -38,7 +38,21 @@ export class QuizAttemptsService {
 
   startAttemptForQuiz(quizId: string): Observable<string | null> {
     return this.studentFacade.me().pipe(
-      filter((profile): profile is StudentProfile & { studentId: string } => typeof profile?.studentId === 'string' && profile.studentId.length > 0),
+      map((profile) => {
+        if (!profile) {
+          return null;
+        }
+
+        const studentIdentifier = this.resolveStudentIdentifier(profile);
+
+        return studentIdentifier
+          ? {
+            ...profile,
+            studentId: studentIdentifier,
+          }
+          : null;
+      }),
+      filter((profile): profile is StudentProfile & { studentId: string } => profile !== null),
       take(1),
       switchMap((profile) => this.startAttempt({
         quizId,
@@ -67,5 +81,13 @@ export class QuizAttemptsService {
 
   private asString(value: unknown): string {
     return typeof value === 'string' ? value : '';
+  }
+
+  private resolveStudentIdentifier(profile: StudentProfile): string | null {
+    if (typeof profile.studentId === 'string' && profile.studentId.length > 0) {
+      return profile.studentId;
+    }
+
+    return null;
   }
 }

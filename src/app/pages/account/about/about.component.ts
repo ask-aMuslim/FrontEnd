@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { Subject, takeUntil, finalize } from 'rxjs';
+import { Subject, takeUntil, finalize, take } from 'rxjs';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
 import { EditPersonalInformationComponent } from './edit-personal-information/edit-personal-information.component';
@@ -86,6 +86,7 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.studentFacade
       .me()
       .pipe(
+        take(1),
         takeUntil(this.destroy$),
         finalize(() => (this.isLoading = false))
       )

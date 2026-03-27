@@ -1,3 +1,7 @@
+---
+description: Spec-Driven Development — create a technical implementation plan from an approved spec. Produces /specs/N-feature-name/plan.md with workstreams and estimates.
+---
+
 # Speckit Workflow: Creating Plans (.agents/workflows/speckit.plan.md)
 
 ## Overview

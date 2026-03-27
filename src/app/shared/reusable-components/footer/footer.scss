@@ -4,15 +4,13 @@
 
 :host {
   display: block;
-  transform: translateY(
-    -2rem
-  ); /** Keeping this from original to handle overlap visual */
+  margin-top: 4rem;
 }
 
 .site-footer {
   background-color: var(--colors-rare-grays-0);
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   position: relative;
   font-family: "Poppins", sans-serif;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.02);
@@ -306,7 +304,7 @@
 .footer-bottom {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Aligns top of texts/buttons */
+  align-items: center;
   padding-top: 0.5rem;
   @media (max-width: 1250px) {
     flex-wrap: wrap;

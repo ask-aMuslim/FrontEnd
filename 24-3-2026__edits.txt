@@ -1,0 +1,25 @@
+footer margin
+remove footer curve
+apply contact page changes
+add backslashes to links
+align center the footer buttons and info
+all titles are capital
+how can we best serve you changes in content and caption
+arc icon in about not in home page
+about and recources page last section
+what is the quran section
+some fair advice section content changes
+titles naming revision
+begin button should be disabled and the restriction message should be displayed
+
+make a meeting for academy stages and courses display
+hero section changes
+hero section hight should be 944
+title should be 72px
+caption 50% opacity and is at the bottom of the hero section
+search bar height, padding, shadow
+bubbles should be away from each other, and decrease the animation of the bubbles
+ask questions should be ask Q&A in the navbar, and Topics in the sidebar
+ensure all sections margins are typical to the design
+the auth layout caption changed
+home hero search bar placeholder changed

@@ -1,3 +1,7 @@
+---
+description: Spec-Driven Development — break an approved plan into atomic, checkboxable developer tasks. Produces /specs/N-feature-name/tasks.md ready for execution.
+---
+
 # Speckit Workflow: Creating Tasks (.agents/workflows/speckit.tasks.md)
 
 ## Overview

@@ -8,6 +8,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:ci": "ng test --watch=false --no-progress --browsers=ChromeHeadless",
     "serve:ssr:AskAMuslim": "node dist/AskAMuslim/server/server.mjs",
     "build:tokens": "style-dictionary build",
     "generate:api": "ng-openapi-gen -c ng-openapi-gen.json",
@@ -15,6 +16,8 @@
     "swagger:check": "node scripts/swagger-hash.mjs --check",
     "swagger:update": "node scripts/swagger-hash.mjs --update",
     "api:sync": "npm run swagger:check || (npm run generate:api && npm run swagger:update)",
+    "verify:local": "npm run lint && npm run build && npm run test:ci",
+    "verify:full": "npm run swagger:check && npm run verify:local",
     "speckit": "node speckit.js",
     "lint": "eslint ."
   },

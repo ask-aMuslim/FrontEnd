@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "windows": "node scripts\\agent-hooks\\session-start.cjs",
+        "linux": "node scripts/agent-hooks/session-start.cjs",
+        "osx": "node scripts/agent-hooks/session-start.cjs",
+        "timeout": 10
+      }
+    ],
+    "PreToolUse": [
+      {
+        "type": "command",
+        "windows": "node scripts\\agent-hooks\\pre-tool-use.cjs",
+        "linux": "node scripts/agent-hooks/pre-tool-use.cjs",
+        "osx": "node scripts/agent-hooks/pre-tool-use.cjs",
+        "timeout": 15
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "windows": "node scripts\\agent-hooks\\post-tool-use.cjs",
+        "linux": "node scripts/agent-hooks/post-tool-use.cjs",
+        "osx": "node scripts/agent-hooks/post-tool-use.cjs",
+        "timeout": 10
+      }
+    ]
+  }
+}

@@ -32,6 +32,25 @@
               <h2 class="section-title">Intro:</h2>
               <p class="section-text">{{ course.intro }}</p>
             </div>
+            <!-- Prerequisites Section -->
+            @if (course.prerequisitesList.length > 0) {
+              <div class="course-section">
+                <h2 class="section-title">Prerequisites:</h2>
+                <div class="prerequisites-list">
+                  @for (prereq of course.prerequisitesList; track prereq.id) {
+                    <div class="prereq-item" [class.completed]="prereq.isCompleted">
+                      <span class="status-dot"></span>
+                      <span class="prereq-title">{{ prereq.title }}</span>
+                      @if (prereq.isCompleted) {
+                        <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M20 6L9 17l-5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
             <!-- Lessons Section -->
             <div class="course-section">
               <h2 class="section-title">Lessons:</h2>
@@ -71,37 +90,22 @@
           </div>
           <!-- Action Buttons -->
           <div class="course-actions">
-            <!-- Locked State -->
-            @if (course.isLocked) {
-              <div class="locked-state">
-                <div class="info-hint">
-                  <svg
-                    class="hint-icon"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 15L12 11.25M21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C10.8181 3 9.64778 3.23279 8.55585 3.68508C7.46392 4.13738 6.47177 4.80031 5.63604 5.63604C4.80031 6.47177 4.13738 7.46392 3.68508 8.55585C3.23279 9.64778 3 10.8181 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21C14.3869 21 16.6761 20.0518 18.364 18.364C20.0518 16.6761 21 14.3869 21 12ZM12 8.25H12.008V8.242H12V8.25Z"
-                      stroke="#2196F3"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    ></path>
-                  </svg>
-                  <p class="hint-text">
-                    You must finish the quizzes of all the previous courses to
-                    unlock this course.
-                  </p>
-                </div>
-                <button class="btn btn-disabled" disabled>Begin</button>
-              </div>
-            }
-            <!-- Unlocked State -->
-            @if (!course.isLocked) {
-              <div class="unlocked-state">
+            <div class="unlocked-state" style="display: flex; align-items: center; gap: 1rem; justify-content: flex-end;">
+              @if (!isUserAuthenticated || course.isLocked || course.hasUnmetPrerequisites) {
+                <span class="restriction-msg" style="color: var(--color-text-info); border: none; background: transparent; padding: 0; font-size: 0.875rem;">
+                  @if (!isUserAuthenticated) {
+                    Please sign in to begin this course.
+                  } @else if (course.isLocked) {
+                    You must finish the quizzes of all previous stages to unlock this course.
+                  } @else if (course.hasUnmetPrerequisites) {
+                    You must complete: {{ course.unmetPrerequisiteNames.join(', ') }}
+                  }
+                </span>
+                <button class="btn btn-disabled" disabled>
+                  <span>Begin</span>
+                </button>
+              } @else {
+                <!-- Available State -->
                 @if (hasQuizLesson) {
                   <button (click)="onTakeQuizClick()" class="btn btn-ghost">
                     <span>Take the Quiz</span>
@@ -114,8 +118,8 @@
                 >
                   <span>Begin</span>
                 </button>
-              </div>
-            }
+              }
+            </div>
           </div>
         </div>
       </div>

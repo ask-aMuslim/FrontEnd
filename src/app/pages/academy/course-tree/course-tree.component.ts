@@ -5,6 +5,7 @@ export interface CourseNode {
     id: string;
     title: string;
     status: 'completed' | 'available' | 'locked' | 'in-progress';
+    hasUnmetPrerequisites?: boolean;
     description?: string;
     prerequisites?: string[];
 }
@@ -71,14 +72,46 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
 
         nodeList.forEach(n => getDepth(n.id));
 
-        const layersArr: CourseNode[][] = [];
+        const unsortedLayers: CourseNode[][] = [];
         nodeList.forEach(n => {
             const d = depthMap.get(n.id) || 0;
-            if (!layersArr[d]) layersArr[d] = [];
-            layersArr[d].push(n);
+            if (!unsortedLayers[d]) unsortedLayers[d] = [];
+            unsortedLayers[d].push(n);
         });
 
-        return layersArr;
+        // Optimization: Sort nodes within each layer to place children near parents
+        const sortedLayers: CourseNode[][] = [];
+        if (unsortedLayers.length > 0) {
+            // Layer 0 is sorted by original list order or ID for stability
+            sortedLayers[0] = [...unsortedLayers[0]].sort((a, b) => a.id.localeCompare(b.id));
+
+            for (let d = 1; d < unsortedLayers.length; d++) {
+                const prevLayer = sortedLayers[d - 1];
+                const prevLayerMap = new Map(prevLayer.map((n, i) => [n.id, i]));
+                
+                const currentLayer = [...unsortedLayers[d]].sort((a, b) => {
+                    const getBarycenter = (node: CourseNode) => {
+                        const parents = node.prerequisites || [];
+                        const parentIndices = parents
+                            .map(pId => prevLayerMap.get(pId))
+                            .filter((idx): idx is number => idx !== undefined);
+                        
+                        if (parentIndices.length === 0) return 999; // Roots or skips move to right
+                        return parentIndices.reduce((sum, idx) => sum + idx, 0) / parentIndices.length;
+                    };
+
+                    const scoreA = getBarycenter(a);
+                    const scoreB = getBarycenter(b);
+
+                    if (scoreA !== scoreB) return scoreA - scoreB;
+                    return a.id.localeCompare(b.id);
+                });
+
+                sortedLayers[d] = currentLayer;
+            }
+        }
+
+        return sortedLayers;
     });
 
     ngAfterViewInit() {
@@ -153,9 +186,6 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
 
     // Node Click Handler
     onNodeClick(node: CourseNode) {
-        if (node.status === 'locked') {
-            return;
-        }
         this.courseClick.emit(node);
     }
 }

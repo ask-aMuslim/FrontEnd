@@ -76,14 +76,14 @@ export const routes: Routes = [
               ),
             title: 'Question',
           },
-          // {
-          //   path: 'ask-assistant',
-          //   loadComponent: () =>
-          //     import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
-          //       (m) => m.AskAssistantComponent,
-          //     ),
-          //   title: 'Ask Assistant',
-          // },
+          {
+            path: 'ask-assistant',
+            loadComponent: () =>
+              import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
+                (m) => m.AskAssistantComponent,
+              ),
+            title: 'Ask Assistant',
+          },
           {
             path: 'meet-scholar',
             loadComponent: () =>
@@ -192,6 +192,12 @@ export const routes: Routes = [
           },
           {
             path: 'course/:courseId/quiz',
+            component: QuizComponent,
+            canActivate: [authGuard],
+            title: 'Quiz',
+          },
+          {
+            path: 'course/:courseId/quiz/:lessonId',
             component: QuizComponent,
             canActivate: [authGuard],
             title: 'Quiz',

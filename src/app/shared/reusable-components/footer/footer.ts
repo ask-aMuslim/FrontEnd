@@ -68,10 +68,9 @@ export class Footer {
     {
       title: 'Ask & Contact',
       links: [
-        { label: 'Ask Questions', href: '/ask-and-contact/ask-qa', external: false },
-        // { label: 'Virtual Assistant', href: '/ask-and-contact/ask-assistant', external: false },
+        { label: 'Topics', href: '/ask-and-contact/ask-qa', external: false },
         { label: 'Meet Scholar', href: '/ask-and-contact/meet-scholar', external: false },
-        { label: 'Send Inquiry', href: '/ask-and-contact/send-inquiry', external: false },
+        { label: 'Contact', href: '/contact', external: false },
       ],
     },
   ];
@@ -79,31 +78,31 @@ export class Footer {
   protected readonly socialLinks: SocialLink[] = [
     {
       icon: '/icons/icons-social-apps/facebook.svg',
-      label: 'askamuslimofficial',
+      label: '\\askamuslimofficial',
       href: 'https://www.facebook.com/askamuslimofficial',
       ariaLabel: 'Visit our Facebook page',
     },
     {
       icon: '/icons/icons-social-apps/instagram.svg',
-      label: 'askamuslim',
+      label: '\\askamuslim',
       href: 'https://www.instagram.com/askamuslim',
       ariaLabel: 'Visit our Instagram profile',
     },
     {
       icon: '/icons/icons-social-apps/youtube.svg',
-      label: 'askamuslim',
+      label: '\\askamuslim',
       href: 'https://www.youtube.com/@AskAMuslim',
       ariaLabel: 'Visit our YouTube channel',
     },
     {
       icon: '/icons/icons-social-apps/threads.svg',
-      label: 'askamuslim',
+      label: '\\askamuslim',
       href: 'https://www.threads.com/@askamuslim',
       ariaLabel: 'Visit our Threads profile',
     },
     {
       icon: '/icons/icons-social-apps/tiktok.svg',
-      label: 'askamuslim_',
+      label: '\\askamuslim_',
       href: 'https://tiktok.com/@askamuslim_',
       ariaLabel: 'Visit our TikTok profile',
     },

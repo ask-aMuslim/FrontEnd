@@ -76,6 +76,55 @@
   color: var(--colors-rare-grays-80, #343a40);
 }
 
+.prerequisites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.prereq-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--colors-rare-grays-5, #f8f9fa);
+  border-radius: 0.5rem;
+  border: 1px solid var(--colors-rare-grays-20, #e9ecef);
+  transition: all 0.2s;
+
+  &.completed {
+    background: var(--colors-green-5, #f0fdf4);
+    border-color: rgba(21, 107, 64, 0.1);
+    
+    .status-dot {
+      background: var(--colors-green-100, #156b40);
+    }
+    
+    .prereq-title {
+      color: var(--colors-green-100, #156b40);
+      font-weight: 500;
+    }
+
+    .check-icon {
+      color: var(--colors-green-100, #156b40);
+      margin-left: auto;
+    }
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--colors-rare-grays-40, #ced4da);
+  }
+
+  .prereq-title {
+    font-size: 0.938rem;
+    color: var(--colors-rare-grays-80, #343a40);
+  }
+}
+
 // ─── Action Buttons ───
 .course-actions {
   display: flex;
