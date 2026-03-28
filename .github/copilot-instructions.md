@@ -35,6 +35,7 @@ Ignore deleted legacy instruction files and avoid loading broad skill packs unle
 - **Chrome DevTools MCP (mandatory for UI tasks):**
   - Validate rendered DOM states, console cleanliness, and network interactions.
   - Capture evidence for component states, route transitions, and responsive behavior.
+  - Verify the implementation using ONLY the Chrome DevTools MCP attached to my current active tab. Do NOT use Playwright to navigate, interact, or extract page state.
 - **Postman MCP (mandatory for API tasks):**
   - Validate endpoint behavior, payload contracts, status codes, and regression coverage.
   - Prefer collection/folder/request validation that mirrors affected frontend use-cases.

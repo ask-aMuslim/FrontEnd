@@ -1,30 +1,36 @@
 <div class="home-page">
-  <section id="hero" class="hero-section py-30">
+  <section id="hero" class="hero-section">
     <div class="hero-surface" aria-hidden="true"></div>
     <div class="section-block section-block--wide">
       <div class="hero-content">
-        <div
-          class="mb-3 text-center text-sm font-semibold tracking-wider text-(--color-text-caption) uppercase"
-        >
-          One <span class="special-primary">God</span> | One
-          <span class="special-primary">Message</span> | Many
-          <span class="special-primary">Prophets</span>
+        <div class="hero-message-pill">
+          <span>One God</span>
+          <span class="hero-message-separator" aria-hidden="true">∙</span>
+          <span>One Message</span>
+          <span class="hero-message-separator" aria-hidden="true">∙</span>
+          <span>Many Prophets</span>
         </div>
-        <div
-          class="mx-auto rounded-full border border-(--colors-green-30) text-(--color-text-caption) bg-transparent px-4 py-1 text-sm font-medium hint"
-        >
-          <span class="text-(--color-button-secondary-normal)"
-            >2,000,000,000+</span
-          >
-          Muslim brothers &amp; sisters
-          <wbr />
-          around the world
-        </div>
+
         <h1 class="hero-title">
-          To <span>Understand</span><br />You Just Need To
-          <br />
-          <span>Ask</span>
+          Questions<br />
+          About Islam?<br />
+          Ask A Muslim.
         </h1>
+
+        <!-- Auto-scrolling suggestion bubbles -->
+        <div class="suggestion-bubbles" #bubblesContainer>
+          <div class="suggestion-bubbles-track" #bubblesTrack>
+            @for (bubble of heroBubbles; track $index; let i = $index) {
+            <a
+              class="suggestion-bubble"
+              [routerLink]="'/ask-and-contact'"
+              [queryParams]="{ question: bubble }"
+            >
+              {{ bubble }}
+            </a>
+            }
+          </div>
+        </div>
 
         <form
           class="hero-search"
@@ -33,48 +39,107 @@
           #searchForm="ngForm"
         >
           <label class="sr-only" for="home-search">Search question</label>
-          <div class="search-wrapper">
-            <img
-              src="/icons/icons-24/search.svg"
-              alt="Search"
-              class="search-icon"
-            />
-            <input
-              id="home-search"
-              name="q"
-              placeholder="Do you have a religious question in mind?"
-              [(ngModel)]="searchQuery"
-            />
-          </div>
+          <app-hero-search-input
+            [inputId]="'home-search'"
+            [value]="searchQuery"
+            [placeholder]="'ask to understand ..'"
+            [ariaLabel]="'Search answered questions'"
+            (valueChange)="searchQuery = $event"
+            (submitted)="onSearch()"
+          ></app-hero-search-input>
 
-          <!-- Auto-scrolling suggestion bubbles -->
-          <div class="suggestion-bubbles" #bubblesContainer>
-            <div class="suggestion-bubbles-track" #bubblesTrack>
-              @for (bubble of heroBubbles; track $index; let i = $index) {
-              <a
-                class="suggestion-bubble"
-                [routerLink]="'/ask-and-contact'"
-                [queryParams]="{ question: bubble }"
-              >
-                {{ bubble }}
-              </a>
-              }
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <button type="submit" class="button">Search</button>
+          <div class="hero-search-actions">
+            <button type="submit" class="button hero-search-submit">
+              Search
+            </button>
           </div>
         </form>
 
         <div class="hero-stat-line">
-          @for (stat of heroStats; track $index; let isLast = $last) {
+          @for (stat of heroStats; track $index) {
           <span class="hero-stat-item">
-            <strong>{{ stat.value }}</strong> {{ stat.label }} @if (!isLast) {
-            <span class="stat-separator">•</span>
-            }
+            <span class="hero-stat-icon" aria-hidden="true">
+              @if (stat.icon === 'questions') {
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M8.00016 14.6663C11.6821 14.6663 14.6668 11.6816 14.6668 7.99967C14.6668 4.31778 11.6821 1.33301 8.00016 1.33301C4.31826 1.33301 1.3335 4.31778 1.3335 7.99967C1.3335 9.10942 1.60473 10.1558 2.08468 11.0759C2.21394 11.3236 2.25695 11.6078 2.18302 11.8778L1.66683 13.7625C1.56365 14.1391 1.90729 14.4828 2.28392 14.3796L4.16867 13.8634C4.4387 13.7895 4.72289 13.8325 4.97054 13.9618C5.89066 14.4418 6.93708 14.713 8.04683 14.713"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M6.63623 6.00002C6.79313 5.55358 7.10251 5.17787 7.51028 4.93828C7.91806 4.69869 8.39795 4.61123 8.86415 4.69122C9.33035 4.77121 9.75323 5.01357 10.0577 5.375C10.3622 5.73644 10.5289 6.1938 10.5282 6.66635C10.5282 8.00007 8.52807 8.66679 8.52807 8.66679"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M8 11.332H8.00667"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              } @else {
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M11 7.33366C12.4728 7.33366 13.6667 6.13975 13.6667 4.66699C13.6667 3.19423 12.4728 2.00033 11 2.00033C9.52724 2.00033 8.33334 3.19423 8.33334 4.66699C8.33334 6.13975 9.52724 7.33366 11 7.33366Z"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M4.99984 6.66634C6.10441 6.66634 6.99984 5.77091 6.99984 4.66634C6.99984 3.56177 6.10441 2.66634 4.99984 2.66634C3.89527 2.66634 2.99984 3.56177 2.99984 4.66634C2.99984 5.77091 3.89527 6.66634 4.99984 6.66634Z"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M1.6665 13.3337V12.667C1.6665 11.9598 1.94746 11.2815 2.44756 10.7814C2.94765 10.2813 3.62592 10.0003 4.33317 10.0003H5.6665C6.37375 10.0003 7.05203 10.2813 7.55212 10.7814C8.05222 11.2815 8.33317 11.9598 8.33317 12.667V13.3337"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.6665 13.3337V12.667C9.6665 11.9598 9.94746 11.2815 10.4476 10.7814C10.9476 10.2813 11.6259 10.0003 12.3332 10.0003H13.6665C14.3737 10.0003 15.052 10.2813 15.5521 10.7814"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              }
+            </span>
+            <span class="hero-stat-text"
+              >{{ stat.value }} {{ stat.label }}</span
+            >
           </span>
           }
+        </div>
+
+        <div class="hero-caption-line">
+          <span class="hero-caption-value">2,000,000,000+</span>
+          <span class="hero-caption-copy"
+            >Muslim brothers &amp; sisters around the world</span
+          >
         </div>
       </div>
     </div>
@@ -84,10 +149,12 @@
     <div class="section-block">
       <div class="section-shell">
         <div class="section-heading" data-aos="fade-up">
-          <h2 class="eyebrow">What is "Ask A Muslim"</h2>
+          <h2 class="eyebrow section-title-with-accent">
+            What is Ask A Muslim
+          </h2>
           <p>
-            A trusted platform to answer questions and guide Muslims &amp;
-            non-Muslims
+            A trusted platform designed to answer questions, guide Muslims and
+            non-Muslims, and provide structured learning resources.
           </p>
         </div>
 
@@ -128,7 +195,7 @@
                 </svg>
               </span>
               } @if (feature.status === 'soon') {
-              <span class="feature-soon">{{ feature.cta }}..</span>
+              <span class="feature-soon">{{ feature.cta }}</span>
               }
             </div>
           </a>
@@ -142,7 +209,7 @@
     <div class="section-block">
       <div class="section-shell section-shell--raised">
         <div class="section-heading" data-aos="fade-up">
-          <h2 class="eyebrow">Events And Sessions</h2>
+          <h2 class="eyebrow section-title-with-accent">Events And Sessions</h2>
           <p>
             Check out latest &amp; upcoming offline &amp; online events, and
             join to gain the right answers form scholars.
@@ -196,7 +263,7 @@
       <div class="section-shell islam-shell">
         <!-- Main Heading -->
         <div class="islam-heading" data-aos="fade-up">
-          <h2>What is Islam</h2>
+          <h2 class="section-title-with-accent">What is Islam</h2>
           <p>
             Islam is a monotheistic Abrahamic religion that teaches that there
             is only one God and all prophets including Muses, Esa and Muhammad
@@ -1267,36 +1334,42 @@
     </div>
   </section>
 
-  <section class="about-quran-section" aria-labelledby="about-quran-title">
+  <section class="what-is-quran-section" aria-labelledby="what-is-quran-title">
     <div class="section-block section-block--wide">
-      <div class="section-shell about-quran-shell">
-        <article class="about-quran-banner" data-aos="fade-up">
-          <div class="about-quran-banner-content">
-            <p class="about-quran-kicker">About Quran</p>
-            <h2 id="about-quran-title">
-              The Quran is the final revelation of God to humankind.
-            </h2>
+      <div class="section-shell what-is-quran-shell">
+        <div class="what-is-quran-header" data-aos="fade-up">
+          <h2 id="what-is-quran-title" class="section-title-with-accent">
+            What is The Quran
+          </h2>
+        </div>
 
-            <p class="about-quran-text">
-              From the <span>Scrolls</span> of Abraham to the
-              <span>Psalms</span> of David, from the <span>Torah</span> of Moses
-              to the <span>Gospel</span> of Jesus, the <span>Quran</span> is the
-              preserved final revelation.
+        <div class="what-is-quran-content" data-aos="fade-up">
+          <article class="quran-description-panel">
+            <p>
+              From the <strong>Scrolls</strong> of Abraham to the
+              <strong>Psalms</strong> of David, from the
+              <strong>Torah</strong> of Moses to the <strong>Gospel</strong> of
+              Jesus, the <strong>Quran</strong> is the final revelation of God
+              to humankind.
             </p>
-
-            <p class="about-quran-text">
-              One <span>God</span>, one <span>Message</span>, many
-              <span>Prophets</span> — a timeless source of truth, guidance, and
-              mercy.
+            <p>
+              As the only scripture that has been preserved in its original
+              form, the Quran is the
+              <strong>literal word of God</strong> transmitted through the Angel
+              Gabriel to Prophet Muhammad, the final messenger of God.
+            </p>
+            <p>
+              The Quran serves as the ultimate source of truth, guidance, and
+              morality for billions worldwide.
             </p>
 
             <a
-              class="quran-banner-button"
+              class="quran-outline-button"
               href="https://www.onemessagefoundation.com/free-quran"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Get Free Qur'an
+              Get Free Qur’an
               <svg
                 width="24"
                 height="24"
@@ -1314,47 +1387,52 @@
                 />
               </svg>
             </a>
-          </div>
-        </article>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-serve" aria-labelledby="home-serve-title">
+    <div class="section-block section-block--wide">
+      <div class="home-serve__shell" data-aos="fade-up">
+        <h2 id="home-serve-title" class="home-serve__title">
+          Find the Right Message for You
+        </h2>
+
+        <div class="home-serve__grid">
+          @for (card of serveAudienceCards; track card.title; let i = $index) {
+          <article
+            class="home-serve__card"
+            [class.home-serve__card--tinted]="i % 2 === 0"
+          >
+            <h3>{{ card.title }}</h3>
+          </article>
+          }
+        </div>
       </div>
     </div>
   </section>
 
   <section class="advice-section">
-    <div class="rounded-bar py-14"></div>
-    <div class="section-block" data-aos="fade-up">
-      <p class="eyebrow">Here is a good advice for you!</p>
-      <p class="blockquote">{{ adviceQuote }}</p>
-      <a class="button-light" [routerLink]="'/ask-and-contact'">Start Asking</a>
-      <p class="advice-caption">
-        “What is the most important thing in your life than to understand the
-        purpose of it.”
-      </p>
-    </div>
-  </section>
-
-  @if (!authService.isAuthenticated()) {
-  <section class="home-serve" aria-labelledby="home-serve-title">
-    <div class="section-container">
-      <div class="section-block">
-        <div class="section-shell home-serve__shell">
-          <div class="section-heading">
-            <p class="about-eyebrow">Find the Right Message for You</p>
-            <h2 id="home-serve-title" class="eyebrow">
-              How can we best serve you?
-            </h2>
-          </div>
-
-          <div class="home-serve__grid">
-            @for (card of serveAudienceCards; track card.title) {
-            <article class="home-serve__card">
-              <h3>{{ card.title }}</h3>
-            </article>
-            }
-          </div>
-        </div>
+    <div class="section-block section-block--wide">
+      <div class="advice-shell" data-aos="fade-up">
+        <h2 class="advice-title">Some Fair Advice</h2>
+        <p class="advice-quote">
+          "Write a list of any questions you may have.<br />
+          Then ask scholars of your current religion or faith to answer them.<br />
+          Finally, visit your nearest mosque and ask an Islamic scholar the same
+          questions."
+        </p>
+        <a class="advice-button" [routerLink]="'/ask-and-contact'"
+          >Start Asking</a
+        >
+        <p class="advice-caption">
+          &rarr; Because what could be more important than knowing your life's
+          purpose?<br />
+          “So ask the people of knowledge if you do not know” Quran 16:43.
+        </p>
       </div>
     </div>
   </section>
-  }
 </div>

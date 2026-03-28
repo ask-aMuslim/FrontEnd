@@ -297,6 +297,11 @@
   font-weight: 500;
   line-height: 1.6;
   color: var(--color-text-body);
+
+  strong {
+    font-weight: 700;
+    color: inherit;
+  }
 }
 
 .about-timeline {
@@ -422,7 +427,6 @@
   inset: 0;
   background-image: url("/backgrounds/islamic-pattern.svg");
   background-position: center;
-  // opacity: 0.08;
   pointer-events: none;
 }
 
@@ -432,9 +436,9 @@
 }
 
 .about-mission__card {
-  background: var(--color-card-surface-secondary);
-  border-left: 8px solid var(--color-button-primary-normal);
-  border-right: 8px solid var(--color-button-primary-normal);
+  background: #fdf9ee;
+  border-left: 8px solid #156b40;
+  border-right: 8px solid #156b40;
   border-radius: 8px;
   padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3.5vw, 2rem);
   text-align: center;
@@ -444,8 +448,20 @@
     font-size: clamp(1.25rem, 3.4vw, 2rem);
     line-height: 1.6;
     font-weight: 600;
-    color: var(--color-text-body);
+    color: #343a40;
   }
+}
+
+.about-mission__accent {
+  font-weight: 600;
+}
+
+.about-mission__accent--primary {
+  color: #156b40;
+}
+
+.about-mission__accent--secondary {
+  color: #cda736;
 }
 
 .about-mission__cta {
@@ -701,6 +717,50 @@
   }
 }
 
+/* 6) QUESTIONS CTA (copied from resources) */
+
+.resources-questions-cta {
+  background: #fdf9ee;
+  padding: 3rem 0 1.5rem;
+}
+
+.resources-questions-cta__container {
+  background: #fdf9ee;
+  border-radius: 16px;
+  padding: clamp(2rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem);
+  text-align: center;
+}
+
+.resources-questions-cta__title {
+  margin: 0;
+  color: #010d05;
+  font-size: clamp(1.5rem, 3.6vw, 2rem);
+  line-height: 1.5;
+  letter-spacing: -0.5px;
+  font-weight: 600;
+}
+
+.resources-questions-cta__subtitle {
+  margin: 1rem auto 0;
+  max-width: 52.5rem;
+  color: #343a40;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.resources-questions-cta__actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.about-button--questions {
+  min-width: 12.5rem;
+}
+
 /* Responsive checkpoints */
 
 @media (max-width: 960px) {
@@ -862,6 +922,18 @@
 
   .about-highlight-card p {
     font-size: 0.9375rem;
+  }
+
+  .resources-questions-cta {
+    padding: 2.5rem 0;
+  }
+
+  .resources-questions-cta__actions {
+    gap: 0.75rem;
+  }
+
+  .about-button--questions {
+    width: 100%;
   }
 }
 

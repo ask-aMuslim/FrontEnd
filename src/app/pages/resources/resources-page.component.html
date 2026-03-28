@@ -14,8 +14,11 @@
         <h1 id="resources-hero-title">{{ hero.title }}</h1>
         <p class="resources-hero__subtitle">{{ hero.subtitle }}</p>
 
+        <p class="resources-hero__cta">{{ hero.ctaLabel }}</p>
+
         <img
           src="/icons/gate.svg"
+          alt=""
           class="hero-gate--single"
           aria-hidden="true"
         />
@@ -27,42 +30,57 @@
     <section
       class="resources-gallery"
       [class.resources-gallery--surface]="gallery.surface === 'surface'"
-      [attr.aria-label]="gallery.title"
+      [attr.aria-label]="gallery.title || 'Resources gallery'"
       data-aos="fade-up"
     >
       <div class="section-container">
         <div class="section-block section-block--wide">
-          <div
-            class="resources-tabs"
-            role="tablist"
-            [attr.aria-label]="gallery.title + ' categories'"
-          >
-            @for (tab of gallery.tabs; track trackByTabId($index, tab)) {
-              <button
-                type="button"
-                role="tab"
-                class="resources-tab"
-                [class.resources-tab--active]="
-                  isGalleryTabActive(gallery.id, tab.id)
-                "
-                [attr.aria-selected]="isGalleryTabActive(gallery.id, tab.id)"
-                [attr.tabindex]="
-                  isGalleryTabActive(gallery.id, tab.id) ? 0 : -1
-                "
-                (click)="selectGalleryTab(gallery.id, tab.id)"
-                (keydown)="onGalleryTabKeydown($event, gallery, tab.id)"
-              >
-                <span>{{ tab.label }}</span>
-              </button>
-            }
-          </div>
+          @if (gallery.eyebrow || gallery.title) {
+            <header class="resources-gallery__header">
+              @if (gallery.eyebrow) {
+                <p class="resources-gallery__eyebrow">{{ gallery.eyebrow }}</p>
+              }
+              @if (gallery.title) {
+                <h2 class="resources-gallery__title">{{ gallery.title }}</h2>
+              }
+            </header>
+          }
 
-          <div
-            class="resources-grid"
-            [class.fade-in]="animationClasses()[gallery.id]"
-            role="list"
-            aria-label="Resource cards"
-          >
+          @if (gallery.id === "gallery-1") {
+            <div
+              class="resources-tabs"
+              role="tablist"
+              [class.resources-tabs--two]="gallery.tabs.length === 2"
+              [attr.aria-label]="gallery.title || 'Resource categories'"
+            >
+              @for (tab of gallery.tabs; track trackByTabId($index, tab)) {
+                <button
+                  type="button"
+                  role="tab"
+                  class="resources-tab"
+                  [class.resources-tab--active]="
+                    isGalleryTabActive(gallery.id, tab.id)
+                  "
+                  [attr.aria-selected]="isGalleryTabActive(gallery.id, tab.id)"
+                  [attr.tabindex]="
+                    isGalleryTabActive(gallery.id, tab.id) ? 0 : -1
+                  "
+                  (click)="selectGalleryTab(gallery.id, tab.id)"
+                  (keydown)="onGalleryTabKeydown($event, gallery, tab.id)"
+                >
+                  <span class="resources-tab__label">{{ tab.label }}</span>
+                  @if (tab.hasIndicator) {
+                    <span
+                      class="resources-tab__indicator"
+                      aria-hidden="true"
+                    ></span>
+                  }
+                </button>
+              }
+            </div>
+          }
+
+          <div class="resources-grid" role="list" aria-label="Resource cards">
             @for (
               card of visibleCardsByGallery()[gallery.id];
               track trackByCardId($index, card)
@@ -139,12 +157,7 @@
             card of newMuslimCards;
             track trackByNewMuslimCardId($index, card)
           ) {
-            <article
-              class="new-muslim-card"
-              [class.new-muslim-card--full]="card.column === 'full'"
-              role="listitem"
-              tabindex="0"
-            >
+            <article class="new-muslim-card" role="listitem">
               <div class="new-muslim-card__text">
                 <h3>{{ card.title }}</h3>
               </div>
@@ -159,9 +172,42 @@
     </div>
   </section>
 
-  <section class="resources-footer-spacer" aria-hidden="true">
+  <section
+    class="resources-questions-cta"
+    aria-labelledby="resources-questions-cta-title"
+    data-aos="fade-up"
+  >
     <div class="section-container">
-      <div class="section-block section-block--wide"></div>
+      <div class="section-block section-block--wide">
+        <div class="resources-questions-cta__container">
+          <h2
+            id="resources-questions-cta-title"
+            class="resources-questions-cta__title"
+          >
+            {{ resourcesCta.title }}
+          </h2>
+          <p class="resources-questions-cta__subtitle">
+            {{ resourcesCta.subtitle }}
+          </p>
+
+          <div class="resources-questions-cta__actions">
+            <a
+              class="resources-button resources-button--outline resources-button--questions"
+              [href]="resourcesCta.requestQuranUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ resourcesCta.requestQuranLabel }}
+            </a>
+            <a
+              class="resources-button resources-button--filled resources-button--questions"
+              [href]="resourcesCta.askQuestionUrl"
+            >
+              {{ resourcesCta.askQuestionLabel }}
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </div>

@@ -10,6 +10,10 @@ import {
     AcademyBreadcrumbItem,
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
+    AcademyCourseSidebarComponent,
+    AcademySidebarLessonItem,
+} from '../shared/academy-course-sidebar/academy-course-sidebar.component';
+import {
     AcademyCourse,
     AcademyLesson,
     CourseProgress,
@@ -53,7 +57,7 @@ interface CourseDetails {
 @Component({
     selector: 'app-course',
     standalone: true,
-    imports: [RouterLink, AcademyPageShellComponent],
+    imports: [RouterLink, AcademyPageShellComponent, AcademyCourseSidebarComponent],
     templateUrl: './course.component.html',
     styleUrls: ['./course.component.scss'],
 })
@@ -326,7 +330,7 @@ export class CourseComponent implements OnInit, OnDestroy {
     /**
      * Navigate to specific lesson
      */
-    onLessonClick(lesson: Lesson): void {
+    onLessonClick(lesson: AcademySidebarLessonItem): void {
         if (!this.authService.isAuthenticated()) {
             this.showSignInPrompt = true;
             return;

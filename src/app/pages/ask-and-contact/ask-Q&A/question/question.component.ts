@@ -454,13 +454,16 @@ export class QuestionComponent implements OnDestroy {
   }
 
   async downloadPdf(): Promise<void> {
+    const titleText = this.title || 'Question';
+    const answerHtml = this.prepareAnswerHtmlForPdf();
+    let exportContainer: HTMLDivElement | null = null;
+
     try {
       const jsPDF = (await import('jspdf')).jsPDF;
       const html2canvas = (await import('html2canvas')).default;
       const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-      const titleText = this.title || 'Question';
 
-      const exportContainer = document.createElement('div');
+      exportContainer = document.createElement('div');
       exportContainer.style.position = 'fixed';
       exportContainer.style.left = '-10000px';
       exportContainer.style.top = '0';
@@ -471,7 +474,6 @@ export class QuestionComponent implements OnDestroy {
       exportContainer.style.fontFamily = 'Arial, sans-serif';
       exportContainer.style.lineHeight = '1.65';
 
-      const answerHtml = this.answerHtmlRaw ?? this.escapeHtml(this.answer || '').replaceAll('\n', '<br/>');
       const questionImage = this.imageUrl
         ? `<img src="${this.escapeHtml(this.imageUrl)}" alt="${this.escapeHtml(titleText)}" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0 20px;" />`
         : '';
@@ -483,16 +485,16 @@ export class QuestionComponent implements OnDestroy {
       `;
 
       document.body.appendChild(exportContainer);
+      await this.inlineContainerImages(exportContainer);
       await this.waitForImages(exportContainer);
 
       const canvas = await html2canvas(exportContainer, {
         scale: 2,
         useCORS: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false,
       });
-
-      exportContainer.remove();
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -518,25 +520,128 @@ export class QuestionComponent implements OnDestroy {
       // fallback: open print dialog for manual PDF
       const printWindow = globalThis.open('', '_blank');
       if (printWindow) {
-        const html = `<html><head><title>${this.title}</title></head><body><h1>${this.title}</h1><pre>${this.answer}</pre></body></html>`;
+        const html = `
+          <html>
+            <head>
+              <title>${this.escapeHtml(titleText)}</title>
+              <style>
+                body { font-family: Arial, sans-serif; color: #111827; line-height: 1.7; padding: 24px; }
+                h1 { margin: 0 0 16px; }
+                img { max-width: 100%; height: auto; display: block; margin: 12px 0; }
+              </style>
+            </head>
+            <body>
+              <h1>${this.escapeHtml(titleText)}</h1>
+              ${this.imageUrl ? `<img src="${this.escapeHtml(this.imageUrl)}" alt="${this.escapeHtml(titleText)}" />` : ''}
+              <div>${answerHtml}</div>
+            </body>
+          </html>
+        `;
         printWindow.document.open();
+        printWindow.document.write(html);
         printWindow.document.close();
-        // populate body safely
-        if (printWindow.document.body) {
-          printWindow.document.body.innerHTML = html;
-        } else {
-          // in case body isn't ready yet
-          printWindow.document.addEventListener('DOMContentLoaded', () => {
-            const body = printWindow.document.body;
-            if (body) {
-              body.innerHTML = html;
-            }
-          });
-        }
         printWindow.focus();
         printWindow.print();
       }
+    } finally {
+      exportContainer?.remove();
     }
+  }
+
+  private prepareAnswerHtmlForPdf(): string {
+    const rawHtml = this.answerHtmlRaw ?? this.escapeHtml(this.answer || '').replaceAll('\n', '<br/>');
+    return this.normalizeHtmlMediaSources(rawHtml);
+  }
+
+  private normalizeHtmlMediaSources(html: string): string {
+    const parser = new DOMParser();
+    const documentNode = parser.parseFromString(`<div id="pdf-answer-root">${html}</div>`, 'text/html');
+    const root = documentNode.body.querySelector('#pdf-answer-root');
+    if (!root) {
+      return html;
+    }
+
+    const images = Array.from(root.querySelectorAll('img'));
+    for (const image of images) {
+      const srcCandidate = (image.getAttribute('src') ?? image.dataset['src'] ?? '').trim();
+      if (!srcCandidate) {
+        continue;
+      }
+
+      const normalizedSrc = this.isInlineImageSource(srcCandidate)
+        ? srcCandidate
+        : (toApiMediaUrl(srcCandidate) ?? srcCandidate);
+
+      image.setAttribute('src', normalizedSrc);
+      image.removeAttribute('srcset');
+      image.removeAttribute('sizes');
+      image.setAttribute('loading', 'eager');
+      image.style.maxWidth = '100%';
+      image.style.height = 'auto';
+      image.style.display = 'block';
+      image.style.margin = '12px 0';
+    }
+
+    return root.innerHTML;
+  }
+
+  private async inlineContainerImages(container: HTMLElement): Promise<void> {
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      images.map(async (image) => {
+        const source = (image.getAttribute('src') ?? '').trim();
+        if (!source || this.isInlineImageSource(source)) {
+          return;
+        }
+
+        const normalizedSource = toApiMediaUrl(source) ?? source;
+        image.setAttribute('crossorigin', 'anonymous');
+
+        try {
+          const response = await fetch(normalizedSource, {
+            mode: 'cors',
+            cache: 'force-cache',
+          });
+
+          if (!response.ok) {
+            image.setAttribute('src', normalizedSource);
+            return;
+          }
+
+          const blob = await response.blob();
+          const dataUrl = await this.convertBlobToDataUrl(blob);
+          image.setAttribute('src', dataUrl);
+        } catch {
+          image.setAttribute('src', normalizedSource);
+        }
+      }),
+    );
+  }
+
+  private isInlineImageSource(value: string): boolean {
+    return value.startsWith('data:') || value.startsWith('blob:');
+  }
+
+  private convertBlobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+          return;
+        }
+
+        reject(new Error('Failed to convert image blob to data URL.'));
+      };
+      reader.onerror = () => {
+        reject(reader.error ?? new Error('Unable to read image blob.'));
+      };
+      reader.readAsDataURL(blob);
+    });
   }
 
   private async waitForImages(container: HTMLElement): Promise<void> {

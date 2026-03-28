@@ -66,22 +66,151 @@
             </div>
 
             <div academy-page-sidebar>
-              <app-academy-course-sidebar
-                [stageLabel]="'Stage ' + courseInfo().stage"
-                [title]="
-                  'Course ' + courseInfo().code + ': ' + courseInfo().title
-                "
-                [stats]="[
-                  'Lesson: ' +
-                    courseInfo().currentLesson +
-                    '/' +
-                    courseInfo().totalLessons,
-                  'Duration: ' + courseInfo().duration,
-                ]"
-                [lessons]="lessons()"
-                [showReadyDividerBeforeQuiz]="true"
-                [allowLessonSelection]="false"
-              />
+              <aside class="sidebar" aria-label="Course lessons">
+                <div class="course-info-card">
+                  <div class="course-header">
+                    <span class="stage-label"
+                      >Stage {{ courseInfo().stage }}</span
+                    >
+                    <h3 class="sidebar-title">
+                      Course {{ courseInfo().code }}: {{ courseInfo().title }}
+                    </h3>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="course-stats">
+                    <p class="stat-item">
+                      Lesson: {{ courseInfo().currentLesson }}/{{
+                        courseInfo().totalLessons
+                      }}
+                    </p>
+                    <p class="stat-item">
+                      Duration: {{ courseInfo().duration }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="lessons-list">
+                  @for (
+                    lesson of lessons();
+                    track trackByLessonId($index, lesson)
+                  ) {
+                    @if (lesson.type === "quiz") {
+                      <div class="lessons-separator">
+                        <div class="separator-line"></div>
+                        <span class="separator-text">Ready?</span>
+                        <div class="separator-line"></div>
+                      </div>
+                    }
+                    <div
+                      class="lesson-item"
+                      [class.completed]="lesson.isCompleted"
+                      [class.current]="lesson.isCurrent"
+                    >
+                      <div class="lesson-icon">
+                        @if (lesson.isCompleted) {
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        } @else if (lesson.type === "quiz") {
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M14.6659 12H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M14.6659 8.44336H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        }
+                      </div>
+                      <div class="lesson-info">
+                        <div class="lesson-title">{{ lesson.title }}</div>
+                        <div class="lesson-duration">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M3.7998 14H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M3.7998 2H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ lesson.duration }}</span>
+                        </div>
+                      </div>
+                      @if (lesson.hasNotification) {
+                        <div class="notification-dot"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              </aside>
             </div>
           </app-academy-page-shell>
         }
@@ -295,7 +424,7 @@
                         class="hint-toggle"
                         (click)="toggleHint()"
                       >
-                        <span class="hint-icon">ðŸ’¡</span>
+                        <span class="hint-icon">­ƒÆí</span>
                         <span>Show Hint...</span>
                         <svg
                           class="chevron-icon"
@@ -538,21 +667,143 @@
             </div>
 
             <div academy-page-sidebar>
-              <app-academy-course-sidebar
-                [stageLabel]="'Stage ' + courseInfo().stage"
-                [title]="
-                  'Course ' + courseInfo().code + ': ' + courseInfo().title
-                "
-                [stats]="[
-                  'Lesson: ' +
-                    courseInfo().currentLesson +
-                    '/' +
-                    courseInfo().totalLessons,
-                  'Duration: ' + courseInfo().duration,
-                ]"
-                [lessons]="lessons()"
-                [allowLessonSelection]="false"
-              />
+              <aside class="course-sidebar" aria-label="Course lessons">
+                <div class="sidebar-header">
+                  <div class="stage-label">Stage {{ courseInfo().stage }}</div>
+                  <h2 class="course-title">
+                    Course {{ courseInfo().code }}: {{ courseInfo().title }}
+                  </h2>
+                </div>
+                <div class="sidebar-divider"></div>
+                <div class="course-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Lesson:</span
+                    ><span class="stat-value"
+                      >{{ courseInfo().currentLesson }}/{{
+                        courseInfo().totalLessons
+                      }}</span
+                    >
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Duration:</span
+                    ><span class="stat-value">{{ courseInfo().duration }}</span>
+                  </div>
+                </div>
+                <div class="lessons-list">
+                  @for (
+                    lesson of lessons();
+                    track trackByLessonId($index, lesson)
+                  ) {
+                    <div
+                      class="lesson-item"
+                      [class.completed]="lesson.isCompleted"
+                      [class.current]="lesson.isCurrent"
+                    >
+                      <div class="lesson-icon">
+                        @if (lesson.isCompleted) {
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        } @else if (lesson.type === "quiz") {
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M14.6659 12H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M14.6659 8.44336H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        }
+                      </div>
+                      <div class="lesson-info">
+                        <div class="lesson-title">{{ lesson.title }}</div>
+                        <div class="lesson-duration">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M3.7998 14H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M3.7998 2H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ lesson.duration }}</span>
+                        </div>
+                      </div>
+                      @if (lesson.hasNotification) {
+                        <div class="notification-dot"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              </aside>
             </div>
           </app-academy-page-shell>
         }
@@ -654,7 +905,7 @@
                         </div>
                         @if (questions()[idx].hint) {
                           <p class="answer-hint">
-                            ðŸ’¡ {{ questions()[idx].hint }}
+                            ­ƒÆí {{ questions()[idx].hint }}
                           </p>
                         }
                       </div>
@@ -735,164 +986,143 @@
             </div>
 
             <div academy-page-sidebar>
-              <app-academy-course-sidebar
-                [stageLabel]="'Stage ' + courseInfo().stage"
-                [title]="
-                  'Course ' + courseInfo().code + ': ' + courseInfo().title
-                "
-                [stats]="[
-                  'Lesson: ' +
-                    courseInfo().currentLesson +
-                    '/' +
-                    courseInfo().totalLessons,
-                  'Duration: ' + courseInfo().duration,
-                ]"
-                [lessons]="lessons()"
-                [allowLessonSelection]="false"
-              />
-              @if (false) {
-                <aside class="course-sidebar" aria-label="Course lessons">
-                  <div class="sidebar-header">
-                    <div class="stage-label">
-                      Stage {{ courseInfo().stage }}
-                    </div>
-                    <h2 class="course-title">
-                      Course {{ courseInfo().code }}: {{ courseInfo().title }}
-                    </h2>
+              <aside class="course-sidebar" aria-label="Course lessons">
+                <div class="sidebar-header">
+                  <div class="stage-label">Stage {{ courseInfo().stage }}</div>
+                  <h2 class="course-title">
+                    Course {{ courseInfo().code }}: {{ courseInfo().title }}
+                  </h2>
+                </div>
+                <div class="sidebar-divider"></div>
+                <div class="course-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Lesson:</span
+                    ><span class="stat-value"
+                      >{{ courseInfo().currentLesson }}/{{
+                        courseInfo().totalLessons
+                      }}</span
+                    >
                   </div>
-                  <div class="sidebar-divider"></div>
-                  <div class="course-stats">
-                    <div class="stat-item">
-                      <span class="stat-label">Lesson:</span
-                      ><span class="stat-value"
-                        >{{ courseInfo().currentLesson }}/{{
-                          courseInfo().totalLessons
-                        }}</span
-                      >
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">Duration:</span
-                      ><span class="stat-value">{{
-                        courseInfo().duration
-                      }}</span>
-                    </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Duration:</span
+                    ><span class="stat-value">{{ courseInfo().duration }}</span>
                   </div>
-                  <div class="lessons-list">
-                    @for (
-                      lesson of lessons();
-                      track trackByLessonId($index, lesson)
-                    ) {
-                      <div
-                        class="lesson-item"
-                        [class.completed]="lesson.isCompleted"
-                        [class.current]="lesson.isCurrent"
-                      >
-                        <div class="lesson-icon">
-                          @if (lesson.isCompleted) {
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <path
-                                d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
-                                stroke="#156B40"
-                                stroke-width="1.35"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
-                                stroke="#156B40"
-                                stroke-width="1.35"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                            </svg>
-                          } @else if (lesson.type === "quiz") {
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <path
-                                d="M14.6659 12H10.2217"
-                                stroke="#343A40"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M14.6659 8.44336H10.2217"
-                                stroke="#343A40"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
-                                stroke="#343A40"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
-                                stroke="#343A40"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                            </svg>
-                          }
-                        </div>
-                        <div class="lesson-info">
-                          <div class="lesson-title">{{ lesson.title }}</div>
-                          <div class="lesson-duration">
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 16 16"
-                              fill="none"
-                            >
-                              <path
-                                d="M3.7998 14H12.1998"
-                                stroke="#6C757D"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M3.7998 2H12.1998"
-                                stroke="#6C757D"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
-                                stroke="#6C757D"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                              <path
-                                d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
-                                stroke="#6C757D"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                            </svg>
-                            <span>{{ lesson.duration }}</span>
-                          </div>
-                        </div>
-                        @if (lesson.hasNotification) {
-                          <div class="notification-dot"></div>
+                </div>
+                <div class="lessons-list">
+                  @for (
+                    lesson of lessons();
+                    track trackByLessonId($index, lesson)
+                  ) {
+                    <div
+                      class="lesson-item"
+                      [class.completed]="lesson.isCompleted"
+                      [class.current]="lesson.isCurrent"
+                    >
+                      <div class="lesson-icon">
+                        @if (lesson.isCompleted) {
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M20.0526 10.7257V18.6306C20.0526 19.1331 19.853 19.615 19.4977 19.9703C19.1423 20.3257 18.6604 20.5253 18.1579 20.5253H4.89474C4.39222 20.5253 3.91029 20.3257 3.55496 19.9703C3.19962 19.615 3 19.1331 3 18.6306V5.36739C3 4.86488 3.19962 4.38294 3.55496 4.02761C3.91029 3.67228 4.39222 3.47266 4.89474 3.47266H16.5891"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.68457 11.0515L11.5267 13.8936L21.0004 4.41992"
+                              stroke="#156B40"
+                              stroke-width="1.35"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        } @else if (lesson.type === "quiz") {
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M14.6659 12H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M14.6659 8.44336H10.2217"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M18.2212 16.4437V5.77767C18.2212 5.3062 18.0339 4.85404 17.7005 4.52067C17.3671 4.18729 16.915 4 16.4435 4H4.88867"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.44434 19.999H19.1104C19.5818 19.999 20.034 19.8117 20.3674 19.4784C20.7007 19.145 20.888 18.6928 20.888 18.2214V17.3325C20.888 17.0968 20.7944 16.8707 20.6277 16.704C20.461 16.5373 20.2349 16.4437 19.9992 16.4437H11.1108C10.8751 16.4437 10.649 16.5373 10.4823 16.704C10.3157 16.8707 10.222 17.0968 10.222 17.3325V18.2214C10.222 18.6928 10.0347 19.145 9.70134 19.4784C9.36796 19.8117 8.9158 19.999 8.44434 19.999ZM8.44434 19.999C7.97287 19.999 7.52071 19.8117 7.18733 19.4784C6.85396 19.145 6.66667 18.6928 6.66667 18.2214V5.77767C6.66667 5.3062 6.47938 4.85404 6.146 4.52067C5.81262 4.18729 5.36046 4 4.889 4C4.41753 4 3.96537 4.18729 3.632 4.52067C3.29862 4.85404 3.11133 5.3062 3.11133 5.77767V7.55534C3.11133 7.79107 3.20497 8.01715 3.37166 8.18384C3.53835 8.35053 3.76443 8.44417 4.00016 8.44417H6.66667"
+                              stroke="#343A40"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
                         }
                       </div>
-                    }
-                  </div>
-                </aside>
-              }
+                      <div class="lesson-info">
+                        <div class="lesson-title">{{ lesson.title }}</div>
+                        <div class="lesson-duration">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M3.7998 14H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M3.7998 2H12.1998"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M11 14V11.4968C10.9999 11.1786 10.8735 10.8734 10.6484 10.6484L8 8L5.3516 10.6484C5.12654 10.8734 5.00007 11.1786 5 11.4968V14"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M5 2V4.5032C5.00007 4.82143 5.12654 5.12661 5.3516 5.3516L8 8L10.6484 5.3516C10.8735 5.12661 10.9999 4.82143 11 4.5032V2"
+                              stroke="#6C757D"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ lesson.duration }}</span>
+                        </div>
+                      </div>
+                      @if (lesson.hasNotification) {
+                        <div class="notification-dot"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              </aside>
             </div>
           </app-academy-page-shell>
         }
