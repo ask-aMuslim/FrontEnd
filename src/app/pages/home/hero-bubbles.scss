@@ -5,50 +5,50 @@
 // Bubble positions table for desktop layout
 $bubble-positions: (
   1: (
-    top: 21%,
-    left: 7%,
+    top: 20%,
+    left: 1.5%,
     start-rotate: -2deg,
     animation-duration: 7.6s,
   ),
   2: (
-    top: 39%,
-    left: 7%,
+    top: 38%,
+    left: 2%,
     start-rotate: 1deg,
     animation-duration: 8.2s,
   ),
   3: (
     top: 55%,
-    left: 10%,
+    left: 3%,
     start-rotate: -1deg,
     animation-duration: 7.9s,
   ),
   4: (
     top: 70%,
-    left: 8%,
+    left: 1.5%,
     start-rotate: 2deg,
     animation-duration: 8.4s,
   ),
   5: (
-    top: 22%,
-    right: 10%,
+    top: 21%,
+    right: 1.5%,
     start-rotate: 2deg,
     animation-duration: 7.7s,
   ),
   6: (
-    top: 39%,
-    right: 12%,
+    top: 38%,
+    right: 2.5%,
     start-rotate: -1deg,
     animation-duration: 8.1s,
   ),
   7: (
     top: 55%,
-    right: 6%,
+    right: 1%,
     start-rotate: 1deg,
     animation-duration: 8.3s,
   ),
   8: (
-    top: 72%,
-    right: 7%,
+    top: 71%,
+    right: 1.5%,
     start-rotate: -2deg,
     animation-duration: 7.85s,
   ),
@@ -57,28 +57,28 @@ $bubble-positions: (
 // Larger desktop adjustments table
 $large-screen-adjustments: (
   1: (
-    left: 6%,
+    left: 1%,
   ),
   2: (
-    left: 5%,
+    left: 1.5%,
   ),
   3: (
-    left: 8%,
+    left: 2%,
   ),
   4: (
-    left: 6.5%,
+    left: 1%,
   ),
   5: (
-    right: 9%,
+    right: 1%,
   ),
   6: (
-    right: 11%,
+    right: 2%,
   ),
   7: (
-    right: 6%,
+    right: 1%,
   ),
   8: (
-    right: 6.5%,
+    right: 1.5%,
   ),
 );
 
@@ -132,7 +132,68 @@ $large-screen-adjustments: (
   }
 }
 
-// Desktop only: Scattered bubbles with rotation animations - 4 left, 4 right
+// ── Unique per-bubble keyframes (desktop) ─────────────────────────────────
+// Each is intentionally different: direction, X-drift, rotation arc and
+// number of stops all vary so no two bubbles feel in sync.
+
+@keyframes bubble-drift-1 {
+  0%   { transform: translateY(0)     translateX(0)    rotate(-2deg); }
+  30%  { transform: translateY(-12px) translateX(4px)  rotate(1deg);  }
+  65%  { transform: translateY(-6px)  translateX(-3px) rotate(-3deg); }
+  100% { transform: translateY(0)     translateX(0)    rotate(-2deg); }
+}
+
+@keyframes bubble-drift-2 {
+  0%   { transform: translateY(0)    translateX(0)   rotate(1deg);  }
+  40%  { transform: translateY(9px)  translateX(-5px) rotate(-2deg); }
+  75%  { transform: translateY(3px)  translateX(3px)  rotate(3deg);  }
+  100% { transform: translateY(0)    translateX(0)   rotate(1deg);  }
+}
+
+@keyframes bubble-drift-3 {
+  0%   { transform: translateY(0)     translateX(0)   rotate(-1deg); }
+  25%  { transform: translateY(-8px)  translateX(6px)  rotate(2deg);  }
+  55%  { transform: translateY(-14px) translateX(2px)  rotate(-2deg); }
+  80%  { transform: translateY(-5px)  translateX(-4px) rotate(1deg);  }
+  100% { transform: translateY(0)     translateX(0)   rotate(-1deg); }
+}
+
+@keyframes bubble-drift-4 {
+  0%   { transform: translateY(0)   translateX(0)    rotate(2deg);  }
+  50%  { transform: translateY(11px) translateX(-6px) rotate(-3deg); }
+  100% { transform: translateY(0)   translateX(0)    rotate(2deg);  }
+}
+
+@keyframes bubble-drift-5 {
+  0%   { transform: translateY(0)     translateX(0)    rotate(2deg);  }
+  35%  { transform: translateY(-10px) translateX(-5px) rotate(5deg);  }
+  70%  { transform: translateY(-4px)  translateX(4px)  rotate(0deg);  }
+  100% { transform: translateY(0)     translateX(0)    rotate(2deg);  }
+}
+
+@keyframes bubble-drift-6 {
+  0%   { transform: translateY(0)   translateX(0)    rotate(-1deg); }
+  20%  { transform: translateY(6px) translateX(5px)  rotate(2deg);  }
+  60%  { transform: translateY(13px) translateX(-3px) rotate(-3deg); }
+  85%  { transform: translateY(5px)  translateX(2px)  rotate(1deg);  }
+  100% { transform: translateY(0)   translateX(0)    rotate(-1deg); }
+}
+
+@keyframes bubble-drift-7 {
+  0%   { transform: translateY(0)     translateX(0)    rotate(1deg);  }
+  45%  { transform: translateY(-13px) translateX(7px)  rotate(-4deg); }
+  100% { transform: translateY(0)     translateX(0)    rotate(1deg);  }
+}
+
+@keyframes bubble-drift-8 {
+  0%   { transform: translateY(0)    translateX(0)    rotate(-2deg); }
+  30%  { transform: translateY(8px)  translateX(-4px) rotate(1deg);  }
+  55%  { transform: translateY(12px) translateX(5px)  rotate(-4deg); }
+  80%  { transform: translateY(4px)  translateX(-2px) rotate(0deg);  }
+  100% { transform: translateY(0)    translateX(0)    rotate(-2deg); }
+}
+
+// Desktop only: Scattered bubbles - 4 left, 4 right
 @media (min-width: 1200px) {
   .suggestion-bubbles {
     position: absolute;
@@ -147,20 +208,19 @@ $large-screen-adjustments: (
     width: 100%;
     height: 100%;
     padding: 0;
-    animation: none; // Disable auto-scroll on desktop
+    animation: none;
   }
 
   .suggestion-bubble {
     position: absolute;
     pointer-events: all;
     transform-origin: center center;
-    transition:
-      background 0.2s ease,
-      color 0.2s ease,
-      transform 0.2s ease;
     will-change: transform;
+    transition:
+      background 0.25s ease,
+      color      0.25s ease;
 
-    // Generate bubble positions and animations from table
+    // Assign position + unique animation per bubble
     @each $index, $position in $bubble-positions {
       &:nth-child(#{$index}) {
         top: map.get($position, top);
@@ -171,30 +231,11 @@ $large-screen-adjustments: (
           right: map.get($position, right);
         }
 
-        $start-rotate: map.get($position, start-rotate);
-        $duration: map.get($position, animation-duration);
-
-        // Create unique animation for each bubble with actual values
-        animation: float-rotate-#{$index} $duration ease-in-out infinite;
-
-        // Generate unique keyframe for this bubble
-        @keyframes float-rotate-#{$index} {
-          0% {
-            transform: translateY(0) rotate($start-rotate);
-          }
-
-          50% {
-            transform: translateY(-4px) rotate(calc(#{$start-rotate} + 2deg));
-          }
-
-          100% {
-            transform: translateY(0) rotate($start-rotate);
-          }
-        }
+        animation: bubble-drift-#{$index} map.get($position, animation-duration) ease-in-out infinite;
       }
     }
 
-    // Hide duplicated bubbles on desktop
+    // Hide duplicates beyond 8
     &:nth-child(n + 9) {
       display: none;
     }
@@ -204,7 +245,6 @@ $large-screen-adjustments: (
       animation-play-state: paused;
       background: rgba(21, 107, 64, 0.1);
       color: #156b40;
-      transform: none;
     }
   }
 }
