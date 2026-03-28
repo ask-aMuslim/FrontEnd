@@ -505,53 +505,17 @@
   </div>
 
   <div academy-page-sidebar>
-    <aside class="sidebar">
-      <div class="course-info-card">
-        <div class="course-header">
-          <span class="stage-label">Stage {{ courseInfo.stage }}</span>
-          <h3 class="sidebar-title" [title]="courseInfo.title">
-            {{ courseInfo.title }}
-          </h3>
-        </div>
-        <div class="divider"></div>
-        <div class="course-stats">
-          <p class="stat-item">{{ courseInfo.stats }}</p>
-          <p class="stat-item">
-            Duration: {{ currentCourse?.duration || "4h 10m" }}
-          </p>
-        </div>
-      </div>
-
-      <div class="lessons-list">
-        @for (lesson of courseLessons; track lesson.id; let i = $index) {
-          @if (
-            i === courseLessons.length - 1 &&
-            courseLessons.length > 0 &&
-            lesson.type === "quiz"
-          ) {
-            <div class="ready-divider">
-              <div class="divider-line"></div>
-              <span class="ready-text">Ready?</span>
-              <div class="divider-line"></div>
-            </div>
-          }
-          <div
-            class="lesson-item"
-            [class.completed]="isLessonCompleted(lesson)"
-            [class.current]="isLessonCurrent(lesson)"
-            [class.pending]="isLessonPending(lesson)"
-            (click)="canClickLesson(lesson) && goToLesson(lesson.id)"
-          >
-            <div class="lesson-info">
-              <h4 class="lesson-title">{{ lesson.title }}</h4>
-              <div class="lesson-meta">
-                <span>{{ lesson.duration }}</span>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    </aside>
+    <app-academy-course-sidebar
+      [stageLabel]="'Stage ' + courseInfo.stage"
+      [title]="courseInfo.title"
+      [stats]="[
+        courseInfo.stats,
+        'Duration: ' + (currentCourse?.duration || '4h 10m'),
+      ]"
+      [lessons]="sidebarLessons"
+      [showReadyDividerBeforeQuiz]="true"
+      (lessonSelect)="onSidebarLessonSelect($event)"
+    />
   </div>
 </app-academy-page-shell>
 

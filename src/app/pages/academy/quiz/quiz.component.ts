@@ -15,6 +15,7 @@ import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
+import { AcademyCourseSidebarComponent } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
 
 // Quiz Question Interface
 interface QuizQuestion {
@@ -45,7 +46,7 @@ type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
 @Component({
     selector: 'app-quiz',
     standalone: true,
-    imports: [FormsModule, AcademyPageShellComponent],
+    imports: [FormsModule, AcademyPageShellComponent, AcademyCourseSidebarComponent],
     templateUrl: './quiz.component.html',
     styleUrls: ['./quiz.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

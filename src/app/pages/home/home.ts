@@ -17,6 +17,7 @@ import { EventsService } from '../../core/services/events.service';
 import { AuthService } from '../../core/services/auth.service';
 import { QasService } from '../../core/services/qas.service';
 import { EventCardComponent, type EventCard as SharedEventCard } from '../events/event-card/event-card.component';
+import { HeroSearchInputComponent } from '../../shared/reusable-components/hero-search-input/hero-search-input.component';
 import {
   asRecord,
   extractArray,
@@ -30,6 +31,7 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 interface HeroStat {
   value: string;
   label: string;
+  icon: 'questions' | 'scholars';
 }
 
 interface FeatureCard {
@@ -54,7 +56,7 @@ interface ServeAudienceCard {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, EventCardComponent],
+  imports: [CommonModule, RouterModule, FormsModule, EventCardComponent, HeroSearchInputComponent],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
@@ -65,8 +67,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   protected readonly Math = Math;
   protected searchQuery = '';
   protected readonly heroStats: HeroStat[] = [
-    { value: '13,000+', label: 'Answered Questions' },
-    { value: '250+ ', label: 'Scholars & Teachers' },
+    { value: '13,000+', label: 'Answered Questions', icon: 'questions' },
+    { value: '250+', label: 'Scholars & Teachers', icon: 'scholars' },
   ];
 
   protected heroBubbles: string[] = [
@@ -90,7 +92,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
             `,
       title: 'Categorized Q&A',
       description:
-        'Browse thousands of carefully answered questions, filtered by topic, scholar, and language so you find guidance faster.',
+        'Explore deep answers in different categories wither you are a Muslim or Non-Muslim.',
       cta: 'Explore',
       href: '/ask-and-contact',
     },
@@ -102,9 +104,9 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 <path d="M42.5415 28.0474V43.8591" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 `,
-      title: 'Academy Courses',
+      title: 'Courses Academy',
       description:
-        'Structured learning paths for new Muslims and lifelong students to strengthen faith step-by-step.',
+        'Step-by-step learning journey from ignorance to knowledge.',
       cta: 'Start',
       href: '/academy',
     },
@@ -118,8 +120,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 `,
       title: 'Events',
       description:
-        'Join online & offline sessions with scholars worldwide, covering hot topics, fiqh, and community building.',
-      cta: 'Join a session',
+        'Online & offline sessions with archive access. Join live or watch recordings anytime.',
+      cta: 'Join',
       href: '/events',
     },
     {
@@ -129,7 +131,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 </svg>`,
       title: 'Articles & Resources',
       description:
-        'Curated articles, e-books, and toolkits reviewed by our research team to deepen your understanding.',
+        'Categorized articles, blogs, research-based content, and real stories.',
       cta: 'Read',
       href: '/resources',
     },
@@ -142,18 +144,11 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 <path d="M39.9971 34.666V39.9993" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M24.002 34.666V39.9993" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
-      // title: 'AI Assistant',
-      // description:
-      //   'Ask faith-related questions 24/7 and get verified summaries backed by authentic sources.',
-      // cta: 'Ask AI',
-      // href: '/ask-and-contact',
-      // },
-      // {
       title: 'AI Assistant',
       description:
-        'AI-powered learning assistant coming soon to help answer your questions instantly.',
-      cta: 'Soon',
-      status: 'soon',
+        'Available 24/7 to answer initial questions and direct users to verified scholarly sources.',
+      cta: 'Ask AI',
+      href: '/ask-and-contact',
     },
     {
       icon: `
@@ -161,8 +156,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 `,
       title: 'Community',
       description:
-        'Connect with vibrant global circles, group studies, and mentorship programs launching soon.',
-      cta: 'Soon',
+        'Connect with scholars, and join groups and discussion rooms with preachers.',
+      cta: 'Soon ..',
       status: 'soon',
     },
   ];
@@ -191,19 +186,16 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     { number: '5', label: 'Pilgrimage', name: 'Hajj' },
   ];
 
-  protected readonly adviceQuote = `“Grab a pen & paper, and list down whatever questions you thought of.
-    After that, go to the scholars of your religion and get the answers of your list, then go to the nearest mosque and ask for a scholar to answer your same list.”`;
-
   protected readonly serveAudienceCards: readonly ServeAudienceCard[] = [
     { title: 'I’m a Christian' },
-    { title: 'I’m Jewish' },
+    { title: 'I’m a Jew' },
     { title: 'I’m a Polytheist' },
     { title: 'I’m an Atheist' },
     { title: 'I’m an Agnostic' },
-    { title: 'I’m a New Muslim' },
-    { title: 'I’m Just Curious' },
     { title: 'I’m a Seeker' },
-    { title: 'I’m a Women in Islam' },
+    { title: 'I’m a New Muslim' },
+    { title: 'I’m a Born Muslim' },
+    { title: 'I’m a Woman' },
   ];
 
   protected trackByIndex(index: number): number {

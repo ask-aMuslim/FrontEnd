@@ -78,11 +78,11 @@
             <div class="about-story__body">
               <p class="about-story__lead">
                 What started as a local initiative has grown into a movement to
-                bridge gaps and build understanding.
+                <strong>bridge gaps and build understanding</strong>.
                 <br />
                 Today, Ask A Muslim is proud to serve communities not only in
-                our home state, but also across the Midwest, Canada, and the
-                world.
+                our home state, but also across the
+                Midwest, Canada, and <strong>the world</strong>.
               </p>
 
               <ol class="about-timeline" aria-label="Ask A Muslim timeline">
@@ -142,9 +142,15 @@
 
           <div class="about-mission__card">
             <p>
-              Ask A Muslim's mission is to share the authentic message of Islam,
-              offer accurate and accessible answers to common questions, and
-              build meaningful bridges between Muslims and the wider community.
+              Ask A Muslim's mission is to share the
+              <span class="about-mission__accent about-mission__accent--primary"
+                >authentic message </span
+              >of Islam, offer accurate and accessible answers to common
+              questions, and build
+              <span class="about-mission__accent about-mission__accent--primary"
+                >meaningful bridges</span
+              >
+              between Muslims and the wider community.
             </p>
           </div>
 
@@ -162,44 +168,6 @@
       </div>
     </div>
   </section>
-
-  @if (authService.isAuthenticated()) {
-    <section
-      class="about-serve"
-      aria-labelledby="about-serve-title"
-      style="display: none"
-    >
-      <div class="section-container">
-        <div class="section-block">
-          <div class="section-shell about-section-shell">
-            <div class="about-serve__icon" aria-hidden="true">
-              <img src="/icons/gate.svg" alt="" />
-            </div>
-
-            <div class="about-section-heading">
-              <p class="about-eyebrow">Find the Right Message for You</p>
-              <h2 id="about-serve-title">How can we best serve you?</h2>
-            </div>
-
-            <div class="about-serve__grid">
-              @for (
-                card of audienceCards;
-                track trackByAudienceTitle($index, card)
-              ) {
-                <article
-                  class="about-audience-card"
-                  [class.about-audience-card--light]="card.variant === 'light'"
-                  [class.about-audience-card--white]="card.variant !== 'light'"
-                >
-                  <h3>{{ card.title }}</h3>
-                </article>
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  }
 
   <section
     class="about-achievements"
@@ -261,5 +229,76 @@
       class="about-achievements__fade about-achievements__fade--bottom"
       aria-hidden="true"
     ></div>
+  </section>
+
+  <section class="about-serve" aria-labelledby="about-serve-title">
+    <div class="section-container">
+      <div class="section-block">
+        <div class="section-shell about-section-shell">
+          <div class="about-serve__icon" aria-hidden="true">
+            <img src="/icons/gate.svg" alt="" />
+          </div>
+
+          <div class="about-section-heading">
+            <p class="about-eyebrow">Find the Right Message for You</p>
+            <h2 id="about-serve-title">How can we best serve you?</h2>
+          </div>
+
+          <div class="about-serve__grid">
+            @for (
+              card of audienceCards;
+              track trackByAudienceTitle($index, card)
+            ) {
+              <article
+                class="about-audience-card"
+                [class.about-audience-card--light]="card.variant === 'light'"
+                [class.about-audience-card--white]="card.variant !== 'light'"
+              >
+                <h3>{{ card.title }}</h3>
+              </article>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section
+    class="resources-questions-cta"
+    aria-labelledby="resources-questions-cta-title"
+    data-aos="fade-up"
+  >
+    <div class="section-container">
+      <div class="section-block section-block--wide">
+        <div class="resources-questions-cta__container">
+          <h2
+            id="resources-questions-cta-title"
+            class="resources-questions-cta__title"
+          >
+            {{ aboutQuestionsCta.title }}
+          </h2>
+          <p class="resources-questions-cta__subtitle">
+            {{ aboutQuestionsCta.subtitle }}
+          </p>
+
+          <div class="resources-questions-cta__actions">
+            <a
+              class="about-button about-button--outline about-button--questions"
+              [href]="aboutQuestionsCta.requestQuranUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ aboutQuestionsCta.requestQuranLabel }}
+            </a>
+            <a
+              class="about-button about-button--filled about-button--questions"
+              [href]="aboutQuestionsCta.askQuestionUrl"
+            >
+              {{ aboutQuestionsCta.askQuestionLabel }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 </div>

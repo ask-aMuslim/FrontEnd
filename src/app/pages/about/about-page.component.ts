@@ -33,6 +33,16 @@ interface AchievementHighlight {
 export class AboutPageComponent {
     protected readonly authService = inject(AuthService);
 
+    protected readonly aboutQuestionsCta = {
+        title: 'Do You Have Any Questions?',
+        subtitle:
+            'No question is too small or too complex. If you’re curious about Islam, want clarification about something you’ve heard, or would like to learn directly from Muslims, we’re here to help.',
+        requestQuranLabel: 'Request Free Quran',
+        askQuestionLabel: 'Ask a Question',
+        requestQuranUrl: 'https://www.onemessagefoundation.com/free-quran',
+        askQuestionUrl: '/ask-and-contact',
+    } as const;
+
     protected readonly timelineItems: readonly TimelineItem[] = [
         {
             year: '2013',

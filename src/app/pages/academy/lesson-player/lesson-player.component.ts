@@ -11,6 +11,10 @@ import {
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
+    AcademyCourseSidebarComponent,
+    AcademySidebarLessonItem,
+} from '../shared/academy-course-sidebar/academy-course-sidebar.component';
+import {
     AcademyCourse,
     AcademyLesson,
     LessonProgress,
@@ -34,7 +38,7 @@ import {
 @Component({
     selector: 'app-lesson-player',
     standalone: true,
-    imports: [FormsModule, AcademyPageShellComponent],
+    imports: [FormsModule, AcademyPageShellComponent, AcademyCourseSidebarComponent],
     templateUrl: './lesson-player.component.html',
     styleUrls: ['./lesson-player.component.scss']
 })
@@ -393,6 +397,22 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     get filteredNotes(): Array<{ timestamp: string; text: string }> {
         return this.previousNotes.filter(note => note.text.toLowerCase().includes(this.notesSearchQuery.toLowerCase()));
+    }
+
+    get sidebarLessons(): AcademySidebarLessonItem[] {
+        return this.courseLessons.map((lesson) => ({
+            id: lesson.id,
+            title: lesson.title,
+            duration: lesson.duration,
+            type: lesson.type,
+            isCompleted: this.isLessonCompleted(lesson),
+            isCurrent: this.isLessonCurrent(lesson),
+            isLocked: this.isLessonPending(lesson),
+        }));
+    }
+
+    onSidebarLessonSelect(lesson: AcademySidebarLessonItem): void {
+        this.goToLesson(lesson.id);
     }
 
     private stripProgress(lesson: AcademyLesson & { progress: LessonProgress }): AcademyLesson {

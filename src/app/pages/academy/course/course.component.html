@@ -38,12 +38,27 @@
                 <h2 class="section-title">Prerequisites:</h2>
                 <div class="prerequisites-list">
                   @for (prereq of course.prerequisitesList; track prereq.id) {
-                    <div class="prereq-item" [class.completed]="prereq.isCompleted">
+                    <div
+                      class="prereq-item"
+                      [class.completed]="prereq.isCompleted"
+                    >
                       <span class="status-dot"></span>
                       <span class="prereq-title">{{ prereq.title }}</span>
                       @if (prereq.isCompleted) {
-                        <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M20 6L9 17l-5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <svg
+                          class="check-icon"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                        >
+                          <path
+                            d="M20 6L9 17l-5-5"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
                         </svg>
                       }
                     </div>
@@ -67,38 +82,41 @@
                 }
               </p>
             </div>
-            <!-- Answers Section -->
-            @if (course.answers.length > 0) {
-              <div class="course-section">
-                <h2 class="section-title">
-                  At the end, you will find the answers of:
-                </h2>
-                <p class="section-text">
-                  @for (
-                    answer of course.answers;
-                    track answer;
-                    let last = $last
-                  ) {
-                    {{ answer }}
-                    @if (!last) {
-                      <br />
-                    }
-                  }
-                </p>
-              </div>
-            }
           </div>
           <!-- Action Buttons -->
           <div class="course-actions">
-            <div class="unlocked-state" style="display: flex; align-items: center; gap: 1rem; justify-content: flex-end;">
-              @if (!isUserAuthenticated || course.isLocked || course.hasUnmetPrerequisites) {
-                <span class="restriction-msg" style="color: var(--color-text-info); border: none; background: transparent; padding: 0; font-size: 0.875rem;">
+            <div
+              class="unlocked-state"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                justify-content: flex-end;
+              "
+            >
+              @if (
+                !isUserAuthenticated ||
+                course.isLocked ||
+                course.hasUnmetPrerequisites
+              ) {
+                <span
+                  class="restriction-msg"
+                  style="
+                    color: var(--color-text-info);
+                    border: none;
+                    background: transparent;
+                    padding: 0;
+                    font-size: 0.875rem;
+                  "
+                >
                   @if (!isUserAuthenticated) {
                     Please sign in to begin this course.
                   } @else if (course.isLocked) {
-                    You must finish the quizzes of all previous stages to unlock this course.
+                    You must finish the quizzes of all previous stages to unlock
+                    this course.
                   } @else if (course.hasUnmetPrerequisites) {
-                    You must complete: {{ course.unmetPrerequisiteNames.join(', ') }}
+                    You must complete:
+                    {{ course.unmetPrerequisiteNames.join(", ") }}
                   }
                 </span>
                 <button class="btn btn-disabled" disabled>
@@ -124,36 +142,17 @@
         </div>
       </div>
       <div academy-page-sidebar>
-        <aside class="sidebar" aria-label="Course lessons">
-          <div class="course-info-card">
-            <div class="course-header">
-              <span class="stage-label">Stage {{ course.stageNumber }}</span>
-              <h3 class="sidebar-title">{{ course.title }}</h3>
-            </div>
-            <div class="divider"></div>
-            <div class="course-stats">
-              <p class="stat-item">Lessons: {{ course.totalLessons }}</p>
-              <p class="stat-item">Duration: {{ course.duration }}</p>
-            </div>
-          </div>
-
-          <div class="lessons-list">
-            @for (lesson of course.lessonsList; track lesson; let i = $index) {
-              <div
-                [class.lesson-selected]="i === 0 && !course.isLocked"
-                [class.lesson-completed]="lesson.isCompleted"
-                [class.lesson-locked]="lesson.isLocked"
-                (click)="onLessonClick(lesson)"
-                class="lesson-item"
-              >
-                <div class="lesson-info">
-                  <h4 class="lesson-title">{{ lesson.title }}</h4>
-                  <span class="lesson-duration">{{ lesson.duration }}</span>
-                </div>
-              </div>
-            }
-          </div>
-        </aside>
+        <app-academy-course-sidebar
+          [stageLabel]="'Stage ' + course.stageNumber"
+          [title]="course.title"
+          [stats]="[
+            'Lessons: ' + course.totalLessons,
+            'Duration: ' + course.duration,
+          ]"
+          [overviewLink]="['/academy/course', course.id]"
+          [lessons]="course.lessonsList"
+          (lessonSelect)="onLessonClick($event)"
+        />
       </div>
     </app-academy-page-shell>
 
