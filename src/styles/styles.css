@@ -121,6 +121,18 @@ h1 {
   font-weight: 700;
 }
 
-span.special-primary {
+.special-primary {
+  color: var(--color-button-primary-normal);
+}
+
+.text-caption {
+  color: var(--color-text-caption);
+}
+
+.text-title {
+  color: var(--color-text-title);
+}
+
+.text-primary {
   color: var(--color-button-primary-normal);
 }
