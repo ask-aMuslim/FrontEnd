@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -80,6 +81,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     ];
 
     private readonly destroy$ = new Subject<void>();
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -285,19 +288,24 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     onShare(): void {
-        if (this.lessonContent && navigator.share) {
-            navigator.share({
+        if (!this.isBrowser || !this.lessonContent) {
+            return;
+        }
+
+        if (globalThis.navigator.share) {
+            globalThis.navigator.share({
                 title: this.lessonContent.title,
                 text: this.lessonContent.description,
                 url: globalThis.location.href
             }).catch(() => void 0);
-        } else {
-            navigator.clipboard.writeText(globalThis.location.href).then(() => void 0);
+            return;
         }
+
+        globalThis.navigator.clipboard?.writeText(globalThis.location.href).then(() => void 0);
     }
 
     onDownload(): void {
-        if (!this.lessonContent) {
+        if (!this.isBrowser || !this.lessonContent) {
             return;
         }
 
@@ -312,10 +320,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = globalThis.document.createElement('a');
         link.href = url;
         link.download = fileName;
-        document.body.appendChild(link);
+        globalThis.document.body.appendChild(link);
         link.click();
         link.remove();
         URL.revokeObjectURL(url);

@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
 import { EventsService } from '../../core/services/events.service';
@@ -31,10 +32,15 @@ export class EventsComponent implements OnInit {
 
   eventCards: EventCard[] = [];
 
+  private readonly isBrowser: boolean;
+
   constructor(
     private readonly eventsService: EventsService,
     private readonly cdr: ChangeDetectorRef,
-  ) { }
+    @Inject(PLATFORM_ID) platformId: object,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit(): void {
     this.loadEvents();
@@ -175,6 +181,10 @@ export class EventsComponent implements OnInit {
   }
 
   private scrollToTopOfSection(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const section = globalThis.document?.getElementById('events-recorded-section');
     section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
@@ -40,6 +40,8 @@ export class AskQaComponent implements OnInit {
 
   private readonly qasService = inject(QasService);
   private readonly tagsService = inject(TagsService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private tagFilterOptions: TagFilterOption[] = [];
   private allFilteredQuestions: QuestionCard[] = [];
   private loadedTagId: string | null = null;
@@ -334,6 +336,10 @@ export class AskQaComponent implements OnInit {
   }
 
   private scrollToTopOfSection(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const section = globalThis.document?.getElementById('qa-list-section');
     section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

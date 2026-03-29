@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Subject, takeUntil, finalize, take } from 'rxjs';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
@@ -43,6 +44,8 @@ export interface AboutModel {
 })
 export class AboutComponent implements OnInit, OnDestroy {
   private readonly studentFacade = inject(StudentFacade);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly destroy$ = new Subject<void>();
 
   about: AboutModel = {
@@ -299,7 +302,11 @@ export class AboutComponent implements OnInit, OnDestroy {
    * Auto-clear success message after 3 seconds
    */
   private autoClearSuccessMessage(): void {
-    setTimeout(() => {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    globalThis.setTimeout(() => {
       this.successMessage = null;
     }, 3000);
   }

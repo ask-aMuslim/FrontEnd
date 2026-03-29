@@ -80,12 +80,12 @@ export class AnnouncementBar implements OnInit, OnDestroy {
         this.isClosing = true;
 
         // Wait for animation to complete before hiding
-        setTimeout(() => {
+        globalThis.setTimeout(() => {
             this.isVisible = false;
             this.isClosing = false;
 
             // Reappear after 5 seconds
-            setTimeout(() => {
+            globalThis.setTimeout(() => {
                 this.isVisible = true;
             }, 5000);
         }, 400);

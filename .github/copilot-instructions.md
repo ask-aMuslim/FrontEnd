@@ -51,6 +51,7 @@ Ignore deleted legacy instruction files and avoid loading broad skill packs unle
 - No HTTP calls in components; use `src/app/api/fn/**` + facades in `src/app/api/facades/**`.
 - Prefer signals + immutable updates; no direct state mutation.
 - No business logic in templates, no inline styles, no magic numbers.
+- Browser globals (window/document/localStorage/navigator/setTimeout/clearTimeout/requestAnimationFrame/fetch) must be wrapped in SSR guards (`isPlatformBrowser(PLATFORM_ID)`) and/or use `globalThis`.
 
 ### Contract and Integration Discipline
 - Treat OpenAPI/Postman contracts as authoritative.

@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, input, output, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, input, output, computed, ElementRef, inject, signal, HostListener, AfterViewInit, OnDestroy, effect, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 export interface CourseNode {
     id: string;
@@ -19,7 +19,9 @@ export interface CourseNode {
     styleUrls: ['./course-tree.component.scss']
 })
 export class CourseTreeComponent implements AfterViewInit, OnDestroy {
-    private el = inject(ElementRef);
+    private readonly el = inject(ElementRef);
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     // Inputs from Academy Component
     nodes = input.required<CourseNode[]>();
@@ -40,8 +42,11 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
         // Automatically redraw lines whenever the tree layers change
         effect(() => {
             const _ = this.layers(); // track layers
+            if (!this.isBrowser) {
+                return;
+            }
             // Small delay to ensure DOM is rendered after signal change
-            setTimeout(() => this.drawLines(), 100);
+            globalThis.setTimeout(() => this.drawLines(), 100);
         });
     }
 
@@ -56,7 +61,7 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
             visited.add(id);
 
             const node = nodeMap.get(id);
-            if (!node || !node.prerequisites || node.prerequisites.length === 0) {
+            if (!node?.prerequisites || node.prerequisites.length === 0) {
                 depthMap.set(id, 0);
                 return 0;
             }
@@ -88,14 +93,14 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
             for (let d = 1; d < unsortedLayers.length; d++) {
                 const prevLayer = sortedLayers[d - 1];
                 const prevLayerMap = new Map(prevLayer.map((n, i) => [n.id, i]));
-                
+
                 const currentLayer = [...unsortedLayers[d]].sort((a, b) => {
                     const getBarycenter = (node: CourseNode) => {
                         const parents = node.prerequisites || [];
                         const parentIndices = parents
                             .map(pId => prevLayerMap.get(pId))
                             .filter((idx): idx is number => idx !== undefined);
-                        
+
                         if (parentIndices.length === 0) return 999; // Roots or skips move to right
                         return parentIndices.reduce((sum, idx) => sum + idx, 0) / parentIndices.length;
                     };
@@ -115,14 +120,18 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
     });
 
     ngAfterViewInit() {
-        if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+        if (!this.isBrowser) {
+            return;
+        }
+
+        if (globalThis.window !== undefined && 'ResizeObserver' in globalThis.window) {
             this.resizeObserver = new ResizeObserver(() => {
                 this.drawLines();
             });
             this.resizeObserver.observe(this.el.nativeElement);
         }
         // Initial draw after view initialization
-        setTimeout(() => this.drawLines(), 300);
+        globalThis.setTimeout(() => this.drawLines(), 300);
     }
 
     ngOnDestroy() {
@@ -133,15 +142,22 @@ export class CourseTreeComponent implements AfterViewInit, OnDestroy {
 
     @HostListener('window:resize')
     onResize() {
+        if (!this.isBrowser) {
+            return;
+        }
         this.drawLines();
     }
 
     drawLines() {
+        if (!this.isBrowser) {
+            return;
+        }
+
         if (!this.el) return;
         const container = this.el.nativeElement.querySelector('.tree-container');
         if (!container) return;
 
-        requestAnimationFrame(() => {
+        globalThis.requestAnimationFrame(() => {
             const containerRect = container.getBoundingClientRect();
             const paths: string[] = [];
 

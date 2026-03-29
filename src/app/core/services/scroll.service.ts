@@ -26,7 +26,7 @@ export class ScrollService {
         }
 
         if (delay > 0) {
-            setTimeout(() => {
+            globalThis.setTimeout(() => {
                 this.performScroll(0, behavior);
             }, delay);
         } else {

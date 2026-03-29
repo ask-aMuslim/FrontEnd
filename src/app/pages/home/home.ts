@@ -231,6 +231,10 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadHeroBubbles(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     this.qasService.getAll({ pageNumber: 1, pageSize: 50, tags: 'Hero Page Questions' }).subscribe({
       next: (response) => {
         const records = extractArray(response);
@@ -259,7 +263,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.detectChanges();
 
             // Re-setup bubbles animation if needed for the new elements
-            setTimeout(() => {
+            globalThis.setTimeout(() => {
               if (this.heroBubbles.length > 0) {
                 this.setupBubblesAnimation();
               }
@@ -399,7 +403,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (globalThis.window === undefined) {
+    if (!this.isBrowser) {
       return;
     }
 
@@ -414,6 +418,10 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
    * Only runs on tablet and below screens (768px and below)
    */
   private setupBubblesAnimation(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     // Only animate on tablet and below (max-width: 768px)
     if (globalThis.innerWidth > 768) {
       return;
@@ -448,7 +456,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       track.style.transform = `translateX(${currentTranslate}px)`;
       track.style.transition = 'none'; // Disable transition for frame-by-frame animation
 
-      requestAnimationFrame(animate);
+      globalThis.requestAnimationFrame(animate);
     };
 
     // Start the animation
@@ -471,6 +479,10 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
    * Scroll the bubbles slider left or right by one bubble
    */
   protected scrollBubbles(direction: 'left' | 'right'): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const container = this.bubblesContainer?.nativeElement;
     if (!container) return;
 

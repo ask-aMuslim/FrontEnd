@@ -180,6 +180,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
     private isFinishingQuiz = false;
+    private readonly isBrowser: boolean;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -191,7 +192,9 @@ export class QuizComponent implements OnInit, OnDestroy {
         private readonly academyProgressService: AcademyProgressService,
         private readonly scrollService: ScrollService,
         @Inject(PLATFORM_ID) private readonly platformId: object
-    ) { }
+    ) {
+        this.isBrowser = isPlatformBrowser(this.platformId);
+    }
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
         return [
@@ -523,7 +526,9 @@ export class QuizComponent implements OnInit, OnDestroy {
             completionTime: this.quizCompletionTime(),
             timestamp: new Date().toISOString()
         };
-        localStorage.setItem(storageKey, JSON.stringify(quizData));
+        if (this.isBrowser) {
+            localStorage.setItem(storageKey, JSON.stringify(quizData));
+        }
 
         const attemptId = this.activeAttemptId();
         if (attemptId) {
@@ -713,7 +718,9 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     retakeQuizFromResults(): void {
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
-        localStorage.removeItem(storageKey);
+        if (this.isBrowser) {
+            localStorage.removeItem(storageKey);
+        }
 
         // Reset state
         this.previousScore.set(0);
