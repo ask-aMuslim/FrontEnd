@@ -54,15 +54,29 @@
       <!-- Video Content -->
       @if (isVideoContent && lessonContent) {
         <div class="media-container video-container">
-          <video
-            controls
-            class="video-player"
-            [poster]="videoContent?.thumbnailUrl"
-          >
-            <source [src]="videoContent?.videoUrl" type="video/mp4" />
-            <track kind="captions" srclang="en" label="English" />
-            Your browser does not support the video tag.
-          </video>
+          @if (isYouTubeVideo && youtubeEmbedUrl) {
+            <div class="video-embed-wrapper">
+              <iframe
+                class="video-player video-player--embed"
+                [src]="youtubeEmbedUrl"
+                title="Lesson video"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          } @else {
+            <video
+              controls
+              class="video-player"
+              [poster]="videoContent?.thumbnailUrl"
+            >
+              <source [src]="videoContent?.videoUrl" type="video/mp4" />
+              <track kind="captions" srclang="en" label="English" />
+              Your browser does not support the video tag.
+            </video>
+          }
           <div class="video-controls-info">
             <div class="playback-speed">
               <span>Speed: 1x</span>
@@ -161,10 +175,10 @@
                 @if (section.header) {
                   <h2 class="section-header">{{ section.header }}</h2>
                 }
-                <div
+                <app-tiptap-viewer
                   class="section-content"
-                  [innerHTML]="section.content"
-                ></div>
+                  [content]="section.content || section.contentJson"
+                ></app-tiptap-viewer>
               </div>
             }
           </div>
@@ -505,13 +519,14 @@
   </div>
 
   <div academy-page-sidebar>
-    <app-academy-course-sidebar
-      [stageLabel]="'Stage ' + courseInfo.stage"
+    <app-academy-sidebar-host
+      [stageNumber]="courseInfo.stage"
       [title]="courseInfo.title"
-      [stats]="[
-        courseInfo.stats,
-        'Duration: ' + (currentCourse?.duration || '4h 10m'),
-      ]"
+      [currentLessonNumber]="lessonData?.metadata?.order ?? currentLesson?.order ?? null"
+      [totalLessons]="courseLessons.length"
+      [duration]="currentCourse?.duration || '4h 10m'"
+      [overviewLink]="['/academy/course', courseId]"
+      overviewLinkLabel="Course overview"
       [lessons]="sidebarLessons"
       [showReadyDividerBeforeQuiz]="true"
       (lessonSelect)="onSidebarLessonSelect($event)"

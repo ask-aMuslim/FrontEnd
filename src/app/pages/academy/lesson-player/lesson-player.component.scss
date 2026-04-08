@@ -35,6 +35,16 @@
     width: 100%;
     aspect-ratio: 16 / 9;
     display: block;
+
+    &.video-player--embed {
+      border: 0;
+      height: 100%;
+    }
+  }
+
+  .video-embed-wrapper {
+    width: 100%;
+    aspect-ratio: 16 / 9;
   }
 
   .audio-player {
@@ -628,6 +638,7 @@
   font-size: 1rem;
   line-height: 1.6;
   color: var(--colors-rare-grays-80, #343a40);
+  display: block;
 }
 
 // ─── Navigation Buttons ───

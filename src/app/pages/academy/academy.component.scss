@@ -2,7 +2,7 @@
   width: 100%;
   background: var(--colors-rare-grays-0);
   font-family:
-    'Poppins',
+    "Poppins",
     -apple-system,
     Roboto,
     Helvetica,
@@ -223,15 +223,27 @@
 }
 
 .important-note {
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: 0;
   background: var(--colors-rare-grays-10);
   border-radius: 8px;
   margin-bottom: var(--spacing-2xl);
   transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .section-block {
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+  }
 
   &.expanded {
     background: var(--colors-rare-grays-20);

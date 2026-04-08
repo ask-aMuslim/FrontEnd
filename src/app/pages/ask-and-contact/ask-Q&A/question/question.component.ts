@@ -88,8 +88,26 @@ export class QuestionComponent implements OnDestroy {
         const record = asRecord(response);
         const data = getValue(record, 'data', 'Data') ? asRecord(getValue(record, 'data', 'Data')) : record;
 
+        const isPublished = getValue(data, 'isPublished', 'IsPublished');
+        if (isPublished === false) {
+          this.title = 'This answer is unavailable.';
+          this.answer = '';
+          this.answerViewerContent = null;
+          this.questionHtml = null;
+          this.answerHtmlRaw = null;
+          this.imageUrl = null;
+          this.changeDetectorRef.markForCheck();
+          return;
+        }
+
         const translations = extractArray(getValue(data, 'translations', 'Translations'));
-        const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+        const firstTranslation = translations
+          .map((translation) => asRecord(translation))
+          .find((translation) => {
+            const translationPublished = getValue(translation, 'isPublished', 'IsPublished');
+            const translationDeleted = getValue(translation, 'isDeleted', 'IsDeleted');
+            return translationPublished !== false && translationDeleted !== true;
+          }) ?? null;
 
         const mappedTitle = toStringValue(
           firstTranslation ? getValue(firstTranslation, 'questionText', 'QuestionText', 'question') : undefined,
@@ -117,6 +135,17 @@ export class QuestionComponent implements OnDestroy {
         const mappedImage = toApiMediaUrl(
           toStringValue(getValue(data, 'imageUrl', 'ImageUrl', 'questionImage', 'QuestionImage')),
         );
+
+        if (!mappedAnswer?.trim()) {
+          this.title = mappedTitle?.trim() || 'This answer is unavailable.';
+          this.answer = '';
+          this.answerViewerContent = null;
+          this.questionHtml = mappedTitle ? this.toSafeHtml(this.escapeHtml(mappedTitle)) : null;
+          this.answerHtmlRaw = null;
+          this.imageUrl = mappedImage ?? null;
+          this.changeDetectorRef.markForCheck();
+          return;
+        }
 
         const renderedTitle = this.resolveRichHtml(mappedTitle, mappedTitleJson);
         const renderedAnswer = this.resolveRichHtml(mappedAnswer, mappedAnswerJson);
@@ -611,7 +640,7 @@ export class QuestionComponent implements OnDestroy {
         image.setAttribute('crossorigin', 'anonymous');
 
         try {
-          const response = await fetch(normalizedSource, {
+          const response = await globalThis.fetch(normalizedSource, {
             mode: 'cors',
             cache: 'force-cache',
           });

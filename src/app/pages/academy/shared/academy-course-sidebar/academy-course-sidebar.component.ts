@@ -11,6 +11,7 @@ export type AcademySidebarLink = string | Array<string | number>;
 
 export interface AcademySidebarLessonItem {
     id: string;
+    quizLessonId?: string;
     title: string;
     duration: string;
     type?: string;
@@ -39,11 +40,16 @@ export class AcademyCourseSidebarComponent {
     @Input() showReadyDividerBeforeQuiz = false;
     @Input() allowLessonSelection = true;
     @Input() disableLockedLessonClick = true;
+    @Input() scrollThreshold = 6;
 
     @Input() overviewLink: AcademySidebarLink | null = null;
     @Input() overviewLinkLabel = 'Overview page';
 
     @Output() lessonSelect = new EventEmitter<AcademySidebarLessonItem>();
+
+    get shouldEnableScroll(): boolean {
+        return this.lessons.length > this.scrollThreshold;
+    }
 
     trackByLessonId(_index: number, lesson: AcademySidebarLessonItem): string {
         return lesson.id;

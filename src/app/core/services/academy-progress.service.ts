@@ -18,7 +18,7 @@ import {
 } from '../models/interfaces/academy-progress.model';
 import { ProgressFacade } from '../../api/facades/progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
-import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
+import { CourseFacade, CourseReadDto, RoadmapCourseDto } from '../../api/facades/course.facade';
 import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { EnrollmentFacade } from '../../api/facades/enrollment.facade';
@@ -245,12 +245,18 @@ export class AcademyProgressService {
                 if (stages.length === 0) {
                     // fallback to unfiltered course fetch if no levels yet
                     return this.courseFacade.getAllCourses().pipe(
-                        map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c, undefined, 1)))
+                        map(courses => courses
+                            .filter((course) => {
+                                const isPublished = course['isPublished'];
+                                return isPublished !== false;
+                            })
+                            .map(c => this.mapCourseDtoToAcademyCourse(c, undefined, 1))
+                        )
                     );
                 }
                 const courseRequests = stages.map(stage =>
                     this.courseFacade.getRoadmap(stage.id).pipe(
-                        map(courses => this.mapCoursesForStage(courses as any[], stage.id, stage.number)),
+                        map(courses => this.mapCoursesForStage(courses, stage.id, stage.number)),
                         catchError(() => of([] as AcademyCourse[]))
                     )
                 );
@@ -272,7 +278,13 @@ export class AcademyProgressService {
     getAcademyCoursesByLevel(levelId: string): Observable<AcademyCourse[]> {
         const stageNumber = this.academyStagesCache.find(s => s.id === levelId)?.number ?? 1;
         return this.courseFacade.getRoadmap(levelId).pipe(
-            map(courses => courses.map(c => this.mapCourseDtoToAcademyCourse(c as any, levelId, stageNumber))),
+            map(courses => courses
+                .filter((course) => {
+                    const isPublished = course['isPublished'];
+                    return isPublished !== false;
+                })
+                .map(c => this.mapRoadmapCourseToAcademyCourse(c, levelId, stageNumber))
+            ),
             catchError(() => of([]))
         );
     }
@@ -280,11 +292,13 @@ export class AcademyProgressService {
     getAcademyCourseById(courseId: string): Observable<AcademyCourse> {
         return this.courseFacade.getCourseById(courseId).pipe(
             map(course => {
+                const cachedCourse = this.academyCoursesCache.find(existing => existing.id === courseId);
+
                 if (!course) {
                     return {
                         id: courseId,
-                        stageId: 1,
-                        levelId: '',
+                        stageId: cachedCourse?.stageId ?? 1,
+                        levelId: cachedCourse?.levelId ?? '',
                         title: 'Unknown Course',
                         category: 'social-topics' as const,
                         categoryLabel: 'C: Social Topics',
@@ -292,15 +306,31 @@ export class AcademyProgressService {
                         duration: '0m',
                     };
                 }
-                return this.mapCourseDtoToAcademyCourse(course, course.levelId, 1);
+
+                const resolvedLevelId = course.levelId ?? cachedCourse?.levelId;
+                const resolvedStageNumber = this.academyStagesCache.find((stage) => stage.id === resolvedLevelId)?.number
+                    ?? cachedCourse?.stageId
+                    ?? 1;
+
+                return this.mapCourseDtoToAcademyCourse(course, resolvedLevelId, resolvedStageNumber);
             }),
             tap(course => {
                 const index = this.academyCoursesCache.findIndex(existing => existing.id === course.id);
                 if (index === -1) {
-                    this.academyCoursesCache.push(course);
                     return;
                 }
-                this.academyCoursesCache[index] = course;
+
+                const existing = this.academyCoursesCache[index];
+                this.academyCoursesCache[index] = {
+                    ...existing,
+                    ...course,
+                    stageId: course.stageId || existing.stageId,
+                    levelId: course.levelId || existing.levelId,
+                };
+
+                if (existing.stageId !== this.academyCoursesCache[index].stageId) {
+                    this.invalidateProgressCache();
+                }
             }),
             catchError(() =>
                 of({
@@ -324,7 +354,10 @@ export class AcademyProgressService {
         }
 
         return this.lessonFacade.getCourseLessons(courseId).pipe(
-            map(lessons => lessons.map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))),
+            map(lessons => lessons
+                .filter((lesson) => lesson.isPublished !== false)
+                .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))
+            ),
             tap(lessons => { this.lessonsCache.set(courseId, lessons); }),
             catchError(() => of([]))
         );
@@ -489,23 +522,30 @@ export class AcademyProgressService {
         recentLesson: RecentLessonInfo | null,
     ): StudentProgress {
         const sortedStageIds = Array.from(new Set(courses.map(course => course.stageId))).sort((a, b) => a - b);
-        const firstStageWithCourses = sortedStageIds[0];
-        const unlockedStageIds = new Set<number>(
-            firstStageWithCourses !== undefined ? [firstStageWithCourses] : []
-        );
+        const unlockedStageIds = new Set<number>(sortedStageIds);
 
-        const courseProgress = courses.map((course) => {
+        const courseProgressById = new Map<string, CourseProgress>();
+        const sortedCourses = [...courses].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+        const courseProgress = sortedCourses.map((course) => {
             const isEnrolled = enrolledCourseIds.has(String(course.id));
-            const isUnlocked = unlockedStageIds.has(course.stageId);
+            const prerequisites = (course.prerequisites ?? []).filter((prereqId) => prereqId !== course.id);
+            const hasUnfinishedPrerequisites = prerequisites.some((prereqId) => {
+                const prereqProgress = courseProgressById.get(prereqId);
+                return prereqProgress?.status !== 'completed';
+            });
+
             let status: CourseStatus = 'locked';
-            if (isUnlocked) {
+
+            if (!hasUnfinishedPrerequisites) {
                 status = 'available';
             }
+
             if (isEnrolled) {
                 status = 'in-progress';
             }
 
-            return {
+            const progressEntry: CourseProgress = {
                 courseId: course.id,
                 status,
                 progress: 0,
@@ -513,6 +553,10 @@ export class AcademyProgressService {
                 totalLessons: course.lessons,
                 quizPassed: false,
             };
+
+            courseProgressById.set(course.id, progressEntry);
+
+            return progressEntry;
         });
 
         const stageProgress: StageProgress[] = sortedStageIds.map((stageId) => {
@@ -614,8 +658,10 @@ export class AcademyProgressService {
         return courses.map((course) => this.withCourseProgress(course, courseProgress));
     }
 
-    private mapCoursesForStage(courses: CourseReadDto[], levelId: string, stageNumber: number): AcademyCourse[] {
-        return courses.map((course) => this.mapCourseDtoToAcademyCourse(course, levelId, stageNumber));
+    private mapCoursesForStage(courses: RoadmapCourseDto[], levelId: string, stageNumber: number): AcademyCourse[] {
+        return courses
+            .filter(course => course['isPublished'] !== false)
+            .map((course) => this.mapRoadmapCourseToAcademyCourse(course, levelId, stageNumber));
     }
 
     private mapLevelToStage(level: LevelReadDto, index: number): AcademyStageApi {
@@ -632,15 +678,17 @@ export class AcademyProgressService {
     private mapCourseDtoToAcademyCourse(course: CourseReadDto, levelId: string | undefined, stageNumber: number): AcademyCourse {
         const id = course.id ?? '';
         const title = course.title ?? 'Untitled course';
-        const lessons = course.numberOfLessons ?? 0;
+        const lessons = this.resolveLessonCount(course);
+        const category = this.mapCourseCategory(course.category);
 
         return {
             id,
             stageId: stageNumber,
             levelId: levelId ?? course.levelId ?? '',
             title,
-            category: 'social-topics', // all API courses map to the same neutral category by default
-            categoryLabel: 'Course',
+            isPublished: course.isPublished,
+            category,
+            categoryLabel: this.buildCategoryLabel(course.category),
             lessons,
             duration: this.buildDurationText(lessons),
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
@@ -651,6 +699,52 @@ export class AcademyProgressService {
                 ...(course.prerequisiteIds ?? [])
             ]
         };
+    }
+
+    private mapRoadmapCourseToAcademyCourse(
+        course: RoadmapCourseDto,
+        levelId: string,
+        stageNumber: number,
+    ): AcademyCourse {
+        const id = course.id ?? '';
+        const title = course.title ?? 'Untitled course';
+        const lessons = this.resolveLessonCount(course);
+        const categoryValue = course['category'];
+        const category = this.mapCourseCategory(categoryValue);
+        const isPublished = typeof course['isPublished'] === 'boolean' ? course['isPublished'] : undefined;
+
+        return {
+            id,
+            stageId: stageNumber,
+            levelId: levelId || course.levelId || '',
+            title,
+            isPublished,
+            category,
+            categoryLabel: this.buildCategoryLabel(categoryValue),
+            lessons,
+            duration: this.buildDurationText(lessons),
+            thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
+            description: course.description ?? undefined,
+            order: course.order,
+            prerequisites: [
+                ...(course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []),
+                ...(course.prerequisiteIds ?? []),
+            ],
+        };
+    }
+
+    private resolveLessonCount(source: Record<string, unknown>): number {
+        const numberOfLessons = source['numberOfLessons'];
+        if (typeof numberOfLessons === 'number' && Number.isFinite(numberOfLessons)) {
+            return Math.max(0, numberOfLessons);
+        }
+
+        const lessons = source['lessons'];
+        if (Array.isArray(lessons)) {
+            return lessons.length;
+        }
+
+        return 0;
     }
 
     private mapLessonDtoToAcademyLesson(
@@ -666,6 +760,7 @@ export class AcademyProgressService {
             id,
             courseId,
             title,
+            isPublished: lesson.isPublished,
             duration: '10 min',
             type,
             order: lesson.order ?? (index + 1),
@@ -674,25 +769,89 @@ export class AcademyProgressService {
     }
 
     private mapLessonType(lesson: LessonReadDto, index: number): AcademyLesson['type'] {
+        const title = (lesson.title ?? '').toLowerCase();
         const content = (lesson.content ?? '').toLowerCase();
+        const lessonType = typeof lesson.type === 'number' ? lesson.type : null;
 
-        if (index === 0 || content.includes('intro')) {
-            return 'intro';
-        }
-
-        if (content.includes('quiz')) {
+        if (
+            content.includes('quiz') ||
+            title.includes('quiz') ||
+            content.includes('assessment') ||
+            title.includes('assessment') ||
+            content.includes('exam') ||
+            title.includes('exam')
+        ) {
             return 'quiz';
         }
 
-        if (content.includes('article') || content.includes('text')) {
+        if (
+            lessonType === 4 ||
+            content.includes('audio') ||
+            title.includes('audio')
+        ) {
+            return 'audio';
+        }
+
+        if (
+            lessonType === 2 ||
+            content.includes('article') ||
+            content.includes('text') ||
+            title.includes('article')
+        ) {
             return 'article';
         }
 
-        if (lesson.videoUrl || lesson.externalVideoUrl) {
+        if (
+            lessonType === 1 ||
+            !!lesson.videoUrl ||
+            !!lesson.externalVideoUrl
+        ) {
             return 'video';
         }
 
+        if (
+            index === 0 ||
+            content.includes('intro') ||
+            content.includes('introduction') ||
+            title.includes('intro') ||
+            title.includes('introduction') ||
+            title.includes('overview')
+        ) {
+            return 'intro';
+        }
+
         return 'video';
+    }
+
+    private mapCourseCategory(value: unknown): AcademyCourse['category'] {
+        const normalized = this.normalizeCategory(value);
+
+        if (normalized.includes('faith') || normalized.includes('aqeeda') || normalized.includes('belief')) {
+            return 'main-believes';
+        }
+
+        if (normalized.includes('seerah') || normalized.includes('prophet') || normalized.includes('story')) {
+            return 'models-stories';
+        }
+
+        return 'social-topics';
+    }
+
+    private buildCategoryLabel(value: unknown): string {
+        const normalized = this.normalizeCategory(value);
+        if (!normalized) {
+            return 'Course';
+        }
+
+        return normalized
+            .replaceAll(/([a-z0-9])([A-Z])/g, '$1 $2')
+            .split(/[_\s]+/)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ');
+    }
+
+    private normalizeCategory(value: unknown): string {
+        return typeof value === 'string' ? value.trim() : '';
     }
 
     private buildDurationText(lessonCount: number): string {

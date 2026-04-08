@@ -20,14 +20,25 @@
       </a>
       <h1 class="register-title">Create an Account</h1>
     </div>
-    <img src="/footer/footer-logo-big.svg" alt="Ask A Muslim Logo" class="header-logo" />
+    <img
+      src="/footer/footer-logo-big.svg"
+      alt="Ask A Muslim Logo"
+      class="header-logo"
+    />
   </div>
 
   <div class="social-buttons">
-    <div class="google-btn-wrapper" style="display: flex; justify-content: center; width: 100%;">
-      <asl-google-signin-button type="standard" size="large" [width]="300"></asl-google-signin-button>
+    <div class="google-btn-wrapper">
+      <asl-google-signin-button
+        type="standard"
+        size="large"
+      ></asl-google-signin-button>
     </div>
-    <button type="button" class="social-btn social-btn--facebook" (click)="onSocialSignIn('facebook')">
+    <button
+      type="button"
+      class="social-btn social-btn--facebook"
+      (click)="onSocialSignIn('facebook')"
+    >
       <img src="/icons/icons-social-apps/facebook.svg" alt="Facebook" />
       <span>Sign in with Facebook</span>
     </button>
@@ -37,7 +48,12 @@
     <span>or</span>
   </div>
 
-  <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
+  <form
+    class="register-form"
+    [formGroup]="registerForm"
+    (ngSubmit)="onSubmit()"
+    novalidate
+  >
     @if (friendlyApiError) {
       <div class="api-error" role="alert">
         <svg
@@ -59,8 +75,14 @@
       </div>
     }
 
-    <div class="religion-selection" [class.religion-selection--error]="isFieldInvalid('religionType')">
-      <label class="religion-option" [class.selected]="religionType === 'muslim'">
+    <div
+      class="religion-selection"
+      [class.religion-selection--error]="isFieldInvalid('religionType')"
+    >
+      <label
+        class="religion-option"
+        [class.selected]="religionType === 'muslim'"
+      >
         <input
           type="radio"
           name="religionType"
@@ -72,7 +94,10 @@
         <span class="religion-radio-visual"></span>
         <span class="religion-label">Muslim</span>
       </label>
-      <label class="religion-option" [class.selected]="religionType === 'non-muslim'">
+      <label
+        class="religion-option"
+        [class.selected]="religionType === 'non-muslim'"
+      >
         <input
           type="radio"
           name="religionType"
@@ -85,8 +110,8 @@
         <span class="religion-label">Non-Muslim</span>
       </label>
     </div>
-    @if (isFieldInvalid('religionType')) {
-      <div class="religion-error">{{ getFieldError('religionType') }}</div>
+    @if (isFieldInvalid("religionType")) {
+      <div class="religion-error">{{ getFieldError("religionType") }}</div>
     }
 
     <div
@@ -107,9 +132,9 @@
           (blur)="onFieldBlur('fullName')"
           autocomplete="name"
         />
-        @if (isFieldInvalid('fullName')) {
+        @if (isFieldInvalid("fullName")) {
           <span class="form-error-tooltip">
-            {{ getFieldError('fullName') }}
+            {{ getFieldError("fullName") }}
           </span>
         }
       </div>
@@ -133,9 +158,9 @@
           (blur)="onFieldBlur('email')"
           autocomplete="email"
         />
-        @if (isFieldInvalid('email')) {
+        @if (isFieldInvalid("email")) {
           <span class="form-error-tooltip">
-            {{ getFieldError('email') }}
+            {{ getFieldError("email") }}
           </span>
         }
       </div>
@@ -168,14 +193,18 @@
             [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
           >
             <img
-              [src]="showPassword ? '/icons/icons-24/eye.svg' : '/icons/icons-24/eye-off.svg'"
+              [src]="
+                showPassword
+                  ? '/icons/icons-24/eye.svg'
+                  : '/icons/icons-24/eye-off.svg'
+              "
               alt
             />
           </button>
         </div>
-        @if (isFieldInvalid('password')) {
+        @if (isFieldInvalid("password")) {
           <span class="form-error-tooltip">
-            {{ getFieldError('password') }}
+            {{ getFieldError("password") }}
           </span>
         }
       </div>
@@ -199,9 +228,9 @@
           (blur)="onFieldBlur('phoneNumber')"
           autocomplete="tel"
         />
-        @if (isFieldInvalid('phoneNumber')) {
+        @if (isFieldInvalid("phoneNumber")) {
           <span class="form-error-tooltip">
-            {{ getFieldError('phoneNumber') }}
+            {{ getFieldError("phoneNumber") }}
           </span>
         }
       </div>
@@ -213,7 +242,11 @@
           @if (hasMinLength) {
             ✓
           } @else {
-            <img class="requirement-icon-img" src="/icons/icons-24/caution.svg" alt="Caution" />
+            <img
+              class="requirement-icon-img"
+              src="/icons/icons-24/caution.svg"
+              alt="Caution"
+            />
           }
         </span>
         <span>Be at least 8 Characters long</span>
@@ -223,7 +256,11 @@
           @if (hasNumber) {
             ✓
           } @else {
-            <img class="requirement-icon-img" src="/icons/icons-24/caution.svg" alt="Caution" />
+            <img
+              class="requirement-icon-img"
+              src="/icons/icons-24/caution.svg"
+              alt="Caution"
+            />
           }
         </span>
         <span>Contain at least one numerical character</span>

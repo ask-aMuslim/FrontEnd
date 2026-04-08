@@ -1,15 +1,18 @@
 <section class="contact-page" aria-labelledby="contact-hero-title">
-  <header class="hero-section">
-    <div class="hero-pattern" aria-hidden="true"></div>
-    <div class="hero-content">
-      <span class="hero-pill">Contact Us</span>
-      <h1 id="contact-hero-title" class="hero-title">Get in Touch</h1>
-      <p class="hero-subtitle">
-        We'd love to hear from you. If you have any kind of question,
-        suggestion, issue, feedback, or any kind of request, please provide it.
-      </p>
-    </div>
-  </header>
+  @if (!submittedContact()) {
+    <header class="hero-section">
+      <div class="hero-pattern" aria-hidden="true"></div>
+      <div class="hero-content">
+        <span class="hero-pill">Contact Us</span>
+        <h1 id="contact-hero-title" class="hero-title">Get in Touch</h1>
+        <p class="hero-subtitle">
+          We'd love to hear from you. If you have any kind of question,
+          suggestion, issue, feedback, or any kind of request, please provide
+          it.
+        </p>
+      </div>
+    </header>
+  }
 
   <div class="page-container">
     @if (submittedContact(); as submitted) {
@@ -38,16 +41,12 @@
         </article>
 
         <div class="success-actions">
-          <button
-            type="button"
-            class="send-button profile-button"
-            (click)="goToProfile()"
-          >
+          <button type="button" class="button-light" (click)="goToProfile()">
             Go to Profile
           </button>
           <button
             type="button"
-            class="text-action"
+            class="send-button success-secondary-button"
             (click)="onSendAnotherMessage()"
           >
             Send another message

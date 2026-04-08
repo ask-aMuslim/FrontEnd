@@ -48,6 +48,7 @@ export interface AcademyCourse {
     stageId: number;
     levelId?: string;  // actual level UUID from API
     title: string;
+    isPublished?: boolean;
     category: CourseCategory;
     categoryLabel: string;
     lessons: number;
@@ -65,6 +66,7 @@ export interface AcademyLesson {
     id: Id;
     courseId: Id;
     title: string;
+    isPublished?: boolean;
     duration: string;
     type: AcademyLessonType;
     order: number;

@@ -346,14 +346,28 @@ export class AskQaComponent implements OnInit {
 
   private mapQuestions(response: unknown): QuestionCard[] {
     const records = extractArray(response);
-    return records.map((item, index) => this.mapQuestion(item, index));
+    return records
+      .map((item, index) => this.mapQuestion(item, index))
+      .filter((question): question is QuestionCard => question !== null);
   }
 
-  private mapQuestion(item: unknown, index: number): QuestionCard {
+  private mapQuestion(item: unknown, index: number): QuestionCard | null {
     const record = asRecord(item);
+    const isPublished = getValue(record, 'isPublished', 'IsPublished');
+    if (isPublished === false) {
+      return null;
+    }
+
     // API returns translations array with questionText/answerText; prefer those if present
     const translations = extractArray(getValue(record, 'translations', 'Translations'));
-    const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+    const firstTranslation = translations
+      .map((translation) => asRecord(translation))
+      .find((translation) => {
+        const translationPublished = getValue(translation, 'isPublished', 'IsPublished');
+        const translationDeleted = getValue(translation, 'isDeleted', 'IsDeleted');
+        return translationPublished !== false && translationDeleted !== true;
+      }) ?? null;
+
     const title = toStringValue(
       firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
     ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
@@ -361,6 +375,11 @@ export class AskQaComponent implements OnInit {
     const description = toStringValue(
       firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
     ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+
+    if (!title.trim() || !description.trim()) {
+      return null;
+    }
+
     const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
     const id =
       toStringValue(getValue(record, 'id', 'Id')) ??

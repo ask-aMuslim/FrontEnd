@@ -76,7 +76,7 @@
 }
 
 .hero-message-separator {
-  color: var(--color-button-secondary-hovering);
+  color: var(--color-text-caption);
   margin: 0 0.5rem;
 }
 
@@ -223,10 +223,14 @@
   .hero-message-pill {
     max-width: 100%;
     white-space: normal;
-    gap: 0.4rem;
-    font-size: 14px;
-    line-height: 21px;
+    gap: 0;
+    font-size: 12px;
+    line-height: 18px;
     padding: 0.5rem 1rem;
+  }
+
+  .hero-message-separator {
+    margin: 0;
   }
 
   .hero-title {
@@ -337,6 +341,22 @@
   }
 }
 
+.section-title-with-accent.section-title-with-accent--word-only {
+  padding-bottom: 0;
+
+  &::after {
+    content: none;
+  }
+}
+
+.section-title-highlight {
+  text-decoration-line: underline;
+  text-decoration-color: #ecc140;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 0.35em;
+  text-decoration-skip-ink: none;
+}
+
 .what-section {
   border-top: 5rem solid white;
   border-top-left-radius: 5rem;
@@ -382,6 +402,14 @@
       min-width: 4rem;
     }
   }
+
+  .section-title-with-accent.section-title-with-accent--word-only {
+    padding-bottom: 0;
+
+    &::after {
+      content: none;
+    }
+  }
 }
 
 .eyebrow {
@@ -415,7 +443,10 @@
 
 .feature-card {
   background-color: #fff;
-  background-image: none;
+  background-image: url("/backgrounds/islamic-pattern.svg");
+  background-size: 500px auto;
+  background-repeat: repeat;
+  background-position: center;
   border-radius: var(--home-feature-card-radius);
   border: 1px solid #8fb39b;
   padding: 2rem;
@@ -1204,7 +1235,7 @@
     }
 
     .iman-label {
-      top: 350px;
+      top: 385px;
     }
   }
 }
@@ -1393,7 +1424,7 @@
     }
 
     .islam-label {
-      top: 0;
+      top: 35px;
     }
   }
 }
@@ -1445,7 +1476,7 @@
     }
 
     .islam-label {
-      top: 0;
+      top: 35px;
     }
   }
 }
@@ -1651,13 +1682,25 @@
 .what-is-quran-content {
   display: grid;
   grid-template-columns: minmax(45%, 1fr) minmax(0, 520px);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
   width: 100%;
+  align-items: stretch;
+}
+
+.quran-visual-panel {
+  display: none;
+  background-image: url("/backgrounds/what-is-quran-background.jpeg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 .quran-description-panel {
   grid-column: 2;
   justify-self: end;
   width: min(100%, 520px);
+  max-width: 100%;
+  min-width: 0;
   min-height: 410px;
   margin-right: 0;
   display: flex;
@@ -1671,6 +1714,7 @@
   font-size: 18px;
   font-weight: 400;
   line-height: 28.8px;
+  overflow-wrap: anywhere;
 }
 
 .quran-description-panel strong {
@@ -1731,17 +1775,50 @@
 }
 
 @media (max-width: 1024px) {
+  .what-is-quran-section {
+    background-image: none;
+    padding: clamp(2.5rem, 6vw, 4rem) 0;
+  }
+
   .what-is-quran-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  .quran-visual-panel {
     display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 240px;
+    background-position: center 22%;
+    border-radius: 16px 16px 0 0;
   }
 
   .quran-description-panel {
+    width: 100%;
+    max-width: 100%;
     min-height: auto;
-    margin-right: 0;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    background: linear-gradient(
+      180deg,
+      rgba(248, 249, 250, 0.92) 0%,
+      rgba(248, 249, 250, 1) 100%
+    );
+    border-radius: 0 0 16px 16px;
+    box-sizing: border-box;
   }
 }
 
 @media (max-width: 640px) {
+  .quran-visual-panel {
+    aspect-ratio: 4 / 3;
+    min-height: 220px;
+    background-position: 38% center;
+  }
+
   .quran-description-panel p {
     font-size: 16px;
     line-height: 25.6px;
@@ -1869,7 +1946,7 @@
   position: relative;
   display: inline-block;
   width: min(100%, 628px);
-  padding-bottom: 11px;
+  padding-bottom: 0;
   color: #010d05;
   font-size: clamp(2rem, 4vw, 2.5rem);
   font-weight: 700;
@@ -1877,14 +1954,7 @@
   text-align: center;
 
   &::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: min(449px, 71.5%);
-    height: 3px;
-    border-radius: 99999px;
-    background: #ecc140;
+    content: none;
   }
 }
 

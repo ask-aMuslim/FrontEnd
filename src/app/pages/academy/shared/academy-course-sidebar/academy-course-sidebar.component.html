@@ -43,7 +43,10 @@
     </div>
   </div>
 
-  <div class="lessons-list">
+  <div
+    class="lessons-list"
+    [class.lessons-list--scrollable]="shouldEnableScroll"
+  >
     @for (lesson of lessons; track trackByLessonId($index, lesson)) {
       @if (showReadyDividerBeforeQuiz && lesson.type === "quiz") {
         <div class="ready-divider">
@@ -64,7 +67,12 @@
         (click)="onLessonClick(lesson)"
       >
         <div class="lesson-info">
-          <h4 class="lesson-title">{{ lesson.title }}</h4>
+          <h4
+            [class.lesson-title]="lesson.type !== 'quiz'"
+            [class.quiz-title]="lesson.type === 'quiz'"
+          >
+            {{ lesson.title }}
+          </h4>
           <span class="lesson-duration">{{ lesson.duration }}</span>
         </div>
 

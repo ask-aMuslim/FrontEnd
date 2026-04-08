@@ -27,6 +27,11 @@
     line-height: 1.2;
     font-weight: 700;
     color: var(--color-text-title);
+    text-decoration: none;
+
+    &::after {
+      content: none;
+    }
   }
 }
 
@@ -738,6 +743,11 @@
   line-height: 1.5;
   letter-spacing: -0.5px;
   font-weight: 600;
+  text-decoration: none;
+
+  &::after {
+    content: none;
+  }
 }
 
 .resources-questions-cta__subtitle {

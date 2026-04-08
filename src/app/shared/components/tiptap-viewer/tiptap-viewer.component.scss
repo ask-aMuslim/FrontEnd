@@ -46,3 +46,17 @@
   margin: 0.75rem auto;
   border-radius: 0.5rem;
 }
+
+:host ::ng-deep .tiptap-viewer .ProseMirror a {
+  color: var(--color-button-primary-normal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror :where(strong, b) {
+  font-weight: 700;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror :where(em, i) {
+  font-style: italic;
+}

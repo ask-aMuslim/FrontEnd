@@ -147,6 +147,11 @@ $radius-lg: 16px;
   font-size: clamp(1.75rem, 4.5vw, 2.25rem);
   line-height: 1.25;
   font-weight: 700;
+  text-decoration: none;
+
+  &::after {
+    content: none;
+  }
 }
 
 .resources-gallery__header + .resources-tabs {
@@ -248,13 +253,37 @@ $radius-lg: 16px;
 .resource-card__media {
   aspect-ratio: 400 / 266;
   background: var(--color-background-base-surface);
+  overflow: hidden;
 
+  .resource-card__thumbnail-fallback {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .resource-card__fallback-logo {
+    width: min(112px, 42%);
+    height: auto;
+    object-fit: contain;
+  }
+
+  .resource-card__pdf-preview,
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    border: 0;
   }
+}
+
+.resource-card__media-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
 }
 
 .resource-card__content {
@@ -288,6 +317,11 @@ $radius-lg: 16px;
   display: grid;
   grid-template-columns: 1fr 56px;
   gap: 1rem;
+}
+
+.resource-card__actions--compact {
+  grid-template-columns: 56px;
+  justify-content: end;
 }
 
 .resources-gallery__footer {
@@ -361,6 +395,8 @@ $radius-lg: 16px;
   border: 0;
   border-radius: 10px;
   background: var(--color-button-primary-normal);
+  text-decoration: none;
+  color: inherit;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -418,6 +454,11 @@ $radius-lg: 16px;
     line-height: 1.4;
     font-weight: 500;
     letter-spacing: 0.5px;
+    text-decoration: none;
+
+    &::after {
+      content: none;
+    }
   }
 
   h2 {
@@ -426,6 +467,11 @@ $radius-lg: 16px;
     font-size: clamp(2rem, 5vw, 2.5rem);
     line-height: 1.2;
     font-weight: 700;
+    text-decoration: none;
+
+    &::after {
+      content: none;
+    }
   }
 }
 
@@ -520,6 +566,11 @@ $radius-lg: 16px;
   line-height: 1.5;
   letter-spacing: -0.5px;
   font-weight: 600;
+  text-decoration: none;
+
+  &::after {
+    content: none;
+  }
 }
 
 .resources-questions-cta__subtitle {
