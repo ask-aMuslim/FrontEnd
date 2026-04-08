@@ -8,8 +8,10 @@ import {
     ElementRef,
     AfterViewChecked,
     ViewChild,
+    PLATFORM_ID,
+    inject,
 } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { NgClass, isPlatformBrowser } from '@angular/common';
 
 export interface TreeCourse {
     id: string;
@@ -44,6 +46,9 @@ interface Connection {
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CourseTreeComponent implements OnChanges, AfterViewChecked {
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
+
     @Input() courses: TreeCourse[] = [];
     @Output() courseClick = new EventEmitter<TreeCourse>();
 
@@ -183,12 +188,17 @@ export class CourseTreeComponent implements OnChanges, AfterViewChecked {
     }
 
     private computeSvgPaths(): void {
+        if (!this.isBrowser) {
+            this.svgPaths = [];
+            return;
+        }
+
         if (!this.svgOverlay) return;
         this.svgPaths = [];
 
         for (const conn of this.connections) {
-            const fromEl = document.getElementById(`course-node-${conn.fromId}`);
-            const toEl = document.getElementById(`course-node-${conn.toId}`);
+            const fromEl = globalThis.document.getElementById(`course-node-${conn.fromId}`);
+            const toEl = globalThis.document.getElementById(`course-node-${conn.toId}`);
             const svgEl = this.svgOverlay.nativeElement;
 
             if (!fromEl || !toEl || !svgEl) continue;

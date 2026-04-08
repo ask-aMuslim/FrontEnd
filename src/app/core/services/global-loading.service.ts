@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 /**
  * Global loading service with minimal-visible-time and show-delay to
@@ -8,6 +9,8 @@ import { Injectable, signal } from '@angular/core';
  */
 @Injectable({ providedIn: 'root' })
 export class GlobalLoadingService {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly pendingRequests = signal(0);
 
   // Backwards-compatible: numeric pending count
@@ -28,6 +31,10 @@ export class GlobalLoadingService {
   start(): void {
     this.pendingRequests.update((count) => count + 1);
 
+    if (!this.isBrowser) {
+      return;
+    }
+
     // If already visible, nothing else to do
     if (this.visible()) {
       return;
@@ -35,12 +42,12 @@ export class GlobalLoadingService {
 
     // Cancel pending hides
     if (this.hideTimer) {
-      clearTimeout(this.hideTimer);
+      globalThis.clearTimeout(this.hideTimer);
       this.hideTimer = null;
     }
 
     // Start show timer if not already scheduled
-    this.showTimer ??= setTimeout(() => {
+    this.showTimer ??= globalThis.setTimeout(() => {
       this.showTimer = null;
       this.visible.set(true);
       this.visibleSince = Date.now();
@@ -50,6 +57,13 @@ export class GlobalLoadingService {
   stop(): void {
     this.pendingRequests.update((count) => Math.max(0, count - 1));
 
+    if (!this.isBrowser) {
+      if (this.pendingRequests() === 0) {
+        this.visible.set(false);
+      }
+      return;
+    }
+
     // If there are still pending requests, keep visible
     if (this.pendingRequests() > 0) {
       return;
@@ -57,7 +71,7 @@ export class GlobalLoadingService {
 
     // Cancel pending show if present
     if (this.showTimer) {
-      clearTimeout(this.showTimer);
+      globalThis.clearTimeout(this.showTimer);
       this.showTimer = null;
     }
 
@@ -70,7 +84,7 @@ export class GlobalLoadingService {
     const remaining = Math.max(0, this.minVisible - elapsed);
 
     // Ensure minimum visible duration
-    this.hideTimer = setTimeout(() => {
+    this.hideTimer = globalThis.setTimeout(() => {
       this.hideTimer = null;
       this.visible.set(false);
     }, remaining);

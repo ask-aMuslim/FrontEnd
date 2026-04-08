@@ -97,7 +97,8 @@ export class LessonContentService {
   getCourseLessons(courseId: Id): Observable<LessonMetadata[]> {
     return this.lessonsService.getByCourseId(courseId).pipe(
       map(lessons => {
-        const withOrder = lessons as (LessonReadDto & { order?: number })[];
+        const withOrder = lessons
+          .filter((lesson) => lesson.isPublished !== false) as (LessonReadDto & { order?: number })[];
         const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         return sortedLessons.map(lesson => this.mapLessonDtoToMetadata(lesson));
       }),
@@ -176,7 +177,7 @@ export class LessonContentService {
    * Map LessonReadDto to LessonContent based on type
    */
   private mapLessonDtoToContent(lessonDto: LessonReadDto | null): LessonContent {
-    if (!lessonDto) {
+    if (!lessonDto || lessonDto.isPublished === false) {
       return {
         id: '',
         type: LessonType.Article,
@@ -292,12 +293,22 @@ export class LessonContentService {
   }
 
   private resolveArticleSectionContent(contentJson: unknown, fallbackContent: string): string {
+    const directFallback = this.tryExtractHtml(fallbackContent);
+    if (directFallback) {
+      return directFallback;
+    }
+
     const fromJson = this.tryResolveContentJson(contentJson);
     if (fromJson) {
       return fromJson;
     }
 
-    return fallbackContent;
+    const fallbackText = fallbackContent.trim();
+    if (!fallbackText) {
+      return '';
+    }
+
+    return `<p>${this.escapeHtml(fallbackText).replaceAll('\n', '<br/>')}</p>`;
   }
 
   private tryResolveContentJson(value: unknown): string | null {
@@ -311,69 +322,300 @@ export class LessonContentService {
         return null;
       }
 
+      const directHtml = this.tryExtractHtml(trimmed);
+      if (directHtml) {
+        return directHtml;
+      }
+
+      const fromJsonString = this.tryExtractHtmlFromJsonString(trimmed);
+      if (fromJsonString) {
+        return fromJsonString;
+      }
+
       if (this.containsHtml(trimmed)) {
         return trimmed;
       }
 
       try {
         const parsed = JSON.parse(trimmed) as unknown;
-        return this.renderStructuredJson(parsed);
+        const directFromUnknown = this.tryExtractHtmlFromUnknown(parsed);
+        if (directFromUnknown) {
+          return directFromUnknown;
+        }
+
+        return this.renderStructuredContent(parsed);
       } catch {
         return `<p>${this.escapeHtml(trimmed).replaceAll('\n', '<br/>')}</p>`;
       }
     }
 
-    return this.renderStructuredJson(value);
+    const directFromUnknown = this.tryExtractHtmlFromUnknown(value);
+    if (directFromUnknown) {
+      return directFromUnknown;
+    }
+
+    return this.renderStructuredContent(value);
   }
 
-  private renderStructuredJson(value: unknown): string | null {
-    const plainText = this.collectStructuredText(value).trim();
-    if (!plainText) {
+  private tryExtractHtml(value: string | null): string | null {
+    if (!value) {
       return null;
     }
 
-    return `<p>${this.escapeHtml(plainText).replaceAll('\n', '<br/>')}</p>`;
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    return /<\/?[a-z][\s\S]*>/i.test(trimmed) ? trimmed : null;
   }
 
-  private collectStructuredText(value: unknown): string {
-    if (value === null || value === undefined) {
-      return '';
+  private tryExtractHtmlFromJsonString(value: string): string | null {
+    const trimmed = value.trim();
+    if (!trimmed || (!trimmed.startsWith('{') && !trimmed.startsWith('['))) {
+      return null;
     }
 
-    if (typeof value === 'string') {
-      return value;
-    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      const direct = this.tryExtractHtmlFromUnknown(parsed);
+      if (direct) {
+        return direct;
+      }
 
-    if (Array.isArray(value)) {
-      return value.map((entry) => this.collectStructuredText(entry)).join('\n');
+      return this.renderStructuredContent(parsed);
+    } catch {
+      return null;
     }
+  }
 
-    if (typeof value !== 'object') {
-      return '';
+  private renderStructuredContent(value: unknown): string | null {
+    if (!value || typeof value !== 'object') {
+      return null;
     }
 
     const record = value as Record<string, unknown>;
+    const content = record['content'];
+    let maybeNodes: unknown[] | null = null;
+    if (Array.isArray(content)) {
+      maybeNodes = content;
+    } else if (Array.isArray(value)) {
+      maybeNodes = value;
+    }
+
+    if (!maybeNodes) {
+      return null;
+    }
+
+    const html = maybeNodes
+      .map((node) => this.renderNode(node))
+      .filter((node): node is string => typeof node === 'string' && node.trim().length > 0)
+      .join('');
+
+    return html.length > 0 ? html : null;
+  }
+
+  private renderNode(node: unknown): string | null {
+    if (!node || typeof node !== 'object') {
+      return null;
+    }
+
+    const record = node as Record<string, unknown>;
     const type = typeof record['type'] === 'string' ? record['type'] : null;
+    const content = this.renderChildContent(record['content']);
 
-    if (type === 'text') {
-      return typeof record['text'] === 'string' ? record['text'] : '';
+    const renderedByType = this.renderNodeByType(type, record, content);
+    if (renderedByType !== null) {
+      return renderedByType;
     }
 
-    if (type === 'hardBreak') {
-      return '\n';
+    const wrapped = this.wrapNode(type, content);
+    if (wrapped) {
+      return wrapped;
     }
 
-    const childContent = this.collectStructuredText(record['content']);
-    if (type === 'paragraph' || type === 'heading' || type === 'listItem') {
-      return childContent ? `${childContent}\n` : '';
+    return content || null;
+  }
+
+  private renderNodeByType(type: string | null, record: Record<string, unknown>, content: string): string | null {
+    switch (type) {
+      case 'text':
+        return this.renderTextNode(record);
+      case 'hardBreak':
+        return '<br/>';
+      case 'image':
+        return this.renderImageNode(record);
+      case 'heading':
+        return this.renderHeadingNode(record, content);
+      case 'doc':
+        return content;
+      default:
+        return null;
+    }
+  }
+
+  private renderTextNode(record: Record<string, unknown>): string {
+    const textValue = this.escapeHtml(typeof record['text'] === 'string' ? record['text'] : '');
+    return this.applyMarks(textValue, record['marks']);
+  }
+
+  private renderImageNode(record: Record<string, unknown>): string | null {
+    const attrs = record['attrs'];
+    const attrsRecord = attrs && typeof attrs === 'object' ? (attrs as Record<string, unknown>) : null;
+    const srcRaw = typeof attrsRecord?.['src'] === 'string' ? attrsRecord['src'] : '';
+
+    if (!srcRaw) {
+      return null;
     }
 
-    const otherValues = Object.entries(record)
-      .filter(([key]) => key !== 'content' && key !== 'type' && key !== 'text')
-      .map(([, entry]) => this.collectStructuredText(entry))
-      .join('\n');
+    const normalizedSrc = toApiMediaUrl(srcRaw) ?? srcRaw;
+    const src = this.escapeHtml(normalizedSrc);
+    const alt = this.escapeHtml(
+      typeof attrsRecord?.['alt'] === 'string' ? attrsRecord['alt'] : 'Article image',
+    );
+    const title = this.escapeHtml(typeof attrsRecord?.['title'] === 'string' ? attrsRecord['title'] : '');
+    const titleAttr = title ? ` title="${title}"` : '';
 
-    return `${childContent}${otherValues}`;
+    return `<img src="${src}" alt="${alt}" loading="lazy"${titleAttr} />`;
+  }
+
+  private renderHeadingNode(record: Record<string, unknown>, content: string): string {
+    const attrs = record['attrs'];
+    const attrsRecord = attrs && typeof attrs === 'object' ? (attrs as Record<string, unknown>) : null;
+    const levelRaw = typeof attrsRecord?.['level'] === 'number' ? attrsRecord['level'] : 2;
+    const level = Math.min(6, Math.max(1, levelRaw));
+    return `<h${level}>${content}</h${level}>`;
+  }
+
+  private wrapNode(type: string | null, content: string): string | null {
+    const wrappers: Record<string, [string, string]> = {
+      paragraph: ['<p>', '</p>'],
+      blockquote: ['<blockquote>', '</blockquote>'],
+      bulletList: ['<ul>', '</ul>'],
+      orderedList: ['<ol>', '</ol>'],
+      listItem: ['<li>', '</li>'],
+    };
+
+    if (!type || !wrappers[type]) {
+      return null;
+    }
+
+    const [openTag, closeTag] = wrappers[type];
+    return `${openTag}${content}${closeTag}`;
+  }
+
+  private renderChildContent(content: unknown): string {
+    if (!Array.isArray(content)) {
+      return '';
+    }
+
+    return content
+      .map((item) => this.renderNode(item))
+      .filter((item): item is string => typeof item === 'string')
+      .join('');
+  }
+
+  private applyMarks(value: string, marks: unknown): string {
+    if (!Array.isArray(marks) || marks.length === 0) {
+      return value;
+    }
+
+    return marks.reduce((result, mark) => {
+      if (!mark || typeof mark !== 'object') {
+        return result;
+      }
+
+      const record = mark as Record<string, unknown>;
+      const type = typeof record['type'] === 'string' ? record['type'] : '';
+
+      if (type === 'bold' || type === 'strong') {
+        return `<strong>${result}</strong>`;
+      }
+
+      if (type === 'italic' || type === 'em') {
+        return `<em>${result}</em>`;
+      }
+
+      if (type === 'underline') {
+        return `<u>${result}</u>`;
+      }
+
+      if (type === 'strike') {
+        return `<s>${result}</s>`;
+      }
+
+      if (type === 'link') {
+        const attrs = record['attrs'];
+        const attrsRecord = attrs && typeof attrs === 'object' ? (attrs as Record<string, unknown>) : null;
+        const href = typeof attrsRecord?.['href'] === 'string' ? attrsRecord['href'] : '#';
+        const escapedHref = this.escapeHtml(href);
+        return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${result}</a>`;
+      }
+
+      return result;
+    }, value);
+  }
+
+  private tryExtractHtmlFromUnknown(value: unknown): string | null {
+    if (typeof value === 'string') {
+      return this.tryExtractHtml(value);
+    }
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    if (typeof value !== 'object') {
+      return null;
+    }
+
+    const record = value as Record<string, unknown>;
+    const directHtml = this.readDirectHtml(record);
+    if (directHtml) {
+      return directHtml;
+    }
+
+    return this.readNestedHtml(record);
+  }
+
+  private readDirectHtml(record: Record<string, unknown>): string | null {
+    const directHtml = this.tryExtractHtml(typeof record['html'] === 'string' ? record['html'] : null);
+    if (directHtml) {
+      return directHtml;
+    }
+
+    return this.tryExtractHtml(typeof record['content'] === 'string' ? record['content'] : null);
+  }
+
+  private readNestedHtml(record: Record<string, unknown>): string | null {
+    const values = Object.values(record);
+    for (const entry of values) {
+      if (Array.isArray(entry)) {
+        const arrayHtml = this.readHtmlFromArray(entry);
+        if (arrayHtml) {
+          return arrayHtml;
+        }
+        continue;
+      }
+
+      const nestedHtml = this.tryExtractHtmlFromUnknown(entry);
+      if (nestedHtml) {
+        return nestedHtml;
+      }
+    }
+
+    return null;
+  }
+
+  private readHtmlFromArray(values: unknown[]): string | null {
+    for (const nestedEntry of values) {
+      const nestedHtml = this.tryExtractHtmlFromUnknown(nestedEntry);
+      if (nestedHtml) {
+        return nestedHtml;
+      }
+    }
+
+    return null;
   }
 
   private containsHtml(value: string): boolean {

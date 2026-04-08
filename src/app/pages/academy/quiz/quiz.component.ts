@@ -15,7 +15,7 @@ import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
-import { AcademyCourseSidebarComponent } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
+import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 
 // Quiz Question Interface
 interface QuizQuestion {
@@ -46,7 +46,7 @@ type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
 @Component({
     selector: 'app-quiz',
     standalone: true,
-    imports: [FormsModule, AcademyPageShellComponent, AcademyCourseSidebarComponent],
+    imports: [FormsModule, AcademyPageShellComponent, AcademySidebarHostComponent],
     templateUrl: './quiz.component.html',
     styleUrls: ['./quiz.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +54,7 @@ type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
 export class QuizComponent implements OnInit, OnDestroy {
     private static readonly optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
     private static readonly questionNumberOffset = 1;
+    private static readonly syntheticQuizLessonPrefix = 'synthetic-quiz-';
     // Route params
     courseId = '';
     lessonId = '';
@@ -164,10 +165,12 @@ export class QuizComponent implements OnInit, OnDestroy {
     // Lessons for sidebar
     readonly lessons = signal<Array<{
         id: string;
+        quizLessonId?: string;
         title: string;
         duration: string;
         type: 'intro' | 'video' | 'article' | 'quiz' | 'audio';
         isCompleted: boolean;
+        isLocked?: boolean;
         isCurrent?: boolean;
         hasNotification?: boolean;
     }>>([]);
@@ -180,6 +183,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
     private isFinishingQuiz = false;
+    private readonly isBrowser: boolean;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -191,7 +195,9 @@ export class QuizComponent implements OnInit, OnDestroy {
         private readonly academyProgressService: AcademyProgressService,
         private readonly scrollService: ScrollService,
         @Inject(PLATFORM_ID) private readonly platformId: object
-    ) { }
+    ) {
+        this.isBrowser = isPlatformBrowser(this.platformId);
+    }
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
         return [
@@ -298,10 +304,12 @@ export class QuizComponent implements OnInit, OnDestroy {
                         const lessonType = this.mapLessonType(lesson.type);
                         return {
                             id: lesson.id,
+                            quizLessonId: lessonType === 'quiz' ? lesson.id : undefined,
                             title: lesson.title,
-                            duration: lesson.duration,
+                            duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
                             type: lessonType,
                             isCompleted: lesson.progress.status === 'completed',
+                            isLocked: lesson.progress.status === 'locked',
                             isCurrent: lesson.progress.status === 'current',
                             hasNotification: lesson.progress.status === 'current'
                         };
@@ -341,10 +349,12 @@ export class QuizComponent implements OnInit, OnDestroy {
                 switchMap((quizzes) => {
                     const activeQuiz = quizzes[0];
                     if (!activeQuiz?.id) {
+                        this.syncSidebarQuizLesson(null);
                         return of([] as QuizQuestion[]);
                     }
 
                     this.activeQuizId.set(activeQuiz.id);
+                    this.syncSidebarQuizLesson(activeQuiz);
                     return this.buildQuestionsFromQuizId(activeQuiz.id);
                 }),
                 catchError(() => of([] as QuizQuestion[])),
@@ -523,7 +533,9 @@ export class QuizComponent implements OnInit, OnDestroy {
             completionTime: this.quizCompletionTime(),
             timestamp: new Date().toISOString()
         };
-        localStorage.setItem(storageKey, JSON.stringify(quizData));
+        if (this.isBrowser) {
+            localStorage.setItem(storageKey, JSON.stringify(quizData));
+        }
 
         const attemptId = this.activeAttemptId();
         if (attemptId) {
@@ -669,10 +681,11 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.router.navigate(['/academy/course', this.courseId, 'certificate']);
     }
     private mapLessonType(value: unknown): 'intro' | 'video' | 'article' | 'quiz' | 'audio' {
-        if (value === 'quiz' || value === 4) return 'quiz';
-        if (value === 'article' || value === 3) return 'article';
-        if (value === 'audio') return 'audio';
+        if (value === 'quiz') return 'quiz';
         if (value === 'intro') return 'intro';
+        if (value === 'audio' || value === 4) return 'audio';
+        if (value === 'article' || value === 2 || value === 3) return 'article';
+        if (value === 'video' || value === 1) return 'video';
         return 'video';
     }
 
@@ -685,6 +698,48 @@ export class QuizComponent implements OnInit, OnDestroy {
                 questionId: answer.questionId,
                 selectedOptionId: answer.selectedOptionId,
             }));
+    }
+
+    private syncSidebarQuizLesson(activeQuiz: { title?: string; lessonId?: string } | null): void {
+        this.lessons.update((currentLessons) => {
+            const quizTitle = activeQuiz?.title?.trim() || 'Quiz';
+            const quizLessonId = activeQuiz?.lessonId?.trim() || this.lessonId || this.courseId;
+
+            const updatedLessons = currentLessons.map((lesson) => {
+                if (lesson.type !== 'quiz') {
+                    return lesson;
+                }
+
+                return {
+                    ...lesson,
+                    title: quizTitle,
+                    duration: 'Assessment',
+                    quizLessonId,
+                    isCurrent: true,
+                    hasNotification: false,
+                };
+            });
+
+            const hasQuizLesson = updatedLessons.some((lesson) => lesson.type === 'quiz');
+            if (hasQuizLesson || !activeQuiz) {
+                return updatedLessons;
+            }
+
+            return [
+                ...updatedLessons,
+                {
+                    id: `${QuizComponent.syntheticQuizLessonPrefix}${quizLessonId}`,
+                    quizLessonId,
+                    title: quizTitle,
+                    duration: 'Assessment',
+                    type: 'quiz' as const,
+                    isCompleted: false,
+                    isLocked: false,
+                    isCurrent: true,
+                    hasNotification: false,
+                },
+            ];
+        });
     }
 
     private mapApiQuestion(
@@ -713,7 +768,9 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     retakeQuizFromResults(): void {
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
-        localStorage.removeItem(storageKey);
+        if (this.isBrowser) {
+            localStorage.removeItem(storageKey);
+        }
 
         // Reset state
         this.previousScore.set(0);

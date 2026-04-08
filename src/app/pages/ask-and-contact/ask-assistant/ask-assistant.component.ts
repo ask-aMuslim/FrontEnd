@@ -1,10 +1,12 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   ViewChild,
   ChangeDetectorRef,
+  PLATFORM_ID,
+  inject,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ChatMessage } from './ask-assistant.model';
@@ -20,6 +22,8 @@ import { AskAssistantService } from './ask-assistant.service';
 })
 export class AskAssistantComponent {
   private messageId = 0;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   @ViewChild('askInput') askInput?: ElementRef<HTMLInputElement>;
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
@@ -70,7 +74,9 @@ export class AskAssistantComponent {
     this.hasSelectedSuggestion = true;
     this.isSuggestionsOpen = false;
     // Refocus the input after selection to keep user in the flow
-    setTimeout(() => this.askInput?.nativeElement.focus({ preventScroll: true }), 0);
+    if (this.isBrowser) {
+      globalThis.setTimeout(() => this.askInput?.nativeElement.focus({ preventScroll: true }), 0);
+    }
   }
 
   async submitQuestion(event?: Event): Promise<void> {
@@ -119,9 +125,13 @@ export class AskAssistantComponent {
   }
 
   private scrollToBottom(smooth = true): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     // Ensure the view reflects latest messages before measuring/scrolling
     this.cdr.detectChanges();
-    setTimeout(() => {
+    globalThis.setTimeout(() => {
       const behavior = smooth ? ('smooth' as ScrollBehavior) : ('auto' as ScrollBehavior);
       const anchor = this.bottomAnchor?.nativeElement;
       if (anchor) {

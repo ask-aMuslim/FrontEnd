@@ -4,7 +4,6 @@
     aria-labelledby="resources-hero-title"
   >
     <div class="resources-hero__pattern" aria-hidden="true"></div>
-    <!-- single centered gate below subtitle -->
     <div class="section-container">
       <div class="resources-hero__content">
         <p class="resources-hero__eyebrow" aria-label="About guidance">
@@ -26,7 +25,7 @@
     </div>
   </section>
 
-  @for (gallery of galleries; track trackByGalleryId($index, gallery)) {
+  <ng-container *ngFor="let gallery of galleries; let galleryIndex = index">
     <section
       class="resources-gallery"
       [class.resources-gallery--surface]="gallery.surface === 'surface'"
@@ -35,97 +34,128 @@
     >
       <div class="section-container">
         <div class="section-block section-block--wide">
-          @if (gallery.eyebrow || gallery.title) {
-            <header class="resources-gallery__header">
-              @if (gallery.eyebrow) {
-                <p class="resources-gallery__eyebrow">{{ gallery.eyebrow }}</p>
-              }
-              @if (gallery.title) {
-                <h2 class="resources-gallery__title">{{ gallery.title }}</h2>
-              }
-            </header>
-          }
+          <header
+            class="resources-gallery__header"
+            *ngIf="gallery.eyebrow || gallery.title"
+          >
+            <p class="resources-gallery__eyebrow" *ngIf="gallery.eyebrow">
+              {{ gallery.eyebrow }}
+            </p>
+            <h2 class="resources-gallery__title" *ngIf="gallery.title">
+              {{ gallery.title }}
+            </h2>
+          </header>
 
-          @if (gallery.id === "gallery-1") {
-            <div
-              class="resources-tabs"
-              role="tablist"
-              [class.resources-tabs--two]="gallery.tabs.length === 2"
-              [attr.aria-label]="gallery.title || 'Resource categories'"
+          <div
+            class="resources-tabs"
+            role="tablist"
+            [class.resources-tabs--two]="gallery.tabs.length === 2"
+            [attr.aria-label]="gallery.title || 'Resource categories'"
+            *ngIf="gallery.id === 'gallery-1'"
+          >
+            <button
+              type="button"
+              role="tab"
+              class="resources-tab"
+              *ngFor="let tab of gallery.tabs; let tabIndex = index"
+              [class.resources-tab--active]="
+                isGalleryTabActive(gallery.id, tab.id)
+              "
+              [attr.aria-selected]="isGalleryTabActive(gallery.id, tab.id)"
+              [attr.tabindex]="isGalleryTabActive(gallery.id, tab.id) ? 0 : -1"
+              (click)="selectGalleryTab(gallery.id, tab.id)"
+              (keydown)="onGalleryTabKeydown($event, gallery, tab.id)"
             >
-              @for (tab of gallery.tabs; track trackByTabId($index, tab)) {
-                <button
-                  type="button"
-                  role="tab"
-                  class="resources-tab"
-                  [class.resources-tab--active]="
-                    isGalleryTabActive(gallery.id, tab.id)
-                  "
-                  [attr.aria-selected]="isGalleryTabActive(gallery.id, tab.id)"
-                  [attr.tabindex]="
-                    isGalleryTabActive(gallery.id, tab.id) ? 0 : -1
-                  "
-                  (click)="selectGalleryTab(gallery.id, tab.id)"
-                  (keydown)="onGalleryTabKeydown($event, gallery, tab.id)"
-                >
-                  <span class="resources-tab__label">{{ tab.label }}</span>
-                  @if (tab.hasIndicator) {
-                    <span
-                      class="resources-tab__indicator"
-                      aria-hidden="true"
-                    ></span>
-                  }
-                </button>
-              }
-            </div>
-          }
-
-          <div class="resources-grid" role="list" aria-label="Resource cards">
-            @for (
-              card of visibleCardsByGallery()[gallery.id];
-              track trackByCardId($index, card)
-            ) {
-              <article class="resource-card" role="listitem">
-                <div class="resource-card__media">
-                  <img
-                    [src]="card.imageSrc"
-                    [alt]="card.imageAlt"
-                    loading="lazy"
-                  />
-                </div>
-
-                <div class="resource-card__content">
-                  <h2>{{ card.title }}</h2>
-                  <p>{{ card.subtitle }}</p>
-
-                  <div class="resource-card__actions">
-                    <button
-                      type="button"
-                      class="resources-button resources-button--outline resources-button--wide"
-                    >
-                      Read Article
-                    </button>
-                    <button
-                      type="button"
-                      class="resources-icon-button"
-                      aria-label="Read article details"
-                    >
-                      <img
-                        src="/icons/icons-24/arrow-right.svg"
-                        alt=""
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </article>
-            }
+              <span class="resources-tab__label">{{ tab.label }}</span>
+            </button>
           </div>
 
-          <div class="resources-gallery__footer">
+          <div class="resources-grid" role="list" aria-label="Resource cards">
+            <article
+              class="resource-card"
+              role="listitem"
+              *ngFor="let card of getVisibleCards(gallery)"
+            >
+              <a
+                class="resource-card__media-link"
+                [href]="card.articleUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                [attr.aria-label]="'Open resource ' + card.title"
+              >
+                <div class="resource-card__media">
+                  <ng-container
+                    *ngIf="
+                      !isThumbnailFallback(card.id);
+                      else thumbnailFallback
+                    "
+                  >
+                    <img
+                      [src]="card.imageSrc"
+                      [alt]="card.imageAlt"
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                      (error)="onResourceThumbnailError($event, card)"
+                    />
+                  </ng-container>
+
+                  <ng-template #thumbnailFallback>
+                    <div class="resource-card__thumbnail-fallback">
+                      <img
+                        class="resource-card__fallback-logo"
+                        [src]="thumbnailFallbackImage"
+                        alt="Ask A Muslim logo"
+                        loading="lazy"
+                      />
+                    </div>
+                  </ng-template>
+                </div>
+              </a>
+
+              <div class="resource-card__content">
+                <h2>{{ card.title }}</h2>
+                <p>{{ card.subtitle }}</p>
+
+                <div
+                  class="resource-card__actions"
+                  [class.resource-card__actions--compact]="
+                    !card.showReadArticle
+                  "
+                >
+                  <a
+                    *ngIf="card.showReadArticle"
+                    class="resources-button resources-button--outline resources-button--wide"
+                    [href]="card.articleUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Read Article
+                  </a>
+                  <a
+                    class="resources-icon-button"
+                    [href]="card.downloadUrl"
+                    [attr.download]="card.downloadFileName"
+                    [attr.aria-label]="'Download PDF for ' + card.title"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src="/icons/icons-24/download.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="resources-gallery__footer" *ngIf="canLoadMore(gallery)">
             <button
               type="button"
               class="resources-button resources-button--outline"
+              (click)="showMore(gallery)"
             >
               Check More
             </button>
@@ -133,7 +163,7 @@
         </div>
       </div>
     </section>
-  }
+  </ng-container>
 
   <section
     class="new-muslim"
@@ -153,20 +183,19 @@
           role="list"
           aria-label="New Muslim resources list"
         >
-          @for (
-            card of newMuslimCards;
-            track trackByNewMuslimCardId($index, card)
-          ) {
-            <article class="new-muslim-card" role="listitem">
-              <div class="new-muslim-card__text">
-                <h3>{{ card.title }}</h3>
-              </div>
+          <article
+            class="new-muslim-card"
+            role="listitem"
+            *ngFor="let card of newMuslimCards"
+          >
+            <div class="new-muslim-card__text">
+              <h3>{{ card.title }}</h3>
+            </div>
 
-              <span class="new-muslim-card__icon" aria-hidden="true">
-                <img src="/icons/icons-24/arrow-right.svg" alt="" />
-              </span>
-            </article>
-          }
+            <span class="new-muslim-card__icon" aria-hidden="true">
+              <img src="/icons/icons-24/arrow-right.svg" alt="" />
+            </span>
+          </article>
         </div>
       </div>
     </div>

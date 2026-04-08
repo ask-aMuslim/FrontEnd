@@ -1,11 +1,12 @@
 import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
 
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subject, combineLatest } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, combineLatest, of } from 'rxjs';
+import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import {
     AcademyCourse,
+    AcademyLesson,
     AcademyStageApi,
     RecentLessonInfo,
     StageProgress,
@@ -51,12 +52,12 @@ interface RecentLesson {
     stageNumber: number;
     courseId: string;
     courseName: string;
+    categoryLabel: string;
     lessonId: string;
     lessonNumber: number;
     thumbnailUrl: string;
     progress: number;
-    currentTime: string;
-    totalTime: string;
+    videoDuration: string | null;
     completedLessons: number;
     totalLessons: number;
 }
@@ -103,11 +104,42 @@ export class AcademyComponent implements OnInit, OnDestroy {
             this.academyProgressService.getAcademyCourses(),
             this.academyProgressService.getStudentProgress(),
         ])
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                switchMap(([apiStages, courses, progress]) => {
+                    if (!progress.recentLesson) {
+                        return of({
+                            apiStages,
+                            courses,
+                            progress,
+                            recentCourseLessons: [] as AcademyLesson[],
+                        });
+                    }
+
+                    return this.academyProgressService
+                        .getAcademyLessons(progress.recentLesson.courseId)
+                        .pipe(
+                            map((recentCourseLessons) => ({
+                                apiStages,
+                                courses,
+                                progress,
+                                recentCourseLessons,
+                            })),
+                            catchError(() =>
+                                of({
+                                    apiStages,
+                                    courses,
+                                    progress,
+                                    recentCourseLessons: [] as AcademyLesson[],
+                                })
+                            ),
+                        );
+                }),
+                takeUntil(this.destroy$),
+            )
             .subscribe({
-                next: ([apiStages, courses, progress]) => {
+                next: ({ apiStages, courses, progress, recentCourseLessons }) => {
                     if (progress.recentLesson) {
-                        this.recentLesson = this.mapRecentLesson(progress.recentLesson);
+                        this.recentLesson = this.mapRecentLesson(progress.recentLesson, courses, recentCourseLessons);
                         this.hasRecentLesson = true;
                     } else {
                         this.recentLesson = null;
@@ -133,31 +165,51 @@ export class AcademyComponent implements OnInit, OnDestroy {
             });
     }
 
-    private mapRecentLesson(info: RecentLessonInfo): RecentLesson {
+    private mapRecentLesson(
+        info: RecentLessonInfo,
+        courses: AcademyCourse[],
+        courseLessons: AcademyLesson[],
+    ): RecentLesson {
+        const matchedCourse = courses.find((course) => course.id === info.courseId);
+        const matchedLesson = courseLessons.find((lesson) => lesson.id === info.lessonId);
+        const lessonsFromCourseFeed = courseLessons.length;
+        const totalLessons = lessonsFromCourseFeed > 0
+            ? lessonsFromCourseFeed
+            : (matchedCourse?.lessons ?? info.totalLessons);
+        const completedLessons = Math.min(info.completedLessons, totalLessons);
+        const computedProgress = totalLessons > 0
+            ? Math.round((completedLessons / totalLessons) * 100)
+            : info.progress;
+        const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
+        const hasVideoDuration = matchedLesson?.type === 'video'
+            && typeof info.totalTime === 'string'
+            && info.totalTime.trim().length > 0
+            && info.totalTime !== '0:00'
+            && info.totalTime !== '0m';
+
         return {
             stageNumber: info.stageNumber,
             courseId: info.courseId,
             courseName: info.courseName,
+            categoryLabel: matchedCourse?.categoryLabel ?? 'Course',
             lessonId: info.lessonId,
             lessonNumber: info.lessonNumber,
             thumbnailUrl: toApiMediaUrl(info.thumbnailUrl ?? null) || '/images/recent-lesson-thumbnail.jpg',
-            progress: info.progress,
-            currentTime: info.currentTime,
-            totalTime: info.totalTime,
-            completedLessons: info.completedLessons,
-            totalLessons: info.totalLessons,
+            progress: normalizedProgress,
+            videoDuration: hasVideoDuration ? info.totalTime : null,
+            completedLessons,
+            totalLessons,
         };
     }
 
     private buildStagesFromApi(
         apiStages: AcademyStageApi[],
-        stageProgress: StageProgress[],
+        _stageProgress: StageProgress[],
         courseProgress: CourseProgress[],
         courses: AcademyCourse[]
     ): Stage[] {
         return apiStages.map((stageData) => {
-            const stageProg = stageProgress.find((sp) => sp.stageNumber === stageData.number);
-            const isLocked = stageData.number > 1 && !stageProg?.isUnlocked;
+            const isLocked = false;
 
             // Match courses to this stage using stageId (which equals stage.number)
             const stageCourses = courses.filter(course =>
@@ -168,7 +220,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
             const sortedStageCourses = [...stageCourses];
             sortedStageCourses.sort((a: AcademyCourse, b: AcademyCourse) => (a.order ?? 0) - (b.order ?? 0));
             let allCourses = sortedStageCourses
-                .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress, isLocked, stageCourseIds));
+                .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress, stageCourseIds));
 
             // Safety valve: if a stage is unlocked but no course is actionable, open the first course.
             if (!isLocked && allCourses.length > 0 && allCourses.every((course) => course.status === 'locked')) {
@@ -190,7 +242,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
     private mapCourseWithProgress(
         course: AcademyCourse,
         courseProgress: CourseProgress[],
-        stageLocked: boolean,
         stageCourseIds: Set<string>,
     ): Course {
         const progress = courseProgress.find((cp) => cp.courseId === course.id);
@@ -205,7 +256,12 @@ export class AcademyComponent implements OnInit, OnDestroy {
             return prereqProgress?.status !== 'completed';
         });
 
-        const isCurrentlyLocked = stageLocked || hasUnfinishedPrereqs;
+        let status: CourseStatus = 'available';
+        if (hasUnfinishedPrereqs) {
+            status = 'locked';
+        } else if (progress?.status === 'completed' || progress?.status === 'in-progress') {
+            status = progress.status;
+        }
 
         return {
             id: course.id,
@@ -215,8 +271,8 @@ export class AcademyComponent implements OnInit, OnDestroy {
             lessons: course.lessons,
             duration: course.duration,
             progress: progress?.progress ?? 0,
-            status: progress?.status === 'locked' ? 'available' : (progress?.status ?? 'available'),
-            hasUnmetPrerequisites: stageLocked || hasUnfinishedPrereqs,
+            status,
+            hasUnmetPrerequisites: hasUnfinishedPrereqs,
             thumbnailUrl: course.thumbnailUrl,
             prerequisites: course.prerequisites ?? []
         };

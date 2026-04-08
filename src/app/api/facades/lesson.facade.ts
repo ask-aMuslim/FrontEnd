@@ -9,6 +9,7 @@ export interface LessonReadDto {
     title?: string;
     description?: string;
     content?: string;
+    isPublished?: boolean;
     type?: number;
     videoUrl?: string;
     externalVideoUrl?: string;
@@ -41,7 +42,14 @@ export class LessonFacade {
     }
 
     getCourseLessons(courseId: string): Observable<LessonReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Lessons', { CourseId: courseId }), []).pipe(map(asArray<LessonReadDto>));
+        return extractData(
+            this.api.get<unknown>('/api/Lessons', {
+                CourseId: courseId,
+                PageNumber: 1,
+                PageSize: 1000,
+            }),
+            [],
+        ).pipe(map(asArray<LessonReadDto>));
     }
 
     createLesson(payload: CreateLessonRequest): Observable<LessonReadDto | null> {

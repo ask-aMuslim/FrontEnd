@@ -1,8 +1,8 @@
 .course-tree-wrapper {
   font-family: inherit;
-  
-  .error-state, .empty-state {
-    animation: fadeIn 0.4s ease-out;
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
 }
 
@@ -11,28 +11,9 @@
   to { transform: rotate(360deg); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* SVG Line Drawing Animation */
-.svg-anim-path {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  animation: drawLine 1s ease-in-out forwards;
-  /* Add a subtle drop shadow to the connecting lines for depth */
-  filter: drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.05));
-  
-  /* Use a sleek gradient-like color by utilizing stroke-opacity */
-  stroke: #94a3b8; /* slate-400 */
-}
-
-@keyframes drawLine {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
+/* Future implementation styles intentionally disabled for now:
+   - Error/empty-state fade-in animation
+   - SVG connector path draw animation */
 
 
 /* Enhancing Node Styles */

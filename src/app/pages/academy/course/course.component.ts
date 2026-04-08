@@ -4,18 +4,21 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import { QuizzesService } from '../../../core/services/quizzes.service';
+import { QuizReadDto } from '../../../api/facades/quiz.facade';
 import { AuthService } from '../../../core/services/auth.service';
 import {
     AcademyPageShellComponent,
     AcademyBreadcrumbItem,
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
-    AcademyCourseSidebarComponent,
     AcademySidebarLessonItem,
 } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
+import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import {
     AcademyCourse,
     AcademyLesson,
+    AcademyStageApi,
     CourseProgress,
     LessonProgress,
 } from '../../../core/models/interfaces/academy-progress.model';
@@ -25,6 +28,7 @@ import {
  */
 interface Lesson {
     id: string;
+    quizLessonId?: string;
     title: string;
     duration: string;
     type: 'intro' | 'video' | 'article' | 'quiz' | 'audio';
@@ -40,6 +44,7 @@ interface Lesson {
 interface CourseDetails {
     id: string;
     stageNumber: number;
+    stageLabel: string;
     title: string;
     intro: string;
     lessons: string[];
@@ -57,11 +62,13 @@ interface CourseDetails {
 @Component({
     selector: 'app-course',
     standalone: true,
-    imports: [RouterLink, AcademyPageShellComponent, AcademyCourseSidebarComponent],
+    imports: [RouterLink, AcademyPageShellComponent, AcademySidebarHostComponent],
     templateUrl: './course.component.html',
     styleUrls: ['./course.component.scss'],
 })
 export class CourseComponent implements OnInit, OnDestroy {
+    private static readonly syntheticQuizLessonPrefix = 'synthetic-quiz-';
+
     private readonly destroy$ = new Subject<void>();
     private courseId: string = '';
 
@@ -93,6 +100,18 @@ export class CourseComponent implements OnInit, OnDestroy {
             (lesson) => !lesson.isLocked && lesson.type === 'quiz',
         );
 
+        if (!quizLesson) {
+            return null;
+        }
+
+        if (quizLesson.quizLessonId) {
+            return quizLesson.quizLessonId;
+        }
+
+        if (quizLesson.id.startsWith(CourseComponent.syntheticQuizLessonPrefix)) {
+            return null;
+        }
+
         return quizLesson?.id ?? null;
     }
 
@@ -108,6 +127,7 @@ export class CourseComponent implements OnInit, OnDestroy {
         private readonly router: Router,
         private readonly route: ActivatedRoute,
         private readonly academyProgressService: AcademyProgressService,
+        private readonly quizzesService: QuizzesService,
         private readonly authService: AuthService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
@@ -141,17 +161,29 @@ export class CourseComponent implements OnInit, OnDestroy {
             this.academyProgressService.getCourseProgress(this.courseId),
             this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
             this.academyProgressService.getAcademyCourses(),
-            this.academyProgressService.getStudentProgress()
+            this.academyProgressService.getAcademyStages(),
+            this.academyProgressService.getStudentProgress(),
+            this.quizzesService.getAll({ pageSize: 200 }),
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([courseData, courseProgress, lessonsWithProgress, allCourses, studentProgress]) => {
+                next: ([courseData, courseProgress, lessonsWithProgress, allCourses, stages, studentProgress, quizzes]) => {
+                    const isPublishedCourse = allCourses.some((course) => course.id === courseData.id);
+                    if (!isPublishedCourse) {
+                        this.error = 'This course is unavailable right now.';
+                        this.isLoading = false;
+                        this.cdr.detectChanges();
+                        return;
+                    }
+
                     this.course = this.buildCourseDetails(
                         courseData,
                         courseProgress,
                         lessonsWithProgress,
                         allCourses,
-                        studentProgress.courseProgress
+                        stages,
+                        studentProgress.courseProgress,
+                        quizzes,
                     );
                     this.error = null;
                     this.isLoading = false;
@@ -173,7 +205,9 @@ export class CourseComponent implements OnInit, OnDestroy {
         courseProgress: CourseProgress | undefined,
         lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[],
         allCourses: AcademyCourse[],
-        allCourseProgress: CourseProgress[]
+        stages: AcademyStageApi[],
+        allCourseProgress: CourseProgress[],
+        quizzes: QuizReadDto[],
     ): CourseDetails {
         const isLocked = this.isUserAuthenticated
             ? courseProgress?.status === 'locked'
@@ -209,10 +243,33 @@ export class CourseComponent implements OnInit, OnDestroy {
                 };
             });
 
+        const sidebarLessons = this.ensureSidebarHasQuizLesson(
+            lessonsWithProgress.map((lesson) =>
+                this.mapLessonForDisplay(lesson, isLocked || hasUnmetPrerequisites)
+            ),
+            quizzes.filter(
+                (quiz) => typeof quiz.lessonId === 'string' && lessonsWithProgress.some((lesson) => lesson.id === quiz.lessonId),
+            ),
+            isLocked || hasUnmetPrerequisites,
+        );
+
+        const resolvedStageNumber = fullCourseFromList?.stageId ?? courseData.stageId;
+        const resolvedLevelId = fullCourseFromList?.levelId ?? courseData.levelId;
+        const matchedStage =
+            stages.find((stage) => stage.id === resolvedLevelId)
+            ?? stages.find((stage) => stage.number === resolvedStageNumber);
+
+        const stageNumber = matchedStage?.number ?? resolvedStageNumber ?? 1;
+        let stageLabel = `Stage ${stageNumber}`;
+        if (matchedStage) {
+            stageLabel = `Stage ${matchedStage.number}: ${matchedStage.title}`;
+        }
+
         return {
             id: courseData.id,
-            stageNumber: courseData.stageId,
-            title: `Course: ${courseData.title}`,
+            stageNumber,
+            stageLabel,
+            title: courseData.title,
             intro:
                 courseData.description ||
                 "In this course, you'll learn comprehensive content designed to guide you step by step through important Islamic teachings.",
@@ -222,13 +279,11 @@ export class CourseComponent implements OnInit, OnDestroy {
             answers: this.extractOutcomes(courseData.description),
             totalLessons: lessonsWithProgress.length,
             completedLessons: lessonsWithProgress.filter((l) => l.progress.isCompleted).length,
-            duration: courseData.duration,
+            duration: fullCourseFromList?.duration ?? courseData.duration,
             isLocked,
             hasUnmetPrerequisites,
             unmetPrerequisiteNames,
-            lessonsList: lessonsWithProgress.map((lesson) =>
-                this.mapLessonForDisplay(lesson, isLocked || hasUnmetPrerequisites)
-            ),
+            lessonsList: sidebarLessons,
             prerequisitesList,
         };
     }
@@ -271,6 +326,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
         return {
             id: lesson.id,
+            quizLessonId: lesson.type === 'quiz' ? lesson.id : undefined,
             title: lesson.title,
             duration: lesson.duration,
             type: lesson.type,
@@ -319,11 +375,12 @@ export class CourseComponent implements OnInit, OnDestroy {
             }
 
             const quizLessonId = this.getUnlockedQuizLessonId();
-            if (!quizLessonId) {
+            if (quizLessonId) {
+                this.router.navigate(['quiz', quizLessonId], { relativeTo: this.route });
                 return;
             }
 
-            this.router.navigate(['quiz', quizLessonId], { relativeTo: this.route });
+            this.router.navigate(['quiz'], { relativeTo: this.route });
         }
     }
 
@@ -338,12 +395,62 @@ export class CourseComponent implements OnInit, OnDestroy {
 
         if (!lesson.isLocked) {
             if (lesson.type === 'quiz') {
-                this.router.navigate(['quiz', lesson.id], { relativeTo: this.route });
+                const quizLessonId = lesson.quizLessonId
+                    ?? (lesson.id.startsWith(CourseComponent.syntheticQuizLessonPrefix) ? null : lesson.id);
+
+                if (quizLessonId) {
+                    this.router.navigate(['quiz', quizLessonId], { relativeTo: this.route });
+                } else {
+                    this.router.navigate(['quiz'], { relativeTo: this.route });
+                }
             } else {
                 // Updated path from academy routes
                 this.router.navigate(['lesson', lesson.id], { relativeTo: this.route });
             }
         }
+    }
+
+    private ensureSidebarHasQuizLesson(
+        lessons: Lesson[],
+        quizzes: QuizReadDto[],
+        isLocked: boolean,
+    ): Lesson[] {
+        const quizLessonId = quizzes.find(
+            (quiz) => typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length > 0,
+        )?.lessonId;
+
+        const quizTitle = quizzes.find(
+            (quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0,
+        )?.title?.trim() ?? 'Quiz';
+
+        const lessonsWithQuizTitle = lessons.map((lesson) =>
+            lesson.type === 'quiz'
+                ? {
+                    ...lesson,
+                    title: quizTitle,
+                    duration: 'Assessment',
+                }
+                : lesson
+        );
+
+        if (lessonsWithQuizTitle.some((lesson) => lesson.type === 'quiz') || quizzes.length === 0) {
+            return lessonsWithQuizTitle;
+        }
+
+        return [
+            ...lessonsWithQuizTitle,
+            {
+                id: `${CourseComponent.syntheticQuizLessonPrefix}${quizLessonId ?? this.courseId}`,
+                quizLessonId,
+                title: quizTitle,
+                duration: 'Assessment',
+                type: 'quiz',
+                isLocked,
+                isCompleted: false,
+                isCurrent: false,
+                hasNotification: false,
+            },
+        ];
     }
 
     closeSignInPrompt(): void {

@@ -12,13 +12,13 @@ $bubble-positions: (
   ),
   2: (
     top: 38%,
-    left: 2%,
+    left: -3.5%,
     start-rotate: 1deg,
     animation-duration: 8.2s,
   ),
   3: (
     top: 55%,
-    left: 3%,
+    left: 1.5%,
     start-rotate: -1deg,
     animation-duration: 7.9s,
   ),
@@ -137,60 +137,126 @@ $large-screen-adjustments: (
 // number of stops all vary so no two bubbles feel in sync.
 
 @keyframes bubble-drift-1 {
-  0%   { transform: translateY(0)     translateX(0)    rotate(-2deg); }
-  30%  { transform: translateY(-12px) translateX(4px)  rotate(1deg);  }
-  65%  { transform: translateY(-6px)  translateX(-3px) rotate(-3deg); }
-  100% { transform: translateY(0)     translateX(0)    rotate(-2deg); }
+  0% {
+    transform: translateY(0) translateX(0) rotate(-2deg);
+  }
+  30% {
+    transform: translateY(-12px) translateX(4px) rotate(1deg);
+  }
+  65% {
+    transform: translateY(-6px) translateX(-3px) rotate(-3deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(-2deg);
+  }
 }
 
 @keyframes bubble-drift-2 {
-  0%   { transform: translateY(0)    translateX(0)   rotate(1deg);  }
-  40%  { transform: translateY(9px)  translateX(-5px) rotate(-2deg); }
-  75%  { transform: translateY(3px)  translateX(3px)  rotate(3deg);  }
-  100% { transform: translateY(0)    translateX(0)   rotate(1deg);  }
+  0% {
+    transform: translateY(0) translateX(0) rotate(1deg);
+  }
+  40% {
+    transform: translateY(9px) translateX(-5px) rotate(-2deg);
+  }
+  75% {
+    transform: translateY(3px) translateX(3px) rotate(3deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(1deg);
+  }
 }
 
 @keyframes bubble-drift-3 {
-  0%   { transform: translateY(0)     translateX(0)   rotate(-1deg); }
-  25%  { transform: translateY(-8px)  translateX(6px)  rotate(2deg);  }
-  55%  { transform: translateY(-14px) translateX(2px)  rotate(-2deg); }
-  80%  { transform: translateY(-5px)  translateX(-4px) rotate(1deg);  }
-  100% { transform: translateY(0)     translateX(0)   rotate(-1deg); }
+  0% {
+    transform: translateY(0) translateX(0) rotate(-1deg);
+  }
+  25% {
+    transform: translateY(-8px) translateX(6px) rotate(2deg);
+  }
+  55% {
+    transform: translateY(-14px) translateX(2px) rotate(-2deg);
+  }
+  80% {
+    transform: translateY(-5px) translateX(-4px) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(-1deg);
+  }
 }
 
 @keyframes bubble-drift-4 {
-  0%   { transform: translateY(0)   translateX(0)    rotate(2deg);  }
-  50%  { transform: translateY(11px) translateX(-6px) rotate(-3deg); }
-  100% { transform: translateY(0)   translateX(0)    rotate(2deg);  }
+  0% {
+    transform: translateY(0) translateX(0) rotate(2deg);
+  }
+  50% {
+    transform: translateY(11px) translateX(-6px) rotate(-3deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(2deg);
+  }
 }
 
 @keyframes bubble-drift-5 {
-  0%   { transform: translateY(0)     translateX(0)    rotate(2deg);  }
-  35%  { transform: translateY(-10px) translateX(-5px) rotate(5deg);  }
-  70%  { transform: translateY(-4px)  translateX(4px)  rotate(0deg);  }
-  100% { transform: translateY(0)     translateX(0)    rotate(2deg);  }
+  0% {
+    transform: translateY(0) translateX(0) rotate(2deg);
+  }
+  35% {
+    transform: translateY(-10px) translateX(-5px) rotate(5deg);
+  }
+  70% {
+    transform: translateY(-4px) translateX(4px) rotate(0deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(2deg);
+  }
 }
 
 @keyframes bubble-drift-6 {
-  0%   { transform: translateY(0)   translateX(0)    rotate(-1deg); }
-  20%  { transform: translateY(6px) translateX(5px)  rotate(2deg);  }
-  60%  { transform: translateY(13px) translateX(-3px) rotate(-3deg); }
-  85%  { transform: translateY(5px)  translateX(2px)  rotate(1deg);  }
-  100% { transform: translateY(0)   translateX(0)    rotate(-1deg); }
+  0% {
+    transform: translateY(0) translateX(0) rotate(-1deg);
+  }
+  20% {
+    transform: translateY(6px) translateX(5px) rotate(2deg);
+  }
+  60% {
+    transform: translateY(13px) translateX(-3px) rotate(-3deg);
+  }
+  85% {
+    transform: translateY(5px) translateX(2px) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(-1deg);
+  }
 }
 
 @keyframes bubble-drift-7 {
-  0%   { transform: translateY(0)     translateX(0)    rotate(1deg);  }
-  45%  { transform: translateY(-13px) translateX(7px)  rotate(-4deg); }
-  100% { transform: translateY(0)     translateX(0)    rotate(1deg);  }
+  0% {
+    transform: translateY(0) translateX(0) rotate(1deg);
+  }
+  45% {
+    transform: translateY(-13px) translateX(7px) rotate(-4deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(1deg);
+  }
 }
 
 @keyframes bubble-drift-8 {
-  0%   { transform: translateY(0)    translateX(0)    rotate(-2deg); }
-  30%  { transform: translateY(8px)  translateX(-4px) rotate(1deg);  }
-  55%  { transform: translateY(12px) translateX(5px)  rotate(-4deg); }
-  80%  { transform: translateY(4px)  translateX(-2px) rotate(0deg);  }
-  100% { transform: translateY(0)    translateX(0)    rotate(-2deg); }
+  0% {
+    transform: translateY(0) translateX(0) rotate(-2deg);
+  }
+  30% {
+    transform: translateY(8px) translateX(-4px) rotate(1deg);
+  }
+  55% {
+    transform: translateY(12px) translateX(5px) rotate(-4deg);
+  }
+  80% {
+    transform: translateY(4px) translateX(-2px) rotate(0deg);
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(-2deg);
+  }
 }
 
 // Desktop only: Scattered bubbles - 4 left, 4 right
@@ -218,7 +284,7 @@ $large-screen-adjustments: (
     will-change: transform;
     transition:
       background 0.25s ease,
-      color      0.25s ease;
+      color 0.25s ease;
 
     // Assign position + unique animation per bubble
     @each $index, $position in $bubble-positions {
@@ -231,7 +297,10 @@ $large-screen-adjustments: (
           right: map.get($position, right);
         }
 
-        animation: bubble-drift-#{$index} map.get($position, animation-duration) ease-in-out infinite;
+        animation: bubble-drift-#{$index}
+          map.get($position, animation-duration)
+          ease-in-out
+          infinite;
       }
     }
 

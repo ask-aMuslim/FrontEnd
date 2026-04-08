@@ -1,5 +1,6 @@
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
@@ -20,6 +21,7 @@ import { TiptapViewerComponent } from '../../../../shared/components/tiptap-view
 })
 export class QuestionComponent implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
+  private readonly isBrowser: boolean;
 
   id = '';
   title = '';
@@ -44,7 +46,10 @@ export class QuestionComponent implements OnDestroy {
     private readonly qasService: QasService,
     private readonly sanitizer: DomSanitizer,
     private readonly changeDetectorRef: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private readonly platformId: object,
   ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.id = params.get('id') ?? '';
       const categoriesParam = params.get('categories');
@@ -83,8 +88,26 @@ export class QuestionComponent implements OnDestroy {
         const record = asRecord(response);
         const data = getValue(record, 'data', 'Data') ? asRecord(getValue(record, 'data', 'Data')) : record;
 
+        const isPublished = getValue(data, 'isPublished', 'IsPublished');
+        if (isPublished === false) {
+          this.title = 'This answer is unavailable.';
+          this.answer = '';
+          this.answerViewerContent = null;
+          this.questionHtml = null;
+          this.answerHtmlRaw = null;
+          this.imageUrl = null;
+          this.changeDetectorRef.markForCheck();
+          return;
+        }
+
         const translations = extractArray(getValue(data, 'translations', 'Translations'));
-        const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+        const firstTranslation = translations
+          .map((translation) => asRecord(translation))
+          .find((translation) => {
+            const translationPublished = getValue(translation, 'isPublished', 'IsPublished');
+            const translationDeleted = getValue(translation, 'isDeleted', 'IsDeleted');
+            return translationPublished !== false && translationDeleted !== true;
+          }) ?? null;
 
         const mappedTitle = toStringValue(
           firstTranslation ? getValue(firstTranslation, 'questionText', 'QuestionText', 'question') : undefined,
@@ -112,6 +135,17 @@ export class QuestionComponent implements OnDestroy {
         const mappedImage = toApiMediaUrl(
           toStringValue(getValue(data, 'imageUrl', 'ImageUrl', 'questionImage', 'QuestionImage')),
         );
+
+        if (!mappedAnswer?.trim()) {
+          this.title = mappedTitle?.trim() || 'This answer is unavailable.';
+          this.answer = '';
+          this.answerViewerContent = null;
+          this.questionHtml = mappedTitle ? this.toSafeHtml(this.escapeHtml(mappedTitle)) : null;
+          this.answerHtmlRaw = null;
+          this.imageUrl = mappedImage ?? null;
+          this.changeDetectorRef.markForCheck();
+          return;
+        }
 
         const renderedTitle = this.resolveRichHtml(mappedTitle, mappedTitleJson);
         const renderedAnswer = this.resolveRichHtml(mappedAnswer, mappedAnswerJson);
@@ -454,6 +488,10 @@ export class QuestionComponent implements OnDestroy {
   }
 
   async downloadPdf(): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const titleText = this.title || 'Question';
     const answerHtml = this.prepareAnswerHtmlForPdf();
     let exportContainer: HTMLDivElement | null = null;
@@ -463,7 +501,7 @@ export class QuestionComponent implements OnDestroy {
       const html2canvas = (await import('html2canvas')).default;
       const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-      exportContainer = document.createElement('div');
+      exportContainer = globalThis.document.createElement('div');
       exportContainer.style.position = 'fixed';
       exportContainer.style.left = '-10000px';
       exportContainer.style.top = '0';
@@ -484,7 +522,7 @@ export class QuestionComponent implements OnDestroy {
         <div style="font-size:16px;line-height:1.75;">${answerHtml}</div>
       `;
 
-      document.body.appendChild(exportContainer);
+      globalThis.document.body.appendChild(exportContainer);
       await this.inlineContainerImages(exportContainer);
       await this.waitForImages(exportContainer);
 
@@ -602,7 +640,7 @@ export class QuestionComponent implements OnDestroy {
         image.setAttribute('crossorigin', 'anonymous');
 
         try {
-          const response = await fetch(normalizedSource, {
+          const response = await globalThis.fetch(normalizedSource, {
             mode: 'cors',
             cache: 'force-cache',
           });
@@ -667,14 +705,18 @@ export class QuestionComponent implements OnDestroy {
   }
 
   async share(): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const url = this.getShareUrl();
     try {
       // Use Web Share API if available (navigator.share is not in strict TS types for all browsers)
       const navigatorWithShare = (globalThis.navigator as { share?: (data: ShareData) => Promise<void> });
       if (navigatorWithShare.share) {
         await navigatorWithShare.share({ title: this.title, url });
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
+      } else if (globalThis.navigator.clipboard) {
+        await globalThis.navigator.clipboard.writeText(url);
         // minimal feedback - in-app toasts would be better
         globalThis.alert('Link copied to clipboard');
       } else {
@@ -686,6 +728,10 @@ export class QuestionComponent implements OnDestroy {
   }
 
   private getShareUrl(): string {
+    if (!this.isBrowser) {
+      return '';
+    }
+
     try {
       const url = new URL(globalThis.location.href);
       // Ensure only the id (and categories) are present in the shared URL to avoid leaking content

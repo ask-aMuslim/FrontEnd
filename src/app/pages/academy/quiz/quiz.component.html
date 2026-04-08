@@ -28,56 +28,51 @@
                     Are you ready to pass this course?
                   </p>
                 </div>
-                <div class="quiz-intro-actions">
-                  <button
-                    type="button"
-                    class="btn btn-outline btn-previous"
-                    (click)="goToPreviousLesson()"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M16 4L8 12L16 20"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    Previous Lesson
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-primary btn-start"
-                    (click)="startQuiz()"
-                  >
-                    Start the Quiz
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M8 20L16 12L8 4"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
               </main>
+
+              <div class="quiz-intro-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-previous"
+                  (click)="goToPreviousLesson()"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M16 4L8 12L16 20"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  Previous Lesson
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-start"
+                  (click)="startQuiz()"
+                >
+                  Start the Quiz
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M8 20L16 12L8 4"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div academy-page-sidebar>
-              <app-academy-course-sidebar
-                [stageLabel]="'Stage ' + courseInfo().stage"
-                [title]="
-                  'Course ' + courseInfo().code + ': ' + courseInfo().title
-                "
-                [stats]="[
-                  'Lesson: ' +
-                    courseInfo().currentLesson +
-                    '/' +
-                    courseInfo().totalLessons,
-                  'Duration: ' + courseInfo().duration,
-                ]"
+              <app-academy-sidebar-host
+                [stageNumber]="courseInfo().stage"
+                [title]="courseInfo().title"
+                [currentLessonNumber]="courseInfo().currentLesson"
+                [totalLessons]="courseInfo().totalLessons"
+                [duration]="courseInfo().duration"
                 [lessons]="lessons()"
                 [showReadyDividerBeforeQuiz]="true"
                 [allowLessonSelection]="false"
@@ -489,68 +484,54 @@
                       </div>
                     }
                   </div>
-                  <div class="review-actions">
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      (click)="goToPreviousLesson()"
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M16 4L8 12L16 20"
-                          stroke="currentColor"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                      Previous Lesson
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      (click)="hasPassed() ? completeQuiz() : retakeQuiz()"
-                    >
-                      {{ hasPassed() ? "Pass" : "Retake Quiz" }}
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M8 20L16 12L8 4"
-                          stroke="currentColor"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
+              </div>
+
+              <div class="review-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  (click)="goToPreviousLesson()"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M16 4L8 12L16 20"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  Previous Lesson
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  (click)="hasPassed() ? completeQuiz() : retakeQuiz()"
+                >
+                  {{ hasPassed() ? "Pass" : "Retake Quiz" }}
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M8 20L16 12L8 4"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
 
             <div academy-page-sidebar>
-              <app-academy-course-sidebar
-                [stageLabel]="'Stage ' + courseInfo().stage"
-                [title]="
-                  'Course ' + courseInfo().code + ': ' + courseInfo().title
-                "
-                [stats]="[
-                  'Lesson: ' +
-                    courseInfo().currentLesson +
-                    '/' +
-                    courseInfo().totalLessons,
-                  'Duration: ' + courseInfo().duration,
-                ]"
+              <app-academy-sidebar-host
+                [stageNumber]="courseInfo().stage"
+                [title]="courseInfo().title"
+                [currentLessonNumber]="courseInfo().currentLesson"
+                [totalLessons]="courseInfo().totalLessons"
+                [duration]="courseInfo().duration"
                 [lessons]="lessons()"
+                [showReadyDividerBeforeQuiz]="true"
                 [allowLessonSelection]="false"
               />
             </div>
@@ -660,94 +641,74 @@
                       </div>
                     }
                   </div>
-
-                  <!-- Action Buttons -->
-                  <div class="results-actions">
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      (click)="goToPreviousLesson()"
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M16 4L8 12L16 20"
-                          stroke="currentColor"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                      Previous Lesson
-                    </button>
-                    @if (hasPassed()) {
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        (click)="goToNextCourse()"
-                      >
-                        Next Course
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <path
-                            d="M8 20L16 12L8 4"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    } @else {
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        (click)="retakeQuizFromResults()"
-                      >
-                        Retake Quiz
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <path
-                            d="M8 20L16 12L8 4"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    }
-                  </div>
                 </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="results-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  (click)="goToPreviousLesson()"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M16 4L8 12L16 20"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  Previous Lesson
+                </button>
+                @if (hasPassed()) {
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="goToNextCourse()"
+                  >
+                    Next Course
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M8 20L16 12L8 4"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="retakeQuizFromResults()"
+                  >
+                    Retake Quiz
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M8 20L16 12L8 4"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                }
               </div>
             </div>
 
             <div academy-page-sidebar>
-              <app-academy-course-sidebar
-                [stageLabel]="'Stage ' + courseInfo().stage"
-                [title]="
-                  'Course ' + courseInfo().code + ': ' + courseInfo().title
-                "
-                [stats]="[
-                  'Lesson: ' +
-                    courseInfo().currentLesson +
-                    '/' +
-                    courseInfo().totalLessons,
-                  'Duration: ' + courseInfo().duration,
-                ]"
+              <app-academy-sidebar-host
+                [stageNumber]="courseInfo().stage"
+                [title]="courseInfo().title"
+                [currentLessonNumber]="courseInfo().currentLesson"
+                [totalLessons]="courseInfo().totalLessons"
+                [duration]="courseInfo().duration"
                 [lessons]="lessons()"
+                [showReadyDividerBeforeQuiz]="true"
                 [allowLessonSelection]="false"
               />
             </div>

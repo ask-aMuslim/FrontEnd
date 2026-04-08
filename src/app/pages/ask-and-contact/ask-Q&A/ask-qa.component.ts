@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
@@ -40,6 +40,8 @@ export class AskQaComponent implements OnInit {
 
   private readonly qasService = inject(QasService);
   private readonly tagsService = inject(TagsService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private tagFilterOptions: TagFilterOption[] = [];
   private allFilteredQuestions: QuestionCard[] = [];
   private loadedTagId: string | null = null;
@@ -334,20 +336,38 @@ export class AskQaComponent implements OnInit {
   }
 
   private scrollToTopOfSection(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const section = globalThis.document?.getElementById('qa-list-section');
     section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   private mapQuestions(response: unknown): QuestionCard[] {
     const records = extractArray(response);
-    return records.map((item, index) => this.mapQuestion(item, index));
+    return records
+      .map((item, index) => this.mapQuestion(item, index))
+      .filter((question): question is QuestionCard => question !== null);
   }
 
-  private mapQuestion(item: unknown, index: number): QuestionCard {
+  private mapQuestion(item: unknown, index: number): QuestionCard | null {
     const record = asRecord(item);
+    const isPublished = getValue(record, 'isPublished', 'IsPublished');
+    if (isPublished === false) {
+      return null;
+    }
+
     // API returns translations array with questionText/answerText; prefer those if present
     const translations = extractArray(getValue(record, 'translations', 'Translations'));
-    const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
+    const firstTranslation = translations
+      .map((translation) => asRecord(translation))
+      .find((translation) => {
+        const translationPublished = getValue(translation, 'isPublished', 'IsPublished');
+        const translationDeleted = getValue(translation, 'isDeleted', 'IsDeleted');
+        return translationPublished !== false && translationDeleted !== true;
+      }) ?? null;
+
     const title = toStringValue(
       firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
     ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
@@ -355,6 +375,11 @@ export class AskQaComponent implements OnInit {
     const description = toStringValue(
       firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
     ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+
+    if (!title.trim() || !description.trim()) {
+      return null;
+    }
+
     const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
     const id =
       toStringValue(getValue(record, 'id', 'Id')) ??

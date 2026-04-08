@@ -1,4 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,14 +8,17 @@ import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LessonContentService } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import { QuizzesService } from '../../../core/services/quizzes.service';
+import { QuizReadDto } from '../../../api/facades/quiz.facade';
+import { toApiMediaUrl } from '../../../core/helpers/media-url.helper';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
-    AcademyCourseSidebarComponent,
     AcademySidebarLessonItem,
 } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
+import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import {
     AcademyCourse,
     AcademyLesson,
@@ -34,16 +39,24 @@ import {
     isArticleContent,
     isIntroContent
 } from '../../../core/models/interfaces/lesson-content.model';
+import { TiptapViewerComponent } from '../../../shared/components/tiptap-viewer/tiptap-viewer.component';
 
 @Component({
     selector: 'app-lesson-player',
     standalone: true,
-    imports: [FormsModule, AcademyPageShellComponent, AcademyCourseSidebarComponent],
+    imports: [
+        FormsModule,
+        AcademyPageShellComponent,
+        AcademySidebarHostComponent,
+        TiptapViewerComponent,
+    ],
     templateUrl: './lesson-player.component.html',
     styleUrls: ['./lesson-player.component.scss']
 })
 export class LessonPlayerComponent implements OnInit, OnDestroy {
     private static readonly defaultBannerUrl = '/backgrounds/course-background.png';
+    private static readonly syntheticQuizSidebarIdPrefix = 'synthetic-quiz-';
+    private static readonly youtubeEmbedOrigin = 'https://www.youtube-nocookie.com';
 
     courseId: string = '';
     lessonId: string = '';
@@ -65,6 +78,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     nextLesson: LessonMetadata | undefined;
     previousLesson: LessonMetadata | undefined;
+    hasCourseQuiz = false;
+    courseQuizLessonId: string | null = null;
+    courseQuizTitle = 'Quiz';
 
     noteText: string = '';
     previousNotes: Array<{ timestamp: string; text: string }> = [];
@@ -80,12 +96,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     ];
 
     private readonly destroy$ = new Subject<void>();
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     constructor(
         private readonly route: ActivatedRoute,
         private readonly router: Router,
+        private readonly sanitizer: DomSanitizer,
         private readonly lessonContentService: LessonContentService,
         private readonly academyProgressService: AcademyProgressService,
+        private readonly quizzesService: QuizzesService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
 
@@ -148,11 +168,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         combineLatest([
             this.academyProgressService.getAcademyCourseById(this.courseId),
             this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
+            this.quizzesService.getAll({ pageSize: 200 }),
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([course, lessonsWithProgress]) => {
+                next: ([course, lessonsWithProgress, quizzes]) => {
                     const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
+                    const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
+                    const courseQuizzes = quizzes.filter(
+                        (quiz) => typeof quiz.lessonId === 'string' && courseLessonIds.has(quiz.lessonId),
+                    );
 
                     if (!currentLesson) {
                         this.error = 'Lesson not found';
@@ -163,6 +188,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     }
 
                     this.currentCourse = course;
+                    this.hasCourseQuiz = courseQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
+                    this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, courseQuizzes);
+                    this.courseQuizTitle = courseQuizzes.find(
+                        (quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0,
+                    )?.title?.trim() ?? 'Quiz';
                     this.courseLessons = lessonsWithProgress.map((lesson) => ({
                         ...lesson,
                         progress: {
@@ -245,6 +275,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.nextLesson = undefined;
         this.previousLesson = undefined;
         this.courseLessons = [];
+        this.hasCourseQuiz = false;
+        this.courseQuizLessonId = null;
+        this.courseQuizTitle = 'Quiz';
         this.activeTab = 'overview';
     }
 
@@ -257,6 +290,20 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     get videoContent(): VideoLessonContent | null { return this.isVideoContent ? this.lessonContent as VideoLessonContent : null; }
     get audioContent(): AudioLessonContent | null { return this.isAudioContent ? this.lessonContent as AudioLessonContent : null; }
     get articleContent(): ArticleLessonContent | null { return this.isArticleContent ? this.lessonContent as ArticleLessonContent : null; }
+
+    get isYouTubeVideo(): boolean {
+        return this.getYouTubeVideoId(this.videoContent?.videoUrl ?? '') !== null;
+    }
+
+    get youtubeEmbedUrl(): SafeResourceUrl | null {
+        const videoId = this.getYouTubeVideoId(this.videoContent?.videoUrl ?? '');
+        if (!videoId) {
+            return null;
+        }
+
+        const embedUrl = `${LessonPlayerComponent.youtubeEmbedOrigin}/embed/${videoId}?rel=0&modestbranding=1`;
+        return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+    }
 
     setActiveTab(tab: LessonPlayerTab): void { this.activeTab = tab; }
 
@@ -285,40 +332,87 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     onShare(): void {
-        if (this.lessonContent && navigator.share) {
-            navigator.share({
+        if (!this.isBrowser || !this.lessonContent) {
+            return;
+        }
+
+        if (globalThis.navigator.share) {
+            globalThis.navigator.share({
                 title: this.lessonContent.title,
                 text: this.lessonContent.description,
                 url: globalThis.location.href
             }).catch(() => void 0);
-        } else {
-            navigator.clipboard.writeText(globalThis.location.href).then(() => void 0);
-        }
-    }
-
-    onDownload(): void {
-        if (!this.lessonContent) {
             return;
         }
 
-        const fileName = `${this.lessonContent.title || 'lesson-content'}.txt`;
-        const text = [
-            this.lessonContent.title || 'Lesson Content',
-            '',
-            this.lessonContent.description || '',
-            '',
-            this.isArticleContent ? (this.articleContent?.sections || []).map(section => section.content).join('\n\n') : '',
-        ].join('\n');
+        globalThis.navigator.clipboard?.writeText(globalThis.location.href).then(() => void 0);
+    }
 
-        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+    async onDownload(): Promise<void> {
+        if (!this.isBrowser || !this.lessonContent) {
+            return;
+        }
+
+        const titleText = this.lessonContent.title || 'Lesson Content';
+        const contentHtml = this.buildLessonHtmlForPdf();
+        let exportContainer: HTMLDivElement | null = null;
+
+        try {
+            const jsPDF = (await import('jspdf')).jsPDF;
+            const html2canvas = (await import('html2canvas')).default;
+            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+            exportContainer = globalThis.document.createElement('div');
+            exportContainer.style.position = 'fixed';
+            exportContainer.style.left = '-10000px';
+            exportContainer.style.top = '0';
+            exportContainer.style.width = '794px';
+            exportContainer.style.background = '#ffffff';
+            exportContainer.style.color = '#111827';
+            exportContainer.style.padding = '32px';
+            exportContainer.style.fontFamily = 'Arial, sans-serif';
+            exportContainer.style.lineHeight = '1.65';
+
+            exportContainer.innerHTML = `
+              <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
+              <div style="font-size:16px;line-height:1.75;">${contentHtml}</div>
+            `;
+
+            globalThis.document.body.appendChild(exportContainer);
+            await this.inlineContainerImages(exportContainer);
+            await this.waitForImages(exportContainer);
+
+            const canvas = await html2canvas(exportContainer, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#ffffff',
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const imageHeight = (canvas.height * pageWidth) / canvas.width;
+
+            let heightLeft = imageHeight;
+            let position = 0;
+
+            doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imageHeight;
+                doc.addPage();
+                doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
+                heightLeft -= pageHeight;
+            }
+
+            const safeTitle = titleText.replaceAll(/[^a-z0-9-]/gi, '_').slice(0, 60);
+            doc.save(`${safeTitle || 'lesson'}.pdf`);
+        } finally {
+            exportContainer?.remove();
+        }
     }
 
     isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'completed'; }
@@ -400,19 +494,286 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     get sidebarLessons(): AcademySidebarLessonItem[] {
-        return this.courseLessons.map((lesson) => ({
+        const mappedLessons = this.courseLessons.map((lesson) => ({
             id: lesson.id,
-            title: lesson.title,
-            duration: lesson.duration,
+            title: lesson.type === 'quiz' ? this.courseQuizTitle : lesson.title,
+            duration: lesson.type === 'quiz' ? 'Assessment' : lesson.duration,
             type: lesson.type,
+            quizLessonId: lesson.type === 'quiz' ? lesson.id : undefined,
             isCompleted: this.isLessonCompleted(lesson),
             isCurrent: this.isLessonCurrent(lesson),
             isLocked: this.isLessonPending(lesson),
         }));
+
+        if (mappedLessons.some((lesson) => lesson.type === 'quiz') || !this.hasCourseQuiz) {
+            return mappedLessons;
+        }
+
+        return [
+            ...mappedLessons,
+            {
+                id: `${LessonPlayerComponent.syntheticQuizSidebarIdPrefix}${this.courseId}`,
+                quizLessonId: this.courseQuizLessonId ?? undefined,
+                title: this.courseQuizTitle,
+                duration: 'Assessment',
+                type: 'quiz',
+                isCompleted: false,
+                isCurrent: false,
+                isLocked: false,
+            },
+        ];
     }
 
     onSidebarLessonSelect(lesson: AcademySidebarLessonItem): void {
+        if (lesson.type === 'quiz') {
+            const quizLessonId = lesson.quizLessonId
+                ?? (lesson.id.startsWith(LessonPlayerComponent.syntheticQuizSidebarIdPrefix) ? null : lesson.id);
+
+            if (quizLessonId) {
+                void this.router.navigate(['/academy/course', this.courseId, 'quiz', quizLessonId]);
+            } else {
+                void this.router.navigate(['/academy/course', this.courseId, 'quiz']);
+            }
+
+            return;
+        }
+
         this.goToLesson(lesson.id);
+    }
+
+    private buildLessonHtmlForPdf(): string {
+        const descriptionHtml = this.lessonContent?.description
+            ? `<p>${this.escapeHtml(this.lessonContent.description)}</p>`
+            : '';
+
+        if (this.isArticleContent && this.articleContent) {
+            const sections = this.articleContent.sections
+                .map((section) => {
+                    const header = section.header
+                        ? `<h2 style="font-size:22px;line-height:1.4;margin:20px 0 10px;">${this.escapeHtml(section.header)}</h2>`
+                        : '';
+                    const content = this.normalizeHtmlMediaSources(section.content);
+                    return `${header}<div>${content}</div>`;
+                })
+                .join('');
+
+            return `${descriptionHtml}${sections}`;
+        }
+
+        if (this.isIntroContent && this.introContent) {
+            const objectivesHtml = this.introContent.objectives.length > 0
+                ? `<ul>${this.introContent.objectives
+                    .map((objective) => `<li>${this.escapeHtml(objective)}</li>`)
+                    .join('')}</ul>`
+                : '';
+
+            const overviewHtml = this.introContent.courseOverview
+                ? `<p>${this.escapeHtml(this.introContent.courseOverview)}</p>`
+                : '';
+
+            return `${descriptionHtml}${overviewHtml}${objectivesHtml}`;
+        }
+
+        if (this.isVideoContent && this.videoContent?.videoUrl) {
+            const videoUrl = this.escapeHtml(this.videoContent.videoUrl);
+            return `${descriptionHtml}<p><strong>Video URL:</strong> <a href="${videoUrl}" target="_blank" rel="noopener noreferrer">${videoUrl}</a></p>`;
+        }
+
+        if (this.isAudioContent && this.audioContent?.transcript) {
+            return `${descriptionHtml}<div>${this.escapeHtml(this.audioContent.transcript).replaceAll('\n', '<br/>')}</div>`;
+        }
+
+        return descriptionHtml;
+    }
+
+    private normalizeHtmlMediaSources(html: string): string {
+        const parser = new DOMParser();
+        const documentNode = parser.parseFromString(`<div id="pdf-lesson-root">${html}</div>`, 'text/html');
+        const root = documentNode.body.querySelector('#pdf-lesson-root');
+        if (!root) {
+            return html;
+        }
+
+        const images = Array.from(root.querySelectorAll('img'));
+        for (const image of images) {
+            const srcCandidate = (image.getAttribute('src') ?? image.dataset['src'] ?? '').trim();
+            if (!srcCandidate) {
+                continue;
+            }
+
+            const normalizedSrc = this.isInlineImageSource(srcCandidate)
+                ? srcCandidate
+                : (toApiMediaUrl(srcCandidate) ?? srcCandidate);
+
+            image.setAttribute('src', normalizedSrc);
+            image.removeAttribute('srcset');
+            image.removeAttribute('sizes');
+            image.setAttribute('loading', 'eager');
+            image.style.maxWidth = '100%';
+            image.style.height = 'auto';
+            image.style.display = 'block';
+            image.style.margin = '12px 0';
+        }
+
+        return root.innerHTML;
+    }
+
+    private async inlineContainerImages(container: HTMLElement): Promise<void> {
+        const images = Array.from(container.querySelectorAll('img'));
+        if (images.length === 0) {
+            return;
+        }
+
+        await Promise.all(
+            images.map(async (image) => {
+                const source = (image.getAttribute('src') ?? '').trim();
+                if (!source || this.isInlineImageSource(source)) {
+                    return;
+                }
+
+                image.setAttribute('crossorigin', 'anonymous');
+
+                try {
+                    const response = await globalThis.fetch(source, {
+                        mode: 'cors',
+                        cache: 'force-cache',
+                    });
+
+                    if (!response.ok) {
+                        image.setAttribute('src', source);
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const dataUrl = await this.convertBlobToDataUrl(blob);
+                    image.setAttribute('src', dataUrl);
+                } catch {
+                    image.setAttribute('src', source);
+                }
+            }),
+        );
+    }
+
+    private isInlineImageSource(value: string): boolean {
+        return value.startsWith('data:') || value.startsWith('blob:');
+    }
+
+    private convertBlobToDataUrl(blob: Blob): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (typeof reader.result === 'string') {
+                    resolve(reader.result);
+                    return;
+                }
+
+                reject(new Error('Failed to convert image blob to data URL.'));
+            };
+            reader.onerror = () => {
+                reject(reader.error ?? new Error('Unable to read image blob.'));
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    private async waitForImages(container: HTMLElement): Promise<void> {
+        const images = Array.from(container.querySelectorAll('img'));
+        if (images.length === 0) {
+            return;
+        }
+
+        await Promise.all(
+            images.map(
+                (image) =>
+                    new Promise<void>((resolve) => {
+                        if (image.complete) {
+                            resolve();
+                            return;
+                        }
+
+                        image.addEventListener('load', () => resolve(), { once: true });
+                        image.addEventListener('error', () => resolve(), { once: true });
+                    }),
+            ),
+        );
+    }
+
+    private getYouTubeVideoId(urlValue: string): string | null {
+        const raw = urlValue.trim();
+        if (!raw) {
+            return null;
+        }
+
+        const directIdMatch = /^[a-zA-Z0-9_-]{11}$/.exec(raw);
+        if (directIdMatch?.[0]) {
+            return directIdMatch[0];
+        }
+
+        const parsedUrl = this.tryParseUrl(raw);
+        if (!parsedUrl) {
+            return null;
+        }
+
+        return this.getYouTubeVideoIdFromUrl(parsedUrl);
+    }
+
+    private tryParseUrl(raw: string): URL | null {
+        try {
+            return new URL(raw);
+        } catch {
+            return null;
+        }
+    }
+
+    private getYouTubeVideoIdFromUrl(url: URL): string | null {
+        const host = url.hostname.replace(/^www\./, '');
+
+        if (host === 'youtu.be') {
+            const id = url.pathname.split('/').find(Boolean) ?? null;
+            return id && id.length >= 11 ? id.slice(0, 11) : null;
+        }
+
+        const isYouTubeHost = host === 'youtube.com'
+            || host === 'm.youtube.com'
+            || host === 'youtube-nocookie.com';
+        if (!isYouTubeHost) {
+            return null;
+        }
+
+        if (url.pathname.startsWith('/embed/')) {
+            const id = url.pathname.split('/embed/')[1]?.split('/')[0];
+            return id && id.length >= 11 ? id.slice(0, 11) : null;
+        }
+
+        const fromQuery = url.searchParams.get('v');
+        if (fromQuery && fromQuery.length >= 11) {
+            return fromQuery.slice(0, 11);
+        }
+
+        return null;
+    }
+
+    private escapeHtml(value: string): string {
+        return value
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    private resolveQuizLessonId(
+        lessons: Array<AcademyLesson & { progress: LessonProgress }>,
+        quizzes: QuizReadDto[],
+    ): string | null {
+        const explicitQuizLesson = lessons.find((lesson) => lesson.type === 'quiz');
+        if (explicitQuizLesson) {
+            return explicitQuizLesson.id;
+        }
+
+        return quizzes.find(
+            (quiz) => typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length > 0,
+        )?.lessonId ?? null;
     }
 
     private stripProgress(lesson: AcademyLesson & { progress: LessonProgress }): AcademyLesson {

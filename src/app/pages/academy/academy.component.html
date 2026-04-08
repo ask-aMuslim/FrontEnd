@@ -15,13 +15,16 @@
           <div class="recent-lesson-card">
             <div class="lesson-sequence">
               <span
-                >Stage {{ recentLesson.stageNumber }} > {{ recentLesson.courseName }} > Lesson
+                >Stage {{ recentLesson.stageNumber }} >
+                {{ recentLesson.courseName }} > Lesson
                 {{ recentLesson.lessonNumber }}</span
               >
               <span class="completion-status">
-                <span class="emoji">Good job👏</span>
+                @if (recentLesson.progress >= 50) {
+                  <span class="emoji">Good job👏</span>
+                }
                 <span class="completion-text">
-                  , you have completed
+                  You have completed
                   <span class="highlight">{{ recentLesson.progress }}%</span>
                   of the course
                 </span>
@@ -69,20 +72,27 @@
                 </div>
                 <div class="lesson-info">
                   <div class="info-row">
-                    <span class="course-category">Worship & Role Models</span>
+                    <span class="course-category">{{
+                      recentLesson.categoryLabel
+                    }}</span>
                     <span class="separator">-</span>
                     <span class="lesson-count"
                       >{{ recentLesson.completedLessons }} out of
                       {{ recentLesson.totalLessons }} lessons</span
                     >
                   </div>
-                  <span class="duration"
-                    >{{ recentLesson.currentTime }} / {{ recentLesson.totalTime }}</span
-                  >
+                  @if (recentLesson.videoDuration) {
+                    <span class="duration">{{
+                      recentLesson.videoDuration
+                    }}</span>
+                  }
                 </div>
                 <div class="progress-bar-container">
                   <div class="progress-bar">
-                    <div class="progress-fill" [style.width.%]="recentLesson.progress"></div>
+                    <div
+                      class="progress-fill"
+                      [style.width.%]="recentLesson.progress"
+                    ></div>
                   </div>
                 </div>
                 <button class="continue-button" (click)="continueLearning()">
@@ -110,10 +120,18 @@
       </section>
     }
 
-    <section class="important-note" [class.expanded]="showFullNote" data-aos="fade-up">
+    <section
+      class="important-note"
+      [class.expanded]="showFullNote"
+      data-aos="fade-up"
+    >
       <div class="section-block">
         <p class="note-text">{{ importantNote }}</p>
-        <button class="toggle-button" (click)="toggleNote()" [attr.aria-label]="'Toggle note'">
+        <button
+          class="toggle-button"
+          (click)="toggleNote()"
+          [attr.aria-label]="'Toggle note'"
+        >
           <svg
             width="24"
             height="24"
@@ -144,22 +162,35 @@
           let isLast = $last
         ) {
           <div class="stage-wrapper">
-            <div class="stage-container">
+            <div class="stage-container" [class.locked]="stage.isLocked">
               <h3 class="stage-title">{{ stage.title }}</h3>
-              <app-course-tree 
+              <app-course-tree
                 [nodes]="stage.treeCourses"
                 [loading]="isLoading"
                 [error]="error"
                 (courseClick)="onCourseClick($event)"
-                (retryAction)="ngOnInit()">
+                (retryAction)="ngOnInit()"
+              >
               </app-course-tree>
-
             </div>
             <div class="stage-divider"></div>
             <p class="stage-description">{{ stage.description }}</p>
           </div>
           @if (!isLast) {
+            <!-- New academy connector design commented out as requested.
+            <div class="connector-line"></div>
+            -->
+
+            <div class="stage-connector">
               <div class="connector-line"></div>
+              @if (stages[i + 1]?.isLocked) {
+                <img
+                  src="/icons/icons-40/Lock.svg"
+                  alt="Locked level"
+                  class="lock-icon"
+                />
+              }
+            </div>
           }
         }
       </div>

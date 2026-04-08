@@ -365,23 +365,26 @@ textarea {
 
 .success-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
 .profile-button {
   background: #ffffff;
   color: #156b40;
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background: #156b40;
+    color: #ffffff;
+  }
 }
 
-.text-action {
-  border: 0;
-  background: transparent;
-  color: #156b40;
-  cursor: pointer;
-  font-size: 16px;
-  text-decoration: underline;
+.success-secondary-button {
+  min-width: 200px;
 }
 
 .success-note {
@@ -453,5 +456,18 @@ textarea {
   .success-icon {
     width: 64px;
     height: 64px;
+  }
+
+  .success-actions {
+    flex-direction: column;
+  }
+
+  .success-secondary-button,
+  .profile-button {
+    width: 100%;
+  }
+
+  .success-secondary-button {
+    min-width: 0;
   }
 }

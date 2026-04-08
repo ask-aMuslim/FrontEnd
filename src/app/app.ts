@@ -16,6 +16,7 @@ export class App {
   protected readonly title = 'AskAMuslim';
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly globalLoadingService = inject(GlobalLoadingService);
 
   // Use the debounced/min-visible overlay boolean
@@ -26,15 +27,15 @@ export class App {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
-        if (isPlatformBrowser(this.platformId)) {
-          window.scrollTo(0, 0);
-          setTimeout(() => {
+        if (this.isBrowser) {
+          globalThis.window?.scrollTo(0, 0);
+          globalThis.setTimeout(() => {
             AOS.refresh();
           }, 100);
         }
       });
 
-    if (isPlatformBrowser(this.platformId)) {
+    if (this.isBrowser) {
       AOS.init({
         duration: 500,
         easing: 'ease-out-quad',

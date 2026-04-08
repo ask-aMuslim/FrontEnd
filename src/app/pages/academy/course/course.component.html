@@ -68,8 +68,16 @@
             }
             <!-- Lessons Section -->
             <div class="course-section">
-              <h2 class="section-title">Lessons:</h2>
-              <p class="section-text">
+              <h2
+                class="section-title"
+                [style.display]="course.lessons.length === 0 ? 'none' : null"
+              >
+                Lessons:
+              </h2>
+              <p
+                class="section-text"
+                [style.display]="course.lessons.length === 0 ? 'none' : null"
+              >
                 @for (
                   lesson of course.lessons;
                   track lesson;
@@ -142,15 +150,14 @@
         </div>
       </div>
       <div academy-page-sidebar>
-        <app-academy-course-sidebar
-          [stageLabel]="'Stage ' + course.stageNumber"
+        <app-academy-sidebar-host
+          [stageLabelOverride]="course.stageLabel"
+          [stageNumber]="course.stageNumber"
           [title]="course.title"
-          [stats]="[
-            'Lessons: ' + course.totalLessons,
-            'Duration: ' + course.duration,
-          ]"
-          [overviewLink]="['/academy/course', course.id]"
+          [totalLessons]="course.totalLessons"
+          [duration]="course.duration"
           [lessons]="course.lessonsList"
+          [showReadyDividerBeforeQuiz]="true"
           (lessonSelect)="onLessonClick($event)"
         />
       </div>

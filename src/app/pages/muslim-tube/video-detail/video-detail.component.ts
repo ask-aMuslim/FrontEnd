@@ -30,6 +30,7 @@ interface Video {
 })
 export class VideoDetailComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
+  private readonly isBrowser: boolean;
 
   video: Video | null = null;
   relatedVideos: Video[] = [];
@@ -42,7 +43,9 @@ export class VideoDetailComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly muslimTubeFacade: MuslimTubeFacade,
     @Inject(PLATFORM_ID) private readonly platformId: object,
-  ) { }
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -131,6 +134,11 @@ export class VideoDetailComponent implements OnInit, OnDestroy {
   }
 
   share(): void {
+    if (!this.isBrowser) {
+      this.userActionMessage = 'Sharing is only available in the browser.';
+      return;
+    }
+
     if (!this.video) {
       this.userActionMessage = 'Unable to share this video right now.';
       return;
@@ -138,8 +146,8 @@ export class VideoDetailComponent implements OnInit, OnDestroy {
 
     this.userActionMessage = null;
 
-    if (navigator.share) {
-      navigator
+    if (globalThis.navigator.share) {
+      globalThis.navigator
         .share({
           title: this.video.title,
           text: `Check out this video: ${this.video.title}`,
@@ -154,8 +162,8 @@ export class VideoDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    navigator.clipboard
-      .writeText(globalThis.location.href)
+    globalThis.navigator.clipboard
+      ?.writeText(globalThis.location.href)
       .then(() => {
         this.userActionMessage = 'Video link copied to clipboard.';
       })
@@ -165,6 +173,11 @@ export class VideoDetailComponent implements OnInit, OnDestroy {
   }
 
   download(): void {
+    if (!this.isBrowser) {
+      this.userActionMessage = 'Download is only available in the browser.';
+      return;
+    }
+
     if (!this.video) {
       this.userActionMessage = 'Unable to download this video right now.';
       return;
@@ -177,10 +190,10 @@ export class VideoDetailComponent implements OnInit, OnDestroy {
 
     const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
     const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = globalThis.document.createElement('a');
     link.href = blobUrl;
     link.download = fileName;
-    document.body.appendChild(link);
+    globalThis.document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(blobUrl);
