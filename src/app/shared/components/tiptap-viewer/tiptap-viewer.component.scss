@@ -28,6 +28,22 @@
   margin: 0.75rem 0;
 }
 
+:host ::ng-deep .tiptap-viewer .ProseMirror ul {
+  list-style: disc;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror ol {
+  list-style: decimal;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror ul ul {
+  list-style: circle;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror ul ul ul {
+  list-style: square;
+}
+
 :host ::ng-deep .tiptap-viewer .ProseMirror li {
   margin: 0.25rem 0;
 }

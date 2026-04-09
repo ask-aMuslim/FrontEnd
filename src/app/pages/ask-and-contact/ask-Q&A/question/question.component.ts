@@ -11,6 +11,13 @@ import { asRecord, extractArray, getValue, toStringValue, toStringArray } from '
 import { toApiMediaUrl } from '../../../../core/helpers/media-url.helper';
 import { TiptapViewerComponent } from '../../../../shared/components/tiptap-viewer/tiptap-viewer.component';
 
+interface ImageInliningReport {
+  total: number;
+  inlined: number;
+  unresolved: number;
+  unresolvedCrossOrigin: number;
+}
+
 @Component({
   selector: 'app-question',
   standalone: true,
@@ -493,7 +500,8 @@ export class QuestionComponent implements OnDestroy {
     }
 
     const titleText = this.title || 'Question';
-    const answerHtml = this.prepareAnswerHtmlForPdf();
+    const answerHtml = this.getRenderedAnswerHtmlForPdf() ?? this.prepareAnswerHtmlForPdf();
+    const richTextStyles = this.getPdfRichTextStyles();
     let exportContainer: HTMLDivElement | null = null;
 
     try {
@@ -517,14 +525,22 @@ export class QuestionComponent implements OnDestroy {
         : '';
 
       exportContainer.innerHTML = `
-        <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
-        ${questionImage}
-        <div style="font-size:16px;line-height:1.75;">${answerHtml}</div>
+        <style>${richTextStyles}</style>
+        <div class="pdf-export-root">
+          <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
+          ${questionImage}
+          <div class="pdf-export-content">${answerHtml}</div>
+        </div>
       `;
 
       globalThis.document.body.appendChild(exportContainer);
-      await this.inlineContainerImages(exportContainer);
+      const imageReport = await this.inlineContainerImages(exportContainer);
       await this.waitForImages(exportContainer);
+
+      if (imageReport.unresolvedCrossOrigin > 0) {
+        this.openPrintFallbackWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
+        return;
+      }
 
       const canvas = await html2canvas(exportContainer, {
         scale: 2,
@@ -555,32 +571,7 @@ export class QuestionComponent implements OnDestroy {
       const safeTitle = titleText.replaceAll(/[^a-z0-9-]/gi, '_').slice(0, 60);
       doc.save(`${safeTitle || 'question'}.pdf`);
     } catch {
-      // fallback: open print dialog for manual PDF
-      const printWindow = globalThis.open('', '_blank');
-      if (printWindow) {
-        const html = `
-          <html>
-            <head>
-              <title>${this.escapeHtml(titleText)}</title>
-              <style>
-                body { font-family: Arial, sans-serif; color: #111827; line-height: 1.7; padding: 24px; }
-                h1 { margin: 0 0 16px; }
-                img { max-width: 100%; height: auto; display: block; margin: 12px 0; }
-              </style>
-            </head>
-            <body>
-              <h1>${this.escapeHtml(titleText)}</h1>
-              ${this.imageUrl ? `<img src="${this.escapeHtml(this.imageUrl)}" alt="${this.escapeHtml(titleText)}" />` : ''}
-              <div>${answerHtml}</div>
-            </body>
-          </html>
-        `;
-        printWindow.document.open();
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-      }
+      this.openPrintFallbackWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
     } finally {
       exportContainer?.remove();
     }
@@ -589,6 +580,90 @@ export class QuestionComponent implements OnDestroy {
   private prepareAnswerHtmlForPdf(): string {
     const rawHtml = this.answerHtmlRaw ?? this.escapeHtml(this.answer || '').replaceAll('\n', '<br/>');
     return this.normalizeHtmlMediaSources(rawHtml);
+  }
+
+  private getRenderedAnswerHtmlForPdf(): string | null {
+    if (!this.isBrowser) {
+      return null;
+    }
+
+    const renderedAnswer = globalThis.document.querySelector('.paragraph .ProseMirror');
+    if (!(renderedAnswer instanceof HTMLElement)) {
+      return null;
+    }
+
+    return this.normalizeHtmlMediaSources(renderedAnswer.innerHTML);
+  }
+
+  private getPdfRichTextStyles(): string {
+    return `
+      .pdf-export-root {
+        font-family: Arial, sans-serif;
+        color: #111827;
+        line-height: 1.65;
+      }
+
+      .pdf-export-root .pdf-export-content,
+      .pdf-export-root .ProseMirror {
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .pdf-export-root :where(p, div) {
+        margin: 0 0 0.9rem;
+      }
+
+      .pdf-export-root :where(h1, h2, h3, h4, h5, h6) {
+        font-weight: 700;
+        line-height: 1.35;
+        margin: 1rem 0 0.6rem;
+      }
+
+      .pdf-export-root ul {
+        list-style: disc;
+        padding-inline-start: 1.5rem;
+        margin: 0 0 0.9rem;
+      }
+
+      .pdf-export-root ul ul {
+        list-style: circle;
+      }
+
+      .pdf-export-root ul ul ul {
+        list-style: square;
+      }
+
+      .pdf-export-root ol {
+        list-style: decimal;
+        padding-inline-start: 1.5rem;
+        margin: 0 0 0.9rem;
+      }
+
+      .pdf-export-root li {
+        margin: 0.2rem 0;
+      }
+
+      .pdf-export-root blockquote {
+        border-inline-start: 3px solid #156b40;
+        margin: 0.8rem 0;
+        padding-inline-start: 0.75rem;
+        color: #4b5563;
+      }
+
+      .pdf-export-root a {
+        color: #156b40;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      .pdf-export-root img {
+        display: block;
+        max-width: 100% !important;
+        height: auto !important;
+        margin: 0.75rem auto;
+        border-radius: 8px;
+      }
+    `;
   }
 
   private normalizeHtmlMediaSources(html: string): string {
@@ -623,41 +698,194 @@ export class QuestionComponent implements OnDestroy {
     return root.innerHTML;
   }
 
-  private async inlineContainerImages(container: HTMLElement): Promise<void> {
+  private async inlineContainerImages(container: HTMLElement): Promise<ImageInliningReport> {
     const images = Array.from(container.querySelectorAll('img'));
+    const report: ImageInliningReport = {
+      total: images.length,
+      inlined: 0,
+      unresolved: 0,
+      unresolvedCrossOrigin: 0,
+    };
+
     if (images.length === 0) {
-      return;
+      return report;
     }
 
     await Promise.all(
       images.map(async (image) => {
         const source = (image.getAttribute('src') ?? '').trim();
         if (!source || this.isInlineImageSource(source)) {
+          if (source) {
+            report.inlined += 1;
+          }
           return;
         }
 
         const normalizedSource = toApiMediaUrl(source) ?? source;
+        const dataUrl = await this.resolveImageDataUrl(normalizedSource);
+        if (dataUrl) {
+          image.setAttribute('src', dataUrl);
+          report.inlined += 1;
+          return;
+        }
+
         image.setAttribute('crossorigin', 'anonymous');
 
-        try {
-          const response = await globalThis.fetch(normalizedSource, {
-            mode: 'cors',
-            cache: 'force-cache',
-          });
-
-          if (!response.ok) {
-            image.setAttribute('src', normalizedSource);
-            return;
-          }
-
-          const blob = await response.blob();
-          const dataUrl = await this.convertBlobToDataUrl(blob);
-          image.setAttribute('src', dataUrl);
-        } catch {
-          image.setAttribute('src', normalizedSource);
+        if (this.isCrossOriginSource(normalizedSource)) {
+          report.unresolvedCrossOrigin += 1;
         }
+
+        report.unresolved += 1;
+        image.setAttribute('src', normalizedSource);
       }),
     );
+
+    return report;
+  }
+
+  private async resolveImageDataUrl(source: string): Promise<string | null> {
+    const authToken = this.readAccessTokenFromStorage();
+    const requestOptions: RequestInit[] = authToken
+      ? [
+        {
+          mode: 'cors',
+          cache: 'force-cache',
+          credentials: 'include',
+        },
+        {
+          mode: 'cors',
+          cache: 'force-cache',
+          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+        {
+          mode: 'cors',
+          cache: 'force-cache',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      ]
+      : [
+        {
+          mode: 'cors',
+          cache: 'force-cache',
+          credentials: 'include',
+        },
+      ];
+
+    for (const options of requestOptions) {
+      try {
+        const response = await globalThis.fetch(source, options);
+        if (!response.ok) {
+          continue;
+        }
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          continue;
+        }
+
+        return await this.convertBlobToDataUrl(blob);
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private readAccessTokenFromStorage(): string | null {
+    if (!this.isBrowser) {
+      return null;
+    }
+
+    try {
+      const raw = globalThis.localStorage.getItem('aam_auth');
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as { accessToken?: unknown };
+      return typeof parsed.accessToken === 'string' && parsed.accessToken.trim().length > 0
+        ? parsed.accessToken
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private isCrossOriginSource(source: string): boolean {
+    try {
+      const sourceUrl = new URL(source, globalThis.location.href);
+      return sourceUrl.origin !== globalThis.location.origin;
+    } catch {
+      return false;
+    }
+  }
+
+  private openPrintFallbackWindow(
+    titleText: string,
+    contentHtml: string,
+    richTextStyles: string,
+    imageUrl: string | null,
+  ): void {
+    const printWindow = globalThis.open('', '_blank');
+    if (!printWindow) {
+      return;
+    }
+
+    const printDocument = printWindow.document;
+    printDocument.title = this.escapeHtml(titleText);
+
+    while (printDocument.head.firstChild) {
+      printDocument.head.firstChild.remove();
+    }
+
+    while (printDocument.body.firstChild) {
+      printDocument.body.firstChild.remove();
+    }
+
+    const style = printDocument.createElement('style');
+    style.textContent = `
+      @page { size: A4; margin: 16mm; }
+      body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; }
+      .pdf-export-content { font-size: 16px; line-height: 1.75; }
+      ${richTextStyles}
+    `;
+    printDocument.head.appendChild(style);
+
+    const title = printDocument.createElement('h1');
+    title.style.fontSize = '28px';
+    title.style.lineHeight = '1.3';
+    title.style.margin = '0 0 16px';
+    title.style.color = '#111827';
+    title.textContent = titleText;
+    printDocument.body.appendChild(title);
+
+    if (imageUrl) {
+      const image = printDocument.createElement('img');
+      image.src = imageUrl;
+      image.alt = titleText;
+      image.style.maxWidth = '100%';
+      image.style.height = 'auto';
+      image.style.display = 'block';
+      image.style.margin = '12px 0 20px';
+      image.style.borderRadius = '8px';
+      printDocument.body.appendChild(image);
+    }
+
+    const content = printDocument.createElement('div');
+    content.className = 'pdf-export-content';
+    content.innerHTML = contentHtml;
+    printDocument.body.appendChild(content);
+
+    printWindow.focus();
+    globalThis.setTimeout(() => {
+      printWindow.print();
+    }, 350);
   }
 
   private isInlineImageSource(value: string): boolean {

@@ -43,6 +43,8 @@ export class TokenService {
     private readonly _expiresAt = signal<number | null>(null);
     private readonly _userId = signal<string | null>(null);
     private readonly _userEmail = signal<string | null>(null);
+    private readonly _isInitialized = signal<boolean>(false);
+    private initializationPromise: Promise<void> | null = null;
 
     // Time before expiry to trigger proactive refresh (1 minute)
     private readonly refreshBufferMs = 60 * 1000;
@@ -52,6 +54,7 @@ export class TokenService {
     readonly refreshToken = this._refreshToken.asReadonly();
     readonly userId = this._userId.asReadonly();
     readonly userEmail = this._userEmail.asReadonly();
+    readonly isInitialized = this._isInitialized.asReadonly();
 
     // Computed signals
     readonly isAuthenticated = computed(() => !!this._accessToken());
@@ -68,8 +71,28 @@ export class TokenService {
         return Date.now() >= expiresAt;
     });
 
-    constructor() {
-        this.initializeFromStorage();
+    constructor() { }
+
+    /**
+     * Initialize auth state from persisted storage.
+     * Safe to call multiple times (idempotent).
+     */
+    initialize(): Promise<void> {
+        if (this.initializationPromise) {
+            return this.initializationPromise;
+        }
+
+        this.initializationPromise = Promise.resolve().then(() => {
+            if (!this.isBrowser) {
+                this._isInitialized.set(true);
+                return;
+            }
+
+            this.restoreFromStorage();
+            this._isInitialized.set(true);
+        });
+
+        return this.initializationPromise;
     }
 
     /**
@@ -195,7 +218,7 @@ export class TokenService {
     /**
      * Initialize tokens from storage on service creation
      */
-    private initializeFromStorage(): void {
+    private restoreFromStorage(): void {
         if (!this.isBrowser) return;
 
         try {

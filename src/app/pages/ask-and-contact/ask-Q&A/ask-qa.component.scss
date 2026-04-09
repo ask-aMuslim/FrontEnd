@@ -3,6 +3,51 @@
   scrollbar-width: thin;
 }
 
+.qa-search-preview {
+  width: 100%;
+  border: 1px solid var(--color-border-brand-low, #bbd1c2);
+  border-radius: 12px;
+  background: var(--color-card-surface-primary, #fff);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qa-search-preview__eyebrow {
+  margin: 0;
+  color: var(--color-text-caption);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.qa-search-preview__title {
+  margin: 0;
+  color: var(--color-text-title);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.qa-search-preview__answer {
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: 16px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.qa-search-preview__separator {
+  width: 100%;
+  height: 1.5px;
+  background: var(--border-brand, #dde5ed);
+}
+
 .category-scroll::-webkit-scrollbar {
   height: 6px;
 }

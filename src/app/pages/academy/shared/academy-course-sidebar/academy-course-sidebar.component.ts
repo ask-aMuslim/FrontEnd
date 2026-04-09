@@ -17,6 +17,7 @@ export interface AcademySidebarLessonItem {
     type?: string;
     isCompleted?: boolean;
     isCurrent?: boolean;
+    isLastCourseLesson?: boolean;
     isLocked?: boolean;
     isPending?: boolean;
     hasNotification?: boolean;

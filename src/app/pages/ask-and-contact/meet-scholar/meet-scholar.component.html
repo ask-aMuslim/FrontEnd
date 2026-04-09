@@ -1,12 +1,29 @@
 <div class="px-2 md:px-0">
   <!-- Header -->
   <div class="mb-6 md:mb-10">
-    <h1 class="mb-2 text-xl md:text-[32px] text-center md:text-left">Book Your Meeting</h1>
+    <h1 class="mb-2 text-xl md:text-[32px] text-center md:text-left">
+      Book Your Meeting
+    </h1>
     <p class="font-normal text-sm md:text-base sm:text-center md:text-left">
-      Complete the steps below to schedule your free 30-minute session. We will respond to you
-      within 48hr. to your email.
+      Complete the steps below to schedule your free 30-minute session. We will
+      respond to you within 48hr. to your email.
     </p>
   </div>
+
+  @if (isGuestUser) {
+    <div class="meet-scholar-guest-cta mb-6 md:mb-8">
+      <p class="meet-scholar-guest-cta__text">
+        You are browsing as a guest. Sign in to complete your meeting booking.
+      </p>
+      <button
+        type="button"
+        class="button meet-scholar-guest-cta__button"
+        (click)="navigateToSignIn()"
+      >
+        Sign In
+      </button>
+    </div>
+  }
 
   <!-- Progress Steps -->
   <app-stepper [steps]="steps" [currentStep]="currentStep()" />
@@ -21,6 +38,7 @@
         [languages]="languages"
         [availableLanguages]="availableLanguages()"
         [selectedLanguages]="selectedLanguages()"
+        [nextDisabled]="isGuestUser"
         (next)="nextStep()"
         (addLanguage)="addLanguage($event)"
         (removeLanguage)="removeLanguage($event)"
@@ -33,6 +51,7 @@
         [form]="meetingForm"
         [availableDates]="availableDates"
         [availableTimes]="availableTimes"
+        [nextDisabled]="isGuestUser"
         (next)="nextStep()"
         (selectDate)="selectDate($event)"
         (selectTime)="selectTime($event)"

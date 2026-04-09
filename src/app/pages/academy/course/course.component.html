@@ -27,45 +27,28 @@
         <div class="course-details">
           <div class="details-card">
             <h1 class="course-title">{{ course.title }}</h1>
+            @if (course.prerequisitesList.length > 0) {
+              <div class="course-prerequisites-overview">
+                <h2 class="section-title">Course's prerequisites</h2>
+                <p class="section-text course-prerequisite-names">
+                  @for (
+                    prereq of course.prerequisitesList;
+                    track prereq.id;
+                    let last = $last
+                  ) {
+                    {{ prereq.title }}
+                    @if (!last) {
+                      <br />
+                    }
+                  }
+                </p>
+              </div>
+            }
             <!-- Intro Section -->
             <div class="course-section">
               <h2 class="section-title">Intro:</h2>
               <p class="section-text">{{ course.intro }}</p>
             </div>
-            <!-- Prerequisites Section -->
-            @if (course.prerequisitesList.length > 0) {
-              <div class="course-section">
-                <h2 class="section-title">Prerequisites:</h2>
-                <div class="prerequisites-list">
-                  @for (prereq of course.prerequisitesList; track prereq.id) {
-                    <div
-                      class="prereq-item"
-                      [class.completed]="prereq.isCompleted"
-                    >
-                      <span class="status-dot"></span>
-                      <span class="prereq-title">{{ prereq.title }}</span>
-                      @if (prereq.isCompleted) {
-                        <svg
-                          class="check-icon"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                        >
-                          <path
-                            d="M20 6L9 17l-5-5"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
-            }
             <!-- Lessons Section -->
             <div class="course-section">
               <h2
@@ -140,7 +123,11 @@
                 <button
                   (click)="onBeginClick()"
                   class="btn btn-primary"
-                  [disabled]="isUserAuthenticated && !hasPlayableLesson"
+                  [disabled]="
+                    course.totalLessons === 0 ||
+                    course.lessonsList.length === 0 ||
+                    (isUserAuthenticated && !hasPlayableLesson)
+                  "
                 >
                   <span>Begin</span>
                 </button>

@@ -71,6 +71,19 @@
   }
 }
 
+.sidebar-item.is-active {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-item.is-active {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0.5rem;
+  }
+}
+
 .sidebar-label {
   font-size: 1.125rem;
   font-weight: 700;

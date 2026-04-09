@@ -181,6 +181,7 @@ export const routes: Routes = [
       },
       {
         path: 'academy',
+        canActivate: [authGuard],
         children: [
           { path: '', component: AcademyComponent, title: 'Academy' },
           { path: 'course/:id', component: CourseComponent, title: 'Course' },

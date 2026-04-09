@@ -60,6 +60,12 @@
         type="button"
         class="lesson-item"
         [class.lesson-current]="lesson.isCurrent"
+        [class.lesson-last-in-course]="lesson.isLastCourseLesson"
+        [class.lesson-before-ready-divider]="
+          showReadyDividerBeforeQuiz &&
+          lesson.type !== 'quiz' &&
+          lessons[$index + 1]?.type === 'quiz'
+        "
         [class.lesson-completed]="lesson.isCompleted"
         [class.lesson-locked]="lesson.isLocked || lesson.isPending"
         [attr.aria-current]="lesson.isCurrent ? 'true' : null"
@@ -73,7 +79,9 @@
           >
             {{ lesson.title }}
           </h4>
-          <span class="lesson-duration">{{ lesson.duration }}</span>
+          @if (lesson.type === "video" && lesson.duration) {
+            <span class="lesson-duration">{{ lesson.duration }}</span>
+          }
         </div>
 
         @if (lesson.hasNotification) {

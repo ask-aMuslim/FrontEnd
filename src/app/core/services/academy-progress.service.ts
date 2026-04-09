@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject, of, forkJoin } from 'rxjs';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Observable, BehaviorSubject, of, forkJoin, from } from 'rxjs';
 import { map, catchError, tap, switchMap, shareReplay } from 'rxjs/operators';
 import {
     StudentProgress,
@@ -23,6 +24,13 @@ import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { EnrollmentFacade } from '../../api/facades/enrollment.facade';
 import { toApiMediaUrl } from '../helpers/media-url.helper';
+import { environment } from '../../../environments/environment';
+import {
+    extractVideoId,
+    fetchVideoDuration,
+    formatDuration,
+    renderDuration,
+} from '../helpers/youtube-duration.helper';
 
 /**
  * Academy Progress Service
@@ -52,6 +60,8 @@ export class AcademyProgressService {
     private readonly levelFacade = inject(LevelFacade);
     private readonly studentFacade = inject(StudentFacade);
     private readonly enrollmentFacade = inject(EnrollmentFacade);
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     private readonly progressSubject = new BehaviorSubject<StudentProgress | null>(null);
     readonly progress$ = this.progressSubject.asObservable();
@@ -61,6 +71,8 @@ export class AcademyProgressService {
     private academyCoursesRequest$: Observable<AcademyCourse[]> | null = null;
     private studentProgressRequest$: Observable<StudentProgress> | null = null;
     private readonly lessonsCache = new Map<string, AcademyLesson[]>();
+    private readonly videoDurationSecondsCache = new Map<string, number>();
+    private readonly videoDurationRequestCache = new Map<string, Observable<number>>();
 
     constructor() {
         this.initializeProgress();
@@ -358,9 +370,28 @@ export class AcademyProgressService {
                 .filter((lesson) => lesson.isPublished !== false)
                 .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))
             ),
-            tap(lessons => { this.lessonsCache.set(courseId, lessons); }),
+            switchMap((lessons) => this.hydrateVideoDurations(lessons)),
+            tap(lessons => {
+                this.lessonsCache.set(courseId, lessons);
+                this.updateCachedCourseDuration(courseId, lessons);
+            }),
             catchError(() => of([]))
         );
+    }
+
+    calculateCourseVideoDuration(
+        lessons: readonly Pick<AcademyLesson, 'type' | 'duration'>[],
+        fallbackDuration = '0m',
+    ): string {
+        const totalVideoSeconds = lessons
+            .filter((lesson) => lesson.type === 'video')
+            .reduce((total, lesson) => total + this.parseDurationLabelToSeconds(lesson.duration), 0);
+
+        if (totalVideoSeconds <= 0) {
+            return fallbackDuration;
+        }
+
+        return this.formatCourseDurationFromSeconds(totalVideoSeconds);
     }
 
     /**
@@ -755,13 +786,17 @@ export class AcademyProgressService {
         const id = lesson.id ?? '';
         const title = lesson.title ?? `Lesson ${index + 1}`;
         const type = this.mapLessonType(lesson, index);
+        const normalizedVideoUrl = toApiMediaUrl(
+            lesson.externalVideoUrl ?? lesson.videoUrl ?? lesson.contentUrl ?? null,
+        ) ?? undefined;
 
         return {
             id,
             courseId,
             title,
             isPublished: lesson.isPublished,
-            duration: '10 min',
+            duration: this.resolveLessonDurationFromDto(lesson, type),
+            videoUrl: type === 'video' ? normalizedVideoUrl : undefined,
             type,
             order: lesson.order ?? (index + 1),
             description: lesson.content ?? undefined,
@@ -804,7 +839,8 @@ export class AcademyProgressService {
         if (
             lessonType === 1 ||
             !!lesson.videoUrl ||
-            !!lesson.externalVideoUrl
+            !!lesson.externalVideoUrl ||
+            !!lesson.contentUrl
         ) {
             return 'video';
         }
@@ -865,6 +901,313 @@ export class AcademyProgressService {
         }
 
         return `${hours}h ${minutes}m`;
+    }
+
+    private resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
+        if (type === 'quiz') {
+            return 'Assessment';
+        }
+
+        if (type !== 'video') {
+            return '';
+        }
+
+        const rawLesson = lesson as Record<string, unknown>;
+
+        const durationFromSeconds = this.readNumericDurationLabel(
+            rawLesson,
+            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds'],
+            1,
+        );
+        if (durationFromSeconds) {
+            return durationFromSeconds;
+        }
+
+        const durationFromMinutes = this.readNumericDurationLabel(
+            rawLesson,
+            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes'],
+            60,
+        );
+        if (durationFromMinutes) {
+            return durationFromMinutes;
+        }
+
+        return this.readStringDurationLabel(
+            rawLesson,
+            ['duration', 'videoDuration', 'durationLabel', 'length'],
+        ) ?? '0:00';
+    }
+
+    private readNumericDurationLabel(
+        lesson: Record<string, unknown>,
+        fields: readonly string[],
+        multiplier: number,
+    ): string | null {
+        for (const field of fields) {
+            const value = lesson[field];
+            if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+                continue;
+            }
+
+            return this.formatVideoDurationLabel(Math.round(value * multiplier));
+        }
+
+        return null;
+    }
+
+    private readStringDurationLabel(
+        lesson: Record<string, unknown>,
+        fields: readonly string[],
+    ): string | null {
+        for (const field of fields) {
+            const value = lesson[field];
+            if (typeof value !== 'string') {
+                continue;
+            }
+
+            const normalizedValue = value.trim();
+            if (!normalizedValue) {
+                continue;
+            }
+
+            const parsedSeconds = this.parseDurationLabelToSeconds(normalizedValue);
+            if (parsedSeconds > 0) {
+                return this.formatVideoDurationLabel(parsedSeconds);
+            }
+        }
+
+        return null;
+    }
+
+    private hydrateVideoDurations(lessons: AcademyLesson[]): Observable<AcademyLesson[]> {
+        if (!this.isBrowser || lessons.length === 0) {
+            return of(lessons);
+        }
+
+        const durationRequests = lessons.map((lesson) => {
+            if (lesson.type !== 'video' || !lesson.videoUrl) {
+                return of(lesson);
+            }
+
+            const youtubeVideoId = this.extractVideoId(lesson.videoUrl);
+            if (youtubeVideoId) {
+                return from(this.fetchVideoDuration(youtubeVideoId)).pipe(
+                    map((isoDuration) => this.renderDuration(this.formatDuration(isoDuration))),
+                    map((formattedDuration) => ({
+                        ...lesson,
+                        duration: formattedDuration,
+                    })),
+                    catchError(() => of(lesson)),
+                );
+            }
+
+            return this.resolveVideoDurationSeconds(lesson.videoUrl).pipe(
+                map((durationSeconds) => ({
+                    ...lesson,
+                    duration: durationSeconds > 0
+                        ? this.formatVideoDurationLabel(durationSeconds)
+                        : lesson.duration,
+                })),
+                catchError(() => of(lesson)),
+            );
+        });
+
+        return forkJoin(durationRequests);
+    }
+
+    private updateCachedCourseDuration(courseId: string, lessons: AcademyLesson[]): void {
+        const courseIndex = this.academyCoursesCache.findIndex((course) => course.id === courseId);
+        if (courseIndex === -1) {
+            return;
+        }
+
+        const existingCourse = this.academyCoursesCache[courseIndex];
+        const calculatedDuration = this.calculateCourseVideoDuration(lessons, '0m');
+
+        if (calculatedDuration === existingCourse.duration) {
+            return;
+        }
+
+        this.academyCoursesCache[courseIndex] = {
+            ...existingCourse,
+            duration: calculatedDuration,
+        };
+    }
+
+    extractVideoId(url: string): string | null {
+        return extractVideoId(url);
+    }
+
+    async fetchVideoDuration(videoId: string): Promise<string> {
+        const apiKey = environment.youtubeDataApiKey.trim();
+        if (!apiKey) {
+            throw new Error('Missing YouTube API key.');
+        }
+
+        return fetchVideoDuration(videoId, apiKey);
+    }
+
+    formatDuration(isoDuration: string): string {
+        return formatDuration(isoDuration);
+    }
+
+    renderDuration(duration: string): string {
+        return renderDuration(duration);
+    }
+
+    private resolveVideoDurationSeconds(videoUrl: string): Observable<number> {
+        const cachedDuration = this.videoDurationSecondsCache.get(videoUrl);
+        if (typeof cachedDuration === 'number') {
+            return of(cachedDuration);
+        }
+
+        const pendingRequest = this.videoDurationRequestCache.get(videoUrl);
+        if (pendingRequest) {
+            return pendingRequest;
+        }
+
+        const request$ = this.measureVideoDurationSeconds(videoUrl).pipe(
+            tap((durationSeconds) => this.videoDurationSecondsCache.set(videoUrl, durationSeconds)),
+            catchError(() => of(0)),
+            shareReplay(1),
+        );
+
+        this.videoDurationRequestCache.set(videoUrl, request$);
+        return request$;
+    }
+
+    private measureVideoDurationSeconds(videoUrl: string): Observable<number> {
+        if (!this.isBrowser) {
+            return of(0);
+        }
+
+        return this.measureHtmlVideoDurationSeconds(videoUrl);
+    }
+
+    private measureHtmlVideoDurationSeconds(videoUrl: string): Observable<number> {
+        if (!this.isBrowser) {
+            return of(0);
+        }
+
+        return new Observable<number>((observer) => {
+            const mediaElement = globalThis.document.createElement('video');
+            let settled = false;
+            const timeoutId = globalThis.setTimeout(() => {
+                completeWith(0);
+            }, 15000);
+
+            const cleanup = () => {
+                globalThis.clearTimeout(timeoutId);
+                mediaElement.removeAttribute('src');
+                mediaElement.load();
+            };
+
+            const completeWith = (durationSeconds: number) => {
+                if (settled) {
+                    return;
+                }
+
+                settled = true;
+                const normalizedDuration = Math.max(0, Math.round(durationSeconds));
+                observer.next(normalizedDuration);
+                observer.complete();
+                cleanup();
+            };
+
+            const handleLoadedMetadata = () => {
+                const rawDuration = Number.isFinite(mediaElement.duration)
+                    ? mediaElement.duration
+                    : 0;
+
+                completeWith(Math.max(0, Math.round(rawDuration)));
+            };
+
+            const handleError = () => completeWith(0);
+
+            mediaElement.preload = 'metadata';
+            mediaElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+            mediaElement.addEventListener('error', handleError, { once: true });
+            mediaElement.src = videoUrl;
+            mediaElement.load();
+
+            return cleanup;
+        });
+    }
+
+    private formatVideoDurationLabel(totalSeconds: number): string {
+        const safeSeconds = Math.max(0, Math.round(totalSeconds));
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const seconds = safeSeconds % 60;
+
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    private formatCourseDurationFromSeconds(totalSeconds: number): string {
+        const roundedMinutes = Math.max(1, Math.round(totalSeconds / 60));
+        const hours = Math.floor(roundedMinutes / 60);
+        const minutes = roundedMinutes % 60;
+
+        if (hours === 0) {
+            return `${minutes}m`;
+        }
+
+        return `${hours}h ${minutes}m`;
+    }
+
+    private parseDurationLabelToSeconds(duration: string): number {
+        const normalized = duration.trim().toLowerCase();
+        if (!normalized || normalized === 'assessment') {
+            return 0;
+        }
+
+        const hhMmSsMatch = /^(\d+):(\d{2})(?::(\d{2}))?$/.exec(normalized);
+        if (hhMmSsMatch) {
+            if (typeof hhMmSsMatch[3] === 'string') {
+                const hours = Number(hhMmSsMatch[1]);
+                const minutes = Number(hhMmSsMatch[2]);
+                const seconds = Number(hhMmSsMatch[3]);
+                return (hours * 3600) + (minutes * 60) + seconds;
+            }
+
+            const minutes = Number(hhMmSsMatch[1]);
+            const seconds = Number(hhMmSsMatch[2]);
+            return (minutes * 60) + seconds;
+        }
+
+        if (normalized.includes('h') || normalized.includes('m')) {
+            const hours = this.extractDurationUnit(normalized, 'h');
+            const minutes = this.extractDurationUnit(normalized, 'm');
+
+            if (hours > 0 || minutes > 0) {
+                return (hours * 3600) + (minutes * 60);
+            }
+        }
+
+        const minutesOnlyMatch = /^(\d+)\s*min(?:ute)?s?$/.exec(normalized);
+        if (minutesOnlyMatch) {
+            return Number(minutesOnlyMatch[1]) * 60;
+        }
+
+        return 0;
+    }
+
+    private extractDurationUnit(value: string, unit: 'h' | 'm'): number {
+        const unitPattern = unit === 'h' ? /(\d+)\s*h/.exec(value) : /(\d+)\s*m/.exec(value);
+        if (!unitPattern) {
+            return 0;
+        }
+
+        const parsed = Number(unitPattern[1]);
+        if (!Number.isFinite(parsed) || parsed < 0) {
+            return 0;
+        }
+
+        return parsed;
     }
 
     private invalidateProgressCache(): void {

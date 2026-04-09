@@ -190,7 +190,7 @@ export class LessonContentService {
 
     let lessonType = (lessonDto as { type?: number }).type as LessonType;
     if (!lessonType) {
-      if (lessonDto.videoUrl || lessonDto.externalVideoUrl) {
+      if (lessonDto.videoUrl || lessonDto.externalVideoUrl || lessonDto.contentUrl) {
         lessonType = LessonType.Video;
       } else if (lessonDto.content && lessonDto.content.trim().length > 0) {
         lessonType = LessonType.Article;
@@ -200,13 +200,14 @@ export class LessonContentService {
     switch (lessonType) {
       case LessonType.Video: {
         const primaryVideoUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
-        const fallbackVideoUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
+        const secondaryVideoUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
+        const fallbackVideoUrl = toApiMediaUrl(lessonDto.contentUrl ?? null);
         return {
           id: String(lessonDto.id ?? ''),
           type: LessonType.Video,
           title: lessonDto.title ?? '',
           description: (lessonDto as { description?: string }).description || '',
-          videoUrl: primaryVideoUrl ?? fallbackVideoUrl ?? '',
+          videoUrl: primaryVideoUrl ?? secondaryVideoUrl ?? fallbackVideoUrl ?? '',
           thumbnailUrl: toApiMediaUrl(lessonDto.thumbnailUrl ?? null) ?? undefined,
           duration: '0:00',
           transcript: ''
@@ -215,13 +216,14 @@ export class LessonContentService {
 
       case LessonType.Audio: {
         const audioPrimaryUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
-        const audioFallbackUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
+        const audioSecondaryUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
+        const audioFallbackUrl = toApiMediaUrl(lessonDto.contentUrl ?? null);
         return {
           id: String(lessonDto.id ?? ''),
           type: LessonType.Audio,
           title: lessonDto.title ?? '',
           description: (lessonDto as { description?: string }).description || '',
-          audioUrl: audioPrimaryUrl ?? audioFallbackUrl ?? '',
+          audioUrl: audioPrimaryUrl ?? audioSecondaryUrl ?? audioFallbackUrl ?? '',
           duration: '0:00',
           transcript: ''
         } as AudioLessonContent;

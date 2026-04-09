@@ -60,11 +60,20 @@ export class AcademySidebarHostComponent {
         }
 
         const durationValue = this.duration.trim();
-        if (durationValue.length > 0) {
+        if (durationValue.length > 0 && !this.isZeroDuration(durationValue)) {
             stats.push(`Duration: ${durationValue}`);
         }
 
         return stats;
+    }
+
+    private isZeroDuration(duration: string): boolean {
+        const normalized = duration.trim().toLowerCase();
+        return normalized === '0m'
+            || normalized === '0:00'
+            || normalized === '00:00'
+            || normalized === '0h 0m'
+            || normalized === '0h 00m';
     }
 
     onLessonSelect(lesson: AcademySidebarLessonItem): void {

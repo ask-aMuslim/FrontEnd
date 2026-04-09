@@ -75,7 +75,9 @@
                 [duration]="courseInfo().duration"
                 [lessons]="lessons()"
                 [showReadyDividerBeforeQuiz]="true"
-                [allowLessonSelection]="false"
+                [allowLessonSelection]="true"
+                [overviewLink]="['/academy/course', courseId]"
+                (lessonSelect)="onLessonSelect($event)"
               />
             </div>
           </app-academy-page-shell>
@@ -532,7 +534,9 @@
                 [duration]="courseInfo().duration"
                 [lessons]="lessons()"
                 [showReadyDividerBeforeQuiz]="true"
-                [allowLessonSelection]="false"
+                [allowLessonSelection]="true"
+                [overviewLink]="['/academy/course', courseId]"
+                (lessonSelect)="onLessonSelect($event)"
               />
             </div>
           </app-academy-page-shell>
@@ -709,7 +713,9 @@
                 [duration]="courseInfo().duration"
                 [lessons]="lessons()"
                 [showReadyDividerBeforeQuiz]="true"
-                [allowLessonSelection]="false"
+                [allowLessonSelection]="true"
+                [overviewLink]="['/academy/course', courseId]"
+                (lessonSelect)="onLessonSelect($event)"
               />
             </div>
           </app-academy-page-shell>

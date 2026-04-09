@@ -1,6 +1,7 @@
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { type CanActivateFn, Router } from '@angular/router';
+import { from, map } from 'rxjs';
 import { TokenService } from '../auth/token.service';
 
 export const guestGuard: CanActivateFn = () => {
@@ -12,9 +13,13 @@ export const guestGuard: CanActivateFn = () => {
     return true;
   }
 
-  if (tokenService.isAuthenticated()) {
-    return router.createUrlTree(['/home']);
-  }
+  return from(tokenService.initialize()).pipe(
+    map(() => {
+      if (tokenService.hasValidSession()) {
+        return router.createUrlTree(['/home']);
+      }
 
-  return true;
+      return true;
+    })
+  );
 };

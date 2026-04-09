@@ -71,12 +71,7 @@
 }
 
 .video-controls-info {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  font-size: 0.813rem;
+  display: none !important;
 }
 
 // ─── Intro Section ───
@@ -674,6 +669,11 @@
     &:active:not(:disabled) {
       transform: translateY(1px);
     }
+  }
+
+  .btn-next,
+  .btn-start-quiz {
+    margin-left: auto;
   }
 
   .btn-primary {

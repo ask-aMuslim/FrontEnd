@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withViewTransitions, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { SocialAuthServiceConfig, SOCIAL_AUTH_CONFIG, GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-social-login';
@@ -11,13 +11,14 @@ import { environment } from '../environments/environment';
 import { authInterceptor } from './core/http/interceptors/auth.interceptor';
 import { loadingInterceptor } from './core/http/interceptors/loading.interceptor';
 import { errorInterceptor } from './core/http/interceptors/error.interceptor';
+import { TokenService } from './core/auth/token.service';
 
 export const getSocialAuthConfig = (): SocialAuthServiceConfig => {
   const googleClientId = environment.googleClientId;
   const facebookAppId = environment.facebookAppId;
 
   return {
-    onError: (err: unknown) => console.error('Social Auth Error:', err),
+    onError: (err: unknown) => globalThis.console?.error('Social Auth Error:', err),
     providers: [
       {
         id: 'GOOGLE',
@@ -46,12 +47,14 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withInterceptors([
-        // Order matters: auth first (adds token), loading state around all calls, then error handling
+        // Order matters: error wraps chain, auth handles raw 401/403 + refresh, loading tracks all calls.
+        errorInterceptor,
         authInterceptor,
         loadingInterceptor,
-        errorInterceptor
       ])
     ),
+
+    provideAppInitializer(() => inject(TokenService).initialize()),
 
     // Configure generated API clients with base URL from environment
     provideApiConfiguration(environment.apiBaseUrl),

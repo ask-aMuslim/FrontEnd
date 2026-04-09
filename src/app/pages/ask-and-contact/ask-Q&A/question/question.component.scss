@@ -24,6 +24,14 @@
     margin: 0 0 0.75rem;
   }
 
+  :where(ul) {
+    list-style: disc;
+  }
+
+  :where(ol) {
+    list-style: decimal;
+  }
+
   :where(li) {
     margin: 0.25rem 0;
   }

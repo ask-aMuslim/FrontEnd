@@ -41,6 +41,13 @@ import {
 } from '../../../core/models/interfaces/lesson-content.model';
 import { TiptapViewerComponent } from '../../../shared/components/tiptap-viewer/tiptap-viewer.component';
 
+interface ImageInliningReport {
+    total: number;
+    inlined: number;
+    unresolved: number;
+    unresolvedCrossOrigin: number;
+}
+
 @Component({
     selector: 'app-lesson-player',
     standalone: true,
@@ -143,6 +150,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return this.lessonContent?.title || this.currentLesson?.title || 'Lesson';
     }
 
+    get resolvedCourseDuration(): string {
+        const fallbackDuration = '0m';
+        return this.academyProgressService.calculateCourseVideoDuration(this.courseLessons, fallbackDuration);
+    }
+
     ngOnInit(): void {
         this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
             this.courseId = params.get('courseId') || '';
@@ -168,16 +180,17 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         combineLatest([
             this.academyProgressService.getAcademyCourseById(this.courseId),
             this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
-            this.quizzesService.getAll({ pageSize: 200 }),
+            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: ([course, lessonsWithProgress, quizzes]) => {
                     const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
                     const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
-                    const courseQuizzes = quizzes.filter(
-                        (quiz) => typeof quiz.lessonId === 'string' && courseLessonIds.has(quiz.lessonId),
-                    );
+                    const scopedQuizzes = quizzes.filter((quiz) => {
+                        const lessonId = typeof quiz.lessonId === 'string' ? quiz.lessonId.trim() : '';
+                        return lessonId.length === 0 || courseLessonIds.has(lessonId);
+                    });
 
                     if (!currentLesson) {
                         this.error = 'Lesson not found';
@@ -187,12 +200,20 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                         return;
                     }
 
-                    this.currentCourse = course;
-                    this.hasCourseQuiz = courseQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
-                    this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, courseQuizzes);
-                    this.courseQuizTitle = courseQuizzes.find(
-                        (quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0,
-                    )?.title?.trim() ?? 'Quiz';
+                    const fallbackDuration = course.duration;
+                    const aggregatedVideoDuration = this.academyProgressService.calculateCourseVideoDuration(
+                        lessonsWithProgress,
+                        '0m',
+                    );
+
+                    this.currentCourse = {
+                        ...course,
+                        duration: aggregatedVideoDuration,
+                    };
+                    // Check if there are any quizzes for this course (course-level or lesson-level)
+                    this.hasCourseQuiz = scopedQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
+                    this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, scopedQuizzes);
+                    this.courseQuizTitle = this.resolveCourseQuizTitle(lessonsWithProgress, scopedQuizzes);
                     this.courseLessons = lessonsWithProgress.map((lesson) => ({
                         ...lesson,
                         progress: {
@@ -230,8 +251,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (data: LessonData) => {
+                    const enrichedContent = this.applyResolvedVideoDuration(data.content);
                     this.lessonData = data;
-                    this.lessonContent = data.content;
+                    this.lessonContent = enrichedContent;
                     this.nextLesson = data.nextLesson;
                     this.previousLesson = data.previousLesson;
                     this.error = null;
@@ -305,6 +327,24 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
     }
 
+    get useExternalEmbed(): boolean {
+        const url = this.videoContent?.videoUrl ?? '';
+        return !!url && !this.isYouTubeVideo && !this.isDirectVideoFileUrl(url);
+    }
+
+    get externalEmbedUrl(): SafeResourceUrl | null {
+        if (!this.useExternalEmbed) {
+            return null;
+        }
+
+        const rawUrl = this.videoContent?.videoUrl?.trim() ?? '';
+        if (!rawUrl) {
+            return null;
+        }
+
+        return this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
+    }
+
     setActiveTab(tab: LessonPlayerTab): void { this.activeTab = tab; }
 
     goToNextLesson(): void {
@@ -323,6 +363,26 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     goToLesson(lessonId: string): void {
         this.router.navigate(['/academy/course', this.courseId, 'lesson', lessonId]);
+    }
+
+    get shouldShowStartQuizButton(): boolean {
+        const lastContentLessonId = this.getLastContentLessonId();
+        return this.hasCourseQuiz
+            && !!lastContentLessonId
+            && this.lessonId === lastContentLessonId;
+    }
+
+    onStartQuizClick(): void {
+        if (!this.hasCourseQuiz) {
+            return;
+        }
+
+        if (this.courseQuizLessonId) {
+            void this.router.navigate(['/academy/course', this.courseId, 'quiz', this.courseQuizLessonId]);
+            return;
+        }
+
+        void this.router.navigate(['/academy/course', this.courseId, 'quiz']);
     }
 
     onSave(): void {
@@ -355,6 +415,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
         const titleText = this.lessonContent.title || 'Lesson Content';
         const contentHtml = this.buildLessonHtmlForPdf();
+        const richTextStyles = this.getPdfRichTextStyles();
         let exportContainer: HTMLDivElement | null = null;
 
         try {
@@ -374,13 +435,21 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             exportContainer.style.lineHeight = '1.65';
 
             exportContainer.innerHTML = `
-              <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
-              <div style="font-size:16px;line-height:1.75;">${contentHtml}</div>
-            `;
+                            <style>${richTextStyles}</style>
+                            <div class="pdf-export-root">
+                                <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
+                                <div class="pdf-export-content">${contentHtml}</div>
+                            </div>
+                        `;
 
             globalThis.document.body.appendChild(exportContainer);
-            await this.inlineContainerImages(exportContainer);
+            const imageReport = await this.inlineContainerImages(exportContainer);
             await this.waitForImages(exportContainer);
+
+            if (imageReport.unresolvedCrossOrigin > 0) {
+                this.openPrintFallbackWindow(titleText, contentHtml, richTextStyles);
+                return;
+            }
 
             const canvas = await html2canvas(exportContainer, {
                 scale: 2,
@@ -410,6 +479,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
             const safeTitle = titleText.replaceAll(/[^a-z0-9-]/gi, '_').slice(0, 60);
             doc.save(`${safeTitle || 'lesson'}.pdf`);
+        } catch {
+            this.openPrintFallbackWindow(titleText, contentHtml, richTextStyles);
         } finally {
             exportContainer?.remove();
         }
@@ -494,6 +565,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     get sidebarLessons(): AcademySidebarLessonItem[] {
+        const lastContentLessonId = this.getLastContentLessonId();
+        const isViewingLastCourseLesson = !!lastContentLessonId && this.lessonId === lastContentLessonId;
+
         const mappedLessons = this.courseLessons.map((lesson) => ({
             id: lesson.id,
             title: lesson.type === 'quiz' ? this.courseQuizTitle : lesson.title,
@@ -502,6 +576,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             quizLessonId: lesson.type === 'quiz' ? lesson.id : undefined,
             isCompleted: this.isLessonCompleted(lesson),
             isCurrent: this.isLessonCurrent(lesson),
+            isLastCourseLesson:
+                isViewingLastCourseLesson
+                && !!lastContentLessonId
+                && lesson.id === lastContentLessonId,
             isLocked: this.isLessonPending(lesson),
         }));
 
@@ -522,6 +600,15 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                 isLocked: false,
             },
         ];
+    }
+
+    private getLastContentLessonId(): string | null {
+        const nonQuizLessons = this.courseLessons
+            .filter((lesson) => lesson.type !== 'quiz')
+            .sort((a, b) => a.order - b.order);
+
+        const lastLesson = nonQuizLessons.at(-1);
+        return lastLesson?.id ?? null;
     }
 
     onSidebarLessonSelect(lesson: AcademySidebarLessonItem): void {
@@ -547,6 +634,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             : '';
 
         if (this.isArticleContent && this.articleContent) {
+            const renderedSectionsHtml = this.getRenderedArticleSectionsHtmlForPdf();
+            if (renderedSectionsHtml) {
+                return `${descriptionHtml}${renderedSectionsHtml}`;
+            }
+
             const sections = this.articleContent.sections
                 .map((section) => {
                     const header = section.header
@@ -586,6 +678,105 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return descriptionHtml;
     }
 
+    private getRenderedArticleSectionsHtmlForPdf(): string | null {
+        if (!this.isBrowser || !this.isArticleContent) {
+            return null;
+        }
+
+        const sectionElements = Array.from(globalThis.document.querySelectorAll('.article-section'));
+        if (sectionElements.length === 0) {
+            return null;
+        }
+
+        const sectionsHtml = sectionElements
+            .map((sectionElement) => {
+                const sectionHost = sectionElement as HTMLElement;
+                const headerNode = sectionHost.querySelector('.section-header');
+                const renderedArticleNode = sectionHost.querySelector('.ProseMirror');
+
+                const headerHtml = headerNode instanceof HTMLElement ? headerNode.outerHTML : '';
+                const contentHtml = renderedArticleNode instanceof HTMLElement
+                    ? this.normalizeHtmlMediaSources(`<div class="ProseMirror">${renderedArticleNode.innerHTML}</div>`)
+                    : this.normalizeHtmlMediaSources(sectionHost.innerHTML);
+
+                return `<section class="pdf-article-section">${headerHtml}${contentHtml}</section>`;
+            })
+            .join('');
+
+        return sectionsHtml.length > 0 ? sectionsHtml : null;
+    }
+
+    private getPdfRichTextStyles(): string {
+        return `
+                    .pdf-export-root {
+                        font-family: Arial, sans-serif;
+                        color: #111827;
+                        line-height: 1.65;
+                    }
+
+                    .pdf-export-root .pdf-export-content,
+                    .pdf-export-root .ProseMirror {
+                        font-size: 16px;
+                        line-height: 1.75;
+                    }
+
+                    .pdf-export-root :where(p, div) {
+                        margin: 0 0 0.9rem;
+                    }
+
+                    .pdf-export-root :where(h1, h2, h3, h4, h5, h6) {
+                        font-weight: 700;
+                        line-height: 1.35;
+                        margin: 1rem 0 0.6rem;
+                    }
+
+                    .pdf-export-root ul {
+                        list-style: disc;
+                        padding-inline-start: 1.5rem;
+                        margin: 0 0 0.9rem;
+                    }
+
+                    .pdf-export-root ul ul {
+                        list-style: circle;
+                    }
+
+                    .pdf-export-root ul ul ul {
+                        list-style: square;
+                    }
+
+                    .pdf-export-root ol {
+                        list-style: decimal;
+                        padding-inline-start: 1.5rem;
+                        margin: 0 0 0.9rem;
+                    }
+
+                    .pdf-export-root li {
+                        margin: 0.2rem 0;
+                    }
+
+                    .pdf-export-root blockquote {
+                        border-inline-start: 3px solid #156b40;
+                        margin: 0.8rem 0;
+                        padding-inline-start: 0.75rem;
+                        color: #4b5563;
+                    }
+
+                    .pdf-export-root a {
+                        color: #156b40;
+                        text-decoration: underline;
+                        text-underline-offset: 2px;
+                    }
+
+                    .pdf-export-root img {
+                        display: block;
+                        max-width: 100% !important;
+                        height: auto !important;
+                        margin: 0.75rem auto;
+                        border-radius: 8px;
+                    }
+                `;
+    }
+
     private normalizeHtmlMediaSources(html: string): string {
         const parser = new DOMParser();
         const documentNode = parser.parseFromString(`<div id="pdf-lesson-root">${html}</div>`, 'text/html');
@@ -618,40 +809,178 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return root.innerHTML;
     }
 
-    private async inlineContainerImages(container: HTMLElement): Promise<void> {
+    private async inlineContainerImages(container: HTMLElement): Promise<ImageInliningReport> {
         const images = Array.from(container.querySelectorAll('img'));
+        const report: ImageInliningReport = {
+            total: images.length,
+            inlined: 0,
+            unresolved: 0,
+            unresolvedCrossOrigin: 0,
+        };
+
         if (images.length === 0) {
-            return;
+            return report;
         }
 
         await Promise.all(
             images.map(async (image) => {
                 const source = (image.getAttribute('src') ?? '').trim();
                 if (!source || this.isInlineImageSource(source)) {
+                    if (source) {
+                        report.inlined += 1;
+                    }
+                    return;
+                }
+
+                const normalizedSource = toApiMediaUrl(source) ?? source;
+                const dataUrl = await this.resolveImageDataUrl(normalizedSource);
+                if (dataUrl) {
+                    image.setAttribute('src', dataUrl);
+                    report.inlined += 1;
                     return;
                 }
 
                 image.setAttribute('crossorigin', 'anonymous');
 
-                try {
-                    const response = await globalThis.fetch(source, {
-                        mode: 'cors',
-                        cache: 'force-cache',
-                    });
-
-                    if (!response.ok) {
-                        image.setAttribute('src', source);
-                        return;
-                    }
-
-                    const blob = await response.blob();
-                    const dataUrl = await this.convertBlobToDataUrl(blob);
-                    image.setAttribute('src', dataUrl);
-                } catch {
-                    image.setAttribute('src', source);
+                if (this.isCrossOriginSource(normalizedSource)) {
+                    report.unresolvedCrossOrigin += 1;
                 }
+
+                report.unresolved += 1;
+                image.setAttribute('src', normalizedSource);
             }),
         );
+
+        return report;
+    }
+
+    private async resolveImageDataUrl(source: string): Promise<string | null> {
+        const authToken = this.readAccessTokenFromStorage();
+        const requestOptions: RequestInit[] = authToken
+            ? [
+                {
+                    mode: 'cors',
+                    cache: 'force-cache',
+                    credentials: 'include',
+                },
+                {
+                    mode: 'cors',
+                    cache: 'force-cache',
+                    credentials: 'include',
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                },
+                {
+                    mode: 'cors',
+                    cache: 'force-cache',
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                },
+            ]
+            : [
+                {
+                    mode: 'cors',
+                    cache: 'force-cache',
+                    credentials: 'include',
+                },
+            ];
+
+        for (const options of requestOptions) {
+            try {
+                const response = await globalThis.fetch(source, options);
+                if (!response.ok) {
+                    continue;
+                }
+
+                const blob = await response.blob();
+                if (blob.size === 0) {
+                    continue;
+                }
+
+                return await this.convertBlobToDataUrl(blob);
+            } catch {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    private readAccessTokenFromStorage(): string | null {
+        if (!this.isBrowser) {
+            return null;
+        }
+
+        try {
+            const raw = globalThis.localStorage.getItem('aam_auth');
+            if (!raw) {
+                return null;
+            }
+
+            const parsed = JSON.parse(raw) as { accessToken?: unknown };
+            return typeof parsed.accessToken === 'string' && parsed.accessToken.trim().length > 0
+                ? parsed.accessToken
+                : null;
+        } catch {
+            return null;
+        }
+    }
+
+    private isCrossOriginSource(source: string): boolean {
+        try {
+            const sourceUrl = new URL(source, globalThis.location.href);
+            return sourceUrl.origin !== globalThis.location.origin;
+        } catch {
+            return false;
+        }
+    }
+
+    private openPrintFallbackWindow(titleText: string, contentHtml: string, richTextStyles: string): void {
+        const printWindow = globalThis.open('', '_blank');
+        if (!printWindow) {
+            return;
+        }
+
+        const printDocument = printWindow.document;
+        printDocument.title = this.escapeHtml(titleText);
+
+        while (printDocument.head.firstChild) {
+            printDocument.head.firstChild.remove();
+        }
+
+        while (printDocument.body.firstChild) {
+            printDocument.body.firstChild.remove();
+        }
+
+        const style = printDocument.createElement('style');
+        style.textContent = `
+                    @page { size: A4; margin: 16mm; }
+                    body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; }
+                    .pdf-export-content { font-size: 16px; line-height: 1.75; }
+                    ${richTextStyles}
+                `;
+        printDocument.head.appendChild(style);
+
+        const title = printDocument.createElement('h1');
+        title.style.fontSize = '28px';
+        title.style.lineHeight = '1.3';
+        title.style.margin = '0 0 16px';
+        title.style.color = '#111827';
+        title.textContent = titleText;
+
+        const content = printDocument.createElement('div');
+        content.className = 'pdf-export-content';
+        content.innerHTML = contentHtml;
+
+        printDocument.body.appendChild(title);
+        printDocument.body.appendChild(content);
+
+        printWindow.focus();
+        globalThis.setTimeout(() => {
+            printWindow.print();
+        }, 350);
     }
 
     private isInlineImageSource(value: string): boolean {
@@ -717,6 +1046,15 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return this.getYouTubeVideoIdFromUrl(parsedUrl);
     }
 
+    private isDirectVideoFileUrl(value: string): boolean {
+        const raw = value.trim().toLowerCase();
+        if (!raw) {
+            return false;
+        }
+
+        return /\.(mp4|webm|ogg|mov|m4v|m3u8)(\?.*)?$/.test(raw);
+    }
+
     private tryParseUrl(raw: string): URL | null {
         try {
             return new URL(raw);
@@ -729,8 +1067,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         const host = url.hostname.replace(/^www\./, '');
 
         if (host === 'youtu.be') {
-            const id = url.pathname.split('/').find(Boolean) ?? null;
-            return id && id.length >= 11 ? id.slice(0, 11) : null;
+            return this.toCanonicalYouTubeId(url.pathname.split('/').find(Boolean) ?? null);
         }
 
         const isYouTubeHost = host === 'youtube.com'
@@ -740,17 +1077,35 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return null;
         }
 
-        if (url.pathname.startsWith('/embed/')) {
-            const id = url.pathname.split('/embed/')[1]?.split('/')[0];
-            return id && id.length >= 11 ? id.slice(0, 11) : null;
+        const pathMatchId = this.extractYouTubePathVideoId(url.pathname);
+        if (pathMatchId) {
+            return pathMatchId;
         }
 
         const fromQuery = url.searchParams.get('v');
-        if (fromQuery && fromQuery.length >= 11) {
-            return fromQuery.slice(0, 11);
+        return this.toCanonicalYouTubeId(fromQuery);
+    }
+
+    private extractYouTubePathVideoId(pathname: string): string | null {
+        const supportedPrefixes = ['/embed/', '/live/', '/shorts/'];
+        for (const prefix of supportedPrefixes) {
+            if (!pathname.startsWith(prefix)) {
+                continue;
+            }
+
+            const candidateId = pathname.slice(prefix.length).split('/')[0] ?? null;
+            return this.toCanonicalYouTubeId(candidateId);
         }
 
         return null;
+    }
+
+    private toCanonicalYouTubeId(candidate: string | null): string | null {
+        if (!candidate || candidate.length < 11) {
+            return null;
+        }
+
+        return candidate.slice(0, 11);
     }
 
     private escapeHtml(value: string): string {
@@ -762,10 +1117,72 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .replaceAll("'", '&#39;');
     }
 
+    private resolveCourseQuizTitle(
+        lessons: Array<AcademyLesson & { progress: LessonProgress }>,
+        quizzes: QuizReadDto[],
+    ): string {
+        const courseQuiz = quizzes.find(
+            (quiz) => !quiz.lessonId || (typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length === 0),
+        );
+
+        if (typeof courseQuiz?.title === 'string' && courseQuiz.title.trim().length > 0) {
+            return courseQuiz.title.trim();
+        }
+
+        const explicitQuizLesson = lessons.find((lesson) => lesson.type === 'quiz');
+        const lessonQuiz = explicitQuizLesson
+            ? quizzes.find(
+                (quiz) => quiz.lessonId === explicitQuizLesson.id
+                    && typeof quiz.title === 'string'
+                    && quiz.title.trim().length > 0,
+            )
+            : undefined;
+
+        const fallbackQuizTitle = lessonQuiz?.title
+            ?? quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0)?.title
+            ?? null;
+
+        return typeof fallbackQuizTitle === 'string' && fallbackQuizTitle.trim().length > 0
+            ? fallbackQuizTitle.trim()
+            : 'Quiz';
+    }
+
+    private applyResolvedVideoDuration(content: LessonContent): LessonContent {
+        if (!isVideoContent(content)) {
+            return content;
+        }
+
+        const currentDuration = this.currentLesson?.duration?.trim();
+        if (!currentDuration || currentDuration.length === 0) {
+            return content;
+        }
+
+        return {
+            ...content,
+            duration: currentDuration,
+        };
+    }
+
     private resolveQuizLessonId(
         lessons: Array<AcademyLesson & { progress: LessonProgress }>,
         quizzes: QuizReadDto[],
     ): string | null {
+        // First, look for a course quiz (quiz without a specific lessonId)
+        const courseQuiz = quizzes.find(
+            (quiz) => !quiz.lessonId || (typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length === 0),
+        );
+
+        if (courseQuiz) {
+            // If there's an explicit quiz lesson, return it to potentially link with that
+            const quizLesson = lessons.find((lesson) => lesson.type === 'quiz');
+            if (quizLesson) {
+                return quizLesson.id;
+            }
+            // Otherwise, no lesson ID means use default quiz route
+            return null;
+        }
+
+        // Fall back to lesson quiz
         const explicitQuizLesson = lessons.find((lesson) => lesson.type === 'quiz');
         if (explicitQuizLesson) {
             return explicitQuizLesson.id;
@@ -782,6 +1199,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             courseId: lesson.courseId,
             title: lesson.title,
             duration: lesson.duration,
+            videoUrl: lesson.videoUrl,
             type: lesson.type,
             order: lesson.order,
             description: lesson.description,

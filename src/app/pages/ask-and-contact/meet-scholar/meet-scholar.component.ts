@@ -119,8 +119,7 @@ export class MeetScholarComponent {
       const monthName = date.toLocaleDateString('en-US', { month: 'short' });
       const day = date.getDate();
 
-      // Disable some dates for demonstration (e.g., third and sixth dates)
-      const disabled = i === 2 || i === 5 || i >= 6;
+      const disabled = false;
 
       dates.push({
         value: date.toISOString().split('T')[0],
@@ -146,9 +145,8 @@ export class MeetScholarComponent {
       '5:00 PM',
     ];
 
-    timeSlots.forEach((slot, index) => {
-      // Disable some time slots for demonstration
-      const disabled = index >= 5;
+    timeSlots.forEach((slot) => {
+      const disabled = false;
       times.push({
         value: this.convertTo24Hour(slot),
         label: slot,
@@ -295,6 +293,16 @@ export class MeetScholarComponent {
           });
         }
       },
+    });
+  }
+
+  get isGuestUser(): boolean {
+    return !this.tokenService.isAuthenticated();
+  }
+
+  navigateToSignIn(): void {
+    void this.router.navigate(['/login'], {
+      queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
     });
   }
 

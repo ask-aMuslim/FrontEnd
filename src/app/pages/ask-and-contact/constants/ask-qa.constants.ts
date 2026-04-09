@@ -1,5 +1,5 @@
 export const QA_CATEGORIES = [
-  'All Categories',
+  'All',
   'Prayer & Worship',
   'Quran & Hadith',
   'Islamic History',

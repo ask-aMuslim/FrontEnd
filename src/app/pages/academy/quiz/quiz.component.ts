@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject, forkJoin, interval, of } from 'rxjs';
+import { Observable, Subject, combineLatest, forkJoin, interval, of } from 'rxjs';
 import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
@@ -174,6 +174,8 @@ export class QuizComponent implements OnInit, OnDestroy {
         isCurrent?: boolean;
         hasNotification?: boolean;
     }>>([]);
+    private courseQuizTitle = 'Quiz';
+    private courseQuizLessonId: string | null = null;
 
     // Passed/Completed state
     readonly userRating = signal<number>(0);
@@ -296,22 +298,50 @@ export class QuizComponent implements OnInit, OnDestroy {
             });
         }
 
-        this.academyProgressService.getCourseLessonsWithProgress(this.courseId)
+        combineLatest([
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
+            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
+        ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (lessons) => {
+                next: ([lessons, quizzes]) => {
+                    const quizLesson = lessons.find((lesson) => this.mapLessonType(lesson.type) === 'quiz');
+                    const linkedCourseQuiz = quizLesson
+                        ? quizzes.find((quiz) => quiz.lessonId === quizLesson.id)
+                        : undefined;
+                    const fallbackCourseQuiz = linkedCourseQuiz
+                        ?? quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0)
+                        ?? null;
+
+                    this.courseQuizTitle = fallbackCourseQuiz?.title?.trim() || 'Quiz';
+                    this.courseQuizLessonId = linkedCourseQuiz?.lessonId?.trim() || quizLesson?.id || null;
+
+                    const aggregatedDuration = this.academyProgressService.calculateCourseVideoDuration(
+                        lessons,
+                        this.courseInfo().duration,
+                    );
+
+                    this.courseInfo.update((current) => ({
+                        ...current,
+                        totalLessons: lessons.length,
+                        currentLesson: lessons.length,
+                        duration: aggregatedDuration,
+                    }));
+
                     this.lessons.set(lessons.map((lesson) => {
                         const lessonType = this.mapLessonType(lesson.type);
                         return {
                             id: lesson.id,
-                            quizLessonId: lessonType === 'quiz' ? lesson.id : undefined,
-                            title: lesson.title,
+                            quizLessonId: lessonType === 'quiz'
+                                ? (this.courseQuizLessonId ?? lesson.id)
+                                : undefined,
+                            title: lessonType === 'quiz' ? this.courseQuizTitle : lesson.title,
                             duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
                             type: lessonType,
                             isCompleted: lesson.progress.status === 'completed',
                             isLocked: lesson.progress.status === 'locked',
-                            isCurrent: lesson.progress.status === 'current',
-                            hasNotification: lesson.progress.status === 'current'
+                            isCurrent: false,  // No lesson marked as current on quiz page
+                            hasNotification: false
                         };
                     }));
                 },
@@ -589,6 +619,19 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.router.navigate(['/academy/course', this.courseId]);
     }
 
+    onLessonSelect(lesson: any): void {
+        // Navigate to the selected lesson or quiz
+        if (lesson.type === 'quiz') {
+            // Navigate to course quiz
+            this.router.navigate(['quiz'], {
+                relativeTo: this.route.parent,
+            });
+        } else {
+            // Navigate to lesson - use absolute path to course/lesson
+            this.router.navigate(['/academy/course', this.courseId, 'lesson', lesson.id]);
+        }
+    }
+
     setRating(rating: number): void {
         this.userRating.set(rating);
     }
@@ -702,8 +745,11 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     private syncSidebarQuizLesson(activeQuiz: { title?: string; lessonId?: string } | null): void {
         this.lessons.update((currentLessons) => {
-            const quizTitle = activeQuiz?.title?.trim() || 'Quiz';
-            const quizLessonId = activeQuiz?.lessonId?.trim() || this.lessonId || this.courseId;
+            const quizTitle = this.courseQuizTitle || activeQuiz?.title?.trim() || 'Quiz';
+            const quizLessonId = this.courseQuizLessonId
+                || activeQuiz?.lessonId?.trim()
+                || this.lessonId
+                || this.courseId;
 
             const updatedLessons = currentLessons.map((lesson) => {
                 if (lesson.type !== 'quiz') {
