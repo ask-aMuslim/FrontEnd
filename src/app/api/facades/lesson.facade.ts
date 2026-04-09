@@ -9,6 +9,7 @@ export interface LessonReadDto {
     title?: string;
     description?: string;
     content?: string;
+    contentUrl?: string;
     isPublished?: boolean;
     type?: number;
     videoUrl?: string;

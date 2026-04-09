@@ -29,6 +29,7 @@ export class RequestStepComponent {
   languages = input.required<LanguageOption[]>();
   availableLanguages = input.required<LanguageOption[]>();
   selectedLanguages = input.required<LanguageOption[]>();
+  nextDisabled = input(false);
 
   next = output<void>();
   addLanguage = output<LanguageOption>();
@@ -37,6 +38,10 @@ export class RequestStepComponent {
   languagesValidated = signal(false);
 
   onNext(): void {
+    if (this.nextDisabled()) {
+      return;
+    }
+
     const form = this.form();
     this.languagesValidated.set(true);
     const controlsToValidate = ['name', 'email', 'topic', 'message'];

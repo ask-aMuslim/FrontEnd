@@ -5,7 +5,7 @@
  * Normalizes errors and provides consistent error handling.
  */
 
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
 import {
     HttpInterceptorFn,
     HttpRequest,
@@ -14,8 +14,11 @@ import {
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
 import { ErrorNormalizer } from '../../errors/error-normalizer';
 import { SKIP_ERROR_HANDLING } from '../context-tokens';
+import { TokenService } from '../../auth/token.service';
 
 /**
  * Error Interceptor
@@ -30,6 +33,10 @@ export const errorInterceptor: HttpInterceptorFn = (
     next: HttpHandlerFn
 ): Observable<HttpEvent<unknown>> => {
     const errorNormalizer = inject(ErrorNormalizer);
+    const tokenService = inject(TokenService);
+    const router = inject(Router);
+    const platformId = inject(PLATFORM_ID);
+    const isBrowser = isPlatformBrowser(platformId);
 
     return next(req).pipe(
         catchError((error: unknown) => {
@@ -40,6 +47,29 @@ export const errorInterceptor: HttpInterceptorFn = (
 
             // Normalize the error
             const apiError = errorNormalizer.normalize(error);
+
+            // Global auth handling for protected requests
+            if ((apiError.statusCode === 401 || apiError.statusCode === 403) && isBrowser) {
+                const currentUrl = router.url;
+                const isAuthPage = currentUrl.startsWith('/login') || currentUrl.startsWith('/register');
+
+                if (!isAuthPage) {
+                    tokenService.clearTokens();
+                    void router.navigate(['/login'], {
+                        queryParams: {
+                            returnUrl: currentUrl,
+                        },
+                    });
+                }
+            }
+
+            globalThis.console?.error('[HTTP Error]', {
+                method: req.method,
+                url: req.urlWithParams,
+                statusCode: apiError.statusCode,
+                message: apiError.message,
+                traceId: apiError.traceId,
+            });
 
             // Re-throw the normalized error
             return throwError(() => apiError);

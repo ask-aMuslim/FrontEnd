@@ -26,6 +26,7 @@ export class DatetimeStepComponent {
   form = input.required<FormGroup>();
   availableDates = input.required<DateOption[]>();
   availableTimes = input.required<TimeOption[]>();
+  nextDisabled = input(false);
 
   next = output<void>();
   selectDate = output<DateOption>();
@@ -40,6 +41,10 @@ export class DatetimeStepComponent {
   }
 
   onNext(): void {
+    if (this.nextDisabled()) {
+      return;
+    }
+
     const durationControl = this.form().get('durationMinutes');
     durationControl?.markAsTouched();
     if (durationControl?.invalid) {

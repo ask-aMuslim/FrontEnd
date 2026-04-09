@@ -35,6 +35,7 @@ interface Lesson {
     isLocked: boolean;
     isCompleted: boolean;
     isCurrent: boolean;
+    isLastCourseLesson?: boolean;
     hasNotification?: boolean;
 }
 
@@ -163,7 +164,7 @@ export class CourseComponent implements OnInit, OnDestroy {
             this.academyProgressService.getAcademyCourses(),
             this.academyProgressService.getAcademyStages(),
             this.academyProgressService.getStudentProgress(),
-            this.quizzesService.getAll({ pageSize: 200 }),
+            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
@@ -243,14 +244,23 @@ export class CourseComponent implements OnInit, OnDestroy {
                 };
             });
 
+        const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
+        const scopedQuizzes = quizzes.filter((quiz) => {
+            const lessonId = typeof quiz.lessonId === 'string' ? quiz.lessonId.trim() : '';
+            return lessonId.length === 0 || courseLessonIds.has(lessonId);
+        });
+
         const sidebarLessons = this.ensureSidebarHasQuizLesson(
             lessonsWithProgress.map((lesson) =>
-                this.mapLessonForDisplay(lesson, isLocked || hasUnmetPrerequisites)
+                this.mapLessonForDisplay(lesson, isLocked || hasUnmetPrerequisites, false, null)
             ),
-            quizzes.filter(
-                (quiz) => typeof quiz.lessonId === 'string' && lessonsWithProgress.some((lesson) => lesson.id === quiz.lessonId),
-            ),
+            scopedQuizzes,
             isLocked || hasUnmetPrerequisites,
+        );
+
+        const aggregatedVideoDuration = this.academyProgressService.calculateCourseVideoDuration(
+            lessonsWithProgress,
+            '0m',
         );
 
         const resolvedStageNumber = fullCourseFromList?.stageId ?? courseData.stageId;
@@ -279,7 +289,7 @@ export class CourseComponent implements OnInit, OnDestroy {
             answers: this.extractOutcomes(courseData.description),
             totalLessons: lessonsWithProgress.length,
             completedLessons: lessonsWithProgress.filter((l) => l.progress.isCompleted).length,
-            duration: fullCourseFromList?.duration ?? courseData.duration,
+            duration: aggregatedVideoDuration,
             isLocked,
             hasUnmetPrerequisites,
             unmetPrerequisiteNames,
@@ -305,7 +315,9 @@ export class CourseComponent implements OnInit, OnDestroy {
      */
     private mapLessonForDisplay(
         lesson: AcademyLesson & { progress: LessonProgress },
-        courseLocked: boolean
+        courseLocked: boolean,
+        allowCurrentLesson: boolean = true,
+        lastContentLessonId: string | null = null,
     ): Lesson {
         if (!this.isUserAuthenticated) {
             return {
@@ -322,7 +334,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
         const isLocked = courseLocked || lesson.progress.status === 'locked';
         const isCompleted = lesson.progress.isCompleted;
-        const isCurrent = lesson.progress.status === 'current';
+        const isCurrent = allowCurrentLesson && lesson.progress.status === 'current';
 
         return {
             id: lesson.id,
@@ -333,6 +345,11 @@ export class CourseComponent implements OnInit, OnDestroy {
             isLocked,
             isCompleted,
             isCurrent,
+            isLastCourseLesson:
+                allowCurrentLesson
+                && isCurrent
+                && !!lastContentLessonId
+                && lesson.id === lastContentLessonId,
             hasNotification: isCurrent,
         };
     }
@@ -415,13 +432,26 @@ export class CourseComponent implements OnInit, OnDestroy {
         quizzes: QuizReadDto[],
         isLocked: boolean,
     ): Lesson[] {
-        const quizLessonId = quizzes.find(
-            (quiz) => typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length > 0,
-        )?.lessonId;
+        // First, look for a course quiz (quiz without a specific lessonId)
+        const courseQuiz = quizzes.find(
+            (quiz) => !quiz.lessonId || (typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length === 0),
+        );
 
-        const quizTitle = quizzes.find(
-            (quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0,
-        )?.title?.trim() ?? 'Quiz';
+        const quizLesson = lessons.find(
+            (lesson) => lesson.type === 'quiz' && !lesson.id.startsWith(CourseComponent.syntheticQuizLessonPrefix),
+        );
+
+        // Determine which quiz to use as fallback
+        let fallbackCourseQuiz = courseQuiz;
+        if (!fallbackCourseQuiz && quizLesson) {
+            fallbackCourseQuiz = quizzes.find((quiz) => quiz.lessonId === quizLesson.id);
+        }
+        fallbackCourseQuiz ??= quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0);
+
+        // Determine quizLessonId: use quiz lesson if we have one, else undefined
+        const quizLessonId = quizLesson?.id ?? undefined;
+
+        const quizTitle = fallbackCourseQuiz?.title?.trim() || 'Quiz';
 
         const lessonsWithQuizTitle = lessons.map((lesson) =>
             lesson.type === 'quiz'

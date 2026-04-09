@@ -1285,6 +1285,7 @@
   .islam-label {
     order: -1;
     width: 100%;
+    margin-top: 20px;
     margin-bottom: 8px;
     flex-basis: 100%;
     display: flex;
@@ -1836,6 +1837,12 @@
   padding: 180px 0 40px;
   transform: translateY(-140px);
   margin-bottom: -140px;
+}
+
+.advice-section--logged-in {
+  padding: 40px 0 40px;
+  transform: none;
+  margin-bottom: 0;
 }
 
 .advice-shell {

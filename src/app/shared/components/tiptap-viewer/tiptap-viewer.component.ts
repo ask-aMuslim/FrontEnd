@@ -104,8 +104,9 @@ export class TiptapViewerComponent implements OnInit, OnChanges, OnDestroy {
 
       try {
         const parsed = JSON.parse(trimmed) as unknown;
-        if (this.isTiptapDoc(parsed)) {
-          return parsed;
+        const normalizedDoc = this.normalizeStructuredDoc(parsed);
+        if (normalizedDoc) {
+          return normalizedDoc;
         }
 
         return this.buildFallbackDoc(trimmed);
@@ -115,11 +116,55 @@ export class TiptapViewerComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
 
+    const normalizedDoc = this.normalizeStructuredDoc(value);
+    if (normalizedDoc) {
+      return normalizedDoc;
+    }
+
+    return this.buildFallbackDoc(this.safeToString(value));
+  }
+
+  private normalizeStructuredDoc(value: unknown): JSONContent | string | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
     if (this.isTiptapDoc(value)) {
       return value;
     }
 
-    return this.buildFallbackDoc(this.safeToString(value));
+    if (Array.isArray(value)) {
+      return {
+        type: 'doc',
+        content: value as JSONContent[],
+      };
+    }
+
+    if (typeof value !== 'object') {
+      return null;
+    }
+
+    const record = value as Record<string, unknown>;
+    const directHtml = this.tryExtractHtml(typeof record['html'] === 'string' ? record['html'] : '');
+    if (directHtml) {
+      return directHtml;
+    }
+
+    if (typeof record['type'] === 'string') {
+      return {
+        type: 'doc',
+        content: [value as JSONContent],
+      };
+    }
+
+    if (Array.isArray(record['content'])) {
+      return {
+        type: 'doc',
+        content: record['content'] as JSONContent[],
+      };
+    }
+
+    return null;
   }
 
   private buildFallbackDoc(text: string): JSONContent {

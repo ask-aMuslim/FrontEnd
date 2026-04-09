@@ -77,6 +77,27 @@ export class AskQaComponent implements OnInit {
     return this.hasSearched && this.searchQuery.trim().length > 0;
   }
 
+  get searchPreviewQuestion(): QuestionCard | null {
+    if (!this.isShowingResults) {
+      return null;
+    }
+
+    return this.searchResults.find((question) => this.toPlainText(question.description).length > 0) ?? null;
+  }
+
+  get showQuestionPreviewSection(): boolean {
+    return this.searchPreviewQuestion !== null;
+  }
+
+  get searchPreviewAnswerText(): string {
+    const previewQuestion = this.searchPreviewQuestion;
+    if (!previewQuestion) {
+      return '';
+    }
+
+    return this.toPlainText(previewQuestion.description);
+  }
+
   get paginatedFilteredQuestions(): QuestionCard[] {
     return this.selectedCategory === 0 ? this.questions : this.getTagPaginatedQuestions();
   }
@@ -170,6 +191,14 @@ export class AskQaComponent implements OnInit {
     );
   }
 
+  private toPlainText(value: string): string {
+    return value
+      .replaceAll(/<[^>]+>/g, ' ')
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
+  }
+
   private loadQuestions(): void {
     const selectedTagId = this.selectedCategoryTagId;
     if (selectedTagId && this.selectedCategoryName) {
@@ -221,7 +250,6 @@ export class AskQaComponent implements OnInit {
         if (totalPages <= AskQaComponent.minimumTotalPages) {
           return of({
             allQuestions: firstPageQuestions,
-            totalCount: pagination.totalCount || firstPageQuestions.length,
           });
         }
 
@@ -240,16 +268,15 @@ export class AskQaComponent implements OnInit {
             ];
             return {
               allQuestions,
-              totalCount: pagination.totalCount || allQuestions.length,
             };
           }),
         );
       }),
-      catchError(() => of({ allQuestions: [], totalCount: 0 })),
-    ).subscribe(({ allQuestions, totalCount }) => {
+      catchError(() => of({ allQuestions: [] })),
+    ).subscribe(({ allQuestions }) => {
       this.loadedTagId = tagId;
       this.allFilteredQuestions = allQuestions;
-      this.totalCount = totalCount > 0 ? totalCount : allQuestions.length;
+      this.totalCount = allQuestions.length;
       this.totalPages = Math.max(
         AskQaComponent.minimumTotalPages,
         Math.ceil(this.totalCount / this.itemsPerPage),
@@ -310,7 +337,7 @@ export class AskQaComponent implements OnInit {
         const mapped = this.mapCategories(response);
         if (mapped.length > 0) {
           this.tagFilterOptions = mapped;
-          this.categories = ['All Categories', ...mapped.map((tag) => tag.name)];
+          this.categories = ['All', ...mapped.map((tag) => tag.name)];
           this.selectedCategory = PAGINATION.DEFAULT_PAGE - 1;
         }
         this.cdr.markForCheck();

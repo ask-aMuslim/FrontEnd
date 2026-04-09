@@ -60,5 +60,7 @@ Ignore any deleted legacy instruction files and avoid loading broad skill packs 
 - **Admin panel**: https://adminpanel.ask-a-muslim.com/auth/login
   - email: `administrator@ask-a-muslim.com`
   - password: `P@ssw0rd`
-- **User site (local)**: run locally and log in via: `aa6310336@gmail.com` / `Pa$$w0rd`
+- **User site (local)**: run locally and log in via:
+  - email: `aa6310336@gmail.com`
+  - password: `Pa$$w0rd`
 

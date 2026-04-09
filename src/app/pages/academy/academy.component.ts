@@ -1,9 +1,10 @@
-import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy, Injector } from '@angular/core';
 
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, combineLatest, of } from 'rxjs';
 import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
     AcademyCourse,
     AcademyLesson,
@@ -72,11 +73,13 @@ interface RecentLesson {
 })
 export class AcademyComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
+    private academyProgressServiceRef: AcademyProgressService | null = null;
 
     constructor(
         private readonly router: Router,
         private readonly route: ActivatedRoute,
-        private readonly academyProgressService: AcademyProgressService,
+        private readonly injector: Injector,
+        private readonly authService: AuthService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
 
@@ -90,6 +93,12 @@ export class AcademyComponent implements OnInit, OnDestroy {
     error: string | null = null;
 
     ngOnInit(): void {
+        if (this.isGuestUser) {
+            this.isLoading = false;
+            this.error = null;
+            return;
+        }
+
         this.loadAcademyData();
     }
 
@@ -99,10 +108,12 @@ export class AcademyComponent implements OnInit, OnDestroy {
     }
 
     private loadAcademyData(): void {
+        const academyProgressService = this.getAcademyProgressService();
+
         combineLatest([
-            this.academyProgressService.getAcademyStages(),
-            this.academyProgressService.getAcademyCourses(),
-            this.academyProgressService.getStudentProgress(),
+            academyProgressService.getAcademyStages(),
+            academyProgressService.getAcademyCourses(),
+            academyProgressService.getStudentProgress(),
         ])
             .pipe(
                 switchMap(([apiStages, courses, progress]) => {
@@ -115,7 +126,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
                         });
                     }
 
-                    return this.academyProgressService
+                    return academyProgressService
                         .getAcademyLessons(progress.recentLesson.courseId)
                         .pipe(
                             map((recentCourseLessons) => ({
@@ -163,6 +174,12 @@ export class AcademyComponent implements OnInit, OnDestroy {
                     this.cdr.detectChanges();
                 },
             });
+    }
+
+    private getAcademyProgressService(): AcademyProgressService {
+        this.academyProgressServiceRef ??= this.injector.get(AcademyProgressService);
+
+        return this.academyProgressServiceRef;
     }
 
     private mapRecentLesson(
@@ -308,6 +325,16 @@ export class AcademyComponent implements OnInit, OnDestroy {
         if (!img.src.endsWith(this.fallbackImage)) {
             img.src = this.fallbackImage;
         }
+    }
+
+    get isGuestUser(): boolean {
+        return !this.authService.isAuthenticated();
+    }
+
+    continueToSignIn(): void {
+        void this.router.navigate(['/login'], {
+            queryParams: { returnUrl: this.router.url },
+        });
     }
 
     getCourseAriaLabel(course: Course): string {

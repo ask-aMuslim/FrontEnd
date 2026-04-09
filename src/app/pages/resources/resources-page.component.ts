@@ -1,18 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 interface ResourceCard {
     readonly id: string;
     readonly title: string;
     readonly subtitle: string;
-    readonly imageSrc: string;
-    readonly imageAlt: string;
     readonly articleUrl: string;
     readonly downloadUrl: string;
-    readonly downloadFileName: string;
-    readonly showReadArticle: boolean;
+    readonly thumbnailUrl: string;
+    readonly thumbnailUrls?: readonly string[];
+    readonly thumbnailAlt: string;
     readonly driveFileId?: string;
-    readonly thumbnailRetryUrl?: string;
 }
 
 interface ResourceTab {
@@ -35,6 +34,7 @@ interface NewMuslimCard {
     readonly id: string;
     readonly title: string;
     readonly subtitle: string;
+    readonly url?: string;
 }
 
 @Component({
@@ -46,6 +46,9 @@ interface NewMuslimCard {
 })
 export class ResourcesPageComponent {
     private readonly itemsPerLoad = 3;
+    private static readonly cardThumbnailFallback = '/images/events-image-placeholder.jpg';
+    private readonly sanitizer = inject(DomSanitizer);
+    private readonly safeDrivePreviewUrlByFileId = new Map<string, SafeResourceUrl>();
     protected readonly hero = {
         eyebrowPrimary: 'About',
         eyebrowSecondary: 'Guidance',
@@ -53,10 +56,6 @@ export class ResourcesPageComponent {
         subtitle: 'Here are some helpful resources you can browse',
         ctaLabel: 'Want to Accept Islam?',
     } as const;
-
-    protected readonly thumbnailFallbackImage = '/ask-a-muslim-logo.png';
-
-    private readonly fallbackResourceImage = '/images/channel1.png';
 
     private readonly driveFileIdsByAssetPath: Readonly<Record<string, string>> = {
         // Pamphlets
@@ -187,59 +186,50 @@ export class ResourcesPageComponent {
         'pamphlet',
         ['resources', 'pamphlets', 'AAM Pamphlets'],
         this.pamphletPdfFiles,
-        'Pamphlet',
-        true,
     );
 
     private readonly scientificPosterCards: readonly ResourceCard[] = this.buildPdfCards(
         'scientific-poster',
         ['resources', 'scientific-posters', 'PDF Versions'],
         this.scientificPosterPdfFiles,
-        'Scientific Poster',
-        false,
     );
 
     private readonly prophecyPosterCards: readonly ResourceCard[] = this.buildPdfCards(
         'prophecy-poster',
         ['resources', 'prophecy-posters', 'PDF Versions'],
         this.prophecyPosterPdfFiles,
-        'Prophecy Poster',
-        false,
     );
 
-    private readonly sharedResourceCards: readonly ResourceCard[] = [
+    protected readonly dawahDriveUrl =
+        'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87';
+
+    private readonly dawahResourceCards: readonly ResourceCard[] = [
         {
-            id: 'science-quran-1',
-            title: 'Science in the Quran',
-            subtitle: 'A miracle of Islam',
-            imageSrc: '/images/channel1.png',
-            imageAlt: 'Science in the Quran resource cover',
-            articleUrl: '/resources',
-            downloadUrl: '/resources',
-            downloadFileName: 'science-in-the-quran.pdf',
-            showReadArticle: true,
+            id: 'dawah-learn-islam',
+            title: 'Learn Islam',
+            subtitle: 'Foundational materials for learning Islam',
+            articleUrl: 'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87',
+            downloadUrl: 'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87',
+            thumbnailUrl: ResourcesPageComponent.cardThumbnailFallback,
+            thumbnailAlt: 'Learn Islam resource',
         },
         {
-            id: 'science-quran-2',
-            title: 'Science in the Quran',
-            subtitle: 'A miracle of Islam',
-            imageSrc: '/images/channel2.png',
-            imageAlt: 'Scientific resource cover preview',
-            articleUrl: '/resources',
-            downloadUrl: '/resources',
-            downloadFileName: 'science-in-the-quran.pdf',
-            showReadArticle: true,
+            id: 'dawah-learn-christianity',
+            title: 'Learn Christianity',
+            subtitle: 'References related to Christianity',
+            articleUrl: 'https://drive.google.com/drive/folders/1S3D-D4WkRPJpNxZL8EdOsXnOvWY2PxgN',
+            downloadUrl: 'https://drive.google.com/drive/folders/1S3D-D4WkRPJpNxZL8EdOsXnOvWY2PxgN',
+            thumbnailUrl: ResourcesPageComponent.cardThumbnailFallback,
+            thumbnailAlt: 'Learn Christianity resource',
         },
         {
-            id: 'science-quran-3',
-            title: 'Science in the Quran',
-            subtitle: 'A miracle of Islam',
-            imageSrc: '/images/channel3.png',
-            imageAlt: 'Prophecy resource cover preview',
-            articleUrl: '/resources',
-            downloadUrl: '/resources',
-            downloadFileName: 'science-in-the-quran.pdf',
-            showReadArticle: true,
+            id: 'dawah-101',
+            title: "Da'wah 101",
+            subtitle: 'A quick starter for Da’wah',
+            articleUrl: 'https://www.youtube.com/watch?v=YPnwAgbgrus',
+            downloadUrl: 'https://www.youtube.com/watch?v=YPnwAgbgrus',
+            thumbnailUrl: ResourcesPageComponent.cardThumbnailFallback,
+            thumbnailAlt: "Da'wah 101 resource",
         },
     ];
 
@@ -260,34 +250,32 @@ export class ResourcesPageComponent {
         },
         {
             id: 'gallery-2',
-            eyebrow: 'For Studies',
+            eyebrow: "Learn How To Give Da'wah",
             title: 'Da’wah Resources',
             surface: 'surface',
             tabs: [
-                { id: 'common-allegations', label: 'Common Allegations' },
-                { id: 'dawah-materials', label: 'Dawah Materials' },
+                { id: 'dawah-resources', label: 'Dawah Resources' },
             ],
             cardsByTab: {
-                'common-allegations': this.sharedResourceCards,
-                'dawah-materials': this.sharedResourceCards,
+                'dawah-resources': this.dawahResourceCards,
             },
         },
     ];
 
     private readonly activeTabsByGallery = signal<Record<ResourceGalleryId, string>>({
         'gallery-1': 'pamphlets',
-        'gallery-2': 'common-allegations',
+        'gallery-2': 'dawah-resources',
     });
 
     private readonly visibleCountByTabKey = signal<Record<string, number>>({
         'gallery-1:pamphlets': this.itemsPerLoad,
         'gallery-1:scientific-posters': this.itemsPerLoad,
         'gallery-1:prophecy-posters': this.itemsPerLoad,
-        'gallery-2:common-allegations': this.itemsPerLoad,
-        'gallery-2:dawah-materials': this.itemsPerLoad,
+        'gallery-2:dawah-resources': this.itemsPerLoad,
     });
 
-    private readonly thumbnailFallbackByCardId = signal<Record<string, boolean>>({});
+    private readonly thumbnailAttemptByCardId = signal<Record<string, number>>({});
+    private readonly usePdfPreviewByCardId = signal<Record<string, boolean>>({});
 
     protected readonly resourcesCta = {
         title: 'Do You Have Any Questions?',
@@ -317,8 +305,9 @@ export class ResourcesPageComponent {
         },
         {
             id: 'daily-dua',
-            title: 'Daily Duas for New Muslims',
+            title: 'New Muslim Form',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://www.noorohio.org/newmuslims/',
         },
     ];
 
@@ -407,35 +396,80 @@ export class ResourcesPageComponent {
         });
     }
 
-    protected isThumbnailFallback(cardId: string): boolean {
-        return this.thumbnailFallbackByCardId()[cardId] === true;
+    protected isLegacyGallery(gallery: ResourceGallery): boolean {
+        return gallery.id === 'gallery-1';
     }
 
-    protected onResourceThumbnailError(event: Event, card: ResourceCard): void {
-        const image = event.target as HTMLImageElement | null;
-        if (!image) {
+    protected isDawahGallery(gallery: ResourceGallery): boolean {
+        return gallery.id === 'gallery-2';
+    }
+
+    protected isPamphletsTabActive(gallery: ResourceGallery): boolean {
+        return this.getSelectedTabId(gallery) === 'pamphlets';
+    }
+
+    protected getCardThumbnailUrl(card: ResourceCard): string {
+        const attempt = this.thumbnailAttemptByCardId()[card.id] ?? 0;
+        const candidates = card.thumbnailUrls && card.thumbnailUrls.length > 0
+            ? card.thumbnailUrls
+            : [card.thumbnailUrl];
+        return candidates[attempt] ?? ResourcesPageComponent.cardThumbnailFallback;
+    }
+
+    protected shouldUsePdfPreview(card: ResourceCard): boolean {
+        return Boolean(card.driveFileId) && Boolean(this.usePdfPreviewByCardId()[card.id]);
+    }
+
+    protected getDrivePreviewUrl(fileId: string): SafeResourceUrl {
+        const cachedUrl = this.safeDrivePreviewUrlByFileId.get(fileId);
+        if (cachedUrl) {
+            return cachedUrl;
+        }
+
+        const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+            `https://drive.google.com/file/d/${fileId}/preview`,
+        );
+        this.safeDrivePreviewUrlByFileId.set(fileId, safeUrl);
+        return safeUrl;
+    }
+
+    protected onCardImageError(card: ResourceCard, event: Event): void {
+        const target = event.target;
+        if (!(target instanceof HTMLImageElement)) {
             return;
         }
 
-        const hasRetried = image.dataset['retry'] === '1';
-        if (!hasRetried && card.thumbnailRetryUrl) {
-            image.dataset['retry'] = '1';
-            image.src = card.thumbnailRetryUrl;
+        const candidates = card.thumbnailUrls && card.thumbnailUrls.length > 0
+            ? card.thumbnailUrls
+            : [card.thumbnailUrl];
+        const currentAttempt = this.thumbnailAttemptByCardId()[card.id] ?? 0;
+        const nextAttempt = currentAttempt + 1;
+
+        if (nextAttempt < candidates.length) {
+            this.thumbnailAttemptByCardId.update((current) => ({
+                ...current,
+                [card.id]: nextAttempt,
+            }));
             return;
         }
 
-        this.thumbnailFallbackByCardId.update((current) => ({
-            ...current,
-            [card.id]: true,
-        }));
+        if (card.driveFileId) {
+            this.usePdfPreviewByCardId.update((current) => ({
+                ...current,
+                [card.id]: true,
+            }));
+            return;
+        }
+
+        if (!target.src.endsWith(ResourcesPageComponent.cardThumbnailFallback)) {
+            target.src = ResourcesPageComponent.cardThumbnailFallback;
+        }
     }
 
     private buildPdfCards(
         idPrefix: string,
         folderSegments: readonly string[],
         fileNames: readonly string[],
-        subtitle: string,
-        showReadArticle: boolean,
     ): readonly ResourceCard[] {
         return fileNames.map((fileName, index) => {
             const encodedAssetPath = this.toAssetPath([...folderSegments, fileName]);
@@ -444,29 +478,24 @@ export class ResourcesPageComponent {
             const directDriveUrl = this.driveLinksByAssetPath[encodedAssetPath];
             const articleUrl = directDriveUrl
                 ?? (driveFileId ? this.buildDriveViewUrl(driveFileId) : localPdfUrl);
-            const downloadUrl = driveFileId
-                ? this.buildDriveDownloadUrl(driveFileId)
-                : (directDriveUrl ?? localPdfUrl);
-            const imageSrc = driveFileId
-                ? this.buildDriveThumbnailUrl(driveFileId)
-                : this.fallbackResourceImage;
-            const thumbnailRetryUrl = driveFileId
-                ? this.buildDriveThumbnailRetryUrl(driveFileId)
-                : undefined;
+            const downloadUrl = driveFileId ? this.buildDriveDownloadUrl(driveFileId) : localPdfUrl;
+            const thumbnailUrls = driveFileId
+                ? this.buildDriveThumbnailCandidates(driveFileId)
+                : [ResourcesPageComponent.cardThumbnailFallback];
+            const thumbnailUrl = thumbnailUrls[0] ?? ResourcesPageComponent.cardThumbnailFallback;
             const title = this.toDisplayTitle(fileName);
+            const subtitle = this.toCardSubtitle(idPrefix);
 
             return {
                 id: `${idPrefix}-${index + 1}`,
                 title,
-                subtitle,
-                imageSrc,
-                imageAlt: `${title} PDF preview`,
                 articleUrl,
+                subtitle,
                 downloadUrl,
-                downloadFileName: fileName,
-                showReadArticle,
+                thumbnailUrl,
+                thumbnailUrls,
+                thumbnailAlt: `${title} thumbnail`,
                 driveFileId,
-                thumbnailRetryUrl,
             };
         });
     }
@@ -483,8 +512,31 @@ export class ResourcesPageComponent {
         return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
     }
 
-    private buildDriveThumbnailRetryUrl(fileId: string): string {
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200&v=${Date.now()}`;
+    private buildDriveThumbnailCandidates(fileId: string): readonly string[] {
+        const candidates = [
+            this.buildDriveThumbnailUrl(fileId),
+            `https://drive.google.com/thumbnail?authuser=0&id=${fileId}&sz=w1200`,
+            `https://drive.googleusercontent.com/thumbnail?id=${fileId}&sz=w1200`,
+            `https://lh3.googleusercontent.com/d/${fileId}=w1200`,
+        ];
+
+        return [...new Set(candidates)];
+    }
+
+    private toCardSubtitle(idPrefix: string): string {
+        if (idPrefix === 'pamphlet') {
+            return 'Pamphlet resource';
+        }
+
+        if (idPrefix === 'scientific-poster') {
+            return 'Scientific poster resource';
+        }
+
+        if (idPrefix === 'prophecy-poster') {
+            return 'Prophecy poster resource';
+        }
+
+        return 'Downloadable PDF resource';
     }
 
     private getSelectedTabId(gallery: ResourceGallery): string {

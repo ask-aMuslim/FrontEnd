@@ -8,6 +8,29 @@
       </section>
     }
 
+    @if (isGuestUser) {
+      <section class="academy-guest-signin" data-aos="fade-up">
+        <div class="section-block academy-guest-signin__content">
+          <div class="academy-guest-signin__copy">
+            <h2 class="academy-guest-signin__title">
+              Sign in to continue your Academy journey
+            </h2>
+            <p class="academy-guest-signin__text">
+              You can browse Academy content as a guest. Sign in to track
+              progress, continue lessons, and take quizzes.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="continueToSignIn()"
+          >
+            Sign In
+          </button>
+        </div>
+      </section>
+    }
+
     @if (hasRecentLesson && recentLesson) {
       <section class="recent-lesson-section" data-aos="fade-up">
         <div class="section-block">
@@ -119,38 +142,38 @@
         </div>
       </section>
     }
-
-    <section
-      class="important-note"
-      [class.expanded]="showFullNote"
-      data-aos="fade-up"
-    >
+    <section class="important-note">
       <div class="section-block">
-        <p class="note-text">{{ importantNote }}</p>
-        <button
-          class="toggle-button"
-          (click)="toggleNote()"
-          [attr.aria-label]="'Toggle note'"
+        <div
+          class="important-note-content"
+          [class.expanded]="showFullNote"
+          data-aos="fade-up"
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+          <p class="note-text">{{ importantNote }}</p>
+          <button
+            class="toggle-button"
+            (click)="toggleNote()"
+            [attr.aria-label]="'Toggle note'"
           >
-            <path
-              d="M4 8L12 16L20 8"
-              stroke="#010D05"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 8L12 16L20 8"
+                stroke="#010D05"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </section>
-
     <section class="academy-stages" data-aos="fade-up">
       <div class="section-block">
         <h2 class="section-title">The Academy</h2>

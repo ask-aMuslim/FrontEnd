@@ -11,7 +11,7 @@
   position: relative;
   background-color: #fdf9ee;
   overflow: hidden;
-  padding: 96px 24px;
+  padding: 96px 0;
   text-align: center;
 }
 
@@ -28,8 +28,6 @@
 .hero-content {
   position: relative;
   z-index: 1;
-  max-width: 1105px;
-  margin: 0 auto;
 }
 
 .hero-pill {
@@ -63,10 +61,10 @@
   line-height: 1.6;
 }
 
-.page-container {
-  max-width: 1248px;
-  margin: 0 auto;
-  padding: 96px 24px;
+.success-view,
+.contact-content {
+  padding-top: 96px;
+  padding-bottom: 96px;
 }
 
 .contact-content {
@@ -373,6 +371,7 @@ textarea {
 }
 
 .profile-button {
+  border: 1px solid #156b40;
   background: #ffffff;
   color: #156b40;
 
@@ -396,11 +395,13 @@ textarea {
 
 @media (max-width: 1279px) {
   .hero-section {
-    padding: 88px 20px;
+    padding: 88px 0;
   }
 
-  .page-container {
-    padding: 72px 20px;
+  .success-view,
+  .contact-content {
+    padding-top: 72px;
+    padding-bottom: 72px;
   }
 }
 
@@ -418,7 +419,7 @@ textarea {
 
 @media (max-width: 767px) {
   .hero-section {
-    padding: 72px 16px;
+    padding: 72px 0;
   }
 
   .hero-title,
@@ -434,8 +435,10 @@ textarea {
     font-size: 15px;
   }
 
-  .page-container {
-    padding: 48px 16px;
+  .success-view,
+  .contact-content {
+    padding-top: 48px;
+    padding-bottom: 48px;
   }
 
   .quick-links {

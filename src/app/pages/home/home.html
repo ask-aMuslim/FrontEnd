@@ -1412,6 +1412,7 @@
     </div>
   </section>
 
+  @if (!authService.isAuthenticated()) {
   <section class="home-serve" aria-labelledby="home-serve-title">
     <div class="section-block section-block--wide">
       <div class="home-serve__shell" data-aos="fade-up">
@@ -1433,8 +1434,12 @@
       </div>
     </div>
   </section>
+  }
 
-  <section class="advice-section">
+  <section
+    class="advice-section"
+    [class.advice-section--logged-in]="authService.isAuthenticated()"
+  >
     <div class="section-block section-block--wide">
       <div class="advice-shell" data-aos="fade-up">
         <h2 class="advice-title">Some Fair Advice</h2>

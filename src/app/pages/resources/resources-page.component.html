@@ -70,85 +70,134 @@
             </button>
           </div>
 
-          <div class="resources-grid" role="list" aria-label="Resource cards">
-            <article
-              class="resource-card"
+          <div
+            class="resources-grid"
+            [class.resources-grid--dawah]="isDawahGallery(gallery)"
+            role="list"
+            aria-label="Resource cards"
+          >
+            <div
+              class="resource-card__item"
+              [class.resource-card__item--dawah]="isDawahGallery(gallery)"
               role="listitem"
               *ngFor="let card of getVisibleCards(gallery)"
             >
-              <a
-                class="resource-card__media-link"
-                [href]="card.articleUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                [attr.aria-label]="'Open resource ' + card.title"
+              <ng-container
+                *ngIf="isLegacyGallery(gallery); else dawahCardTemplate"
               >
-                <div class="resource-card__media">
-                  <ng-container
-                    *ngIf="
-                      !isThumbnailFallback(card.id);
-                      else thumbnailFallback
-                    "
-                  >
-                    <img
-                      [src]="card.imageSrc"
-                      [alt]="card.imageAlt"
-                      loading="lazy"
-                      decoding="async"
-                      referrerpolicy="no-referrer"
-                      (error)="onResourceThumbnailError($event, card)"
-                    />
-                  </ng-container>
-
-                  <ng-template #thumbnailFallback>
-                    <div class="resource-card__thumbnail-fallback">
-                      <img
-                        class="resource-card__fallback-logo"
-                        [src]="thumbnailFallbackImage"
-                        alt="Ask A Muslim logo"
-                        loading="lazy"
-                      />
-                    </div>
-                  </ng-template>
-                </div>
-              </a>
-
-              <div class="resource-card__content">
-                <h2>{{ card.title }}</h2>
-                <p>{{ card.subtitle }}</p>
-
-                <div
-                  class="resource-card__actions"
-                  [class.resource-card__actions--compact]="
-                    !card.showReadArticle
-                  "
-                >
+                <article class="resource-card resource-card--legacy">
                   <a
-                    *ngIf="card.showReadArticle"
-                    class="resources-button resources-button--outline resources-button--wide"
+                    class="resource-card__media-link"
                     [href]="card.articleUrl"
                     target="_blank"
                     rel="noopener noreferrer"
+                    [attr.aria-label]="'Open resource ' + card.title"
                   >
-                    Read Article
+                    <div class="resource-card__media">
+                      <ng-container
+                        *ngIf="
+                          !shouldUsePdfPreview(card) || !card.driveFileId;
+                          else drivePdfPreview
+                        "
+                      >
+                        <img
+                          [src]="getCardThumbnailUrl(card)"
+                          [alt]="card.thumbnailAlt"
+                          loading="lazy"
+                          referrerpolicy="no-referrer"
+                          (error)="onCardImageError(card, $event)"
+                        />
+                      </ng-container>
+
+                      <ng-template #drivePdfPreview>
+                        <iframe
+                          class="resource-card__pdf-preview"
+                          [src]="getDrivePreviewUrl(card.driveFileId!)"
+                          [title]="card.title + ' preview'"
+                          loading="lazy"
+                          tabindex="-1"
+                          aria-hidden="true"
+                        ></iframe>
+                      </ng-template>
+                    </div>
                   </a>
-                  <a
-                    class="resources-icon-button"
-                    [href]="card.downloadUrl"
-                    [attr.download]="card.downloadFileName"
-                    [attr.aria-label]="'Download PDF for ' + card.title"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      src="/icons/icons-24/download.svg"
-                      alt=""
-                      aria-hidden="true"
-                    />
-                  </a>
-                </div>
-              </div>
-            </article>
+
+                  <div class="resource-card__content">
+                    <h3>{{ card.title }}</h3>
+                    <p>{{ card.subtitle }}</p>
+
+                    <div
+                      class="resource-card__actions"
+                      [class.resource-card__actions--download-only]="
+                        !isPamphletsTabActive(gallery)
+                      "
+                    >
+                      <a
+                        *ngIf="isPamphletsTabActive(gallery)"
+                        class="resources-button resources-button--outline resources-button--article"
+                        [href]="card.articleUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        [attr.aria-label]="'Read article ' + card.title"
+                      >
+                        Read Article
+                      </a>
+
+                      <a
+                        class="resources-icon-button"
+                        [href]="card.downloadUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        [attr.aria-label]="'Download ' + card.title"
+                      >
+                        <img
+                          src="/icons/icons-24/download.svg"
+                          alt=""
+                          aria-hidden="true"
+                        />
+                      </a>
+                    </div>
+                  </div>
+                </article>
+              </ng-container>
+
+              <ng-template #dawahCardTemplate>
+                <a
+                  class="new-muslim-card new-muslim-card--link"
+                  [href]="card.articleUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="'Open resource ' + card.title"
+                >
+                  <div class="new-muslim-card__text">
+                    <h3>{{ card.title }}</h3>
+                  </div>
+
+                  <span class="new-muslim-card__icon" aria-hidden="true">
+                    <img src="/icons/icons-24/arrow-right.svg" alt="" />
+                  </span>
+                </a>
+              </ng-template>
+            </div>
+          </div>
+
+          <div
+            class="resources-gallery__drive-cta"
+            *ngIf="isDawahGallery(gallery)"
+          >
+            <a
+              class="resources-button resources-button--outline resources-button--drive"
+              [href]="dawahDriveUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Check AAM Google Drive"
+            >
+              <span>Check AAM Google Drive</span>
+              <span
+                class="resources-button__link-icon"
+                aria-hidden="true"
+              ></span>
+            </a>
           </div>
 
           <div class="resources-gallery__footer" *ngIf="canLoadMore(gallery)">
@@ -183,19 +232,39 @@
           role="list"
           aria-label="New Muslim resources list"
         >
-          <article
-            class="new-muslim-card"
+          <div
+            class="new-muslim-card__item"
             role="listitem"
             *ngFor="let card of newMuslimCards"
           >
-            <div class="new-muslim-card__text">
-              <h3>{{ card.title }}</h3>
-            </div>
+            <a
+              *ngIf="card.url; else staticNewMuslimCard"
+              class="new-muslim-card new-muslim-card--link"
+              [href]="card.url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div class="new-muslim-card__text">
+                <h3>{{ card.title }}</h3>
+              </div>
 
-            <span class="new-muslim-card__icon" aria-hidden="true">
-              <img src="/icons/icons-24/arrow-right.svg" alt="" />
-            </span>
-          </article>
+              <span class="new-muslim-card__icon" aria-hidden="true">
+                <img src="/icons/icons-24/arrow-right.svg" alt="" />
+              </span>
+            </a>
+
+            <ng-template #staticNewMuslimCard>
+              <article class="new-muslim-card">
+                <div class="new-muslim-card__text">
+                  <h3>{{ card.title }}</h3>
+                </div>
+
+                <span class="new-muslim-card__icon" aria-hidden="true">
+                  <img src="/icons/icons-24/arrow-right.svg" alt="" />
+                </span>
+              </article>
+            </ng-template>
+          </div>
         </div>
       </div>
     </div>

@@ -1,10 +1,19 @@
-<div id="qa-list-section" class="flex w-full flex-1 flex-col justify-center gap-8 lg:gap-10">
+<div
+  id="qa-list-section"
+  class="flex w-full flex-1 flex-col justify-center gap-8 lg:gap-10"
+>
   <div class="flex flex-col items-start gap-6 w-full">
-    <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+    <div
+      class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full"
+    >
       <div
         class="flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6"
       >
-        <img src="/icons/icons-24/search.svg" alt="search icon" class="h-5 w-5 object-contain" />
+        <img
+          src="/icons/icons-24/search.svg"
+          alt="search icon"
+          class="h-5 w-5 object-contain"
+        />
         <input
           type="text"
           id="ask-qa-search"
@@ -21,8 +30,20 @@
             (click)="clearSearch()"
             aria-label="Clear search"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="text-(--color-text-placeholder) hover:text-(--color-text-body) transition-colors">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              class="text-(--color-text-placeholder) hover:text-(--color-text-body) transition-colors"
+            >
+              <path
+                d="M18 6L6 18M6 6L18 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
         }
@@ -37,14 +58,30 @@
       </button>
     </div>
 
-    <div class="category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto">
+    @if (
+      showQuestionPreviewSection && searchPreviewQuestion;
+      as previewQuestion
+    ) {
+      <section class="qa-search-preview w-full" aria-label="Question preview">
+        <p class="qa-search-preview__eyebrow">Question preview</p>
+        <h3 class="qa-search-preview__title">{{ previewQuestion.title }}</h3>
+        <p class="qa-search-preview__answer">{{ searchPreviewAnswerText }}</p>
+      </section>
+      <div class="qa-search-preview__separator" aria-hidden="true"></div>
+    }
+
+    <div
+      class="category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto"
+    >
       @for (category of categories; track $index; let i = $index) {
         <button
           (click)="selectCategory(i)"
-          [ngClass]="selectedCategory === i ? 'secondary-button' : 'text-text-body'"
-          class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-6 py-3 transition-colors capitalize cursor-pointer"
+          [ngClass]="
+            selectedCategory === i ? 'secondary-button' : 'text-text-body'
+          "
+          class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-4 py-3 transition-colors capitalize cursor-pointer"
         >
-          <span class="text-lg font-medium">{{ category }}</span>
+          <span class="text-base font-medium">{{ category }}</span>
         </button>
       }
     </div>
@@ -64,7 +101,8 @@
           class="flex w-full items-center justify-center rounded-lg border border-(--color-card-surface-secondary-2) bg-(--color-card-surface-primary) p-6"
         >
           <p class="text-center text-base text-(--color-text-caption)">
-            No questions were found for “{{ selectedCategoryName }}”. Try another category.
+            No questions were found for “{{ selectedCategoryName }}”. Try
+            another category.
           </p>
         </div>
       } @else {

@@ -61,7 +61,35 @@
                 [src]="youtubeEmbedUrl"
                 title="Lesson video"
                 loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allow="
+                  accelerometer;
+                  autoplay;
+                  clipboard-write;
+                  encrypted-media;
+                  gyroscope;
+                  picture-in-picture;
+                  web-share;
+                "
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          } @else if (useExternalEmbed && externalEmbedUrl) {
+            <div class="video-embed-wrapper">
+              <iframe
+                class="video-player video-player--embed"
+                [src]="externalEmbedUrl"
+                title="Lesson video"
+                loading="lazy"
+                allow="
+                  accelerometer;
+                  autoplay;
+                  clipboard-write;
+                  encrypted-media;
+                  gyroscope;
+                  picture-in-picture;
+                  web-share;
+                "
                 referrerpolicy="strict-origin-when-cross-origin"
                 allowfullscreen
               ></iframe>
@@ -70,9 +98,9 @@
             <video
               controls
               class="video-player"
+              [src]="videoContent?.videoUrl"
               [poster]="videoContent?.thumbnailUrl"
             >
-              <source [src]="videoContent?.videoUrl" type="video/mp4" />
               <track kind="captions" srclang="en" label="English" />
               Your browser does not support the video tag.
             </video>
@@ -111,57 +139,59 @@
       <!-- Article Content Header -->
       @if (isArticleContent && articleContent) {
         <div class="article-header-container">
-          <div class="article-icon">
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="14,2 14,8 20,8"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <line
-                x1="16"
-                y1="13"
-                x2="8"
-                y2="13"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <line
-                x1="16"
-                y1="17"
-                x2="8"
-                y2="17"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="10,9 9,9 8,9"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
+          @if (isContentLoading) {
+            <div class="article-icon">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="14,2 14,8 20,8"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="16"
+                  y1="13"
+                  x2="8"
+                  y2="13"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="16"
+                  y1="17"
+                  x2="8"
+                  y2="17"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="10,9 9,9 8,9"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          }
           <div class="article-header-content">
             <p class="article-type">Article</p>
             @if (articleContent.description) {
@@ -177,7 +207,7 @@
                 }
                 <app-tiptap-viewer
                   class="section-content"
-                  [content]="section.content || section.contentJson"
+                  [content]="section.contentJson || section.content"
                 ></app-tiptap-viewer>
               </div>
             }
@@ -504,13 +534,23 @@
       <!-- Navigation Buttons -->
       <div class="navigation-buttons">
         @if (previousAcademyLesson || previousLesson) {
-          <button class="btn btn-outlined" (click)="goToPreviousLesson()">
+          <button
+            class="btn btn-outlined btn-previous"
+            (click)="goToPreviousLesson()"
+          >
             <span>Previous Lesson</span>
           </button>
         }
 
-        @if (nextAcademyLesson || nextLesson) {
-          <button class="btn btn-primary" (click)="goToNextLesson()">
+        @if (shouldShowStartQuizButton) {
+          <button
+            class="btn btn-primary btn-start-quiz"
+            (click)="onStartQuizClick()"
+          >
+            <span>Start The Quiz</span>
+          </button>
+        } @else if (nextAcademyLesson || nextLesson) {
+          <button class="btn btn-primary btn-next" (click)="goToNextLesson()">
             <span>{{ isIntroContent ? "Begin" : "Next Lesson" }}</span>
           </button>
         }
@@ -522,9 +562,11 @@
     <app-academy-sidebar-host
       [stageNumber]="courseInfo.stage"
       [title]="courseInfo.title"
-      [currentLessonNumber]="lessonData?.metadata?.order ?? currentLesson?.order ?? null"
+      [currentLessonNumber]="
+        lessonData?.metadata?.order ?? currentLesson?.order ?? null
+      "
       [totalLessons]="courseLessons.length"
-      [duration]="currentCourse?.duration || '4h 10m'"
+      [duration]="resolvedCourseDuration"
       [overviewLink]="['/academy/course', courseId]"
       overviewLinkLabel="Course overview"
       [lessons]="sidebarLessons"
