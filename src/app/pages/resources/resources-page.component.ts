@@ -201,7 +201,7 @@ export class ResourcesPageComponent {
     );
 
     protected readonly dawahDriveUrl =
-        'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87';
+        'https://drive.google.com/drive/folders/1AviAC5b6jgnNXCu9LjTrJWppD5fGvftS';
 
     private readonly dawahResourceCards: readonly ResourceCard[] = [
         {
