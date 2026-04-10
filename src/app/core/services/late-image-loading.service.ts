@@ -61,6 +61,10 @@ export class LateImageLoadingService {
       for (const node of mutation.addedNodes) {
         this.processAddedNode(node);
       }
+
+      for (const node of mutation.removedNodes) {
+        this.processRemovedNode(node);
+      }
     }
   }
 
@@ -77,6 +81,22 @@ export class LateImageLoadingService {
     const nestedImages = node.querySelectorAll<HTMLImageElement>('img');
     for (const image of nestedImages) {
       this.prepareImage(image);
+    }
+  }
+
+  private processRemovedNode(node: Node): void {
+    if (!(node instanceof Element)) {
+      return;
+    }
+
+    if (node instanceof HTMLImageElement) {
+      this.unbindImageListeners(node);
+      return;
+    }
+
+    const nestedImages = node.querySelectorAll<HTMLImageElement>('img');
+    for (const image of nestedImages) {
+      this.unbindImageListeners(image);
     }
   }
 
