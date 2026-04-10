@@ -7,6 +7,7 @@ import {
   login,
   loginWithFacebook,
   loginWithGoogle,
+  logout as authLogout,
   register,
   resetPassword,
   verifyOtp,
@@ -52,7 +53,7 @@ export class IdentityFacade {
     private readonly http: HttpClient,
     private readonly config: ApiConfiguration,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   clearError(): void {
     this.error.set(null);
@@ -118,9 +119,12 @@ export class IdentityFacade {
   }
 
   logout(): Observable<void> {
-    this.clearError();
-    this.tokenService.clearTokens();
-    return of(void 0);
+    return this.withRequestState(
+      authLogout(this.http, this.config.rootUrl).pipe(
+        map(() => void 0),
+        finalize(() => this.tokenService.clearTokens()),
+      ),
+    );
   }
 
   requestPasswordResetOtp(email: string): Observable<void> {
