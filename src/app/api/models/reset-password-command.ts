@@ -4,5 +4,5 @@
 export interface ResetPasswordCommand {
   email?: string;
   newPassword?: string;
-  otp?: string;
+  token?: string;
 }

@@ -18,6 +18,7 @@ import {
   LoginWithGoogleCommand,
   RegisterCommand,
   ReligiousStatus,
+  Result,
 } from '../models';
 import { TokenService } from '../../core/auth/token.service';
 import { ResultOfAuthenticationResponse } from '../models/result-of-authentication-response';
@@ -42,6 +43,13 @@ export interface LoginResponse {
   lastName?: string;
   role?: number;
   userId?: string;
+}
+
+interface VerifyOtpTokenPayload {
+  token?: string | null;
+  data?: string | {
+    token?: string | null;
+  } | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -135,22 +143,32 @@ export class IdentityFacade {
     );
   }
 
-  verifyPasswordResetOtp(email: string, otp: string): Observable<void> {
+  verifyPasswordResetOtp(email: string, otp: string): Observable<string> {
     return this.withRequestState(
-      verifyOtp(this.http, this.config.rootUrl, { body: { email, otp } }).pipe(
-        map(() => void 0),
-      ),
+      verifyOtp(this.http, this.config.rootUrl, { body: { email, otp } }).pipe(map((response) => {
+        const responseBody = response.body as Result & VerifyOtpTokenPayload;
+        const tokenFromData = typeof responseBody?.data === 'string'
+          ? responseBody.data
+          : responseBody?.data?.token;
+        const token = responseBody?.token ?? tokenFromData;
+
+        if (!token || token.trim().length === 0) {
+          throw new Error('Verification token was not returned by the server.');
+        }
+
+        return token;
+      })),
     );
   }
 
   resetPassword(
     email: string,
-    otp: string,
+    token: string,
     newPassword: string,
   ): Observable<void> {
     return this.withRequestState(
       resetPassword(this.http, this.config.rootUrl, {
-        body: { email, otp, newPassword },
+        body: { email, token, newPassword },
       }).pipe(map(() => void 0)),
     );
   }
