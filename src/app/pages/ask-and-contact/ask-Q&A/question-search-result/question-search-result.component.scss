@@ -1,6 +1,6 @@
 .search-results {
   width: 100%;
-  padding: 1.5rem;
+
   border: 1.5px solid var(--border-normal, #e5e7eb);
   border-radius: 1rem;
   background: #fff;
@@ -13,6 +13,8 @@
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
+  padding: 1.5rem;
+  background-color: var(--color-card-surface-primary, #f8f9fa);
 }
 
 .search-results__title {

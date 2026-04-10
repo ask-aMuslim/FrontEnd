@@ -31,7 +31,7 @@
             @for (bubble of heroBubbles; track $index; let i = $index) {
             <a
               class="suggestion-bubble"
-              [routerLink]="'/ask-and-contact'"
+              [routerLink]="'/question-and-answer/topics'"
               [queryParams]="{ question: bubble }"
             >
               {{ bubble }}
@@ -1449,7 +1449,7 @@
           Finally, visit your nearest mosque and ask an Islamic scholar the same
           questions."
         </p>
-        <a class="advice-button" [routerLink]="'/ask-and-contact'"
+        <a class="advice-button" [routerLink]="'/question-and-answer/topics'"
           >Start Asking</a
         >
         <p class="advice-caption">

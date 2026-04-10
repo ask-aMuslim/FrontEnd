@@ -18,19 +18,19 @@ export class SidebarComponent {
     {
       key: 'ask-qa',
       label: 'Topics',
-      href: '/ask-and-contact/ask-qa',
+      href: '/question-and-answer/topics',
       icon: '/icons/icons-24/found.svg',
     },
     {
       key: 'ask-assistant',
       label: 'Ask Assistant',
-      href: '/ask-and-contact/ask-assistant',
+      href: '/question-and-answer/ask-assistant',
       icon: '/icons/icons-24/ai-talk.svg',
     },
     {
       key: 'meet-scholar',
       label: 'Meet Scholar',
-      href: '/ask-and-contact/meet-scholar',
+      href: '/question-and-answer/meet-scholar',
       icon: '/icons/icons-24/scholar-talk.svg',
     },
   ];

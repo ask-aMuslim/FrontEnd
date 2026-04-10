@@ -41,6 +41,24 @@ interface QuizAnswer {
     readonly isSkipped: boolean;
 }
 
+interface StoredQuizAnswer {
+    readonly questionId: string;
+    readonly questionIndex?: number;
+    readonly selectedOptionId: string | null;
+    readonly isCorrect?: boolean;
+    readonly isSkipped: boolean;
+}
+
+interface StoredQuizResult {
+    readonly completed: boolean;
+    readonly score: number;
+    readonly passed: boolean;
+    readonly completionTime: number;
+    readonly timestamp: string;
+    readonly questionCount: number;
+    readonly answers: readonly StoredQuizAnswer[];
+}
+
 type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
 
 @Component({
@@ -113,6 +131,19 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.answers().filter(a => a.isCorrect).length
     );
 
+    readonly effectiveCorrectAnswersCount = computed(() => {
+        const restoredResult = this.restoredQuizResult;
+        const hasAnsweredQuestions = this.answers().some(
+            (answer) => answer.selectedOptionId !== null || answer.isSkipped,
+        );
+
+        if (this.quizState() === 'results' && !hasAnsweredQuestions && restoredResult?.completed) {
+            return restoredResult.score;
+        }
+
+        return this.correctAnswersCount();
+    });
+
     readonly wrongAnswersCount = computed(() =>
         this.answers().filter(a => !a.isCorrect && !a.isSkipped).length
     );
@@ -122,13 +153,14 @@ export class QuizComponent implements OnInit, OnDestroy {
     );
 
     readonly scorePercentage = computed(() => {
-        const total = this.questions().length;
+        const restoredResult = this.restoredQuizResult;
+        const total = this.questions().length || restoredResult?.questionCount || this.quizConfig.totalQuestions;
         if (total === 0) return 0;
-        return Math.round((this.correctAnswersCount() / total) * 100);
+        return Math.round((this.effectiveCorrectAnswersCount() / total) * 100);
     });
 
     readonly hasPassed = computed(() =>
-        this.correctAnswersCount() >= this.quizConfig.passingScore
+        this.effectiveCorrectAnswersCount() >= this.quizConfig.passingScore
     );
 
     readonly formattedTime = computed(() => {
@@ -186,6 +218,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     private timerSubscription?: Subject<void>;
     private isFinishingQuiz = false;
     private readonly isBrowser: boolean;
+    private restoredQuizResult: StoredQuizResult | null = null;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -234,6 +267,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.stopTimer();
         this.isFinishingQuiz = false;
         this.quizStartTime = 0;
+        this.restoredQuizResult = null;
 
         this.quizState.set('intro');
         this.currentQuestionIndex.set(0);
@@ -251,7 +285,7 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     private checkPreviousCompletion(): void {
         // Only access localStorage in browser environment
-        if (!isPlatformBrowser(this.platformId)) {
+        if (!this.isBrowser) {
             return;
         }
 
@@ -259,21 +293,23 @@ export class QuizComponent implements OnInit, OnDestroy {
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
         const storedData = localStorage.getItem(storageKey);
 
-        if (storedData) {
-            try {
-                const data = JSON.parse(storedData);
-                if (data.completed && data.score !== undefined) {
-                    this.previousScore.set(data.score);
-                    this.previousCompletionTime.set(data.completionTime || 0);
-                    this.wasPreviouslyPassed.set(data.passed || false);
-                    this.quizState.set('results');
-                }
-            } catch {
-                this.previousScore.set(0);
-                this.previousCompletionTime.set(0);
-                this.wasPreviouslyPassed.set(false);
-            }
+        if (!storedData) {
+            return;
         }
+
+        const parsedResult = this.parseStoredQuizResult(storedData);
+        if (!parsedResult?.completed) {
+            this.previousScore.set(0);
+            this.previousCompletionTime.set(0);
+            this.wasPreviouslyPassed.set(false);
+            return;
+        }
+
+        this.restoredQuizResult = parsedResult;
+        this.previousScore.set(parsedResult.score);
+        this.previousCompletionTime.set(parsedResult.completionTime);
+        this.wasPreviouslyPassed.set(parsedResult.passed);
+        this.quizCompletionTime.set(parsedResult.completionTime);
     }
 
     ngOnDestroy(): void {
@@ -393,6 +429,7 @@ export class QuizComponent implements OnInit, OnDestroy {
             .subscribe((questions: QuizQuestion[]) => {
                 this.questions.set(questions);
                 this.initializeAnswers(questions);
+                this.restoreQuizResultFromStorage(questions);
             });
     }
 
@@ -423,6 +460,10 @@ export class QuizComponent implements OnInit, OnDestroy {
             isSkipped: false
         }));
         this.answers.set(initialAnswers);
+    }
+
+    private resetAnswersToDefault(): void {
+        this.initializeAnswers(this.questions());
     }
 
     // Quiz Actions
@@ -550,18 +591,26 @@ export class QuizComponent implements OnInit, OnDestroy {
         const completionTimeMs = Date.now() - this.quizStartTime;
         this.quizCompletionTime.set(Math.floor(completionTimeMs / 1000)); // Convert to seconds
 
-        this.quizState.set('review');
+        this.quizState.set('results');
         // Scroll to top when quiz finishes and shows review
         this.scrollService.scrollToTop();
 
         // Save quiz results to localStorage
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
-        const quizData = {
+        const quizData: StoredQuizResult = {
             completed: true,
             score: this.correctAnswersCount(),
             passed: this.hasPassed(),
             completionTime: this.quizCompletionTime(),
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            questionCount: this.questions().length,
+            answers: this.answers().map((answer, index) => ({
+                questionId: answer.questionId,
+                questionIndex: index,
+                selectedOptionId: answer.selectedOptionId,
+                isCorrect: answer.isCorrect,
+                isSkipped: answer.isSkipped,
+            })),
         };
         if (this.isBrowser) {
             localStorage.setItem(storageKey, JSON.stringify(quizData));
@@ -586,16 +635,12 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     retakeQuiz(): void {
-        // Reset all answers
-        const resetAnswers = this.answers().map(a => ({
-            ...a,
-            selectedOptionId: null,
-            isCorrect: false,
-            isSkipped: false
-        }));
-        this.answers.set(resetAnswers);
+        this.resetAnswersToDefault();
         this.activeAttemptId.set(null);
         this.isFinishingQuiz = false;
+        this.currentQuestionIndex.set(0);
+        this.selectedOptionId.set(null);
+        this.showHint.set(false);
         // Scroll to top when starting to retake quiz
         this.scrollService.scrollToTop();
         this.startQuiz();
@@ -788,6 +833,128 @@ export class QuizComponent implements OnInit, OnDestroy {
         });
     }
 
+    private restoreQuizResultFromStorage(questions: readonly QuizQuestion[]): void {
+        const storedResult = this.restoredQuizResult;
+        if (!storedResult?.completed || questions.length === 0) {
+            return;
+        }
+
+        const storedAnswersById = new Map(storedResult.answers.map((answer) => [answer.questionId, answer]));
+        const storedAnswersByIndex = new Map(
+            storedResult.answers
+                .filter((answer) => typeof answer.questionIndex === 'number')
+                .map((answer) => [answer.questionIndex as number, answer]),
+        );
+
+        const restoredAnswers: QuizAnswer[] = questions.map((question, index) => {
+            const storedAnswer = storedAnswersById.get(question.id) ?? storedAnswersByIndex.get(index);
+
+            if (!storedAnswer) {
+                return {
+                    questionId: question.id,
+                    selectedOptionId: null,
+                    isCorrect: false,
+                    isSkipped: false,
+                };
+            }
+
+            const selectedOptionId = typeof storedAnswer.selectedOptionId === 'string'
+                ? storedAnswer.selectedOptionId
+                : null;
+            const isCorrect = typeof selectedOptionId === 'string' && selectedOptionId === question.correctOptionId;
+
+            return {
+                questionId: question.id,
+                selectedOptionId,
+                isCorrect,
+                isSkipped: storedAnswer.isSkipped,
+            };
+        });
+
+        const hasStoredSelections = restoredAnswers.some(
+            (answer) => answer.selectedOptionId !== null || answer.isSkipped,
+        );
+
+        if (hasStoredSelections) {
+            this.answers.set(restoredAnswers);
+        }
+
+        this.quizCompletionTime.set(storedResult.completionTime);
+        this.quizState.set('results');
+    }
+
+    private parseStoredQuizResult(raw: string): StoredQuizResult | null {
+        try {
+            const parsed = JSON.parse(raw) as unknown;
+            const record = this.asRecord(parsed);
+
+            if (record?.['completed'] !== true) {
+                return null;
+            }
+
+            const score = typeof record['score'] === 'number' ? Math.max(0, record['score']) : 0;
+            const passed = typeof record['passed'] === 'boolean' ? record['passed'] : false;
+            const completionTime = typeof record['completionTime'] === 'number' ? Math.max(0, record['completionTime']) : 0;
+            const timestamp = typeof record['timestamp'] === 'string' ? record['timestamp'] : '';
+            const questionCount = typeof record['questionCount'] === 'number'
+                ? Math.max(0, record['questionCount'])
+                : this.quizConfig.totalQuestions;
+            const answers = this.normalizeStoredAnswers(record['answers']);
+
+            return {
+                completed: true,
+                score,
+                passed,
+                completionTime,
+                timestamp,
+                questionCount,
+                answers,
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private normalizeStoredAnswers(value: unknown): StoredQuizAnswer[] {
+        if (!Array.isArray(value)) {
+            return [];
+        }
+
+        return value
+            .map((entry): StoredQuizAnswer | null => {
+                const record = this.asRecord(entry);
+                if (!record || typeof record['questionId'] !== 'string') {
+                    return null;
+                }
+
+                const selectedOptionIdValue = record['selectedOptionId'];
+                const selectedOptionId = typeof selectedOptionIdValue === 'string' || selectedOptionIdValue === null
+                    ? selectedOptionIdValue
+                    : null;
+
+                const questionIndex = typeof record['questionIndex'] === 'number'
+                    ? record['questionIndex']
+                    : undefined;
+
+                const isCorrect = record['isCorrect'] === true;
+
+                const normalized: StoredQuizAnswer = {
+                    questionId: record['questionId'],
+                    selectedOptionId,
+                    isSkipped: record['isSkipped'] === true,
+                    ...(typeof questionIndex === 'number' ? { questionIndex } : {}),
+                    ...(isCorrect ? { isCorrect: true } : {}),
+                };
+
+                return normalized;
+            })
+            .filter((answer): answer is StoredQuizAnswer => answer !== null);
+    }
+
+    private asRecord(value: unknown): Record<string, unknown> | null {
+        return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+    }
+
     private mapApiQuestion(
         question: { id?: string; text?: string },
         options: Array<{ id?: string; text?: string; isCorrect?: boolean }>,
@@ -818,12 +985,22 @@ export class QuizComponent implements OnInit, OnDestroy {
             localStorage.removeItem(storageKey);
         }
 
+        this.restoredQuizResult = null;
+
         // Reset state
         this.previousScore.set(0);
         this.previousCompletionTime.set(0);
         this.wasPreviouslyPassed.set(false);
+        this.quizCompletionTime.set(0);
+        this.resetAnswersToDefault();
+        this.activeAttemptId.set(null);
+        this.isFinishingQuiz = false;
+        this.currentQuestionIndex.set(0);
+        this.selectedOptionId.set(null);
+        this.showHint.set(false);
 
         // Start fresh quiz
         this.quizState.set('intro');
+        this.scrollService.scrollToTop();
     }
 }

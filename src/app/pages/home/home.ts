@@ -94,7 +94,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       description:
         'Explore deep answers in different categories wither you are a Muslim or Non-Muslim.',
       cta: 'Explore',
-      href: '/ask-and-contact',
+      href: '/question-and-answer/topics',
     },
     {
       icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -148,7 +148,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       description:
         'Available 24/7 to answer initial questions and direct users to verified scholarly sources.',
       cta: 'Ask AI',
-      href: '/ask-and-contact',
+      href: '/question-and-answer/ask-assistant',
     },
     {
       icon: `
@@ -315,7 +315,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     if (!q) {
       return;
     }
-    void this.router.navigate(['/ask-and-contact'], { queryParams: { question: q } });
+    void this.router.navigate(['/question-and-answer/topics'], { queryParams: { question: q } });
   }
 
   private loadEventsSection(): void {

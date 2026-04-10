@@ -34,7 +34,7 @@ export class SendInquirySuccessComponent {
 
     // Redirect if accessed directly without form submission
     if (!state.topicLabel && !state.message) {
-      this.router.navigate(['/ask-and-contact/send-inquiry']);
+      this.router.navigate(['/question-and-answer/send-inquiry']);
       return;
     }
 
@@ -49,7 +49,7 @@ export class SendInquirySuccessComponent {
   }
 
   createAnother(): void {
-    this.router.navigate(['/ask-and-contact/send-inquiry']);
+    this.router.navigate(['/question-and-answer/send-inquiry']);
   }
 
   hasDetails(): boolean {

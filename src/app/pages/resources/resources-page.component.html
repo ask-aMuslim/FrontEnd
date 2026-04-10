@@ -94,6 +94,14 @@
                     [attr.aria-label]="'Open resource ' + card.title"
                   >
                     <div class="resource-card__media">
+                      <div
+                        class="resource-card__media-spinner"
+                        *ngIf="isThumbnailLoading(card)"
+                        aria-hidden="true"
+                      >
+                        <span class="resource-card__spinner"></span>
+                      </div>
+
                       <ng-container
                         *ngIf="
                           !shouldUsePdfPreview(card) || !card.driveFileId;
@@ -105,6 +113,7 @@
                           [alt]="card.thumbnailAlt"
                           loading="lazy"
                           referrerpolicy="no-referrer"
+                          (load)="onCardImageLoad(card)"
                           (error)="onCardImageError(card, $event)"
                         />
                       </ng-container>
@@ -117,6 +126,7 @@
                           loading="lazy"
                           tabindex="-1"
                           aria-hidden="true"
+                          (load)="onCardPreviewLoad(card)"
                         ></iframe>
                       </ng-template>
                     </div>

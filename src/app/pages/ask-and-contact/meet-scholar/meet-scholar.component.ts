@@ -249,7 +249,7 @@ export class MeetScholarComponent {
     if (!this.tokenService.isAuthenticated()) {
       this.submitError.set('Please sign in before booking a meeting.');
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
+        queryParams: { returnUrl: '/question-and-answer/meet-scholar' },
       });
       return;
     }
@@ -274,7 +274,7 @@ export class MeetScholarComponent {
     this._meetingRequestsService.create(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
-        this.router.navigate(['/ask-and-contact/meet-scholar/success'], {
+        this.router.navigate(['/question-and-answer/meet-scholar/success'], {
           state: {
             scheduledDateTime,
             scheduledTime: formValue.scheduledTime,
@@ -289,7 +289,7 @@ export class MeetScholarComponent {
 
         if (this.extractErrorStatus(error) === 401) {
           this.router.navigate(['/login'], {
-            queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
+            queryParams: { returnUrl: '/question-and-answer/meet-scholar' },
           });
         }
       },
@@ -302,7 +302,7 @@ export class MeetScholarComponent {
 
   navigateToSignIn(): void {
     void this.router.navigate(['/login'], {
-      queryParams: { returnUrl: '/ask-and-contact/meet-scholar' },
+      queryParams: { returnUrl: '/question-and-answer/meet-scholar' },
     });
   }
 

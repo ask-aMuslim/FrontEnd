@@ -17,14 +17,14 @@ export class AskAndContactComponent {
 
   readonly isAskQa$ = this.router.events.pipe(
     filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-    map((event) => event.urlAfterRedirects.startsWith('/ask-and-contact/ask-qa')),
-    startWith(this.router.url.startsWith('/ask-and-contact/ask-qa')),
+    map((event) => event.urlAfterRedirects.startsWith('/question-and-answer/topics')),
+    startWith(this.router.url.startsWith('/question-and-answer/topics')),
   );
 
   readonly isQuestion$ = this.router.events.pipe(
     filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-    map((event) => event.urlAfterRedirects.includes('/ask-and-contact/ask-qa/question')),
-    startWith(this.router.url.includes('/ask-and-contact/ask-qa/question')),
+    map((event) => event.urlAfterRedirects.includes('/question-and-answer/topics/question')),
+    startWith(this.router.url.includes('/question-and-answer/topics/question')),
   );
 
   navigateToAcademy(): void {
@@ -32,6 +32,10 @@ export class AskAndContactComponent {
   }
 
   navigateToSendInquiry(): void {
-    void this.router.navigate(['/ask-and-contact/send-inquiry']);
+    void this.router.navigate(['/question-and-answer/send-inquiry']);
+  }
+
+  navigateToContact(): void {
+    void this.router.navigate(['/contact']);
   }
 }

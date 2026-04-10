@@ -40,7 +40,7 @@ export class AboutPageComponent {
         requestQuranLabel: 'Request Free Quran',
         askQuestionLabel: 'Ask a Question',
         requestQuranUrl: 'https://www.onemessagefoundation.com/free-quran',
-        askQuestionUrl: '/ask-and-contact',
+        askQuestionUrl: '/question-and-answer/topics',
     } as const;
 
     protected readonly timelineItems: readonly TimelineItem[] = [
