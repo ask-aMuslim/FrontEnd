@@ -1,10 +1,12 @@
 import { Id } from './base.model';
+import type { ReligiousStatus } from '../../../api/models';
 
 export interface RegisterRequest {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
+  religiousStatus: ReligiousStatus;
   role?: number;
 }
 

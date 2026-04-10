@@ -98,7 +98,7 @@
   overflow: hidden;
 }
 
-:host ::ng-deep .google-btn-wrapper > div,
+:host ::ng-deep .google-btn-wrapper>div,
 :host ::ng-deep .google-btn-wrapper iframe {
   width: 100% !important;
   border-radius: inherit !important;
@@ -131,11 +131,9 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      135deg,
-      transparent,
-      var(--color-button-primary-soft)
-    );
+    background: linear-gradient(135deg,
+        transparent,
+        var(--color-button-primary-soft));
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -185,23 +183,19 @@
     content: "";
     flex: 1;
     height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      var(--color-border-light) 20%,
-      var(--color-border-light) 80%,
-      transparent
-    );
+    background: linear-gradient(to right,
+        transparent,
+        var(--color-border-light) 20%,
+        var(--color-border-light) 80%,
+        transparent);
   }
 
   &::after {
-    background: linear-gradient(
-      to left,
-      transparent,
-      var(--color-border-light) 20%,
-      var(--color-border-light) 80%,
-      transparent
-    );
+    background: linear-gradient(to left,
+        transparent,
+        var(--color-border-light) 20%,
+        var(--color-border-light) 80%,
+        transparent);
   }
 
   span {
@@ -254,7 +248,7 @@
 
 .religion-selection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 
@@ -771,13 +765,11 @@
       left: 0;
       right: 0;
       height: 1px;
-      background: linear-gradient(
-        to right,
-        transparent,
-        rgba(21, 107, 64, 0.2) 20%,
-        rgba(21, 107, 64, 0.2) 80%,
-        transparent
-      );
+      background: linear-gradient(to right,
+          transparent,
+          rgba(21, 107, 64, 0.2) 20%,
+          rgba(21, 107, 64, 0.2) 80%,
+          transparent);
     }
   }
 

@@ -1,12 +1,12 @@
 /**
  * Auth Service
- * 
+ *
  * Facade for authentication operations that bridges the gap between
  * the new TokenService-based architecture and existing components.
- * 
+ *
  * This service is being phased out in favor of IdentityFacade + TokenService.
  * New code should use IdentityFacade directly.
- * 
+ *
  * @deprecated Use IdentityFacade and TokenService directly
  */
 
@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 
 // New architecture imports
-import { IdentityFacade, UserRole } from '../../api/facades/identity.facade';
+import { IdentityFacade } from '../../api/facades/identity.facade';
 import { TokenService } from '../auth/token.service';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { SocialAuthenticationService } from './social-auth.service';
@@ -33,7 +33,11 @@ export class AuthService {
 
   // Reactive authentication state using signals
   // These now delegate to TokenService
-  private _currentUser = signal<{ name: string; meta: string; imageUrl?: string | null } | null>(null);
+  private _currentUser = signal<{
+    name: string;
+    meta: string;
+    imageUrl?: string | null;
+  } | null>(null);
 
   // Expose isAuthenticated from TokenService
   readonly isAuthenticated = this.tokenService.isAuthenticated;
@@ -81,7 +85,9 @@ export class AuthService {
 
     // Also clear social auth state (Google/Facebook) to prevent auto-login bounce
     this.socialAuthService.signOut().subscribe({
-      error: () => { /* ignore */ }
+      error: () => {
+        /* ignore */
+      },
     });
 
     return this.facade.logout().pipe(
@@ -91,7 +97,7 @@ export class AuthService {
         this.studentFacade.clearCache();
         void this.router.navigate(['/login']);
       }),
-      map(() => void 0)
+      map(() => void 0),
     );
   }
 
@@ -99,36 +105,29 @@ export class AuthService {
    * Register new user
    */
   register(payload: RegisterRequest): Observable<AuthResponse> {
-    // UserRole is a string union type: 'Student' | 'Instructor' | 'Admin'
-    // Default to 'Student' if not provided
-    let role: UserRole = 'Student';
-    if (payload.role === 2) {
-      role = 'Instructor';
-    } else if (payload.role === 3) {
-      role = 'Admin';
-    }
-
-    return this.facade.register({
-      email: payload.email,
-      password: payload.password,
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      role: role,
-    }).pipe(
-      map(() => {
-        // The generated API returns void, but we need to return AuthResponse
-        // This is a temporary workaround until Swagger spec includes proper response types
-        return {
-          accessToken: '',
-          refreshToken: '',
-          expiresIn: 0
-        } as AuthResponse;
-      }),
-      tap(() => {
-        // If the API actually returns tokens, they would be set here
-        // For now, user needs to login after registration
+    return this.facade
+      .register({
+        email: payload.email,
+        password: payload.password,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        religiousStatus: payload.religiousStatus,
       })
-    );
+      .pipe(
+        map(() => {
+          // The generated API returns void, but we need to return AuthResponse
+          // This is a temporary workaround until Swagger spec includes proper response types
+          return {
+            accessToken: '',
+            refreshToken: '',
+            expiresIn: 0,
+          } as AuthResponse;
+        }),
+        tap(() => {
+          // If the API actually returns tokens, they would be set here
+          // For now, user needs to login after registration
+        }),
+      );
   }
 
   /**
@@ -141,14 +140,14 @@ export class AuthService {
         return {
           accessToken: response.token || '',
           refreshToken: '',
-          expiresIn: response.expiresIn ?? 3600
+          expiresIn: response.expiresIn ?? 3600,
         } as AuthResponse;
       }),
       tap(() => {
         this.studentFacade.clearCache();
         this._currentUser.set({ name: email, meta: 'Signed in' });
         this.hydrateCurrentUserFromProfile();
-      })
+      }),
     );
   }
 
@@ -164,7 +163,10 @@ export class AuthService {
       })),
       tap(() => {
         this.studentFacade.clearCache();
-        this._currentUser.set({ name: 'Google User', meta: 'Signed in with Google' });
+        this._currentUser.set({
+          name: 'Google User',
+          meta: 'Signed in with Google',
+        });
         this.hydrateCurrentUserFromProfile();
       }),
     );
@@ -182,7 +184,10 @@ export class AuthService {
       })),
       tap(() => {
         this.studentFacade.clearCache();
-        this._currentUser.set({ name: 'Facebook User', meta: 'Signed in with Facebook' });
+        this._currentUser.set({
+          name: 'Facebook User',
+          meta: 'Signed in with Facebook',
+        });
         this.hydrateCurrentUserFromProfile();
       }),
     );
@@ -218,7 +223,10 @@ export class AuthService {
   }
 
   getCurrentUserMeta(): string {
-    return this._currentUser()?.meta || (this.tokenService.isAuthenticated() ? 'Signed in' : 'Guest');
+    return (
+      this._currentUser()?.meta ||
+      (this.tokenService.isAuthenticated() ? 'Signed in' : 'Guest')
+    );
   }
 
   private setupAuthHydrationEffect(): void {
@@ -231,7 +239,10 @@ export class AuthService {
         return;
       }
 
-      this._currentUser.set({ name: fallbackEmail || 'User', meta: 'Signed in' });
+      this._currentUser.set({
+        name: fallbackEmail || 'User',
+        meta: 'Signed in',
+      });
       this.hydrateCurrentUserFromProfile();
     });
   }
@@ -245,35 +256,66 @@ export class AuthService {
 
     this._currentUser.set({ name: fallbackEmail, meta: 'Signed in' });
 
-    this.studentFacade.getMyProfile().pipe(
-      map((profile: unknown) => {
-        const profileRecord = this.asRecord(profile);
+    this.studentFacade
+      .getMyProfile()
+      .pipe(
+        map((profile: unknown) => {
+          const profileRecord = this.asRecord(profile);
 
-        const firstName = this.getString(profileRecord, ['firstName', 'firstname', 'givenName']);
-        const lastName = this.getString(profileRecord, ['lastName', 'lastname', 'familyName']);
-        const fullNameFromParts = `${firstName} ${lastName}`.trim();
-        const fullName =
-          fullNameFromParts ||
-          this.getString(profileRecord, ['fullName', 'name', 'displayName']) ||
-          fallbackEmail;
+          const firstName = this.getString(profileRecord, [
+            'firstName',
+            'firstname',
+            'givenName',
+          ]);
+          const lastName = this.getString(profileRecord, [
+            'lastName',
+            'lastname',
+            'familyName',
+          ]);
+          const fullNameFromParts = `${firstName} ${lastName}`.trim();
+          const fullName =
+            fullNameFromParts ||
+            this.getString(profileRecord, [
+              'fullName',
+              'name',
+              'displayName',
+            ]) ||
+            fallbackEmail;
 
-        const level = this.getString(profileRecord, ['level', 'studentLevel', 'stage']);
-        const meta = level ? `Level ${level}` : 'Student';
-        const imageUrl = this.getString(profileRecord, ['imageUrl', 'profileImageUrl', 'picture', 'avatarUrl']);
+          const level = this.getString(profileRecord, [
+            'level',
+            'studentLevel',
+            'stage',
+          ]);
+          const meta = level ? `Level ${level}` : 'Student';
+          const imageUrl = this.getString(profileRecord, [
+            'imageUrl',
+            'profileImageUrl',
+            'picture',
+            'avatarUrl',
+          ]);
 
-        return { name: fullName, meta, imageUrl: imageUrl || null };
-      }),
-      catchError(() => of({ name: fallbackEmail, meta: 'Signed in' }))
-    ).subscribe((user: { name: string; meta: string; imageUrl?: string | null }) => {
-      this._currentUser.set(user);
-    });
+          return { name: fullName, meta, imageUrl: imageUrl || null };
+        }),
+        catchError(() => of({ name: fallbackEmail, meta: 'Signed in' })),
+      )
+      .subscribe(
+        (user: { name: string; meta: string; imageUrl?: string | null }) => {
+          this._currentUser.set(user);
+        },
+      );
   }
 
   private asRecord(value: unknown): Record<string, unknown> | null {
-    return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+    return value && typeof value === 'object'
+      ? (value as Record<string, unknown>)
+      : null;
   }
 
-  private getString(record: Record<string, unknown> | null, keys: string[]): string {
+  private getString(
+    record: Record<string, unknown> | null,
+    keys: string[],
+  ): string {
     if (!record) {
       return '';
     }

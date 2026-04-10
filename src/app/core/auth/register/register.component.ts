@@ -1,14 +1,40 @@
-import { Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  inject,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { environment } from '../../../../environments/environment';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { IdentityFacade, RegistrationData, UserRole } from '../../../api/facades/identity.facade';
+import {
+  IdentityFacade,
+  RegistrationData,
+} from '../../../api/facades/identity.facade';
+import type { ReligiousStatus } from '../../../api/models';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 import { SocialAuthenticationService } from '../../services/social-auth.service';
-import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
+import {
+  GoogleSigninButtonModule,
+  SocialAuthService,
+} from '@abacritt/angularx-social-login';
 
-type RegisterField = 'religionType' | 'fullName' | 'email' | 'phoneNumber' | 'password';
+type RegisterField = 'religionType' | 'fullName' | 'email' | 'password';
+type ReligionSelection = 'non-muslim' | 'born-muslim' | 'new-muslim';
+
+const religionStatusBySelection: Readonly<
+  Record<ReligionSelection, ReligiousStatus>
+> = {
+  'non-muslim': 1,
+  'born-muslim': 2,
+  'new-muslim': 3,
+};
 
 @Component({
   selector: 'app-register',
@@ -22,25 +48,33 @@ export class RegisterComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly fb = inject(FormBuilder);
 
   protected readonly loading = this.facade.isLoading;
   protected readonly apiError = this.facade.error;
   private readonly socialAuthService = inject(SocialAuthenticationService);
   private readonly abacrittAuthService = inject(SocialAuthService);
+  protected readonly religionOptions: ReadonlyArray<{
+    value: ReligionSelection;
+    label: string;
+  }> = [
+    { value: 'non-muslim', label: 'Non-Muslim' },
+    { value: 'born-muslim', label: 'Born Muslim' },
+    { value: 'new-muslim', label: 'New Muslim' },
+  ];
 
   registerForm!: FormGroup;
   showPassword = false;
   hasMinLength = false;
   hasNumber = false;
-  religionType: 'muslim' | 'non-muslim' | null = null;
+  religionType: ReligionSelection | null = null;
 
   // Field interaction states
   fieldTouched = {
     religionType: false,
     fullName: false,
     email: false,
-    phoneNumber: false,
-    password: false
+    password: false,
   };
 
   // Field focus states for premium animations
@@ -48,13 +82,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
     religionType: false,
     fullName: false,
     email: false,
-    phoneNumber: false,
-    password: false
+    password: false,
   };
 
   submitSuccess = false;
-
-  constructor(private readonly fb: FormBuilder) { }
 
   ngOnInit(): void {
     this.submitSuccess = false;
@@ -68,10 +99,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
             this.submitSuccess = true;
             void this.router.navigate(['/home']);
           },
-          error: (err: any) => {
+          error: (err: unknown) => {
             this.submitSuccess = false;
-            console.error('Google registration failed', err);
-          }
+            globalThis.console.error('Google registration failed', err);
+          },
         });
       }
     });
@@ -80,8 +111,14 @@ export class RegisterComponent implements OnInit, OnDestroy {
       religionType: ['', [Validators.required]],
       fullName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      phoneNumber: ['', [Validators.required, Validators.pattern(/^\+?\d{10,15}$/)]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/.*\d.*/)]],
+      password: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.pattern(/.*\d.*/),
+        ],
+      ],
     });
 
     // Subscribe to password changes to update validation indicators
@@ -99,7 +136,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.showPassword = !this.showPassword;
   }
 
-  onReligionChange(type: 'muslim' | 'non-muslim'): void {
+  onReligionChange(type: ReligionSelection): void {
     this.religionType = type;
     this.fieldTouched.religionType = true;
   }
@@ -118,7 +155,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
     return !!(control && control.invalid && this.fieldTouched[field]);
   }
 
-  private getFullNameError(control: import('@angular/forms').AbstractControl): string {
+  private getFullNameError(
+    control: import('@angular/forms').AbstractControl,
+  ): string {
     if (control.hasError('required')) return 'Full name is required';
     if (control.hasError('minlength')) {
       const minLength = control.errors?.['minlength']?.requiredLength;
@@ -131,20 +170,25 @@ export class RegisterComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  private getEmailError(control: import('@angular/forms').AbstractControl): string {
+  private getEmailError(
+    control: import('@angular/forms').AbstractControl,
+  ): string {
     if (control.hasError('required')) return 'Email address is required';
     if (control.hasError('email')) return 'Please enter a valid email address';
     if (control.hasError('pattern')) return 'Invalid email format';
     return '';
   }
 
-  private getPasswordError(control: import('@angular/forms').AbstractControl): string {
+  private getPasswordError(
+    control: import('@angular/forms').AbstractControl,
+  ): string {
     if (control.hasError('required')) return 'Password is required';
     if (control.hasError('minlength')) {
       const minLength = control.errors?.['minlength']?.requiredLength;
       return `Password must be at least ${minLength} characters`;
     }
-    if (control.hasError('pattern')) return 'Password must contain at least one number';
+    if (control.hasError('pattern'))
+      return 'Password must contain at least one number';
     if (control.hasError('maxlength')) {
       const maxLength = control.errors?.['maxlength']?.requiredLength;
       return `Password must not exceed ${maxLength} characters`;
@@ -152,14 +196,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  private getPhoneNumberError(control: import('@angular/forms').AbstractControl): string {
-    if (control.hasError('required')) return 'Phone number is required';
-    if (control.hasError('pattern')) return 'Please enter a valid phone number (10-15 digits)';
-    return '';
-  }
-
-  private getReligionTypeError(control: import('@angular/forms').AbstractControl): string {
-    if (control.hasError('required')) return 'Please choose Muslim or Non-Muslim';
+  private getReligionTypeError(
+    control: import('@angular/forms').AbstractControl,
+  ): string {
+    if (control.hasError('required')) return 'Please choose a religious status';
     return '';
   }
 
@@ -176,8 +216,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
         return this.getEmailError(control);
       case 'password':
         return this.getPasswordError(control);
-      case 'phoneNumber':
-        return this.getPhoneNumberError(control);
       default:
         return '';
     }
@@ -186,9 +224,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   protected onSocialSignIn(provider: 'google' | 'facebook'): void {
     if (!this.isBrowser) return;
 
-    const loginMethod = provider === 'google'
-      ? this.socialAuthService.signInWithGoogle()
-      : this.socialAuthService.signInWithFacebook();
+    const loginMethod =
+      provider === 'google'
+        ? this.socialAuthService.signInWithGoogle()
+        : this.socialAuthService.signInWithFacebook();
 
     loginMethod.subscribe({
       next: () => {
@@ -197,7 +236,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.submitSuccess = false;
-        console.error(`${provider} login failed`, error);
+        globalThis.console.error(`${provider} login failed`, error);
       },
     });
   }
@@ -210,7 +249,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.registerForm.markAllAsTouched();
 
     // Mark all fields as touched for validation display
-    Object.keys(this.fieldTouched).forEach(key => {
+    Object.keys(this.fieldTouched).forEach((key) => {
       this.fieldTouched[key as keyof typeof this.fieldTouched] = true;
     });
 
@@ -235,16 +274,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
     const [firstName, ...rest] = fullName.split(' ').filter(Boolean);
     const lastName = rest.join(' ');
 
-    // Map religionType to appropriate userRole
-    const userRole: UserRole = this.religionType === 'muslim' ? 'Student' : 'NonMuslim';
+    const religiousStatus =
+      religionStatusBySelection[this.religionType ?? 'non-muslim'];
 
     return {
       email: String(this.registerForm.value.email).trim(),
       password: String(this.registerForm.value.password),
       firstName: firstName || 'User',
       lastName: lastName || 'Account',
-      phoneNumber: String(this.registerForm.value.phoneNumber).trim(),
-      role: userRole,
+      religiousStatus,
     };
   }
 }

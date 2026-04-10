@@ -79,36 +79,23 @@
       class="religion-selection"
       [class.religion-selection--error]="isFieldInvalid('religionType')"
     >
-      <label
-        class="religion-option"
-        [class.selected]="religionType === 'muslim'"
-      >
-        <input
-          type="radio"
-          name="religionType"
-          value="muslim"
-          formControlName="religionType"
-          (change)="onReligionChange('muslim')"
-          class="religion-radio"
-        />
-        <span class="religion-radio-visual"></span>
-        <span class="religion-label">Muslim</span>
-      </label>
-      <label
-        class="religion-option"
-        [class.selected]="religionType === 'non-muslim'"
-      >
-        <input
-          type="radio"
-          name="religionType"
-          value="non-muslim"
-          formControlName="religionType"
-          (change)="onReligionChange('non-muslim')"
-          class="religion-radio"
-        />
-        <span class="religion-radio-visual"></span>
-        <span class="religion-label">Non-Muslim</span>
-      </label>
+      @for (option of religionOptions; track option.value) {
+        <label
+          class="religion-option"
+          [class.selected]="religionType === option.value"
+        >
+          <input
+            type="radio"
+            name="religionType"
+            [value]="option.value"
+            formControlName="religionType"
+            (change)="onReligionChange(option.value)"
+            class="religion-radio"
+          />
+          <span class="religion-radio-visual"></span>
+          <span class="religion-label">{{ option.label }}</span>
+        </label>
+      }
     </div>
     @if (isFieldInvalid("religionType")) {
       <div class="religion-error">{{ getFieldError("religionType") }}</div>
@@ -205,32 +192,6 @@
         @if (isFieldInvalid("password")) {
           <span class="form-error-tooltip">
             {{ getFieldError("password") }}
-          </span>
-        }
-      </div>
-    </div>
-
-    <div
-      class="form-group"
-      [class.form-group--error]="isFieldInvalid('phoneNumber')"
-      [class.form-group--focused]="fieldFocused['phoneNumber']"
-    >
-      <label for="phoneNumber" class="form-label">Phone Number</label>
-      <div class="input-wrapper">
-        <input
-          type="tel"
-          id="phoneNumber"
-          name="phoneNumber"
-          formControlName="phoneNumber"
-          placeholder="01012345678"
-          class="form-input"
-          (focus)="onFieldFocus('phoneNumber')"
-          (blur)="onFieldBlur('phoneNumber')"
-          autocomplete="tel"
-        />
-        @if (isFieldInvalid("phoneNumber")) {
-          <span class="form-error-tooltip">
-            {{ getFieldError("phoneNumber") }}
           </span>
         }
       </div>
