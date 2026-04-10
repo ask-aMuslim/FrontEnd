@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs';
 import { ApiConfiguration } from '../api-configuration';
 import {
@@ -22,6 +22,7 @@ import {
 } from '../models';
 import { TokenService } from '../../core/auth/token.service';
 import { ResultOfAuthenticationResponse } from '../models/result-of-authentication-response';
+import { REQUIRE_CREDENTIALS } from '../../core/http/context-tokens';
 
 export type UserRole = 'Student' | 'Instructor' | 'Admin' | 'NonMuslim';
 
@@ -56,6 +57,7 @@ interface VerifyOtpTokenPayload {
 export class IdentityFacade {
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  private readonly authCookieContext = new HttpContext().set(REQUIRE_CREDENTIALS, true);
 
   constructor(
     private readonly http: HttpClient,
@@ -88,7 +90,7 @@ export class IdentityFacade {
     const body: LoginCommand = { email, password };
 
     return this.withRequestState(
-      login(this.http, this.config.rootUrl, { body }).pipe(
+      login(this.http, this.config.rootUrl, { body }, this.authCookieContext).pipe(
         map((response) =>
           this.mapAuthenticationResponse(
             response.body as ResultOfAuthenticationResponse | null,
@@ -102,7 +104,7 @@ export class IdentityFacade {
     const body: LoginWithGoogleCommand = { idToken };
 
     return this.withRequestState(
-      loginWithGoogle(this.http, this.config.rootUrl, { body }).pipe(
+      loginWithGoogle(this.http, this.config.rootUrl, { body }, this.authCookieContext).pipe(
         map((response) =>
           this.mapAuthenticationResponse(
             response.body as ResultOfAuthenticationResponse | null,
@@ -116,7 +118,7 @@ export class IdentityFacade {
     const body: LoginWithFacebookCommand = { accessToken };
 
     return this.withRequestState(
-      loginWithFacebook(this.http, this.config.rootUrl, { body }).pipe(
+      loginWithFacebook(this.http, this.config.rootUrl, { body }, this.authCookieContext).pipe(
         map((response) =>
           this.mapAuthenticationResponse(
             response.body as ResultOfAuthenticationResponse | null,
@@ -127,8 +129,10 @@ export class IdentityFacade {
   }
 
   logout(): Observable<void> {
+    const context = new HttpContext().set(REQUIRE_CREDENTIALS, true);
+
     return this.withRequestState(
-      authLogout(this.http, this.config.rootUrl).pipe(
+      authLogout(this.http, this.config.rootUrl, undefined, context).pipe(
         map(() => void 0),
         finalize(() => this.tokenService.clearTokens()),
       ),
@@ -223,7 +227,6 @@ export class IdentityFacade {
 
       this.tokenService.setTokens({
         accessToken: data.token,
-        refreshToken: '',
         expiresIn,
         userId: data.userId ?? undefined,
         userEmail: data.email ?? undefined,

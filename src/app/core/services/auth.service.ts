@@ -215,7 +215,7 @@ export class AuthService {
    * Get current refresh token
    */
   getRefreshToken(): string | null {
-    return this.tokenService.refreshToken();
+    return null;
   }
 
   getCurrentUserName(): string {
