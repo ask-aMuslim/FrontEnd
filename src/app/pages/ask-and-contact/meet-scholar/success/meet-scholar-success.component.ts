@@ -31,7 +31,7 @@ export class MeetScholarSuccessComponent {
 
     // Redirect if accessed directly without form submission
     if (!state.scheduledDateTime && !state.confirmationEmail) {
-      this.router.navigate(['/ask-and-contact/meet-scholar']);
+      this.router.navigate(['/question-and-answer/meet-scholar']);
       return;
     }
 
@@ -51,6 +51,6 @@ export class MeetScholarSuccessComponent {
   }
 
   goToAskAndContact(): void {
-    this.router.navigate(['/ask-and-contact']);
+    this.router.navigate(['/question-and-answer/topics']);
   }
 }

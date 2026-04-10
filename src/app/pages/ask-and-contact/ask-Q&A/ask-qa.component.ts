@@ -1,7 +1,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
 import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
@@ -41,6 +41,7 @@ export class AskQaComponent implements OnInit {
   private readonly qasService = inject(QasService);
   private readonly tagsService = inject(TagsService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private tagFilterOptions: TagFilterOption[] = [];
   private allFilteredQuestions: QuestionCard[] = [];
@@ -181,6 +182,31 @@ export class AskQaComponent implements OnInit {
 
   trackByQuestionId(_index: number, question: QuestionCard): string {
     return question.id;
+  }
+
+  isGeneralCategory(index: number): boolean {
+    if (index !== 1) {
+      return false;
+    }
+
+    const category = this.categories[index] ?? '';
+    return this.isGeneralCategoryName(category);
+  }
+
+  getPreviewTags(question: QuestionCard): string[] {
+    if (question.categories.length > 0) {
+      return question.categories;
+    }
+
+    return ['General'];
+  }
+
+  openSearchPreviewQuestion(question: QuestionCard): void {
+    const queryParams = {
+      id: question.id,
+      categories: JSON.stringify(question.categories ?? []),
+    };
+    void this.router.navigate(['/question-and-answer/topics/question'], { queryParams });
   }
 
   private matchesQuery(question: QuestionCard, normalizedQuery: string): boolean {
@@ -335,9 +361,10 @@ export class AskQaComponent implements OnInit {
     this.tagsService.getAll({ pageNumber: 1, pageSize: 100 }).subscribe({
       next: (response) => {
         const mapped = this.mapCategories(response);
-        if (mapped.length > 0) {
-          this.tagFilterOptions = mapped;
-          this.categories = ['All', ...mapped.map((tag) => tag.name)];
+        const ordered = this.prioritizeGeneralCategory(mapped);
+        if (ordered.length > 0) {
+          this.tagFilterOptions = ordered;
+          this.categories = ['All', ...ordered.map((tag) => tag.name)];
           this.selectedCategory = PAGINATION.DEFAULT_PAGE - 1;
         }
         this.cdr.markForCheck();
@@ -360,6 +387,31 @@ export class AskQaComponent implements OnInit {
     });
 
     return Array.from(uniqueCategories.values());
+  }
+
+  private prioritizeGeneralCategory(categories: TagFilterOption[]): TagFilterOption[] {
+    if (categories.length === 0) {
+      return categories;
+    }
+
+    const generalCategories: TagFilterOption[] = [];
+    const otherCategories: TagFilterOption[] = [];
+
+    categories.forEach((category) => {
+      if (this.isGeneralCategoryName(category.name)) {
+        generalCategories.push(category);
+        return;
+      }
+
+      otherCategories.push(category);
+    });
+
+    return [...generalCategories, ...otherCategories];
+  }
+
+  private isGeneralCategoryName(value: string): boolean {
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'general' || normalized.startsWith('general ');
   }
 
   private scrollToTopOfSection(): void {

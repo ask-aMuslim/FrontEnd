@@ -19,7 +19,7 @@ import {
 } from '../models/interfaces/academy-progress.model';
 import { ProgressFacade } from '../../api/facades/progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
-import { CourseFacade, CourseReadDto, RoadmapCourseDto } from '../../api/facades/course.facade';
+import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
 import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { EnrollmentFacade } from '../../api/facades/enrollment.facade';
@@ -267,8 +267,14 @@ export class AcademyProgressService {
                     );
                 }
                 const courseRequests = stages.map(stage =>
-                    this.courseFacade.getRoadmap(stage.id).pipe(
-                        map(courses => this.mapCoursesForStage(courses, stage.id, stage.number)),
+                    this.courseFacade.getCoursesByLevel(stage.id).pipe(
+                        map(courses => courses
+                            .filter((course) => {
+                                const isPublished = course['isPublished'];
+                                return isPublished !== false;
+                            })
+                            .map((course) => this.mapCourseDtoToAcademyCourse(course, stage.id, stage.number))
+                        ),
                         catchError(() => of([] as AcademyCourse[]))
                     )
                 );
@@ -289,13 +295,13 @@ export class AcademyProgressService {
      */
     getAcademyCoursesByLevel(levelId: string): Observable<AcademyCourse[]> {
         const stageNumber = this.academyStagesCache.find(s => s.id === levelId)?.number ?? 1;
-        return this.courseFacade.getRoadmap(levelId).pipe(
+        return this.courseFacade.getCoursesByLevel(levelId).pipe(
             map(courses => courses
                 .filter((course) => {
                     const isPublished = course['isPublished'];
                     return isPublished !== false;
                 })
-                .map(c => this.mapRoadmapCourseToAcademyCourse(c, levelId, stageNumber))
+                .map(c => this.mapCourseDtoToAcademyCourse(c, levelId, stageNumber))
             ),
             catchError(() => of([]))
         );
@@ -689,12 +695,6 @@ export class AcademyProgressService {
         return courses.map((course) => this.withCourseProgress(course, courseProgress));
     }
 
-    private mapCoursesForStage(courses: RoadmapCourseDto[], levelId: string, stageNumber: number): AcademyCourse[] {
-        return courses
-            .filter(course => course['isPublished'] !== false)
-            .map((course) => this.mapRoadmapCourseToAcademyCourse(course, levelId, stageNumber));
-    }
-
     private mapLevelToStage(level: LevelReadDto, index: number): AcademyStageApi {
         return {
             id: level.id ?? '',
@@ -729,38 +729,6 @@ export class AcademyProgressService {
                 ...(course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []),
                 ...(course.prerequisiteIds ?? [])
             ]
-        };
-    }
-
-    private mapRoadmapCourseToAcademyCourse(
-        course: RoadmapCourseDto,
-        levelId: string,
-        stageNumber: number,
-    ): AcademyCourse {
-        const id = course.id ?? '';
-        const title = course.title ?? 'Untitled course';
-        const lessons = this.resolveLessonCount(course);
-        const categoryValue = course['category'];
-        const category = this.mapCourseCategory(categoryValue);
-        const isPublished = typeof course['isPublished'] === 'boolean' ? course['isPublished'] : undefined;
-
-        return {
-            id,
-            stageId: stageNumber,
-            levelId: levelId || course.levelId || '',
-            title,
-            isPublished,
-            category,
-            categoryLabel: this.buildCategoryLabel(categoryValue),
-            lessons,
-            duration: this.buildDurationText(lessons),
-            thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
-            description: course.description ?? undefined,
-            order: course.order,
-            prerequisites: [
-                ...(course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []),
-                ...(course.prerequisiteIds ?? []),
-            ],
         };
     }
 

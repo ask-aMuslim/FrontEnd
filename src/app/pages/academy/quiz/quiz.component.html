@@ -433,7 +433,12 @@
                                   </svg>
                                 </div>
                                 <div class="answer-content">
-                                  <span class="answer-label">Answer</span>
+                                  <span class="answer-label"
+                                    >Correct Answer</span
+                                  >
+                                  <span class="answer-text"
+                                    >{{ option.label }}. {{ option.text }}</span
+                                  >
                                   @if (question.evidenceSource) {
                                     <a
                                       class="answer-hint"
@@ -477,7 +482,10 @@
                                   </svg>
                                 </div>
                                 <div class="answer-content">
-                                  <span class="answer-label">Answer</span>
+                                  <span class="answer-label">Your Answer</span>
+                                  <span class="answer-text"
+                                    >{{ option.label }}. {{ option.text }}</span
+                                  >
                                 </div>
                               </div>
                             }
@@ -556,7 +564,6 @@
                 <div class="results-view">
                   <!-- Quiz Review Header -->
                   <div class="results-header">
-                    <h1 class="results-title">Quiz Review</h1>
                     <div class="results-score-info">
                       <div class="score-badge" [class.passed]="hasPassed()">
                         <span class="score-percentage"
@@ -564,6 +571,7 @@
                         >
                       </div>
                       <div class="score-message">
+                        <h1 class="results-title">Quiz Review</h1>
                         @if (hasPassed()) {
                           <p class="message-text">
                             Great Job! You have answered
@@ -591,7 +599,7 @@
                   <div class="results-questions">
                     @for (answer of answers(); let idx = $index; track idx) {
                       <div
-                        class="review-question-item"
+                        class="review-question-item review-question-block"
                         [class.correct]="answer.isCorrect"
                         [class.incorrect]="!answer.isCorrect"
                       >

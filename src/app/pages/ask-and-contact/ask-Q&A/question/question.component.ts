@@ -74,7 +74,7 @@ export class QuestionComponent implements OnDestroy {
   }
 
   back(): void {
-    void this.router.navigate(['/ask-and-contact/ask-qa']);
+    void this.router.navigate(['/question-and-answer/topics']);
   }
 
   toggleSave(): void {

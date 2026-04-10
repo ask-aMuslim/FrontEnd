@@ -263,6 +263,7 @@ $radius-lg: 16px;
 }
 
 .resource-card__media {
+  position: relative;
   aspect-ratio: 400 / 266;
   background: var(--color-background-base-surface);
   overflow: hidden;
@@ -272,6 +273,31 @@ $radius-lg: 16px;
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+}
+
+.resource-card__media-spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.82);
+  z-index: 1;
+}
+
+.resource-card__spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(21, 107, 64, 0.2);
+  border-top-color: var(--color-button-primary-normal);
+  animation: resourcesThumbnailSpin 0.8s linear infinite;
+}
+
+@keyframes resourcesThumbnailSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

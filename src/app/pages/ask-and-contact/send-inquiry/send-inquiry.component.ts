@@ -124,7 +124,7 @@ export class SendInquiryComponent implements OnInit, OnChanges {
     if (!this.tokenService.isAuthenticated()) {
       this.submitError.set('Please sign in before sending an inquiry.');
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/ask-and-contact/send-inquiry' },
+        queryParams: { returnUrl: '/question-and-answer/send-inquiry' },
       });
       return;
     }
@@ -145,7 +145,7 @@ export class SendInquiryComponent implements OnInit, OnChanges {
         this.isSubmitting.set(false);
         this.next.emit();
 
-        this.router.navigate(['/ask-and-contact/send-inquiry/success'], {
+        this.router.navigate(['/question-and-answer/send-inquiry/success'], {
           state: {
             topicLabel,
             languages,
@@ -160,7 +160,7 @@ export class SendInquiryComponent implements OnInit, OnChanges {
 
         if (this.extractErrorStatus(error) === 401) {
           this.router.navigate(['/login'], {
-            queryParams: { returnUrl: '/ask-and-contact/send-inquiry' },
+            queryParams: { returnUrl: '/question-and-answer/send-inquiry' },
           });
         }
       },

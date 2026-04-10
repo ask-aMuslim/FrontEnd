@@ -136,3 +136,17 @@ h1 {
 .text-primary {
   color: var(--color-button-primary-normal);
 }
+
+img.aam-late-image {
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+img.aam-late-image.aam-late-image--loaded {
+  opacity: 1;
+}
+
+
+.social-buttons .nsm7Bb-HzV7m-LgbsSe {
+  border: none !important;
+}

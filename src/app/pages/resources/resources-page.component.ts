@@ -276,6 +276,7 @@ export class ResourcesPageComponent {
 
     private readonly thumbnailAttemptByCardId = signal<Record<string, number>>({});
     private readonly usePdfPreviewByCardId = signal<Record<string, boolean>>({});
+    private readonly thumbnailLoadingByCardId = signal<Record<string, boolean>>({});
 
     protected readonly resourcesCta = {
         title: 'Do You Have Any Questions?',
@@ -284,7 +285,7 @@ export class ResourcesPageComponent {
         requestQuranLabel: 'Request Free Quran',
         askQuestionLabel: 'Ask a Question',
         requestQuranUrl: 'https://www.onemessagefoundation.com/free-quran',
-        askQuestionUrl: '/ask-and-contact',
+        askQuestionUrl: '/question-and-answer/topics',
     } as const;
 
     protected readonly newMuslimCards: readonly NewMuslimCard[] = [
@@ -420,6 +421,18 @@ export class ResourcesPageComponent {
         return Boolean(card.driveFileId) && Boolean(this.usePdfPreviewByCardId()[card.id]);
     }
 
+    protected isThumbnailLoading(card: ResourceCard): boolean {
+        return this.thumbnailLoadingByCardId()[card.id] ?? true;
+    }
+
+    protected onCardImageLoad(card: ResourceCard): void {
+        this.setThumbnailLoading(card.id, false);
+    }
+
+    protected onCardPreviewLoad(card: ResourceCard): void {
+        this.setThumbnailLoading(card.id, false);
+    }
+
     protected getDrivePreviewUrl(fileId: string): SafeResourceUrl {
         const cachedUrl = this.safeDrivePreviewUrlByFileId.get(fileId);
         if (cachedUrl) {
@@ -446,6 +459,7 @@ export class ResourcesPageComponent {
         const nextAttempt = currentAttempt + 1;
 
         if (nextAttempt < candidates.length) {
+            this.setThumbnailLoading(card.id, true);
             this.thumbnailAttemptByCardId.update((current) => ({
                 ...current,
                 [card.id]: nextAttempt,
@@ -454,6 +468,7 @@ export class ResourcesPageComponent {
         }
 
         if (card.driveFileId) {
+            this.setThumbnailLoading(card.id, true);
             this.usePdfPreviewByCardId.update((current) => ({
                 ...current,
                 [card.id]: true,
@@ -463,7 +478,18 @@ export class ResourcesPageComponent {
 
         if (!target.src.endsWith(ResourcesPageComponent.cardThumbnailFallback)) {
             target.src = ResourcesPageComponent.cardThumbnailFallback;
+            this.setThumbnailLoading(card.id, true);
+            return;
         }
+
+        this.setThumbnailLoading(card.id, false);
+    }
+
+    private setThumbnailLoading(cardId: string, isLoading: boolean): void {
+        this.thumbnailLoadingByCardId.update((current) => ({
+            ...current,
+            [cardId]: isLoading,
+        }));
     }
 
     private buildPdfCards(

@@ -29,6 +29,6 @@ export class QaCardComponent {
       id: this.question.id,
       categories: JSON.stringify(this.question.categories ?? []),
     };
-    void this.router.navigate(['/ask-and-contact/ask-qa/question'], { queryParams });
+    void this.router.navigate(['/question-and-answer/topics/question'], { queryParams });
   }
 }

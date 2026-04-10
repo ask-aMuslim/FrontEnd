@@ -88,8 +88,10 @@
 }
 
 .social-buttons {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
@@ -97,12 +99,17 @@
 .google-btn-wrapper {
   display: flex;
   justify-content: center;
-  width: 100%;
+  width: fit-content;
+  border: 1px solid var(--color-border-brand-low);
+  border-radius: var(--border-radius-default);
+  background: var(--color-background-white);
+  overflow: hidden;
 }
 
 :host ::ng-deep .google-btn-wrapper > div,
 :host ::ng-deep .google-btn-wrapper iframe {
   width: 100% !important;
+  border-radius: inherit !important;
 }
 
 .social-btn.social-btn--facebook {

@@ -36,7 +36,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'ask-and-contact/ask-qa',
+    path: 'question-and-answer/topics',
     renderMode: RenderMode.Server,
   },
   // Muslim Tube video detail with params - use server-side rendering

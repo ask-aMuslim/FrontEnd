@@ -62,10 +62,42 @@
       showQuestionPreviewSection && searchPreviewQuestion;
       as previewQuestion
     ) {
-      <section class="qa-search-preview w-full" aria-label="Question preview">
-        <p class="qa-search-preview__eyebrow">Question preview</p>
+      <section
+        class="qa-search-preview w-full"
+        aria-label="Question search preview"
+      >
+        <div class="qa-search-preview__tags" aria-label="Question tags">
+          @for (
+            tag of getPreviewTags(previewQuestion);
+            track tag;
+            let isLast = $last
+          ) {
+            <span class="qa-search-preview__tag">{{ tag }}</span>
+            @if (!isLast) {
+              <span class="qa-search-preview__tag-separator" aria-hidden="true"
+                >•</span
+              >
+            }
+          }
+        </div>
         <h3 class="qa-search-preview__title">{{ previewQuestion.title }}</h3>
         <p class="qa-search-preview__answer">{{ searchPreviewAnswerText }}</p>
+        <button
+          type="button"
+          class="learn-more flex h-8 items-center gap-2 rounded-lg group cursor-pointer"
+          (click)="openSearchPreviewQuestion(previewQuestion)"
+        >
+          <span class="text-lg font-semibold">Learn more</span>
+          <span
+            class="learn-more-icon h-6 w-6"
+            role="img"
+            aria-label="Learn more"
+            style="
+              -webkit-mask-image: url(&quot;/icons/icons-24/arrow-right.svg&quot;);
+              mask-image: url(&quot;/icons/icons-24/arrow-right.svg&quot;);
+            "
+          ></span>
+        </button>
       </section>
       <div class="qa-search-preview__separator" aria-hidden="true"></div>
     }
@@ -79,10 +111,16 @@
           [ngClass]="
             selectedCategory === i ? 'secondary-button' : 'text-text-body'
           "
-          class="flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-4 py-3 transition-colors capitalize cursor-pointer"
+          [class.category-button--all]="i === 0"
+          [class.category-button--general]="isGeneralCategory(i)"
+          class="category-button flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-4 py-3 transition-colors capitalize cursor-pointer"
         >
           <span class="text-base font-medium">{{ category }}</span>
         </button>
+
+        @if (i === 0) {
+          <div class="category-separator" aria-hidden="true"></div>
+        }
       }
     </div>
   </div>
@@ -114,7 +152,7 @@
           ) {
             <app-qa-card [question]="question" />
             @if (!isLast) {
-              <div class="w-full h-[1.5px] bg-border-brand"></div>
+              <div class="qa-question-separator" aria-hidden="true"></div>
             }
           }
         </div>
