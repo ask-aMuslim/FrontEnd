@@ -11,10 +11,13 @@ import { QuestionsService } from '../../../core/services/questions.service';
 import { OptionsService } from '../../../core/services/options.service';
 import { QuizAttemptsService } from '../../../core/services/quiz-attempts.service';
 import { QuizAnswerDto } from '../../../api/models/quiz-answer-dto';
+import { ACADEMY_COURSES, ACADEMY_LESSONS } from '../../../core/services/academy-data';
+import { AcademyLesson } from '../../../core/models/interfaces/academy-progress.model';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
+import { AcademySidebarLessonItem } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
 import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 
 // Quiz Question Interface
@@ -33,6 +36,8 @@ interface QuizOption {
     readonly label: string;
     readonly text: string;
 }
+
+type SidebarLessonType = 'intro' | 'video' | 'article' | 'quiz' | 'audio';
 
 interface QuizAnswer {
     readonly questionId: string;
@@ -61,6 +66,14 @@ interface StoredQuizResult {
 
 type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
 
+interface CourseInfo {
+    stage: number | null;
+    title: string;
+    totalLessons: number | null;
+    currentLesson: number | null;
+    duration: string;
+}
+
 @Component({
     selector: 'app-quiz',
     standalone: true,
@@ -83,13 +96,12 @@ export class QuizComponent implements OnInit, OnDestroy {
     ];
 
     // Course info
-    readonly courseInfo = signal({
-        stage: 1,
-        code: 'A2',
-        title: 'Prayer (Salah)',
-        totalLessons: 5,
-        currentLesson: 5,
-        duration: '4h 10m'
+    readonly courseInfo = signal<CourseInfo>({
+        stage: null,
+        title: '',
+        totalLessons: null,
+        currentLesson: null,
+        duration: '',
     });
 
     // Quiz configuration
@@ -195,17 +207,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     });
 
     // Lessons for sidebar
-    readonly lessons = signal<Array<{
-        id: string;
-        quizLessonId?: string;
-        title: string;
-        duration: string;
-        type: 'intro' | 'video' | 'article' | 'quiz' | 'audio';
-        isCompleted: boolean;
-        isLocked?: boolean;
-        isCurrent?: boolean;
-        hasNotification?: boolean;
-    }>>([]);
+    readonly lessons = signal<AcademySidebarLessonItem[]>([]);
     private courseQuizTitle = 'Quiz';
     private courseQuizLessonId: string | null = null;
 
@@ -235,13 +237,17 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
-        return [
-            ...this.breadcrumbsBase,
-            {
-                label: `Course ${this.courseInfo().code}: ${this.courseInfo().title}`,
-                link: ['/academy/course', this.courseId],
-            },
-        ];
+        const courseTitle = this.courseInfo().title.trim();
+
+        return courseTitle.length > 0
+            ? [
+                ...this.breadcrumbsBase,
+                {
+                    label: courseTitle,
+                    link: ['/academy/course', this.courseId],
+                },
+            ]
+            : [...this.breadcrumbsBase];
     }
 
     get currentBreadcrumb(): string {
@@ -322,16 +328,27 @@ export class QuizComponent implements OnInit, OnDestroy {
         if (!this.courseId) return;
 
         // Load course info from academy progress service
-        const course = this.academyProgressService.getCourseById(this.courseId);
+        const course = this.academyProgressService.getCourseById(this.courseId)
+            ?? ACADEMY_COURSES.find((item) => item.id === this.courseId);
         if (course) {
             this.courseInfo.set({
                 stage: course.stageId,
-                code: course.id.split('-')[1]?.toUpperCase() || 'A2',
                 title: course.title,
                 totalLessons: course.lessons,
                 currentLesson: course.lessons,
                 duration: course.duration
             });
+        }
+
+        const staticLessons = this.getStaticLessonsForCourse();
+        if (staticLessons.length > 0 && this.lessons().length === 0) {
+            this.lessons.set(staticLessons.map((lesson) => this.mapStaticLessonToSidebarLesson(lesson)));
+
+            const staticQuizLesson = staticLessons.find((lesson) => lesson.type === 'quiz');
+            if (staticQuizLesson) {
+                this.courseQuizTitle = staticQuizLesson.title;
+                this.courseQuizLessonId = staticQuizLesson.id;
+            }
         }
 
         combineLatest([
@@ -376,7 +393,7 @@ export class QuizComponent implements OnInit, OnDestroy {
                             type: lessonType,
                             isCompleted: lesson.progress.status === 'completed',
                             isLocked: lesson.progress.status === 'locked',
-                            isCurrent: false,  // No lesson marked as current on quiz page
+                            isCurrent: lessonType === 'quiz',
                             hasNotification: false
                         };
                     }));
@@ -660,8 +677,22 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     goToPreviousLesson(): void {
-        // Navigate back to the course page
-        this.router.navigate(['/academy/course', this.courseId]);
+        const quizLessonId = this.courseQuizLessonId || this.lessonId || this.courseId;
+        const previousLesson = this.academyProgressService.getPreviousLesson(this.courseId, quizLessonId);
+
+        if (previousLesson?.id) {
+            void this.router.navigate(['/academy/course', this.courseId, 'lesson', previousLesson.id]);
+            return;
+        }
+
+        const staticPreviousLessonId = this.getStaticPreviousLessonId();
+        if (staticPreviousLessonId) {
+            void this.router.navigate(['/academy/course', this.courseId, 'lesson', staticPreviousLessonId]);
+            return;
+        }
+
+        // Fallback to the course page if a previous lesson cannot be resolved.
+        void this.router.navigate(['/academy/course', this.courseId]);
     }
 
     onLessonSelect(lesson: any): void {
@@ -753,6 +784,14 @@ export class QuizComponent implements OnInit, OnDestroy {
         return '';
     }
 
+    isWrongSelectedOption(
+        question: QuizQuestion,
+        answer: QuizAnswer | undefined,
+        optionId: string,
+    ): boolean {
+        return answer?.selectedOptionId === optionId && optionId !== question.correctOptionId;
+    }
+
     trackByQuestionId(_index: number, question: QuizQuestion): string {
         return question.id;
     }
@@ -768,7 +807,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     goToCertificPage(): void {
         this.router.navigate(['/academy/course', this.courseId, 'certificate']);
     }
-    private mapLessonType(value: unknown): 'intro' | 'video' | 'article' | 'quiz' | 'audio' {
+    private mapLessonType(value: unknown): SidebarLessonType {
         if (value === 'quiz') return 'quiz';
         if (value === 'intro') return 'intro';
         if (value === 'audio' || value === 4) return 'audio';
@@ -812,7 +851,7 @@ export class QuizComponent implements OnInit, OnDestroy {
             });
 
             const hasQuizLesson = updatedLessons.some((lesson) => lesson.type === 'quiz');
-            if (hasQuizLesson || !activeQuiz) {
+            if (hasQuizLesson) {
                 return updatedLessons;
             }
 
@@ -831,6 +870,43 @@ export class QuizComponent implements OnInit, OnDestroy {
                 },
             ];
         });
+    }
+
+    private getStaticLessonsForCourse(): AcademyLesson[] {
+        return ACADEMY_LESSONS
+            .filter((lesson) => lesson.courseId === this.courseId)
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => ({ ...lesson }));
+    }
+
+    private getStaticPreviousLessonId(): string | null {
+        const lessons = ACADEMY_LESSONS
+            .filter((lesson) => lesson.courseId === this.courseId)
+            .slice()
+            .sort((a, b) => a.order - b.order);
+
+        const currentQuizLessonId = this.courseQuizLessonId || this.lessonId;
+        const currentIndex = lessons.findIndex((lesson) => lesson.id === currentQuizLessonId);
+        const previousLesson = currentIndex > 0 ? lessons[currentIndex - 1] : lessons.find((lesson) => lesson.type !== 'quiz') ?? null;
+
+        return previousLesson?.id ?? null;
+    }
+
+    private mapStaticLessonToSidebarLesson(lesson: AcademyLesson): AcademySidebarLessonItem {
+        const lessonType = this.mapLessonType(lesson.type);
+
+        return {
+            id: lesson.id,
+            quizLessonId: lessonType === 'quiz' ? lesson.id : undefined,
+            title: lesson.title,
+            duration: lesson.duration,
+            type: lessonType,
+            isCompleted: false,
+            isLocked: false,
+            isCurrent: lessonType === 'quiz',
+            hasNotification: false,
+        };
     }
 
     private restoreQuizResultFromStorage(questions: readonly QuizQuestion[]): void {

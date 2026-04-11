@@ -1,5 +1,15 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  PLATFORM_ID,
+  QueryList,
+  ViewChildren,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
@@ -43,6 +53,10 @@ export class AskQaComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private initialCategoryQuery: string | null = null;
+  private lastScrolledCategoryIndex: number | null = null;
+  private lastScrolledCategoryContainerWidth: number | null = null;
+  private selectedCategoryScrollTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
   private tagFilterOptions: TagFilterOption[] = [];
   private allFilteredQuestions: QuestionCard[] = [];
   private loadedTagId: string | null = null;
@@ -60,14 +74,21 @@ export class AskQaComponent implements OnInit {
   arrowRightIcon = '/icons/icons-24/arrow-right.svg';
   arrowLeftIcon = '/icons/icons-24/arrow-left.svg';
 
+  @ViewChildren('categoryButton')
+  private readonly categoryButtons?: QueryList<ElementRef<HTMLButtonElement>>;
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
   ) { }
 
   ngOnInit(): void {
+    this.initialCategoryQuery = this.route.snapshot.queryParamMap.get('category')
+      ?? this.route.snapshot.queryParamMap.get('tag');
     this.loadCategories();
-    this.loadQuestions();
+    if (!this.initialCategoryQuery) {
+      this.loadQuestions();
+    }
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
@@ -154,6 +175,7 @@ export class AskQaComponent implements OnInit {
     this.currentPage = PAGINATION.DEFAULT_PAGE;
     this.loadQuestions();
     this.cdr.markForCheck();
+    this.queueSelectedCategoryScroll();
   }
 
   goToPage(page: number): void {
@@ -365,12 +387,89 @@ export class AskQaComponent implements OnInit {
         if (ordered.length > 0) {
           this.tagFilterOptions = ordered;
           this.categories = ['All', ...ordered.map((tag) => tag.name)];
-          this.selectedCategory = PAGINATION.DEFAULT_PAGE - 1;
         }
+
+        if (this.initialCategoryQuery) {
+          this.applyCategoryQuery(this.initialCategoryQuery);
+          return;
+        }
+
         this.cdr.markForCheck();
       },
-      error: () => this.cdr.markForCheck(),
+      error: () => {
+        if (this.initialCategoryQuery) {
+          this.loadQuestions();
+          return;
+        }
+
+        this.cdr.markForCheck();
+      },
     });
+  }
+
+  private applyCategoryQuery(categoryQuery: string): void {
+    const normalizedQuery = categoryQuery.trim().toLowerCase();
+    const matchedIndex = this.categories.findIndex(
+      (category) => category.trim().toLowerCase() === normalizedQuery,
+    );
+
+    if (matchedIndex > 0) {
+      this.selectCategory(matchedIndex);
+      return;
+    }
+
+    this.selectedCategory = PAGINATION.DEFAULT_PAGE - 1;
+    this.currentPage = PAGINATION.DEFAULT_PAGE;
+    this.loadQuestions();
+    this.queueSelectedCategoryScroll();
+  }
+
+  private queueSelectedCategoryScroll(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    if (this.selectedCategoryScrollTimeout !== null) {
+      globalThis.clearTimeout(this.selectedCategoryScrollTimeout);
+    }
+
+    this.selectedCategoryScrollTimeout = globalThis.setTimeout(() => {
+      this.selectedCategoryScrollTimeout = null;
+      this.scrollSelectedCategoryIntoView();
+    }, 300);
+  }
+
+  private scrollSelectedCategoryIntoView(): void {
+    if (!this.isBrowser || this.selectedCategory === 0) {
+      return;
+    }
+
+    const activeButton = this.categoryButtons?.toArray()[this.selectedCategory]?.nativeElement;
+    const container = activeButton?.parentElement;
+    if (!activeButton || !container) {
+      return;
+    }
+
+    const containerWidth = container.clientWidth;
+    if (
+      this.lastScrolledCategoryIndex === this.selectedCategory &&
+      this.lastScrolledCategoryContainerWidth === containerWidth
+    ) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    const targetScrollLeft = container.scrollLeft + (buttonRect.left - containerRect.left);
+    const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+    const scrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScrollLeft));
+
+    container.scrollTo({
+      left: scrollLeft,
+      behavior: 'auto',
+    });
+    this.lastScrolledCategoryIndex = this.selectedCategory;
+    this.lastScrolledCategoryContainerWidth = containerWidth;
   }
 
   private mapCategories(response: unknown): TagFilterOption[] {

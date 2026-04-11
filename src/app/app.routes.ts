@@ -55,21 +55,21 @@ export const routes: Routes = [
         title: 'Resources',
       },
       {
-        path: 'question-and-answer',
+        path: 'ask-and-contact',
         component: AskAndContactComponent,
         title: 'Ask & Contact',
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'topics' },
+          { path: '', pathMatch: 'full', redirectTo: 'ask-qa' },
           {
-            path: 'topics',
+            path: 'ask-qa',
             loadComponent: () =>
               import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
                 (m) => m.AskQaComponent,
               ),
-            title: 'Topics',
+            title: 'Ask Questions',
           },
           {
-            path: 'topics/question',
+            path: 'ask-qa/question',
             loadComponent: () =>
               import('./pages/ask-and-contact/ask-Q&A/question/question.component').then(
                 (m) => m.QuestionComponent,
@@ -117,38 +117,6 @@ export const routes: Routes = [
             title: 'Send Inquiry',
           },
         ],
-      },
-      { path: 'ask-and-contact', pathMatch: 'full', redirectTo: 'question-and-answer' },
-      { path: 'ask-and-contact/ask-qa', pathMatch: 'full', redirectTo: 'question-and-answer/topics' },
-      {
-        path: 'ask-and-contact/ask-qa/question',
-        pathMatch: 'full',
-        redirectTo: 'question-and-answer/topics/question',
-      },
-      {
-        path: 'ask-and-contact/ask-assistant',
-        pathMatch: 'full',
-        redirectTo: 'question-and-answer/ask-assistant',
-      },
-      {
-        path: 'ask-and-contact/meet-scholar',
-        pathMatch: 'full',
-        redirectTo: 'question-and-answer/meet-scholar',
-      },
-      {
-        path: 'ask-and-contact/meet-scholar/success',
-        pathMatch: 'full',
-        redirectTo: 'question-and-answer/meet-scholar/success',
-      },
-      {
-        path: 'ask-and-contact/send-inquiry',
-        pathMatch: 'full',
-        redirectTo: 'question-and-answer/send-inquiry',
-      },
-      {
-        path: 'ask-and-contact/send-inquiry/success',
-        pathMatch: 'full',
-        redirectTo: 'question-and-answer/send-inquiry/success',
       },
       {
         path: 'muslim-tube',

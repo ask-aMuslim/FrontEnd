@@ -45,6 +45,18 @@
   background: var(--color-card-surface-secondary);
 }
 
+@media (max-width: 768px) {
+  .ask-contact__cta {
+    height: auto;
+    min-height: 262px;
+    padding: 3.5rem 2rem;
+  }
+
+  .ask-contact__cta-inner {
+    gap: 1.25rem;
+  }
+}
+
 .ask-contact__cta-inner {
   display: flex;
   flex-direction: column;

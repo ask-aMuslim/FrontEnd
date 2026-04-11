@@ -49,19 +49,10 @@
                 </button>
                 <button
                   type="button"
-                  class="btn btn-primary btn-start"
+                  class="btn btn-primary"
                   (click)="startQuiz()"
                 >
-                  Start the Quiz
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M8 20L16 12L8 4"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
+                  Start Quiz
                 </button>
               </div>
             </div>
@@ -454,9 +445,8 @@
                               </div>
                             }
                             @if (
-                              !answer.isCorrect &&
                               !answer.isSkipped &&
-                              answer.selectedOptionId === option.id
+                              isWrongSelectedOption(question, answer, option.id)
                             ) {
                               <div class="answer-card answer-wrong">
                                 <div class="answer-icon">
@@ -517,19 +507,20 @@
                 <button
                   type="button"
                   class="btn btn-primary"
-                  (click)="hasPassed() ? completeQuiz() : retakeQuiz()"
+                  (click)="retakeQuiz()"
                 >
-                  {{ hasPassed() ? "Pass" : "Retake Quiz" }}
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M8 20L16 12L8 4"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
+                  Retake Quiz
                 </button>
+
+                @if (hasPassed()) {
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="goToNextCourse()"
+                  >
+                    Next Course
+                  </button>
+                }
               </div>
             </div>
 
@@ -619,8 +610,11 @@
                           ) {
                             <!-- Show user's incorrect answer if they got it wrong -->
                             @if (
-                              answer.selectedOptionId === option.id &&
-                              !answer.isCorrect
+                              isWrongSelectedOption(
+                                questions()[idx],
+                                answer,
+                                option.id
+                              )
                             ) {
                               <div class="review-answer-card wrong">
                                 <div class="answer-label-badge wrong">
@@ -680,6 +674,15 @@
                   </svg>
                   Previous Lesson
                 </button>
+
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  (click)="retakeQuizFromResults()"
+                >
+                  Retake Quiz
+                </button>
+
                 @if (hasPassed()) {
                   <button
                     type="button"
@@ -687,32 +690,6 @@
                     (click)="goToNextCourse()"
                   >
                     Next Course
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M8 20L16 12L8 4"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    (click)="retakeQuizFromResults()"
-                  >
-                    Retake Quiz
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M8 20L16 12L8 4"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
                   </button>
                 }
               </div>

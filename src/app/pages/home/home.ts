@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostListener,
   inject,
   OnDestroy,
   OnInit,
@@ -51,6 +52,7 @@ interface PillarItem {
 
 interface ServeAudienceCard {
   title: string;
+  topicTag: string;
 }
 
 @Component({
@@ -187,15 +189,15 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   protected readonly serveAudienceCards: readonly ServeAudienceCard[] = [
-    { title: 'I’m a Christian' },
-    { title: 'I’m a Jew' },
-    { title: 'I’m a Polytheist' },
-    { title: 'I’m an Atheist' },
-    { title: 'I’m an Agnostic' },
-    { title: 'I’m a Seeker' },
-    { title: 'I’m a New Muslim' },
-    { title: 'I’m a Born Muslim' },
-    { title: 'I’m a Woman' },
+    { title: 'I’m a Christian', topicTag: 'Christianity' },
+    { title: 'I’m a Jew', topicTag: 'Judaism' },
+    { title: 'I’m a Polytheist', topicTag: 'Polytheism' },
+    { title: 'I’m an Atheist', topicTag: 'Atheism' },
+    { title: 'I’m an Agnostic', topicTag: 'General' },
+    { title: 'I’m a Seeker', topicTag: 'General' },
+    { title: 'I’m a New Muslim', topicTag: 'General' },
+    { title: 'I’m a Born Muslim', topicTag: 'General' },
+    { title: 'I’m a Woman', topicTag: 'Women' },
   ];
 
   protected trackByIndex(index: number): number {
@@ -205,6 +207,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   private cleanupFns: (() => void)[] = [];
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private bubblesAutoscrollEnabled = false;
 
   constructor(
     private readonly router: Router,
@@ -265,7 +268,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
             // Re-setup bubbles animation if needed for the new elements
             globalThis.setTimeout(() => {
               if (this.heroBubbles.length > 0) {
-                this.setupBubblesAnimation();
+                this.syncBubblesAnimation(true);
               }
             }, 100);
           }
@@ -410,7 +413,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     void import('gsap');
 
     // Setup seamless bubble scrolling animation
-    this.setupBubblesAnimation();
+    this.syncBubblesAnimation(true);
   }
 
   /**
@@ -422,8 +425,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Only animate on tablet and below (max-width: 768px)
-    if (globalThis.innerWidth > 768) {
+    // Only animate on tablets and below (max-width: 1199px)
+    if (globalThis.innerWidth > 1199) {
       return;
     }
 
@@ -468,11 +471,45 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
+  @HostListener('window:resize')
+  protected onWindowResize(): void {
+    this.syncBubblesAnimation(true);
+  }
+
+  private syncBubblesAnimation(forceRestart = false): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    const shouldAutoscroll = globalThis.innerWidth <= 1199;
+
+    if (!forceRestart && shouldAutoscroll === this.bubblesAutoscrollEnabled) {
+      return;
+    }
+
+    this.stopBubblesAnimation();
+    this.bubblesAutoscrollEnabled = shouldAutoscroll;
+
+    if (shouldAutoscroll) {
+      this.setupBubblesAnimation();
+    }
+  }
+
+  private stopBubblesAnimation(): void {
     for (const cleanup of this.cleanupFns) {
       cleanup();
     }
     this.cleanupFns = [];
+
+    const track = this.bubblesTrack?.nativeElement;
+    if (track) {
+      track.style.transform = '';
+      track.style.transition = '';
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopBubblesAnimation();
   }
 
   /**

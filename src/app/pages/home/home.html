@@ -1348,7 +1348,11 @@
     </div>
   </section>
 
-  <section class="what-is-quran-section" aria-labelledby="what-is-quran-title">
+  <section
+    class="what-is-quran-section"
+    [class.what-is-quran-section--logged-in]="authService.isAuthenticated()"
+    aria-labelledby="what-is-quran-title"
+  >
     <div class="section-block section-block--wide">
       <div class="section-shell what-is-quran-shell">
         <div class="what-is-quran-header" data-aos="fade-up">
@@ -1423,12 +1427,15 @@
 
         <div class="home-serve__grid">
           @for (card of serveAudienceCards; track card.title; let i = $index) {
-          <article
+          <a
             class="home-serve__card"
             [class.home-serve__card--tinted]="i % 2 === 0"
+            [routerLink]="['/question-and-answer/topics']"
+            [queryParams]="{ category: card.topicTag }"
+            [attr.aria-label]="'Explore questions for ' + card.title"
           >
             <h3>{{ card.title }}</h3>
-          </article>
+          </a>
           }
         </div>
       </div>

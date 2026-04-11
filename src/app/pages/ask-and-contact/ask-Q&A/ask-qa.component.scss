@@ -1,6 +1,14 @@
 .category-scroll {
   scrollbar-color: var(--color-button-primary-normal) transparent;
   scrollbar-width: thin;
+  scroll-padding-inline: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .category-scroll {
+    padding-inline: 0.75rem;
+    scroll-snap-type: x mandatory;
+  }
 }
 
 .qa-search-preview {
@@ -96,6 +104,8 @@
 
 .category-button {
   position: relative;
+  scroll-margin-inline: 0.75rem;
+  scroll-snap-align: start;
 }
 
 .category-button--all {
