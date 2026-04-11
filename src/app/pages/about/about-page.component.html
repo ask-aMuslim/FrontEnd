@@ -81,8 +81,8 @@
                 <strong>bridge gaps and build understanding</strong>.
                 <br />
                 Today, Ask A Muslim is proud to serve communities not only in
-                our home state, but also across the
-                Midwest, Canada, and <strong>the world</strong>.
+                our home state, but also across the Midwest, Canada, and
+                <strong>the world</strong>.
               </p>
 
               <ol class="about-timeline" aria-label="Ask A Muslim timeline">
@@ -249,13 +249,15 @@
               card of audienceCards;
               track trackByAudienceTitle($index, card)
             ) {
-              <article
+              <a
                 class="about-audience-card"
                 [class.about-audience-card--light]="card.variant === 'light'"
                 [class.about-audience-card--white]="card.variant !== 'light'"
+                [href]="getAudienceCardHref(card)"
+                [attr.aria-label]="'Explore questions for ' + card.title"
               >
                 <h3>{{ card.title }}</h3>
-              </article>
+              </a>
             }
           </div>
         </div>

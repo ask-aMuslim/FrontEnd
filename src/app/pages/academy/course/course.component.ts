@@ -90,9 +90,26 @@ export class CourseComponent implements OnInit, OnDestroy {
         );
     }
 
+    get hasCourseLessons(): boolean {
+        return !!this.course?.lessons?.length;
+    }
+
     get hasQuizLesson(): boolean {
         return !!this.course?.lessonsList.some(
             (lesson) => !lesson.isLocked && lesson.type === 'quiz',
+        );
+    }
+
+    get isBeginDisabled(): boolean {
+        if (!this.course) {
+            return true;
+        }
+
+        return (
+            !this.hasCourseLessons ||
+            this.course.totalLessons === 0 ||
+            this.course.lessonsList.length === 0 ||
+            !this.hasPlayableLesson
         );
     }
 
@@ -363,7 +380,7 @@ export class CourseComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.course || this.course.isLocked || this.course.hasUnmetPrerequisites) {
+        if (!this.course || this.course.isLocked || this.course.hasUnmetPrerequisites || this.isBeginDisabled) {
             return;
         }
 

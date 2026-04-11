@@ -11,6 +11,7 @@ interface AudienceCard {
     title: string;
     description: string;
     variant?: 'light' | 'white';
+    topicTag: string;
 }
 
 interface AchievementStat {
@@ -63,46 +64,55 @@ export class AboutPageComponent {
             title: 'I’m a Christian',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'light',
+            topicTag: 'Christianity',
         },
         {
-            title: 'I’m Jewish',
+            title: 'I’m a Jew',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'white',
+            topicTag: 'Judaism',
         },
         {
             title: 'I’m a Polytheist',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'light',
+            topicTag: 'Polytheism',
         },
         {
             title: 'I’m an Atheist',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'white',
+            topicTag: 'Atheism',
         },
         {
             title: 'I’m an Agnostic',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'light',
+            topicTag: 'General',
         },
         {
             title: 'I’m a New Muslim',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'light',
+            topicTag: 'General',
         },
         {
-            title: 'I’m Just Curious',
+            title: 'I’m a Born Muslim',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'white',
+            topicTag: 'General',
         },
         {
             title: 'I’m a Seeker',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'white',
+            topicTag: 'General',
         },
         {
-            title: 'I’m a Women in Islam',
+            title: 'I’m a Woman',
             description: 'Step-by-step learning journey from ignorance to knowledge.',
             variant: 'light',
+            topicTag: 'Women',
         },
     ];
 
@@ -157,6 +167,10 @@ export class AboutPageComponent {
 
     protected trackByAudienceTitle(_index: number, item: AudienceCard): string {
         return item.title;
+    }
+
+    protected getAudienceCardHref(item: AudienceCard): string {
+        return `/question-and-answer/topics?category=${encodeURIComponent(item.topicTag)}`;
     }
 
     protected trackByStatLabel(_index: number, item: AchievementStat): string {

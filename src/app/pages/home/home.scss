@@ -1655,6 +1655,14 @@
   padding: clamp(3.5rem, 7vw, 6rem) 0;
 }
 
+.what-is-quran-section--logged-in {
+  position: relative;
+  z-index: 1;
+  border-bottom-left-radius: clamp(56px, 11vw, 138px);
+  border-bottom-right-radius: clamp(56px, 11vw, 138px);
+  overflow: hidden;
+}
+
 .what-is-quran-shell {
   max-width: 1248px;
   width: 100%;
@@ -1839,12 +1847,6 @@
   margin-bottom: -140px;
 }
 
-.advice-section--logged-in {
-  padding: 40px 0 40px;
-  transform: none;
-  margin-bottom: 0;
-}
-
 .advice-shell {
   max-width: 1248px;
   margin: 0 auto;
@@ -1984,6 +1986,8 @@
   justify-content: center;
   gap: 0.25rem;
   text-align: center;
+  text-decoration: none;
+  color: inherit;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,

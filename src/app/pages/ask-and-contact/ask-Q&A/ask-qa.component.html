@@ -107,6 +107,7 @@
     >
       @for (category of categories; track $index; let i = $index) {
         <button
+          #categoryButton
           (click)="selectCategory(i)"
           [ngClass]="
             selectedCategory === i ? 'secondary-button' : 'text-text-body'
