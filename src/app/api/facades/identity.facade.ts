@@ -236,6 +236,7 @@ export class IdentityFacade {
 
       this.tokenService.setTokens({
         accessToken: data.token,
+        refreshToken: data.refreshToken ?? null,
         expiresIn,
         userId: data.userId ?? undefined,
         userEmail: data.email ?? undefined,

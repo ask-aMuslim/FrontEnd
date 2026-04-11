@@ -1,6 +1,9 @@
 
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { finalize, take } from 'rxjs';
+import { NewsletterService } from '../../../core/services/newsletter.service';
 
 interface FooterLink {
   label: string;
@@ -31,12 +34,23 @@ interface AppDownload {
 @Component({
   selector: 'app-footer',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, FormsModule],
   templateUrl: './footer.html',
   styleUrls: ['./footer.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Footer {
+  protected newsletterEmail = '';
+  protected isSubscribing = false;
+  protected subscriptionMessage: string | null = null;
+  protected subscriptionMessageType: 'success' | 'error' | null = null;
+
   protected readonly currentYear = new Date().getFullYear();
+
+  constructor(
+    private readonly newsletterService: NewsletterService,
+    private readonly cdr: ChangeDetectorRef,
+  ) { }
 
   protected readonly footerColumns: FooterColumn[] = [
     {
@@ -78,31 +92,31 @@ export class Footer {
   protected readonly socialLinks: SocialLink[] = [
     {
       icon: '/icons/icons-social-apps/facebook.svg',
-      label: '\\askamuslimofficial',
+      label: String.raw`\askamuslimofficial`,
       href: 'https://www.facebook.com/askamuslimofficial',
       ariaLabel: 'Visit our Facebook page',
     },
     {
       icon: '/icons/icons-social-apps/instagram.svg',
-      label: '\\askamuslim',
+      label: String.raw`\askamuslim`,
       href: 'https://www.instagram.com/askamuslim',
       ariaLabel: 'Visit our Instagram profile',
     },
     {
       icon: '/icons/icons-social-apps/youtube.svg',
-      label: '\\askamuslim',
+      label: String.raw`\askamuslim`,
       href: 'https://www.youtube.com/@AskAMuslim',
       ariaLabel: 'Visit our YouTube channel',
     },
     {
       icon: '/icons/icons-social-apps/threads.svg',
-      label: '\\askamuslim',
+      label: String.raw`\askamuslim`,
       href: 'https://www.threads.com/@askamuslim',
       ariaLabel: 'Visit our Threads profile',
     },
     {
       icon: '/icons/icons-social-apps/tiktok.svg',
-      label: '\\askamuslim_',
+      label: String.raw`\askamuslim_`,
       href: 'https://tiktok.com/@askamuslim_',
       ariaLabel: 'Visit our TikTok profile',
     },
@@ -141,14 +155,34 @@ export class Footer {
 
   protected onSubscribe(event: Event): void {
     event.preventDefault();
-    const form = event.target as HTMLFormElement | null;
-    const emailInput = form?.querySelector<HTMLInputElement>('#footer-email');
 
-    if (!emailInput?.checkValidity()) {
-      emailInput?.reportValidity();
+    if (!this.newsletterEmail.trim() || this.isSubscribing) {
       return;
     }
 
-    emailInput.value = '';
+    this.isSubscribing = true;
+    this.subscriptionMessage = null;
+    this.subscriptionMessageType = null;
+    this.cdr.markForCheck();
+
+    this.newsletterService
+      .subscribe(this.newsletterEmail)
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.isSubscribing = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe((result) => {
+        this.subscriptionMessage = result.message;
+        this.subscriptionMessageType = result.success ? 'success' : 'error';
+
+        if (result.success) {
+          this.newsletterEmail = '';
+        }
+
+        this.cdr.markForCheck();
+      });
   }
 }

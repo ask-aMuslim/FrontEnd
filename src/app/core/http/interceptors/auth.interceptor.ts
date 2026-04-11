@@ -32,7 +32,8 @@ import { RefreshQueueService } from '../../auth/refresh-queue.service';
 import {
     SKIP_AUTH,
     SKIP_TOKEN_REFRESH,
-    IS_REFRESH_REQUEST
+    IS_REFRESH_REQUEST,
+    REQUIRE_CREDENTIALS,
 } from '../context-tokens';
 import { environment } from '../../../../environments/environment';
 
@@ -81,8 +82,20 @@ export const authInterceptor: HttpInterceptorFn = (
                     return throwError(() => error);
                 }
 
+                const shouldAttemptRefreshForForbidden =
+                    statusCode === 403 && (
+                        tokenService.isTokenExpired()
+                        || tokenService.isTokenExpiringSoon()
+                        || !tokenService.hasValidSession()
+                    );
+
+                if (statusCode === 403 && !shouldAttemptRefreshForForbidden) {
+                    return throwError(() => error);
+                }
+
                 // If user has no session at all, fail gracefully without refresh loop
-                if (!tokenService.hasValidSession() && !tokenService.refreshToken()) {
+                const hasRefreshCapability = tokenService.canUseCookieRefresh();
+                if (!tokenService.hasValidSession() && !hasRefreshCapability) {
                     return throwError(() => error);
                 }
 
@@ -136,9 +149,10 @@ function handle401WithRefresh(
     router: Router,
     isBrowser: boolean
 ): Observable<HttpEvent<unknown>> {
-    // Check if we have a refresh token
-    if (!tokenService.refreshToken()) {
-        // No refresh token - redirect to login
+    // Check if refresh can be attempted via refresh cookie
+    const hasRefreshCapability = tokenService.canUseCookieRefresh();
+    if (!hasRefreshCapability) {
+        // No refresh capability - redirect to login
         tokenService.clearTokens();
         if (isBrowser) {
             void router.navigate(['/login'], {
@@ -213,6 +227,7 @@ function extractStatusCode(error: unknown): number | null {
 
 function applyRequestCompatibility(req: HttpRequest<unknown>): HttpRequest<unknown> {
     const setHeaders: Record<string, string> = {};
+    const requiresCredentials = req.context.get(REQUIRE_CREDENTIALS);
 
     if (!req.headers.has('Accept')) {
         setHeaders['Accept'] = 'application/json';
@@ -223,7 +238,7 @@ function applyRequestCompatibility(req: HttpRequest<unknown>): HttpRequest<unkno
     }
 
     return req.clone({
-        withCredentials: environment.authWithCredentials,
+        withCredentials: environment.authWithCredentials || requiresCredentials,
         setHeaders,
     });
 }

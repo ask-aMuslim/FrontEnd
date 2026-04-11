@@ -470,9 +470,6 @@
 
 .saved-lessons__empty-icon-svg,
 .notes__empty-icon-svg {
-  width: 2rem;
-  height: 2rem;
-
   :deep(path) {
     stroke: var(--color-button-primary-normal);
   }

@@ -72,7 +72,8 @@
   color: var(--color-button-primary-hovering);
 }
 
-.active {
+.active,
+.qna-active {
   &:hover {
     a {
       color: var(--color-button-primary-hovering);

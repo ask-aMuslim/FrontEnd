@@ -2,7 +2,7 @@
  * Token Service
  * 
  * Centralized JWT lifecycle management with Angular signals.
- * Memory-first storage with localStorage fallback for persistence.
+ * Access token is sessionStorage-backed. Refresh token is cookie-based.
  */
 
 import { Injectable, inject, PLATFORM_ID, signal, computed } from '@angular/core';
@@ -11,17 +11,18 @@ import { Observable, of, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { IS_REFRESH_REQUEST, SKIP_AUTH } from '../http/context-tokens';
+import { IS_REFRESH_REQUEST, REQUIRE_CREDENTIALS, SKIP_AUTH } from '../http/context-tokens';
 
-const AUTH_REFRESH_PATH = '/api/Authentication/refresh';
+const AUTH_REFRESH_PATH = '/api/Authentication/refresh-token';
+const LEGACY_REFRESH_PATHS = ['/api/Authentication/refresh', '/api/Identity/Refresh'];
 
 /** Storage key for auth data */
-const AUTH_STORAGE_KEY = 'aam_auth';
+const AUTH_SESSION_STORAGE_KEY = 'aam_auth_session';
 
 /** Token data structure */
 interface TokenData {
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   expiresAt: number;
 }
 
@@ -39,6 +40,7 @@ export class TokenService {
 
   // Memory-first storage using signals
   private readonly _accessToken = signal<string | null>(null);
+  // Refresh token is stored in secure HttpOnly cookies only (not in JS storage).
   private readonly _refreshToken = signal<string | null>(null);
   private readonly _expiresAt = signal<number | null>(null);
   private readonly _userId = signal<string | null>(null);
@@ -100,15 +102,16 @@ export class TokenService {
    */
   setTokens(data: {
     accessToken: string;
-    refreshToken: string;
+    refreshToken?: string | null;
     expiresIn: number;
     userId?: string;
     userEmail?: string;
   }): void {
+    const normalizedRefreshToken = this.normalizeOptionalString(data.refreshToken);
     const expiresAt = Date.now() + data.expiresIn * 1000;
 
     this._accessToken.set(data.accessToken);
-    this._refreshToken.set(data.refreshToken);
+    this._refreshToken.set(normalizedRefreshToken);
     this._expiresAt.set(expiresAt);
 
     if (data.userId) this._userId.set(data.userId);
@@ -116,7 +119,7 @@ export class TokenService {
 
     this.persistToStorage({
       accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
+      refreshToken: normalizedRefreshToken,
       expiresAt,
       userId: data.userId,
       userEmail: data.userEmail
@@ -157,22 +160,17 @@ export class TokenService {
   }
 
   /**
-   * Refresh the access token using refresh token
+   * Refresh the access token using refresh cookie
    */
   refreshAccessToken(): Observable<string> {
-    const refreshToken = this._refreshToken();
-
-    if (!refreshToken) {
-      this.clearTokens();
-      return throwError(() => new Error('No refresh token available'));
-    }
+    const currentRefreshToken = this._refreshToken();
 
     // Call refresh endpoint
-    return this.callRefreshEndpoint(refreshToken).pipe(
+    return this.callRefreshEndpoint().pipe(
       tap(response => {
         this.setTokens({
           accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
+          refreshToken: response.refreshToken ?? currentRefreshToken,
           expiresIn: response.expiresIn
         });
       }),
@@ -213,6 +211,10 @@ export class TokenService {
     };
   }
 
+  canUseCookieRefresh(): boolean {
+    return this.isBrowser;
+  }
+
   // ==================== Private Methods ====================
 
   /**
@@ -222,7 +224,7 @@ export class TokenService {
     if (!this.isBrowser) return;
 
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      const stored = globalThis.sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
       if (!stored) return;
 
       const data: AuthStorage = JSON.parse(stored);
@@ -230,7 +232,7 @@ export class TokenService {
       // Check if stored token is still valid
       if (data.expiresAt && data.expiresAt > Date.now()) {
         this._accessToken.set(data.accessToken);
-        this._refreshToken.set(data.refreshToken);
+        this._refreshToken.set(this.normalizeOptionalString(data.refreshToken));
         this._expiresAt.set(data.expiresAt);
         this._userId.set(data.userId ?? null);
         this._userEmail.set(data.userEmail ?? null);
@@ -244,26 +246,26 @@ export class TokenService {
   }
 
   /**
-   * Persist tokens to localStorage
+   * Persist access token to sessionStorage
    */
   private persistToStorage(data: AuthStorage): void {
     if (!this.isBrowser) return;
 
     try {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
+      globalThis.sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(data));
     } catch {
       // Storage write failed silently
     }
   }
 
   /**
-   * Clear localStorage
+   * Clear sessionStorage
    */
   private clearStorage(): void {
     if (!this.isBrowser) return;
 
     try {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
+      globalThis.sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
     } catch {
       // Storage clear failed silently
     }
@@ -274,26 +276,25 @@ export class TokenService {
    * Note: This endpoint may not exist in current Swagger spec
    * Adjust the endpoint path as needed
    */
-  private callRefreshEndpoint(refreshToken: string): Observable<{
+  private callRefreshEndpoint(): Observable<{
     accessToken: string;
-    refreshToken: string;
+    refreshToken: string | null;
     expiresIn: number;
   }> {
+    const refreshToken = this._refreshToken();
     const normalizedBaseUrl = environment.apiBaseUrl.replaceAll(/\/+$/g, '');
-    const refreshUrls = [
-      `${normalizedBaseUrl}${AUTH_REFRESH_PATH}`,
-      `${normalizedBaseUrl}/api/Identity/Refresh`
-    ];
+    const refreshUrls = [AUTH_REFRESH_PATH, ...LEGACY_REFRESH_PATHS]
+      .map((path) => `${normalizedBaseUrl}${path}`);
 
     return this.tryRefreshUrls(refreshUrls, refreshToken);
   }
 
   private tryRefreshUrls(
     refreshUrls: readonly string[],
-    refreshToken: string
+    refreshToken: string | null,
   ): Observable<{
     accessToken: string;
-    refreshToken: string;
+    refreshToken: string | null;
     expiresIn: number;
   }> {
     if (refreshUrls.length === 0) {
@@ -302,19 +303,20 @@ export class TokenService {
 
     const [currentUrl, ...remainingUrls] = refreshUrls;
 
-    return this.http.post<{
-      accessToken: string;
-      refreshToken: string;
-      expiresIn: number;
-    }>(
+    const refreshBody = refreshToken ? { refreshToken } : {};
+
+    return this.http.post<unknown>(
       currentUrl,
-      { refreshToken },
+      refreshBody,
       {
+        withCredentials: true,
         context: new HttpContext()
           .set(IS_REFRESH_REQUEST, true)
+          .set(REQUIRE_CREDENTIALS, true)
           .set(SKIP_AUTH, true)
       }
     ).pipe(
+      map((response) => this.normalizeRefreshResponse(response, refreshToken)),
       catchError((error: unknown) => {
         if (remainingUrls.length === 0) {
           return throwError(() => error);
@@ -323,5 +325,62 @@ export class TokenService {
         return this.tryRefreshUrls(remainingUrls, refreshToken);
       })
     );
+  }
+
+  private normalizeRefreshResponse(
+    response: unknown,
+    fallbackRefreshToken: string | null,
+  ): {
+    accessToken: string;
+    refreshToken: string | null;
+    expiresIn: number;
+  } {
+    const topLevel = this.asRecord(response);
+    const nestedData = this.asRecord(topLevel?.['data']);
+    const payload = nestedData ?? topLevel;
+
+    const accessToken = this.normalizeOptionalString(payload?.['accessToken'])
+      ?? this.normalizeOptionalString(payload?.['token']);
+    const refreshToken = this.normalizeOptionalString(payload?.['refreshToken'])
+      ?? fallbackRefreshToken;
+    const expiresIn = this.resolveExpiresInSeconds(payload?.['expiresIn'], payload?.['expiresAt']);
+
+    if (!accessToken) {
+      throw new Error('Refresh endpoint did not return an access token');
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn,
+    };
+  }
+
+  private resolveExpiresInSeconds(
+    expiresInValue: unknown,
+    expiresAtValue: unknown,
+  ): number {
+    if (typeof expiresInValue === 'number' && Number.isFinite(expiresInValue)) {
+      return Math.max(60, Math.floor(expiresInValue));
+    }
+
+    if (typeof expiresAtValue === 'string') {
+      const expiresAtMs = Date.parse(expiresAtValue);
+      if (Number.isFinite(expiresAtMs)) {
+        return Math.max(60, Math.floor((expiresAtMs - Date.now()) / 1000));
+      }
+    }
+
+    return 24 * 60 * 60;
+  }
+
+  private normalizeOptionalString(value: unknown): string | null {
+    return typeof value === 'string' && value.trim().length > 0 ? value : null;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    return value !== null && typeof value === 'object'
+      ? (value as Record<string, unknown>)
+      : null;
   }
 }
