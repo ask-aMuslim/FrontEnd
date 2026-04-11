@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import type { EventDetail } from './event-detail/event-detail.component';
 import { EventsService } from '../../core/services/events.service';
@@ -20,7 +20,7 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 export class EventService {
   private selectedEvent: EventCard | null = null;
 
-  constructor(private readonly eventsService: EventsService) { }
+  private readonly eventsService = inject(EventsService);
 
   setSelectedEvent(event: EventCard): void {
     this.selectedEvent = event;
@@ -28,6 +28,10 @@ export class EventService {
 
   getSelectedEventById(id: string): EventDetail | null {
     if (!this.selectedEvent || String(this.selectedEvent.id) !== id) {
+      return null;
+    }
+
+    if (this.selectedEvent.isPublished === false) {
       return null;
     }
 
@@ -47,6 +51,7 @@ export class EventService {
       location: '',
       tags: this.selectedEvent.tags,
       isRecorded: this.selectedEvent.isRecorded === true,
+      isPublished: this.selectedEvent.isPublished,
       agenda: [],
       outcomes: [],
     };
@@ -61,6 +66,10 @@ export class EventService {
   private mapEventDetail(response: unknown): EventDetail | null {
     const record = extractRecord(response);
     if (!record) {
+      return null;
+    }
+
+    if (!toBooleanValue(getValue(record, 'isPublished', 'IsPublished'))) {
       return null;
     }
 
@@ -100,6 +109,7 @@ export class EventService {
       location: toStringValue(getValue(record, 'location', 'Location')) ?? '',
       tags,
       isRecorded: toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
+      isPublished: true,
       registrationDeadline: toStringValue(
         getValue(record, 'registrationDeadline', 'RegistrationDeadline'),
       ) ?? undefined,

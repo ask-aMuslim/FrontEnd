@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
@@ -17,6 +17,7 @@ export interface EventCard {
   timeRange?: string;
   tags: string[];
   isRecorded?: boolean;
+  isPublished?: boolean;
 }
 
 @Component({
@@ -31,10 +32,8 @@ export class EventCardComponent {
 
   @Input() event!: EventCard;
 
-  constructor(
-    private readonly router: Router,
-    private readonly eventService: EventService,
-  ) { }
+  private readonly router = inject(Router);
+  private readonly eventService = inject(EventService);
 
   onCardClick(): void {
     this.eventService.setSelectedEvent(this.event);

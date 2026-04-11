@@ -27,7 +27,7 @@ interface TagFilterOption {
 }
 
 @Component({
-  selector: 'app-ask-qa',
+  selector: 'app-question-and-answer-topics',
   standalone: true,
   imports: [
     CommonModule,
@@ -40,7 +40,7 @@ interface TagFilterOption {
   styleUrls: ['./ask-qa.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AskQaComponent implements OnInit {
+export class QuestionAndAnswerTopicsComponent implements OnInit {
   private static readonly fallbackQuestionCount = 0;
   private static readonly fallbackIdPrefix = 'Q-';
   private static readonly idOffset = 1;
@@ -63,7 +63,7 @@ export class AskQaComponent implements OnInit {
   categories: string[] = [...QA_CATEGORIES];
   selectedCategory = 0;
   currentPage: number = PAGINATION.DEFAULT_PAGE;
-  itemsPerPage = AskQaComponent.defaultPageSize;
+  itemsPerPage = QuestionAndAnswerTopicsComponent.defaultPageSize;
   totalPages = 1;
   totalCount = 0;
   searchQuery = '';
@@ -287,7 +287,7 @@ export class AskQaComponent implements OnInit {
   }
 
   private loadAllTagQuestions(tagId: string): void {
-    const pageSize = AskQaComponent.tagFetchPageSize;
+    const pageSize = QuestionAndAnswerTopicsComponent.tagFetchPageSize;
 
     this.qasService.getAll({ pageNumber: 1, pageSize, tagIds: tagId }).pipe(
       switchMap((firstResponse) => {
@@ -295,7 +295,7 @@ export class AskQaComponent implements OnInit {
         const pagination = this.extractPagination(firstResponse, firstPageQuestions.length);
         const totalPages = pagination.totalPages;
 
-        if (totalPages <= AskQaComponent.minimumTotalPages) {
+        if (totalPages <= QuestionAndAnswerTopicsComponent.minimumTotalPages) {
           return of({
             allQuestions: firstPageQuestions,
           });
@@ -326,7 +326,7 @@ export class AskQaComponent implements OnInit {
       this.allFilteredQuestions = allQuestions;
       this.totalCount = allQuestions.length;
       this.totalPages = Math.max(
-        AskQaComponent.minimumTotalPages,
+        QuestionAndAnswerTopicsComponent.minimumTotalPages,
         Math.ceil(this.totalCount / this.itemsPerPage),
       );
 
@@ -364,7 +364,7 @@ export class AskQaComponent implements OnInit {
       nested?.pageCount ??
       result?.totalPages ??
       result?.pageCount ??
-      AskQaComponent.minimumTotalPages;
+      QuestionAndAnswerTopicsComponent.minimumTotalPages;
 
     const totalCount =
       nested?.totalCount ??
@@ -374,7 +374,7 @@ export class AskQaComponent implements OnInit {
       fallbackCount;
 
     return {
-      totalPages: Math.max(AskQaComponent.minimumTotalPages, totalPages),
+      totalPages: Math.max(QuestionAndAnswerTopicsComponent.minimumTotalPages, totalPages),
       totalCount,
     };
   }
@@ -561,9 +561,9 @@ export class AskQaComponent implements OnInit {
     const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
     const id =
       toStringValue(getValue(record, 'id', 'Id')) ??
-      `${AskQaComponent.fallbackIdPrefix}${index + AskQaComponent.idOffset}`;
+      `${QuestionAndAnswerTopicsComponent.fallbackIdPrefix}${index + QuestionAndAnswerTopicsComponent.idOffset}`;
     const sameQuestions = toNumberValue(getValue(record, 'sameQuestions', 'SameQuestions')) ??
-      AskQaComponent.fallbackQuestionCount;
+      QuestionAndAnswerTopicsComponent.fallbackQuestionCount;
 
     return {
       id,

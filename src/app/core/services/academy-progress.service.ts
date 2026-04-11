@@ -502,27 +502,29 @@ export class AcademyProgressService {
                         || this.isLegacyVideoCompletionRecorded(apiLesson.id)
                         || index < completedByApi;
                     const status: LessonStatus = isCompleted ? 'completed' : 'available';
+                    const progress: LessonProgress = {
+                        lessonId: apiLesson.id,
+                        courseId,
+                        status,
+                        isCompleted,
+                    };
 
                     return {
                         ...apiLesson,
-                        progress: {
-                            lessonId: apiLesson.id,
-                            courseId,
-                            status,
-                            isCompleted,
-                        },
-                    } as AcademyLesson & { progress: LessonProgress };
+                        progress,
+                    };
                 });
 
                 const firstPendingIndex = mappedLessons.findIndex((lesson) => !lesson.progress.isCompleted);
                 if (firstPendingIndex >= 0) {
                     const currentLesson = mappedLessons[firstPendingIndex];
+                    const currentProgress: LessonProgress = {
+                        ...currentLesson.progress,
+                        status: 'current',
+                    };
                     mappedLessons[firstPendingIndex] = {
                         ...currentLesson,
-                        progress: {
-                            ...currentLesson.progress,
-                            status: 'current',
-                        },
+                        progress: currentProgress,
                     };
                 }
 

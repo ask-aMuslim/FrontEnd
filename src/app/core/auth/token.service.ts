@@ -163,14 +163,11 @@ export class TokenService {
    * Refresh the access token using refresh cookie
    */
   refreshAccessToken(): Observable<string> {
-    const currentRefreshToken = this._refreshToken();
-
     // Call refresh endpoint
     return this.callRefreshEndpoint().pipe(
       tap(response => {
         this.setTokens({
           accessToken: response.accessToken,
-          refreshToken: response.refreshToken ?? currentRefreshToken,
           expiresIn: response.expiresIn
         });
       }),
@@ -278,23 +275,19 @@ export class TokenService {
    */
   private callRefreshEndpoint(): Observable<{
     accessToken: string;
-    refreshToken: string | null;
     expiresIn: number;
   }> {
-    const refreshToken = this._refreshToken();
     const normalizedBaseUrl = environment.apiBaseUrl.replaceAll(/\/+$/g, '');
     const refreshUrls = [AUTH_REFRESH_PATH, ...LEGACY_REFRESH_PATHS]
       .map((path) => `${normalizedBaseUrl}${path}`);
 
-    return this.tryRefreshUrls(refreshUrls, refreshToken);
+    return this.tryRefreshUrls(refreshUrls);
   }
 
   private tryRefreshUrls(
     refreshUrls: readonly string[],
-    refreshToken: string | null,
   ): Observable<{
     accessToken: string;
-    refreshToken: string | null;
     expiresIn: number;
   }> {
     if (refreshUrls.length === 0) {
@@ -303,11 +296,9 @@ export class TokenService {
 
     const [currentUrl, ...remainingUrls] = refreshUrls;
 
-    const refreshBody = refreshToken ? { refreshToken } : {};
-
     return this.http.post<unknown>(
       currentUrl,
-      refreshBody,
+      {},
       {
         withCredentials: true,
         context: new HttpContext()
@@ -316,23 +307,21 @@ export class TokenService {
           .set(SKIP_AUTH, true)
       }
     ).pipe(
-      map((response) => this.normalizeRefreshResponse(response, refreshToken)),
+      map((response) => this.normalizeRefreshResponse(response)),
       catchError((error: unknown) => {
         if (remainingUrls.length === 0) {
           return throwError(() => error);
         }
 
-        return this.tryRefreshUrls(remainingUrls, refreshToken);
+        return this.tryRefreshUrls(remainingUrls);
       })
     );
   }
 
   private normalizeRefreshResponse(
     response: unknown,
-    fallbackRefreshToken: string | null,
   ): {
     accessToken: string;
-    refreshToken: string | null;
     expiresIn: number;
   } {
     const topLevel = this.asRecord(response);
@@ -341,8 +330,6 @@ export class TokenService {
 
     const accessToken = this.normalizeOptionalString(payload?.['accessToken'])
       ?? this.normalizeOptionalString(payload?.['token']);
-    const refreshToken = this.normalizeOptionalString(payload?.['refreshToken'])
-      ?? fallbackRefreshToken;
     const expiresIn = this.resolveExpiresInSeconds(payload?.['expiresIn'], payload?.['expiresAt']);
 
     if (!accessToken) {
@@ -351,7 +338,6 @@ export class TokenService {
 
     return {
       accessToken,
-      refreshToken,
       expiresIn,
     };
   }

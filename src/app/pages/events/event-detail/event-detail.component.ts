@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,6 +23,7 @@ export interface EventDetail {
   location: string;
   tags: string[];
   isRecorded: boolean;
+  isPublished?: boolean;
   registrationDeadline?: string;
   maxAttendees?: number;
   currentAttendees?: number;
@@ -44,12 +45,10 @@ export class EventDetailComponent implements OnInit {
   showSharePopup = false;
   questionText = '';
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private readonly cdr: ChangeDetectorRef,
-  ) { }
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly eventService = inject(EventService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.eventId = this.route.snapshot.paramMap.get('id');
