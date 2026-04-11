@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 
@@ -6,10 +6,10 @@ import { ApiService } from './api.service';
 export class EventsService {
   private static readonly EVENTS_PATH = '/api/Events';
 
-  constructor(private api: ApiService) { }
+  private readonly api = inject(ApiService);
 
-  getAll(params?: { pageNumber?: number; pageSize?: number }): Observable<unknown> {
-    const query = this.buildQueryString(params);
+  getAll(params?: { pageNumber?: number; pageSize?: number; isPublished?: boolean }): Observable<unknown> {
+    const query = this.buildQueryString({ isPublished: true, ...params });
     const url = query ? `${EventsService.EVENTS_PATH}?${query}` : EventsService.EVENTS_PATH;
     return this.api.get<unknown>(url);
   }
@@ -30,9 +30,10 @@ export class EventsService {
     return this.api.delete<unknown>(`${EventsService.EVENTS_PATH}/${encodeURIComponent(id)}`);
   }
 
-  private buildQueryString(params?: { pageNumber?: number; pageSize?: number }): string {
+  private buildQueryString(params?: { pageNumber?: number; pageSize?: number; isPublished?: boolean }): string {
     if (!params) return '';
     const parts: string[] = [];
+    if (params.isPublished !== undefined) parts.push(`IsPublished=${params.isPublished}`);
     if (params.pageNumber !== undefined) parts.push(`pageNumber=${params.pageNumber}`);
     if (params.pageSize !== undefined) parts.push(`pageSize=${params.pageSize}`);
     return parts.join('&');

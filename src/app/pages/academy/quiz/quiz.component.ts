@@ -665,6 +665,19 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     completeQuiz(): void {
         if (this.hasPassed()) {
+            this.academyProgressService.markCourseQuizPassed(this.courseId);
+
+            const resolvedQuizLessonId = this.courseQuizLessonId || this.lessonId;
+            if (resolvedQuizLessonId) {
+                this.academyProgressService
+                    .markLessonCompleted(resolvedQuizLessonId, this.courseId)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: () => void 0,
+                        error: () => void 0,
+                    });
+            }
+
             this.quizState.set('completed');
         } else {
             this.retakeQuiz();

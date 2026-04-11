@@ -17,7 +17,12 @@ import {
     CourseStatus,
     LessonStatus,
 } from '../models/interfaces/academy-progress.model';
-import { ProgressFacade } from '../../api/facades/progress.facade';
+import {
+    CourseProgressSummaryDto,
+    ProgressFacade,
+    ProgressReadDto,
+} from '../../api/facades/progress.facade';
+import { LessonProgressFacade } from '../../api/facades/lesson-progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
 import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
 import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
@@ -54,7 +59,12 @@ import {
     providedIn: 'root',
 })
 export class AcademyProgressService {
+    private static readonly localCompletedLessonsPrefix = 'aam_course_completed_lessons_';
+    private static readonly localQuizPassedPrefix = 'aam_course_quiz_passed_';
+    private static readonly localVideoCompletedPrefix = 'video-completed-';
+
     private readonly progressFacade = inject(ProgressFacade);
+    private readonly lessonProgressFacade = inject(LessonProgressFacade);
     private readonly lessonFacade = inject(LessonFacade);
     private readonly courseFacade = inject(CourseFacade);
     private readonly levelFacade = inject(LevelFacade);
@@ -134,7 +144,7 @@ export class AcademyProgressService {
             switchMap(courses =>
                 this.studentFacade.me().pipe(
                     switchMap(student => this.buildProgressForStudent(courses, student?.id)),
-                    catchError(() => of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null)))
+                    catchError(() => of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null, [])))
                 )
             ),
             tap(progress => this.progressSubject.next(progress)),
@@ -146,17 +156,86 @@ export class AcademyProgressService {
 
     private buildProgressForStudent(courses: AcademyCourse[], studentId?: string): Observable<StudentProgress> {
         if (!studentId) {
-            return of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null));
+            return of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null, []));
         }
 
-        return this.getEnrolledCourseIds(studentId).pipe(
-            switchMap(enrolledCourseIds =>
-                this.resolveRecentLesson(courses, enrolledCourseIds).pipe(
-                    map(recentLesson => this.buildStudentProgress(studentId, courses, enrolledCourseIds, recentLesson))
-                )
+        return forkJoin({
+            enrolledCourseIds: this.getEnrolledCourseIds(studentId),
+            progressRecords: this.getCourseProgressRecords(courses),
+        }).pipe(
+            switchMap(({ enrolledCourseIds, progressRecords }) =>
+                this.resolveRecentLesson(courses, enrolledCourseIds, progressRecords).pipe(
+                    map((recentLesson) => this.buildStudentProgress(
+                        studentId,
+                        courses,
+                        enrolledCourseIds,
+                        recentLesson,
+                        progressRecords,
+                    )),
+                ),
             ),
-            catchError(() => of(this.buildStudentProgress(studentId, courses, new Set<string>(), null)))
+            catchError(() => of(this.buildStudentProgress(studentId, courses, new Set<string>(), null, []))),
         );
+    }
+
+    private getCourseProgressRecords(courses: AcademyCourse[]): Observable<ProgressReadDto[]> {
+        if (courses.length === 0) {
+            return of([]);
+        }
+
+        return forkJoin(
+            courses.map((course) =>
+                this.progressFacade.getCourseProgress(course.id).pipe(
+                    map((summary) => this.mapCourseSummaryToProgressRecord(course.id, summary)),
+                    catchError(() => of(null)),
+                ),
+            ),
+        ).pipe(
+            map((records) => records.filter((record): record is ProgressReadDto => record !== null)),
+        );
+    }
+
+    private mapCourseSummaryToProgressRecord(
+        courseId: string,
+        summary: CourseProgressSummaryDto | null,
+    ): ProgressReadDto | null {
+        if (!summary) {
+            return null;
+        }
+
+        const completedLessonsCount =
+            typeof summary.completedLessonsCount === 'number'
+                ? Math.max(0, summary.completedLessonsCount)
+                : undefined;
+        const progressPercentage =
+            typeof summary.progressPercentage === 'number'
+                ? this.normalizeProgressPercentage(summary.progressPercentage)
+                : undefined;
+        const isCompleted =
+            summary.isCompleted === true
+            || (
+                typeof summary.totalLessonsCount === 'number'
+                && summary.totalLessonsCount > 0
+                && typeof completedLessonsCount === 'number'
+                && completedLessonsCount >= summary.totalLessonsCount
+            );
+
+        if (
+            completedLessonsCount === undefined
+            && progressPercentage === undefined
+            && !isCompleted
+        ) {
+            return null;
+        }
+
+        return {
+            courseId,
+            totalLessonsCompleted: completedLessonsCount,
+            lessonCompletionRate: progressPercentage,
+            progress: progressPercentage,
+            isCompleted,
+            completedProgress: isCompleted,
+        };
     }
 
     private getEnrolledCourseIds(studentId: string): Observable<Set<string>> {
@@ -405,18 +484,52 @@ export class AcademyProgressService {
      * Uses API lessons and derives an initial progress projection.
      */
     getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
-        return this.getAcademyLessons(courseId).pipe(
-            map(apiLessons =>
-                apiLessons.map((apiLesson, index) => ({
-                    ...apiLesson,
-                    progress: {
+        return forkJoin({
+            apiLessons: this.getAcademyLessons(courseId),
+            courseProgress: this.progressFacade.getCourseProgress(courseId).pipe(catchError(() => of(null))),
+        }).pipe(
+            map(({ apiLessons, courseProgress }) => {
+                const sortedLessons = [...apiLessons].sort((a, b) => a.order - b.order);
+                const completedByApi = Math.max(
+                    0,
+                    Math.min(sortedLessons.length, Number(courseProgress?.completedLessonsCount ?? 0)),
+                );
+
+                const locallyCompletedIds = this.getLocallyCompletedLessonIds(courseId);
+
+                const mappedLessons: Array<AcademyLesson & { progress: LessonProgress }> = sortedLessons.map((apiLesson, index) => {
+                    const isCompleted = locallyCompletedIds.has(apiLesson.id)
+                        || this.isLegacyVideoCompletionRecorded(apiLesson.id)
+                        || index < completedByApi;
+                    const status: LessonStatus = isCompleted ? 'completed' : 'available';
+                    const progress: LessonProgress = {
                         lessonId: apiLesson.id,
                         courseId,
-                        status: index === 0 ? 'current' : 'available',
-                        isCompleted: false,
-                    },
-                }))
-            )
+                        status,
+                        isCompleted,
+                    };
+
+                    return {
+                        ...apiLesson,
+                        progress,
+                    };
+                });
+
+                const firstPendingIndex = mappedLessons.findIndex((lesson) => !lesson.progress.isCompleted);
+                if (firstPendingIndex >= 0) {
+                    const currentLesson = mappedLessons[firstPendingIndex];
+                    const currentProgress: LessonProgress = {
+                        ...currentLesson.progress,
+                        status: 'current',
+                    };
+                    mappedLessons[firstPendingIndex] = {
+                        ...currentLesson,
+                        progress: currentProgress,
+                    };
+                }
+
+                return mappedLessons;
+            }),
         );
     }
 
@@ -425,31 +538,34 @@ export class AcademyProgressService {
      * Persists completion and watch position through lesson progress APIs.
      */
     updateLessonProgress(request: UpdateLessonProgressRequest): Observable<LessonProgress> {
-        if (request.isCompleted) {
-            return this.lessonFacade.saveProgress(request.lessonId, {
-                completed: true,
-                currentTime: request.lastPosition,
-            }).pipe(
-                map(() => {
-                    this.invalidateProgressCache();
-                    return this.buildLessonProgress(request.lessonId, request.courseId, true);
-                })
-            );
-        }
+        const requestedProgress = request.isCompleted
+            ? 100
+            : Math.max(0, Math.min(100, Number(request.watchTime ?? 0)));
 
-        if (request.watchTime !== undefined || request.lastPosition !== undefined) {
-            return this.lessonFacade.saveProgress(request.lessonId, {
-                completed: false,
-                currentTime: request.lastPosition,
-            }).pipe(
+        return this.lessonProgressFacade
+            .saveLessonVideoProgress({
+                courseId: request.courseId,
+                lessonId: request.lessonId,
+                videoProgressPercentage: requestedProgress,
+            })
+            .pipe(
                 map(() => {
-                    this.invalidateProgressCache();
-                    return this.buildLessonProgress(request.lessonId, request.courseId, false);
-                })
-            );
-        }
+                    if (request.isCompleted) {
+                        this.markLocalLessonCompleted(request.courseId, request.lessonId);
+                    }
 
-        return of(this.buildLessonProgress(request.lessonId, request.courseId, false));
+                    this.invalidateProgressCache();
+                    return this.buildLessonProgress(request.lessonId, request.courseId, !!request.isCompleted);
+                }),
+                catchError(() => {
+                    if (request.isCompleted) {
+                        this.markLocalLessonCompleted(request.courseId, request.lessonId);
+                    }
+
+                    this.invalidateProgressCache();
+                    return of(this.buildLessonProgress(request.lessonId, request.courseId, !!request.isCompleted));
+                }),
+            );
     }
 
     /**
@@ -461,6 +577,18 @@ export class AcademyProgressService {
             courseId,
             isCompleted: true,
         });
+    }
+
+    markCourseQuizPassed(courseId: string): void {
+        if (!this.isBrowser || !courseId) {
+            return;
+        }
+
+        globalThis.localStorage.setItem(
+            `${AcademyProgressService.localQuizPassedPrefix}${courseId}`,
+            'true',
+        );
+        this.invalidateProgressCache();
     }
 
     /**
@@ -557,9 +685,11 @@ export class AcademyProgressService {
         courses: AcademyCourse[],
         enrolledCourseIds: Set<string>,
         recentLesson: RecentLessonInfo | null,
+        progressRecords: ProgressReadDto[],
     ): StudentProgress {
         const sortedStageIds = Array.from(new Set(courses.map(course => course.stageId))).sort((a, b) => a - b);
         const unlockedStageIds = new Set<number>(sortedStageIds);
+        const progressRecordByCourseId = this.normalizeProgressRecords(progressRecords);
 
         const courseProgressById = new Map<string, CourseProgress>();
         const sortedCourses = [...courses].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -582,13 +712,41 @@ export class AcademyProgressService {
                 status = 'in-progress';
             }
 
+            const apiProgress = progressRecordByCourseId.get(course.id);
+            const normalizedProgress = apiProgress
+                ? this.normalizeProgressPercentage(apiProgress.lessonCompletionRate ?? apiProgress.progress ?? 0)
+                : 0;
+            const apiCompletedLessons = apiProgress && typeof apiProgress.totalLessonsCompleted === 'number'
+                ? Math.max(0, apiProgress.totalLessonsCompleted)
+                : 0;
+            const isApiCompleted = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
+            const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
+            const completedLessonsCount = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            const completionRateFromLessons = course.lessons > 0
+                ? this.normalizeProgressPercentage((completedLessonsCount / course.lessons) * 100)
+                : 0;
+            const effectiveProgress = isApiCompleted
+                ? 100
+                : Math.max(normalizedProgress, completionRateFromLessons);
+            const quizPassed = isApiCompleted || this.isCourseQuizPassedLocally(course.id);
+            const completedByRule = completedLessonsCount >= course.lessons && quizPassed;
+            const isCourseCompleted = isApiCompleted || completedByRule;
+
+            if (isCourseCompleted) {
+                status = 'completed';
+            } else if (effectiveProgress > 0) {
+                status = 'in-progress';
+            }
+
             const progressEntry: CourseProgress = {
                 courseId: course.id,
                 status,
-                progress: 0,
-                completedLessons: 0,
+                progress: isCourseCompleted ? 100 : effectiveProgress,
+                completedLessons: isCourseCompleted
+                    ? Math.max(course.lessons, completedLessonsCount)
+                    : Math.min(course.lessons, completedLessonsCount),
                 totalLessons: course.lessons,
-                quizPassed: false,
+                quizPassed,
             };
 
             courseProgressById.set(course.id, progressEntry);
@@ -621,10 +779,28 @@ export class AcademyProgressService {
         };
     }
 
-    private resolveRecentLesson(courses: AcademyCourse[], enrolledCourseIds: Set<string>): Observable<RecentLessonInfo | null> {
+    private resolveRecentLesson(
+        courses: AcademyCourse[],
+        enrolledCourseIds: Set<string>,
+        progressRecords: ProgressReadDto[],
+    ): Observable<RecentLessonInfo | null> {
+        const progressRecordByCourseId = this.normalizeProgressRecords(progressRecords);
+        const inProgressFromApi = courses
+            .map((course) => ({
+                course,
+                progress: this.normalizeProgressPercentage(
+                    progressRecordByCourseId.get(course.id)?.lessonCompletionRate
+                    ?? progressRecordByCourseId.get(course.id)?.progress
+                    ?? 0,
+                ),
+            }))
+            .filter((entry) => entry.progress > 0 && entry.progress < 100)
+            .sort((a, b) => b.progress - a.progress)
+            .at(0)?.course;
+
         const fallbackCourse = courses[0];
         const enrolledCourse = courses.find(course => enrolledCourseIds.has(String(course.id)));
-        const targetCourse = enrolledCourse ?? fallbackCourse;
+        const targetCourse = inProgressFromApi ?? enrolledCourse ?? fallbackCourse;
 
         if (!targetCourse) {
             return of(null);
@@ -654,6 +830,41 @@ export class AcademyProgressService {
             }),
             catchError(() => of(null))
         );
+    }
+
+    private normalizeProgressRecords(progressRecords: ProgressReadDto[]): Map<string, ProgressReadDto> {
+        const recordMap = new Map<string, ProgressReadDto>();
+
+        for (const record of progressRecords) {
+            const courseId = typeof record.courseId === 'string' ? record.courseId : '';
+            if (!courseId) {
+                continue;
+            }
+
+            const existing = recordMap.get(courseId);
+            if (!existing) {
+                recordMap.set(courseId, record);
+                continue;
+            }
+
+            const existingProgress = this.normalizeProgressPercentage(existing.lessonCompletionRate ?? existing.progress ?? 0);
+            const currentProgress = this.normalizeProgressPercentage(record.lessonCompletionRate ?? record.progress ?? 0);
+
+            if (currentProgress >= existingProgress) {
+                recordMap.set(courseId, record);
+            }
+        }
+
+        return recordMap;
+    }
+
+    private normalizeProgressPercentage(rawValue: unknown): number {
+        if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
+            return 0;
+        }
+
+        const normalized = rawValue <= 1 ? rawValue * 100 : rawValue;
+        return Math.max(0, Math.min(100, Math.round(normalized)));
     }
 
     /**
@@ -1176,6 +1387,61 @@ export class AcademyProgressService {
         }
 
         return parsed;
+    }
+
+    private getLocallyCompletedLessonIds(courseId: string): Set<string> {
+        if (!this.isBrowser || !courseId) {
+            return new Set<string>();
+        }
+
+        const storageKey = `${AcademyProgressService.localCompletedLessonsPrefix}${courseId}`;
+        const storedValue = globalThis.localStorage.getItem(storageKey);
+        if (!storedValue) {
+            return new Set<string>();
+        }
+
+        try {
+            const parsed = JSON.parse(storedValue) as unknown;
+            if (!Array.isArray(parsed)) {
+                return new Set<string>();
+            }
+
+            const lessonIds = parsed.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+            return new Set<string>(lessonIds);
+        } catch {
+            return new Set<string>();
+        }
+    }
+
+    private markLocalLessonCompleted(courseId: string, lessonId: string): void {
+        if (!this.isBrowser || !courseId || !lessonId) {
+            return;
+        }
+
+        const completedLessonIds = this.getLocallyCompletedLessonIds(courseId);
+        completedLessonIds.add(lessonId);
+
+        const storageKey = `${AcademyProgressService.localCompletedLessonsPrefix}${courseId}`;
+        globalThis.localStorage.setItem(storageKey, JSON.stringify(Array.from(completedLessonIds)));
+        globalThis.localStorage.setItem(`${AcademyProgressService.localVideoCompletedPrefix}${lessonId}`, 'true');
+    }
+
+    private isLegacyVideoCompletionRecorded(lessonId: string): boolean {
+        if (!this.isBrowser || !lessonId) {
+            return false;
+        }
+
+        const storageKey = `${AcademyProgressService.localVideoCompletedPrefix}${lessonId}`;
+        return globalThis.localStorage.getItem(storageKey) === 'true';
+    }
+
+    private isCourseQuizPassedLocally(courseId: string): boolean {
+        if (!this.isBrowser || !courseId) {
+            return false;
+        }
+
+        const storageKey = `${AcademyProgressService.localQuizPassedPrefix}${courseId}`;
+        return globalThis.localStorage.getItem(storageKey) === 'true';
     }
 
     private invalidateProgressCache(): void {

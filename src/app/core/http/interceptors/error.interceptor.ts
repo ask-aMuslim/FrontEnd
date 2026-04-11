@@ -52,8 +52,12 @@ export const errorInterceptor: HttpInterceptorFn = (
             if ((apiError.statusCode === 401 || apiError.statusCode === 403) && isBrowser) {
                 const currentUrl = router.url;
                 const isAuthPage = currentUrl.startsWith('/login') || currentUrl.startsWith('/register');
+                const hasSession = tokenService.hasValidSession() || tokenService.canUseCookieRefresh();
+                const shouldRedirectToLogin =
+                    apiError.statusCode === 401
+                    || (apiError.statusCode === 403 && !hasSession);
 
-                if (!isAuthPage) {
+                if (!isAuthPage && shouldRedirectToLogin) {
                     tokenService.clearTokens();
                     void router.navigate(['/login'], {
                         queryParams: {

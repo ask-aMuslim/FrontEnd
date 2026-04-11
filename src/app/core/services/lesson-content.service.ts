@@ -126,11 +126,15 @@ export class LessonContentService {
   /**
    * Get user notes for a lesson
    */
-  getLessonNotes(lessonId: Id): Observable<Array<{ timestamp: string; text: string }>> {
+  getLessonNotes(
+    lessonId: Id,
+  ): Observable<Array<{ id: string; timestamp: string; text: string; createdAt: string }>> {
     return this.lessonsService.getNotes(lessonId).pipe(
       map(notes => notes.map(note => ({
+        id: String(note.id),
         timestamp: note.timestamp,
-        text: note.text
+        text: note.text,
+        createdAt: note.createdAt,
       }))),
       catchError(() => of([]))
     );
@@ -139,18 +143,43 @@ export class LessonContentService {
   /**
    * Add a note to a lesson
    */
-  addLessonNote(lessonId: Id, note: string, timestamp: string): Observable<{ timestamp: string; text: string }> {
+  addLessonNote(
+    lessonId: Id,
+    note: string,
+    timestamp: string,
+  ): Observable<{ id: string; timestamp: string; text: string; createdAt: string }> {
     return this.lessonsService.addNote(lessonId, { timestamp, text: note }).pipe(
       map(createdNote => {
         if (!createdNote) {
-          return { timestamp, text: note };
+          return {
+            id: `${String(lessonId)}-${Date.now()}`,
+            timestamp,
+            text: note,
+            createdAt: new Date().toISOString(),
+          };
         }
         return {
+          id: String(createdNote.id),
           timestamp: createdNote.timestamp,
-          text: createdNote.text
+          text: createdNote.text,
+          createdAt: createdNote.createdAt,
         };
       }),
-      catchError(() => of({ timestamp, text: note }))
+      catchError(() =>
+        of({
+          id: `${String(lessonId)}-${Date.now()}`,
+          timestamp,
+          text: note,
+          createdAt: new Date().toISOString(),
+        }),
+      )
+    );
+  }
+
+  deleteLessonNote(noteId: Id): Observable<boolean> {
+    return this.lessonsService.deleteNote(noteId).pipe(
+      map(() => true),
+      catchError(() => of(false)),
     );
   }
 

@@ -8,6 +8,13 @@ import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LessonContentService } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import { VideoProgressService } from '../../../core/services/video-progress.service';
+import {
+    YOUTUBE_PLAYER_STATE,
+    YouTubePlayer,
+    YouTubePlayerService,
+    YouTubePlayerState,
+} from '../../../core/services/youtube-player.service';
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { TokenService } from '../../../core/auth/token.service';
 import { QuizReadDto } from '../../../api/facades/quiz.facade';
@@ -65,6 +72,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private static readonly defaultBannerUrl = '/backgrounds/course-background.png';
     private static readonly syntheticQuizSidebarIdPrefix = 'synthetic-quiz-';
     private static readonly youtubeEmbedOrigin = 'https://www.youtube-nocookie.com';
+    private static readonly youtubePlayerHostElementId = 'lesson-youtube-player-host';
+    private static readonly completionThresholdPercentage = 90;
 
     courseId: string = '';
     lessonId: string = '';
@@ -77,6 +86,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     lessonData: LessonData | null = null;
     lessonContent: LessonContent | null = null;
+    lessonProgressLabel = '0:00 / 0:00';
 
     isIntroLesson = false;
     activeTab: LessonPlayerTab = 'overview';
@@ -91,7 +101,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     courseQuizTitle = 'Quiz';
 
     noteText: string = '';
-    previousNotes: Array<{ timestamp: string; text: string }> = [];
+    previousNotes: Array<{ id: string; timestamp: string; text: string; createdAt: string }> = [];
     notesFilter: 'latest' | 'current-lesson' = 'latest';
     notesSearchQuery: string = '';
 
@@ -102,11 +112,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
     ];
+    readonly youtubePlayerHostElementId = LessonPlayerComponent.youtubePlayerHostElementId;
 
     private readonly destroy$ = new Subject<void>();
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
     private readonly tokenService = inject(TokenService);
+    private readonly flushProgressOnUnload = () => this.flushVideoProgress();
+    private youtubePlayer: YouTubePlayer | null = null;
+    private youtubeProgressIntervalId: ReturnType<typeof globalThis.setInterval> | null = null;
+    private hasSyncedCompletion = false;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -114,6 +129,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         private readonly sanitizer: DomSanitizer,
         private readonly lessonContentService: LessonContentService,
         private readonly academyProgressService: AcademyProgressService,
+        private readonly youtubePlayerService: YouTubePlayerService,
+        private readonly videoProgressService: VideoProgressService,
         private readonly quizzesService: QuizzesService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
@@ -170,6 +187,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        this.teardownYouTubeIntegration();
         this.destroy$.next();
         this.destroy$.complete();
     }
@@ -202,7 +220,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                         return;
                     }
 
-                    const fallbackDuration = course.duration;
                     const aggregatedVideoDuration = this.academyProgressService.calculateCourseVideoDuration(
                         lessonsWithProgress,
                         '0m',
@@ -262,6 +279,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.isLoading = false;
                     this.isContentLoading = false;
                     this.cdr.detectChanges();
+                    this.initializeYouTubeIntegration();
                 },
                 error: () => {
                     this.error = 'Unable to load lesson content right now. Please try again.';
@@ -289,6 +307,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     private resetViewStateForRouteChange(): void {
+        this.teardownYouTubeIntegration();
         this.error = null;
         this.lessonData = null;
         this.lessonContent = null;
@@ -303,6 +322,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.courseQuizLessonId = null;
         this.courseQuizTitle = 'Quiz';
         this.activeTab = 'overview';
+        this.lessonProgressLabel = '0:00 / 0:00';
+        this.hasSyncedCompletion = false;
     }
 
     get isIntroContent(): boolean { return this.lessonContent ? isIntroContent(this.lessonContent) : false; }
@@ -352,7 +373,17 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     goToNextLesson(): void {
         const nextId = this.nextAcademyLesson?.id || this.nextLesson?.id;
         if (nextId) {
-            this.router.navigate(['/academy/course', this.courseId, 'lesson', nextId]);
+            this.academyProgressService
+                .markLessonCompleted(this.lessonId, this.courseId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => {
+                        void this.router.navigate(['/academy/course', this.courseId, 'lesson', nextId]);
+                    },
+                    error: () => {
+                        void this.router.navigate(['/academy/course', this.courseId, 'lesson', nextId]);
+                    },
+                });
         }
     }
 
@@ -533,7 +564,19 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             });
     }
 
-    deleteNote(index: number): void { this.previousNotes.splice(index, 1); }
+    deleteNote(noteId: string, index: number): void {
+        this.lessonContentService
+            .deleteLessonNote(noteId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (deleted) => {
+                    if (deleted) {
+                        this.previousNotes.splice(index, 1);
+                        this.cdr.detectChanges();
+                    }
+                },
+            });
+    }
 
     setRating(stars: number): void { this.lessonRating = stars; }
 
@@ -562,8 +605,15 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         };
     }
 
-    get filteredNotes(): Array<{ timestamp: string; text: string }> {
-        return this.previousNotes.filter(note => note.text.toLowerCase().includes(this.notesSearchQuery.toLowerCase()));
+    get filteredNotes(): Array<{ id: string; timestamp: string; text: string; createdAt: string }> {
+        const query = this.notesSearchQuery.trim().toLowerCase();
+        const notesForLesson = this.previousNotes;
+
+        if (!query) {
+            return notesForLesson;
+        }
+
+        return notesForLesson.filter(note => note.text.toLowerCase().includes(query));
     }
 
     get sidebarLessons(): AcademySidebarLessonItem[] {
@@ -628,6 +678,232 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         this.goToLesson(lesson.id);
+    }
+
+    private initializeYouTubeIntegration(): void {
+        if (!this.isBrowser || !this.isVideoContent || !this.isYouTubeVideo) {
+            this.teardownYouTubeIntegration(false);
+            return;
+        }
+
+        this.hasSyncedCompletion = this.videoProgressService.isLessonCompleted(this.lessonId);
+
+        const videoId = this.getYouTubeVideoId(this.videoContent?.videoUrl ?? '');
+        if (!videoId) {
+            this.teardownYouTubeIntegration(false);
+            return;
+        }
+
+        globalThis.setTimeout(() => {
+            const hostElement = globalThis.document.getElementById(this.youtubePlayerHostElementId);
+            if (!(hostElement instanceof HTMLElement)) {
+                return;
+            }
+
+            this.teardownYouTubeIntegration(false);
+
+            void this.youtubePlayerService
+                .createPlayer(hostElement, videoId, {
+                    onStateChange: (event) => this.onYouTubePlayerStateChange(event.data as YouTubePlayerState),
+                })
+                .then((player) => {
+                    this.youtubePlayer = player;
+                    this.restorePlaybackProgress();
+                    this.startYouTubeProgressTracking();
+
+                    globalThis.addEventListener('beforeunload', this.flushProgressOnUnload);
+                    this.cdr.detectChanges();
+                })
+                .catch(() => {
+                    this.teardownYouTubeIntegration(false);
+                });
+        }, 0);
+    }
+
+    private onYouTubePlayerStateChange(state: YouTubePlayerState): void {
+        if (state === YOUTUBE_PLAYER_STATE.PAUSED) {
+            this.flushVideoProgress();
+            return;
+        }
+
+        if (state === YOUTUBE_PLAYER_STATE.ENDED) {
+            const payload = this.buildVideoProgressPayload();
+            if (payload) {
+                this.videoProgressService.syncCompletion({
+                    ...payload,
+                    videoProgressPercentage: 100,
+                });
+            }
+            this.syncLessonCompletionState();
+            this.flushVideoProgress();
+        }
+    }
+
+    private startYouTubeProgressTracking(): void {
+        this.stopYouTubeProgressTracking();
+        this.updateVideoProgressLabel();
+
+        this.youtubeProgressIntervalId = globalThis.setInterval(() => {
+            this.updateVideoProgressLabel();
+            this.trackVideoProgress();
+        }, 1000);
+    }
+
+    private stopYouTubeProgressTracking(): void {
+        if (this.youtubeProgressIntervalId) {
+            globalThis.clearInterval(this.youtubeProgressIntervalId);
+            this.youtubeProgressIntervalId = null;
+        }
+    }
+
+    private updateVideoProgressLabel(): void {
+        const duration = this.safelyGetYouTubeDuration();
+        const currentTime = this.safelyGetYouTubeCurrentTime();
+
+        this.lessonProgressLabel = `${this.formatPlaybackClock(currentTime)} / ${this.formatPlaybackClock(duration)}`;
+    }
+
+    private trackVideoProgress(): void {
+        const payload = this.buildVideoProgressPayload();
+        if (!payload) {
+            return;
+        }
+
+        this.videoProgressService.recordProgress(payload);
+
+        if (
+            payload.videoProgressPercentage >= LessonPlayerComponent.completionThresholdPercentage
+            && !this.hasSyncedCompletion
+        ) {
+            this.videoProgressService.syncCompletion(payload);
+            this.syncLessonCompletionState();
+        }
+    }
+
+    private restorePlaybackProgress(): void {
+        if (!this.youtubePlayer || !this.lessonId) {
+            return;
+        }
+
+        const savedProgressPercentage = this.videoProgressService.getSavedProgressPercentage(this.lessonId);
+        if (savedProgressPercentage <= 0) {
+            return;
+        }
+
+        const duration = this.safelyGetYouTubeDuration();
+        if (duration <= 0) {
+            return;
+        }
+
+        const savedPositionSeconds = (savedProgressPercentage / 100) * duration;
+        const seekPosition = Math.max(0, Math.min(duration, savedPositionSeconds));
+
+        if (seekPosition > 0) {
+            this.youtubePlayer.seekTo(seekPosition, true);
+        }
+    }
+
+    private flushVideoProgress(): void {
+        const payload = this.buildVideoProgressPayload();
+        if (!payload) {
+            return;
+        }
+
+        this.videoProgressService.flushProgress(payload);
+    }
+
+    private syncLessonCompletionState(): void {
+        if (this.hasSyncedCompletion) {
+            return;
+        }
+
+        this.hasSyncedCompletion = true;
+        this.videoProgressService.markLessonCompleted(this.lessonId);
+
+        this.academyProgressService
+            .markLessonCompleted(this.lessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe();
+    }
+
+    private buildVideoProgressPayload(): {
+        courseId: string;
+        lessonId: string;
+        videoProgressPercentage: number;
+    } | null {
+        if (!this.courseId || !this.lessonId) {
+            return null;
+        }
+
+        const duration = this.safelyGetYouTubeDuration();
+        if (duration <= 0) {
+            return null;
+        }
+
+        const currentTime = this.safelyGetYouTubeCurrentTime();
+        const rawProgress = (currentTime / duration) * 100;
+        const videoProgressPercentage = Number.isFinite(rawProgress)
+            ? Math.max(0, Math.min(100, rawProgress))
+            : 0;
+
+        return {
+            courseId: this.courseId,
+            lessonId: this.lessonId,
+            videoProgressPercentage,
+        };
+    }
+
+    private safelyGetYouTubeCurrentTime(): number {
+        if (!this.youtubePlayer) {
+            return 0;
+        }
+
+        try {
+            const value = this.youtubePlayer.getCurrentTime();
+            return Number.isFinite(value) ? Math.max(0, value) : 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    private safelyGetYouTubeDuration(): number {
+        if (!this.youtubePlayer) {
+            return 0;
+        }
+
+        try {
+            const value = this.youtubePlayer.getDuration();
+            return Number.isFinite(value) ? Math.max(0, value) : 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    private formatPlaybackClock(totalSeconds: number): string {
+        const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const seconds = safeSeconds % 60;
+
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    private teardownYouTubeIntegration(emitFinalProgress = true): void {
+        if (emitFinalProgress) {
+            this.flushVideoProgress();
+        }
+
+        this.stopYouTubeProgressTracking();
+        if (this.isBrowser) {
+            globalThis.removeEventListener('beforeunload', this.flushProgressOnUnload);
+        }
+
+        this.youtubePlayerService.destroyPlayer(this.youtubePlayer);
+        this.youtubePlayer = null;
     }
 
     private buildLessonHtmlForPdf(): string {

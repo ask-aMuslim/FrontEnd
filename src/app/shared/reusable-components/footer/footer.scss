@@ -157,6 +157,25 @@
   &:hover {
     color: var(--colors-green-200);
   }
+
+  &:disabled {
+    color: var(--colors-rare-grays-50);
+    cursor: not-allowed;
+  }
+}
+
+.newsletter-message {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  &.newsletter-message--success {
+    color: var(--colors-green-200);
+  }
+
+  &.newsletter-message--error {
+    color: var(--color-critical, #f44336);
+  }
 }
 
 .donate-btn {

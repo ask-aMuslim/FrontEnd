@@ -92,3 +92,50 @@ Keep it `false` for bearer-token-only mode.
 - Interceptor attaches bearer token on first request after refresh
 - Auth guard redirects unauthenticated users before protected API calls
 - 401/403 handled globally with meaningful logs and safe redirect
+
+## 5) Verified root causes of server-only 403s
+
+The most common reason localhost works while server fails is **auth transport mismatch**:
+
+- Refresh endpoint path differences (`/refresh-token` vs legacy aliases)
+- Refresh response shape differences (envelope `data.token` vs flat `accessToken`)
+- Credentials mode mismatch (cookie refresh requires `withCredentials` + backend CORS credentials)
+- Over-aggressive 403 handling that logs users out even for authorization-only forbidden responses
+
+## 6) Durable frontend safeguards implemented
+
+- Refresh tries canonical and legacy endpoints
+- Refresh response normalization supports both envelope and flat contracts
+- Hybrid refresh support:
+  - token-body refresh when refresh token exists
+  - cookie refresh fallback (`withCredentials`) when token-body is unavailable
+- Request compatibility honors `REQUIRE_CREDENTIALS` context, not only global env toggle
+- 403 handling avoids forced logout for permission-based forbidden responses
+
+## 7) Backend/infrastructure hardening for "fixed forever"
+
+For production parity across all environments, backend and infra must also satisfy:
+
+1. **CORS parity** between localhost/staging/prod
+   - Explicit origins only
+   - `AllowCredentials()` when cookie refresh is used
+   - `Authorization` + `Content-Type` headers allowed
+2. **Cookie policy parity** (if refresh cookie is used)
+   - `Secure`, `HttpOnly`, `SameSite=None` for cross-site scenarios
+   - Domain/path correctly scoped for SPA + API hosts
+3. **JWT/refresh lifecycle parity**
+   - Same signing keys and token validation settings across nodes
+   - NTP clock sync (clock skew causes intermittent 401/403)
+4. **Reverse proxy correctness**
+   - Forwarded headers preserved (proto/host)
+   - No auth header stripping
+5. **Session consistency** (if stateful refresh token store)
+   - shared distributed store or sticky sessions
+
+## 8) Production verification checklist
+
+- Login success on server environment
+- Protected API call succeeds with bearer token
+- Forced token expiry triggers refresh and retries original request
+- Permission-based 403 stays on page (no global logout)
+- Hard refresh on protected route preserves authenticated state

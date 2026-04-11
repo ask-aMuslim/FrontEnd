@@ -63,7 +63,6 @@ export class LessonsService {
 
   /**
    * Save lesson progress for current student
-   * Note: Backend endpoint not verified - placeholder implementation
    */
   saveProgress(lessonId: Id, progress: { completed: boolean; currentTime?: number }): Observable<void> {
     return this.facade.saveProgress(String(lessonId), {
@@ -77,13 +76,12 @@ export class LessonsService {
 
   /**
    * Get student notes for a lesson
-   * Note: Backend endpoint not verified - placeholder implementation
    */
   getNotes(lessonId: Id): Observable<Array<{ id: Id; timestamp: string; text: string; createdAt: string }>> {
     return this.facade.getNotes(String(lessonId)).pipe(
       map(notes => notes.map(note => ({
         id: note.id,
-        timestamp: '', // Note: LessonNote doesn't have timestamp
+        timestamp: this.formatNoteTimestamp(note.createdAt),
         text: note.text ?? note.content ?? '',
         createdAt: note.createdAt
       })))
@@ -92,7 +90,6 @@ export class LessonsService {
 
   /**
    * Add a note to a lesson
-   * Note: Backend endpoint not verified - placeholder implementation
    */
   addNote(lessonId: Id, note: { timestamp: string; text: string }): Observable<{ id: Id; timestamp: string; text: string; createdAt: string } | null> {
     return this.studentFacade.me().pipe(
@@ -111,11 +108,21 @@ export class LessonsService {
 
   /**
    * Delete a note
-   * Note: Backend endpoint not verified - placeholder implementation
    */
   deleteNote(noteId: Id): Observable<void> {
     return this.facade.deleteNote(String(noteId)).pipe(
       map(() => void 0)
     );
+  }
+
+  private formatNoteTimestamp(createdAt: string): string {
+    const parsedDate = new Date(createdAt);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '[Lesson] --:--';
+    }
+
+    const hours = String(parsedDate.getHours()).padStart(2, '0');
+    const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+    return `[Lesson] ${hours}:${minutes}`;
   }
 }
