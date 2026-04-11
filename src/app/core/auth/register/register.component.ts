@@ -1,8 +1,10 @@
 import {
   Component,
+  computed,
   OnDestroy,
   OnInit,
   PLATFORM_ID,
+  signal,
   inject,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -58,16 +60,30 @@ export class RegisterComponent implements OnInit, OnDestroy {
     value: ReligionSelection;
     label: string;
   }> = [
-    { value: 'non-muslim', label: 'Non-Muslim' },
-    { value: 'born-muslim', label: 'Born Muslim' },
-    { value: 'new-muslim', label: 'New Muslim' },
-  ];
+      { value: 'non-muslim', label: 'Non-Muslim' },
+      { value: 'born-muslim', label: 'Born Muslim' },
+      { value: 'new-muslim', label: 'New Muslim' },
+    ];
 
   registerForm!: FormGroup;
+  otpForm!: FormGroup;
+  currentStep: 1 | 2 = 1;
   showPassword = false;
   hasMinLength = false;
   hasNumber = false;
   religionType: ReligionSelection | null = null;
+  otpDigits: string[] = ['', '', '', '', '', ''];
+  protected readonly otpTimer = signal(60);
+  protected readonly canResendOtp = signal(false);
+  protected readonly formattedTimer = computed(() => {
+    const minutes = Math.floor(this.otpTimer() / 60);
+    const seconds = this.otpTimer() % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  });
+  private registeredEmail = '';
+  private registrationPayload: RegistrationData | null = null;
+  private otpTimerInterval?: ReturnType<typeof globalThis.setInterval>;
+  otpTouched = false;
 
   // Field interaction states
   fieldTouched = {
@@ -89,6 +105,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.submitSuccess = false;
+    this.currentStep = 1;
     this.facade.clearError();
 
     // Listen for Google Sign-In Success
@@ -121,6 +138,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
       ],
     });
 
+    this.otpForm = this.fb.group({
+      otp: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+    });
+
     // Subscribe to password changes to update validation indicators
     this.registerForm.get('password')?.valueChanges.subscribe((value) => {
       this.hasMinLength = value?.length >= 8;
@@ -129,6 +150,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.otpTimerInterval) {
+      globalThis.clearInterval(this.otpTimerInterval);
+      this.otpTimerInterval = undefined;
+    }
     this.facade.clearError();
   }
 
@@ -221,6 +246,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
     }
   }
 
+  get isOtpInvalid(): boolean {
+    const otpControl = this.otpForm.get('otp');
+    return !!(
+      otpControl &&
+      otpControl.invalid &&
+      (otpControl.dirty || otpControl.touched || this.otpTouched)
+    );
+  }
+
   protected onSocialSignIn(provider: 'google' | 'facebook'): void {
     if (!this.isBrowser) return;
 
@@ -246,6 +280,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
+    if (this.currentStep !== 1) {
+      return;
+    }
+
     this.registerForm.markAllAsTouched();
 
     // Mark all fields as touched for validation display
@@ -256,17 +294,167 @@ export class RegisterComponent implements OnInit, OnDestroy {
     if (this.registerForm.valid && !this.loading()) {
       this.facade.clearError();
       const payload = this.buildRegisterPayload();
+      this.registrationPayload = payload;
+      const email = String(this.registerForm.value.email).trim();
 
       this.facade.register(payload).subscribe({
         next: () => {
-          this.submitSuccess = true;
-          void this.router.navigate(['/login']);
+          this.submitSuccess = false;
+          this.registeredEmail = email;
+          this.currentStep = 2;
+          this.otpDigits = ['', '', '', '', '', ''];
+          this.otpTouched = false;
+          this.otpForm.reset({ otp: '' });
+          this.startOtpTimer();
         },
         error: () => {
           this.submitSuccess = false;
         },
       });
     }
+  }
+
+  onOtpInput(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+
+    if (!/^\d*$/.test(value)) {
+      input.value = this.otpDigits[index];
+      return;
+    }
+
+    this.otpDigits[index] = value.slice(-1);
+    input.value = this.otpDigits[index];
+
+    if (this.otpDigits[index] && index < 5) {
+      const nextInput =
+        input.parentElement?.nextElementSibling?.querySelector('input');
+      nextInput?.focus();
+    }
+
+    this.otpForm.patchValue({ otp: this.otpDigits.join('') });
+    this.otpForm.get('otp')?.markAsDirty();
+  }
+
+  onOtpKeydown(index: number, event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+
+    if (event.key === 'Backspace' && !this.otpDigits[index] && index > 0) {
+      const prevInput =
+        input.parentElement?.previousElementSibling?.querySelector('input');
+      prevInput?.focus();
+    }
+  }
+
+  onOtpPaste(event: ClipboardEvent): void {
+    event.preventDefault();
+    const pastedData = event.clipboardData?.getData('text').trim() || '';
+    const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
+
+    digits.forEach((digit, index) => {
+      if (index < 6) {
+        this.otpDigits[index] = digit;
+      }
+    });
+
+    this.otpForm.patchValue({ otp: this.otpDigits.join('') });
+    this.otpForm.get('otp')?.markAsDirty();
+  }
+
+  onOtpSubmit(): void {
+    if (this.loading()) {
+      return;
+    }
+
+    const otp = this.otpDigits.join('');
+    this.otpForm.patchValue({ otp });
+
+    if (this.otpForm.invalid || !this.registeredEmail) {
+      this.otpTouched = true;
+      this.otpForm.get('otp')?.markAsTouched();
+      return;
+    }
+
+    this.facade.clearError();
+
+    this.facade.verifyRegistrationOtp(this.registeredEmail, otp).subscribe({
+      next: () => {
+        this.submitSuccess = true;
+        if (this.otpTimerInterval) {
+          globalThis.clearInterval(this.otpTimerInterval);
+          this.otpTimerInterval = undefined;
+        }
+        void this.router.navigate(['/login'], {
+          queryParams: { registered: 'success' },
+        });
+      },
+      error: () => {
+        this.submitSuccess = false;
+        this.otpTouched = true;
+      },
+    });
+  }
+
+  goToRegisterStep(): void {
+    if (this.otpTimerInterval) {
+      globalThis.clearInterval(this.otpTimerInterval);
+      this.otpTimerInterval = undefined;
+    }
+
+    this.currentStep = 1;
+    this.otpTouched = false;
+    this.otpDigits = ['', '', '', '', '', ''];
+    this.otpTimer.set(60);
+    this.canResendOtp.set(false);
+    this.otpForm.reset({ otp: '' });
+    this.facade.clearError();
+  }
+
+  protected startOtpTimer(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.otpTimer.set(60);
+    this.canResendOtp.set(false);
+
+    if (this.otpTimerInterval) {
+      globalThis.clearInterval(this.otpTimerInterval);
+      this.otpTimerInterval = undefined;
+    }
+
+    this.otpTimerInterval = globalThis.setInterval(() => {
+      const nextTimer = this.otpTimer() - 1;
+      this.otpTimer.set(Math.max(0, nextTimer));
+
+      if (nextTimer <= 0) {
+        this.canResendOtp.set(true);
+        if (this.otpTimerInterval) {
+          globalThis.clearInterval(this.otpTimerInterval);
+          this.otpTimerInterval = undefined;
+        }
+      }
+    }, 1000);
+  }
+
+  protected resendOtp(): void {
+    if (!this.canResendOtp() || !this.registrationPayload || this.loading()) {
+      return;
+    }
+
+    this.facade.clearError();
+    this.otpDigits = ['', '', '', '', '', ''];
+    this.otpTouched = false;
+    this.otpForm.reset({ otp: '' });
+
+    this.facade.register(this.registrationPayload).subscribe({
+      next: () => {
+        this.startOtpTimer();
+      },
+      error: () => {
+        this.canResendOtp.set(true);
+      },
+    });
   }
 
   private buildRegisterPayload(): RegistrationData {

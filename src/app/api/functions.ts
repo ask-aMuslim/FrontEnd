@@ -27,6 +27,8 @@ export type { ForgotPassword$Params as ForgotPassword$Params } from './fn/authen
 export { forgotPassword as forgotPassword } from './fn/authentication/forgot-password';
 export type { VerifyOtp$Params as VerifyOtp$Params } from './fn/authentication/verify-otp';
 export { verifyOtp as verifyOtp } from './fn/authentication/verify-otp';
+export type { VerifyRegistrationOtp$Params as VerifyRegistrationOtp$Params } from './fn/authentication/verify-registration-otp';
+export { verifyRegistrationOtp as verifyRegistrationOtp } from './fn/authentication/verify-registration-otp';
 export type { ResetPassword$Params as ResetPassword$Params } from './fn/authentication/reset-password';
 export { resetPassword as resetPassword } from './fn/authentication/reset-password';
 export type { LogoutParams as LogoutParams } from './fn/authentication/logout';

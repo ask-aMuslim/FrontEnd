@@ -10,6 +10,7 @@ import {
   logout as authLogout,
   register,
   resetPassword,
+  verifyRegistrationOtp,
   verifyOtp,
 } from '../functions';
 import {
@@ -83,6 +84,14 @@ export class IdentityFacade {
       register(this.http, this.config.rootUrl, { body }).pipe(
         map(() => void 0),
       ),
+    );
+  }
+
+  verifyRegistrationOtp(email: string, otp: string): Observable<void> {
+    return this.withRequestState(
+      verifyRegistrationOtp(this.http, this.config.rootUrl, {
+        body: { email, otp },
+      }).pipe(map(() => void 0)),
     );
   }
 
