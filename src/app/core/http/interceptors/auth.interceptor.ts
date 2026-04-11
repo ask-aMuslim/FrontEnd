@@ -1,6 +1,6 @@
 /**
  * Auth Interceptor
- *
+ * 
  * Functional HTTP interceptor for Angular 20.
  * Handles JWT injection and token refresh on 401 responses.
  */
@@ -32,14 +32,13 @@ import { RefreshQueueService } from '../../auth/refresh-queue.service';
 import {
     SKIP_AUTH,
     SKIP_TOKEN_REFRESH,
-    IS_REFRESH_REQUEST,
-    REQUIRE_CREDENTIALS,
+    IS_REFRESH_REQUEST
 } from '../context-tokens';
 import { environment } from '../../../../environments/environment';
 
 /**
  * Auth Interceptor
- *
+ * 
  * Features:
  * - Attaches JWT Authorization header to requests
  * - Handles 401 responses with token refresh
@@ -82,9 +81,8 @@ export const authInterceptor: HttpInterceptorFn = (
                     return throwError(() => error);
                 }
 
-                // If there is no access token in memory, fail fast.
-                // Cookie-based refresh is attempted when token exists but is invalid/expired.
-                if (!tokenService.accessToken()) {
+                // If user has no session at all, fail gracefully without refresh loop
+                if (!tokenService.hasValidSession() && !tokenService.refreshToken()) {
                     return throwError(() => error);
                 }
 
@@ -138,7 +136,8 @@ function handle401WithRefresh(
     router: Router,
     isBrowser: boolean
 ): Observable<HttpEvent<unknown>> {
-    if (!tokenService.accessToken()) {
+    // Check if we have a refresh token
+    if (!tokenService.refreshToken()) {
         // No refresh token - redirect to login
         tokenService.clearTokens();
         if (isBrowser) {
@@ -224,7 +223,7 @@ function applyRequestCompatibility(req: HttpRequest<unknown>): HttpRequest<unkno
     }
 
     return req.clone({
-        withCredentials: req.withCredentials || req.context.get(REQUIRE_CREDENTIALS) || environment.authWithCredentials,
+        withCredentials: environment.authWithCredentials,
         setHeaders,
     });
 }
