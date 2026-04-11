@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
@@ -32,15 +32,10 @@ export class EventsComponent implements OnInit {
 
   eventCards: EventCard[] = [];
 
-  private readonly isBrowser: boolean;
-
-  constructor(
-    private readonly eventsService: EventsService,
-    private readonly cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) platformId: object,
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-  }
+  private readonly eventsService = inject(EventsService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   ngOnInit(): void {
     this.loadEvents();
@@ -134,8 +129,12 @@ export class EventsComponent implements OnInit {
   }
 
   private mapEvents(response: unknown): EventCard[] {
-    const records = extractArray(response);
+    const records = this.getPublishedEventRecords(response);
     return records.map((item, index) => this.mapEvent(item, index));
+  }
+
+  private getPublishedEventRecords(response: unknown): readonly unknown[] {
+    return extractArray(response).filter((item) => this.isPublishedEvent(item));
   }
 
   private mapEvent(item: unknown, index: number): EventCard {
@@ -163,6 +162,7 @@ export class EventsComponent implements OnInit {
     const timeRange = formatEventTimeRangeDisplay(startDateValue, endDateValue);
     const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
     const isRecorded = toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded'));
+    const isPublished = toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
 
     return {
       id,
@@ -177,7 +177,13 @@ export class EventsComponent implements OnInit {
       timeRange,
       tags,
       isRecorded,
+      isPublished,
     };
+  }
+
+  private isPublishedEvent(item: unknown): boolean {
+    const record = asRecord(item);
+    return toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
   }
 
   private scrollToTopOfSection(): void {

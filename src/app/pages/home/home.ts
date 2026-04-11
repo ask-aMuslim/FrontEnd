@@ -23,6 +23,7 @@ import {
   asRecord,
   extractArray,
   getValue,
+  toBooleanValue,
   toStringValue,
   toStringArray,
 } from '../../core/helpers/api-response.helper';
@@ -205,18 +206,15 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private cleanupFns: (() => void)[] = [];
+  private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly eventsService = inject(EventsService);
+  protected readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly qasService = inject(QasService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private bubblesAutoscrollEnabled = false;
-
-  constructor(
-    private readonly router: Router,
-    private readonly sanitizer: DomSanitizer,
-    private readonly eventsService: EventsService,
-    protected readonly authService: AuthService,
-    private readonly cdr: ChangeDetectorRef,
-    private readonly qasService: QasService,
-  ) { }
 
   protected get eventsCtaLabel(): string {
     return this.authService.isAuthenticated() ? 'See All Events' : 'Join for Free';
@@ -339,7 +337,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private calculateTotalEventPages(response: unknown): void {
-    const records = extractArray(response);
+    const records = this.getPublishedEventRecords(response);
     this.totalEventPages = Math.max(1, Math.ceil(records.length / this.eventsPerPage));
   }
 
@@ -365,8 +363,12 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private mapEventCards(response: unknown): SharedEventCard[] {
-    const records = extractArray(response);
+    const records = this.getPublishedEventRecords(response);
     return records.map((item, index) => this.mapEventCard(item, index));
+  }
+
+  private getPublishedEventRecords(response: unknown): readonly unknown[] {
+    return extractArray(response).filter((item) => this.isPublishedEvent(item));
   }
 
   private mapEventCard(item: unknown, index: number): SharedEventCard {
@@ -389,6 +391,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     );
     const date = formatEventDateDisplay(startDateValue);
     const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
+    const isPublished = toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
 
     return {
       id,
@@ -401,8 +404,14 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       speakerRole,
       date,
       tags,
+      isPublished,
       isRecorded: false,
     };
+  }
+
+  private isPublishedEvent(item: unknown): boolean {
+    const record = asRecord(item);
+    return toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
   }
 
   ngAfterViewInit(): void {

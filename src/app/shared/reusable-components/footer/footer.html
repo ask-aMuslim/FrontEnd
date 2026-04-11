@@ -34,12 +34,25 @@ Based on Figma Node 2284:21719
                 id="footer-email"
                 class="newsletter-input"
                 type="email"
+                name="footerEmail"
+                [(ngModel)]="newsletterEmail"
                 placeholder="email@example.com"
                 required
                 aria-required="true"
               />
-              <button type="submit" class="subscribe-btn">Subscribe</button>
+              <button type="submit" class="subscribe-btn" [disabled]="isSubscribing">
+                {{ isSubscribing ? 'Subscribing...' : 'Subscribe' }}
+              </button>
             </div>
+            @if (subscriptionMessage) {
+              <p
+                class="newsletter-message"
+                [class.newsletter-message--success]="subscriptionMessageType === 'success'"
+                [class.newsletter-message--error]="subscriptionMessageType === 'error'"
+              >
+                {{ subscriptionMessage }}
+              </p>
+            }
           </form>
         </div>
 

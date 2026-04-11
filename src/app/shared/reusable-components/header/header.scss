@@ -72,7 +72,8 @@
   color: var(--color-button-primary-hovering);
 }
 
-.active {
+.active,
+.qna-active {
   &:hover {
     a {
       color: var(--color-button-primary-hovering);
@@ -223,7 +224,7 @@
     }
   }
 
-  &--register {
+  &--login {
     color: white;
     background: var(--color-button-primary-normal);
     border: 1.5px solid var(--color-button-primary-normal);

@@ -54,25 +54,13 @@
       <!-- Video Content -->
       @if (isVideoContent && lessonContent) {
         <div class="media-container video-container">
-          @if (isYouTubeVideo && youtubeEmbedUrl) {
+          @if (isYouTubeVideo) {
             <div class="video-embed-wrapper">
-              <iframe
+              <div
                 class="video-player video-player--embed"
-                [src]="youtubeEmbedUrl"
+                [id]="youtubePlayerHostElementId"
                 title="Lesson video"
-                loading="lazy"
-                allow="
-                  accelerometer;
-                  autoplay;
-                  clipboard-write;
-                  encrypted-media;
-                  gyroscope;
-                  picture-in-picture;
-                  web-share;
-                "
-                referrerpolicy="strict-origin-when-cross-origin"
-                allowfullscreen
-              ></iframe>
+              ></div>
             </div>
           } @else if (useExternalEmbed && externalEmbedUrl) {
             <div class="video-embed-wrapper">
@@ -106,10 +94,7 @@
             </video>
           }
           <div class="video-controls-info">
-            <div class="playback-speed">
-              <span>Speed: 1x</span>
-            </div>
-            <div class="duration">{{ videoContent?.duration }}</div>
+            <span class="lesson-progress">{{ lessonProgressLabel }}</span>
           </div>
         </div>
       }
@@ -301,7 +286,7 @@
             Notes
           </button>
           <button
-            class="tab"
+            class="tab tab-feedback"
             [class.active]="activeTab === 'feedback'"
             (click)="setActiveTab('feedback')"
           >
@@ -471,11 +456,14 @@
                   </select>
                 </div>
                 <div class="notes-list">
-                  @for (note of filteredNotes; track note; let i = $index) {
+                  @for (note of filteredNotes; track note.id; let i = $index) {
                     <div class="note-item">
                       <div class="note-header">
                         <span class="note-timestamp">{{ note.timestamp }}</span>
-                        <button class="btn-more" (click)="deleteNote(i)">
+                        <button
+                          class="btn-more"
+                          (click)="deleteNote(note.id, i)"
+                        >
                           Delete
                         </button>
                       </div>

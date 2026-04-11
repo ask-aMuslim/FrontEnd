@@ -19,6 +19,67 @@ import { LessonOverviewComponent } from './pages/academy/lesson-overview/lesson-
 import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
 import { QuizComponent } from './pages/academy/quiz/quiz.component';
 
+const createQuestionAndAnswerRoutes = (): Routes => [
+  { path: '', pathMatch: 'full', redirectTo: 'topics' },
+  { path: 'ask-qa', pathMatch: 'full', redirectTo: 'topics' },
+  {
+    path: 'topics',
+    loadComponent: () =>
+      import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
+        (m) => m.QuestionAndAnswerTopicsComponent,
+      ),
+    title: 'Ask Questions',
+  },
+  {
+    path: 'topics/question',
+    loadComponent: () =>
+      import('./pages/ask-and-contact/ask-Q&A/question/question.component').then(
+        (m) => m.QuestionComponent,
+      ),
+    title: 'Question',
+  },
+  {
+    path: 'ask-assistant',
+    loadComponent: () =>
+      import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
+        (m) => m.AskAssistantComponent,
+      ),
+    title: 'Ask Assistant',
+  },
+  {
+    path: 'meet-scholar',
+    loadComponent: () =>
+      import('./pages/ask-and-contact/meet-scholar/meet-scholar.component').then(
+        (m) => m.MeetScholarComponent,
+      ),
+    title: 'Meet Scholar',
+  },
+  {
+    path: 'meet-scholar/success',
+    loadComponent: () =>
+      import(
+        './pages/ask-and-contact/meet-scholar/success/meet-scholar-success.component'
+      ).then((m) => m.MeetScholarSuccessComponent),
+    title: 'Meeting Request Submitted',
+  },
+  {
+    path: 'send-inquiry/success',
+    loadComponent: () =>
+      import(
+        './pages/ask-and-contact/send-inquiry/success/send-inquiry-success.component'
+      ).then((m) => m.SendInquirySuccessComponent),
+    title: 'Inquiry Sent',
+  },
+  {
+    path: 'send-inquiry',
+    loadComponent: () =>
+      import('./pages/ask-and-contact/send-inquiry/send-inquiry.component').then(
+        (m) => m.SendInquiryComponent,
+      ),
+    title: 'Send Inquiry',
+  },
+];
+
 export const routes: Routes = [
   // default route
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -55,68 +116,16 @@ export const routes: Routes = [
         title: 'Resources',
       },
       {
+        path: 'question-and-answer',
+        component: AskAndContactComponent,
+        title: 'Question & Answer',
+        children: createQuestionAndAnswerRoutes(),
+      },
+      {
         path: 'ask-and-contact',
         component: AskAndContactComponent,
         title: 'Ask & Contact',
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'ask-qa' },
-          {
-            path: 'ask-qa',
-            loadComponent: () =>
-              import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
-                (m) => m.AskQaComponent,
-              ),
-            title: 'Ask Questions',
-          },
-          {
-            path: 'ask-qa/question',
-            loadComponent: () =>
-              import('./pages/ask-and-contact/ask-Q&A/question/question.component').then(
-                (m) => m.QuestionComponent,
-              ),
-            title: 'Question',
-          },
-          {
-            path: 'ask-assistant',
-            loadComponent: () =>
-              import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
-                (m) => m.AskAssistantComponent,
-              ),
-            title: 'Ask Assistant',
-          },
-          {
-            path: 'meet-scholar',
-            loadComponent: () =>
-              import('./pages/ask-and-contact/meet-scholar/meet-scholar.component').then(
-                (m) => m.MeetScholarComponent,
-              ),
-            title: 'Meet Scholar',
-          },
-          {
-            path: 'meet-scholar/success',
-            loadComponent: () =>
-              import(
-                './pages/ask-and-contact/meet-scholar/success/meet-scholar-success.component'
-              ).then((m) => m.MeetScholarSuccessComponent),
-            title: 'Meeting Request Submitted',
-          },
-          {
-            path: 'send-inquiry/success',
-            loadComponent: () =>
-              import(
-                './pages/ask-and-contact/send-inquiry/success/send-inquiry-success.component'
-              ).then((m) => m.SendInquirySuccessComponent),
-            title: 'Inquiry Sent',
-          },
-          {
-            path: 'send-inquiry',
-            loadComponent: () =>
-              import('./pages/ask-and-contact/send-inquiry/send-inquiry.component').then(
-                (m) => m.SendInquiryComponent,
-              ),
-            title: 'Send Inquiry',
-          },
-        ],
+        children: createQuestionAndAnswerRoutes(),
       },
       {
         path: 'muslim-tube',

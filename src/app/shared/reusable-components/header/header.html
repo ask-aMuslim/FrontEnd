@@ -48,11 +48,11 @@
   <ng-template #authButtonsTemplate>
     <div class="auth-buttons">
       <a
-        [routerLink]="'/register'"
-        class="auth-btn auth-btn--register"
+        [routerLink]="'/login'"
+        class="auth-btn auth-btn--login"
         (click)="closeNav()"
       >
-        Explore Islam
+        Log In
       </a>
     </div>
   </ng-template>
@@ -96,7 +96,8 @@
           routerLinkActive="active"
           #rla="routerLinkActive"
           (click)="closeNav()"
-          [attr.aria-current]="rla.isActive ? 'page' : null"
+          [class.qna-active]="link.section === 'qna' && isQnaSectionActive()"
+          [attr.aria-current]="rla.isActive || (link.section === 'qna' && isQnaSectionActive()) ? 'page' : null"
           class="nav-item"
         >
           <a class="nav-link"> {{ link.label }} </a>

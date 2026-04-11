@@ -50,7 +50,7 @@ export class AuthService {
   }
 
   private initializeAuthState(): void {
-    // TokenService handles its own initialization from localStorage
+    // TokenService handles its own initialization from sessionStorage
     // We just need to set up the user info if authenticated
     if (this.tokenService.isAuthenticated()) {
       this.hydrateCurrentUserFromProfile();
