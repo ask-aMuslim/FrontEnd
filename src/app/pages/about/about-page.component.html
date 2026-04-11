@@ -251,8 +251,8 @@
             ) {
               <a
                 class="about-audience-card"
-                [class.about-audience-card--light]="card.variant === 'light'"
-                [class.about-audience-card--white]="card.variant !== 'light'"
+                [class.about-audience-card--light]="isOddAudienceCard($index)"
+                [class.about-audience-card--white]="!isOddAudienceCard($index)"
                 [href]="getAudienceCardHref(card)"
                 [attr.aria-label]="'Explore questions for ' + card.title"
               >

@@ -169,6 +169,10 @@ export class AboutPageComponent {
         return item.title;
     }
 
+    protected isOddAudienceCard(index: number): boolean {
+        return (index + 1) % 2 === 1;
+    }
+
     protected getAudienceCardHref(item: AudienceCard): string {
         return `/question-and-answer/topics?category=${encodeURIComponent(item.topicTag)}`;
     }

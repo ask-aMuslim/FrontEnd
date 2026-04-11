@@ -9,17 +9,17 @@ If you deploy as a SPA behind a web server, ensure all non-file/non-API routes r
 ### Node (Express) example
 
 ```ts
-import express from "express";
-import path from "path";
+import express from 'express';
+import path from 'path';
 
 const app = express();
-const distPath = path.join(process.cwd(), "dist/browser");
+const distPath = path.join(process.cwd(), 'dist/browser');
 
-app.use("/api", apiRouter);
+app.use('/api', apiRouter);
 app.use(express.static(distPath));
 
 app.get(/^(?!\/api\/).*/, (_req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 ```
 
