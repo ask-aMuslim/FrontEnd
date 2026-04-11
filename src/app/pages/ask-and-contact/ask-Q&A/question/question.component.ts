@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import DOMPurify from 'dompurify';
 import { QasService } from '../../../../core/services/qas.service';
+import { TokenService } from '../../../../core/auth/token.service';
 import { asRecord, extractArray, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../../../core/helpers/media-url.helper';
 import { TiptapViewerComponent } from '../../../../shared/components/tiptap-viewer/tiptap-viewer.component';
@@ -29,6 +30,7 @@ interface ImageInliningReport {
 export class QuestionComponent implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly isBrowser: boolean;
+  private readonly tokenService: TokenService;
 
   id = '';
   title = '';
@@ -51,11 +53,13 @@ export class QuestionComponent implements OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly qasService: QasService,
+    tokenService: TokenService,
     private readonly sanitizer: DomSanitizer,
     private readonly changeDetectorRef: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object,
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
+    this.tokenService = tokenService;
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.id = params.get('id') ?? '';
@@ -744,7 +748,7 @@ export class QuestionComponent implements OnDestroy {
   }
 
   private async resolveImageDataUrl(source: string): Promise<string | null> {
-    const authToken = this.readAccessTokenFromStorage();
+    const authToken = this.readAccessTokenFromMemory();
     const requestOptions: RequestInit[] = authToken
       ? [
         {
@@ -797,24 +801,9 @@ export class QuestionComponent implements OnDestroy {
     return null;
   }
 
-  private readAccessTokenFromStorage(): string | null {
-    if (!this.isBrowser) {
-      return null;
-    }
-
-    try {
-      const raw = globalThis.localStorage.getItem('aam_auth');
-      if (!raw) {
-        return null;
-      }
-
-      const parsed = JSON.parse(raw) as { accessToken?: unknown };
-      return typeof parsed.accessToken === 'string' && parsed.accessToken.trim().length > 0
-        ? parsed.accessToken
-        : null;
-    } catch {
-      return null;
-    }
+  private readAccessTokenFromMemory(): string | null {
+    const accessToken = this.tokenService.accessToken();
+    return accessToken && accessToken.trim().length > 0 ? accessToken : null;
   }
 
   private isCrossOriginSource(source: string): boolean {

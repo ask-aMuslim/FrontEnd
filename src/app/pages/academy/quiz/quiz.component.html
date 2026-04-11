@@ -576,8 +576,11 @@
                           <p class="message-text">
                             Great Job! You have answered
                             {{ correctAnswersCount() }} questions out of
-                            {{ quizConfig.totalQuestions }} in
-                            {{ formattedTime() }} and passed the quiz.<br />
+                            {{
+                              questions().length || quizConfig.totalQuestions
+                            }}
+                            in {{ formattedCompletionTime() }} and passed the
+                            quiz.<br />
                             Review you answers and get ready for the next
                             course.
                           </p>
@@ -585,8 +588,11 @@
                           <p class="message-text">
                             You have answered
                             {{ correctAnswersCount() }} questions out of
-                            {{ quizConfig.totalQuestions }} in
-                            {{ formattedTime() }}, and that's a big step.<br />
+                            {{
+                              questions().length || quizConfig.totalQuestions
+                            }}
+                            in {{ formattedCompletionTime() }}, and that's a big
+                            step.<br />
                             Review you answers and you can restart your quiz
                             again at anytime.
                           </p>

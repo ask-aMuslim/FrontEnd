@@ -12,7 +12,9 @@ import {
   UserRole,
 } from '../models/interfaces/enums.model';
 
-export const enrollmentStatusLabels: Readonly<Record<EnrollmentStatus, string>> = {
+export const enrollmentStatusLabels: Readonly<
+  Record<EnrollmentStatus, string>
+> = {
   [EnrollmentStatus.Active]: 'Active',
   [EnrollmentStatus.Completed]: 'Completed',
   [EnrollmentStatus.Cancelled]: 'Cancelled',
@@ -41,12 +43,13 @@ export const lessonTypeLabels: Readonly<Record<LessonType, string>> = {
   [LessonType.Audio]: 'Audio',
 };
 
-export const levelDifficultyLabels: Readonly<Record<LevelDifficulty, string>> = {
-  [LevelDifficulty.Beginner]: 'Beginner',
-  [LevelDifficulty.Intermediate]: 'Intermediate',
-  [LevelDifficulty.Advanced]: 'Advanced',
-  [LevelDifficulty.Expert]: 'Expert',
-};
+export const levelDifficultyLabels: Readonly<Record<LevelDifficulty, string>> =
+  {
+    [LevelDifficulty.Beginner]: 'Beginner',
+    [LevelDifficulty.Intermediate]: 'Intermediate',
+    [LevelDifficulty.Advanced]: 'Advanced',
+    [LevelDifficulty.Expert]: 'Expert',
+  };
 
 export const meetingInquiryRequestStatusLabels: Readonly<
   Record<MeetingInquiryRequestStatus, string>
@@ -58,7 +61,9 @@ export const meetingInquiryRequestStatusLabels: Readonly<
   [MeetingInquiryRequestStatus.Completed]: 'Completed',
 };
 
-export const meetingInquiryTopicLabels: Readonly<Record<MeetingInquiryTopic, string>> = {
+export const meetingInquiryTopicLabels: Readonly<
+  Record<MeetingInquiryTopic, string>
+> = {
   [MeetingInquiryTopic.GeneralInquiry]: 'General Inquiry',
   [MeetingInquiryTopic.Quran]: 'Quran',
   [MeetingInquiryTopic.Hadith]: 'Hadith',
@@ -90,8 +95,9 @@ export const userRoleLabels: Readonly<Record<UserRole, string>> = {
   [UserRole.NonMuslim]: 'NonMuslim',
 };
 
-export const religiousStatusLabels: Readonly<Record<ReligiousStatus, string>> = {
-  [ReligiousStatus.NonMuslim]: 'NonMuslim',
-  [ReligiousStatus.BornMuslim]: 'BornMuslim',
-  [ReligiousStatus.RevertedMuslim]: 'RevertedMuslim',
-};
+export const religiousStatusLabels: Readonly<Record<ReligiousStatus, string>> =
+  {
+    [ReligiousStatus.NonMuslim]: 'NonMuslim',
+    [ReligiousStatus.BornMuslim]: 'BornMuslim',
+    [ReligiousStatus.RevertedMuslim]: 'New Muslim',
+  };

@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { Component, computed, inject, OnDestroy, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -40,9 +40,15 @@ export class ResetPasswordComponent implements OnDestroy {
 
   // OTP related
   protected otpDigits: string[] = ['', '', '', '', '', ''];
-  protected otpTimer = 60;
-  protected canResendOtp = false;
-  private timerInterval?: ReturnType<typeof setInterval>;
+  protected readonly otpTimer = signal(60);
+  protected readonly canResendOtp = signal(false);
+  protected readonly formattedTimer = computed(() => {
+    const minutes = Math.floor(this.otpTimer() / 60);
+    const seconds = this.otpTimer() % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  });
+  private timerInterval?: ReturnType<typeof globalThis.setInterval>;
+  private resetPasswordToken = '';
   protected userEmail = '';
 
   constructor() {
@@ -68,7 +74,8 @@ export class ResetPasswordComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.timerInterval) {
-      clearInterval(this.timerInterval);
+      globalThis.clearInterval(this.timerInterval);
+      this.timerInterval = undefined;
     }
   }
 
@@ -149,6 +156,7 @@ export class ResetPasswordComponent implements OnDestroy {
     this.identityFacade.requestPasswordResetOtp(email).subscribe({
       next: () => {
         this.userEmail = email;
+        this.resetPasswordToken = '';
         this.currentStep = 2;
         this.otpDigits = ['', '', '', '', '', ''];
         this.otpForm.reset({ otp: '' });
@@ -207,33 +215,32 @@ export class ResetPasswordComponent implements OnDestroy {
   protected startOtpTimer(): void {
     if (!this.isBrowser) return;
 
-    this.otpTimer = 60;
-    this.canResendOtp = false;
+    this.otpTimer.set(60);
+    this.canResendOtp.set(false);
 
     if (this.timerInterval) {
-      clearInterval(this.timerInterval);
+      globalThis.clearInterval(this.timerInterval);
+      this.timerInterval = undefined;
     }
 
     this.timerInterval = globalThis.setInterval(() => {
-      this.otpTimer--;
-      if (this.otpTimer <= 0) {
-        this.canResendOtp = true;
+      const nextTimer = this.otpTimer() - 1;
+      this.otpTimer.set(Math.max(0, nextTimer));
+
+      if (nextTimer <= 0) {
+        this.canResendOtp.set(true);
         if (this.timerInterval) {
-          clearInterval(this.timerInterval);
+          globalThis.clearInterval(this.timerInterval);
+          this.timerInterval = undefined;
         }
       }
     }, 1000);
   }
 
-  protected get formattedTimer(): string {
-    const minutes = Math.floor(this.otpTimer / 60);
-    const seconds = this.otpTimer % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-
   protected resendOtp(): void {
-    if (this.canResendOtp) {
+    if (this.canResendOtp()) {
       this.identityFacade.clearError();
+      this.resetPasswordToken = '';
       this.otpDigits = ['', '', '', '', '', ''];
       this.otpForm.reset({ otp: '' });
 
@@ -242,7 +249,7 @@ export class ResetPasswordComponent implements OnDestroy {
           this.startOtpTimer();
         },
         error: () => {
-          this.canResendOtp = true;
+          this.canResendOtp.set(true);
         },
       });
     }
@@ -259,10 +266,12 @@ export class ResetPasswordComponent implements OnDestroy {
     this.identityFacade.clearError();
 
     this.identityFacade.verifyPasswordResetOtp(this.userEmail, otp).subscribe({
-      next: () => {
+      next: (token) => {
+        this.resetPasswordToken = token;
         this.currentStep = 3;
         if (this.timerInterval) {
-          clearInterval(this.timerInterval);
+          globalThis.clearInterval(this.timerInterval);
+          this.timerInterval = undefined;
         }
       },
       error: () => {
@@ -280,12 +289,18 @@ export class ResetPasswordComponent implements OnDestroy {
       return;
     }
 
-    const otp = this.otpDigits.join('');
     const password = String(this.passwordForm.get('password')?.value ?? '');
+
+    if (!this.resetPasswordToken) {
+      this.fieldTouched['password'] = true;
+      this.fieldTouched['confirmPassword'] = true;
+      this.identityFacade.clearError();
+      return;
+    }
 
     this.identityFacade.clearError();
     this.identityFacade
-      .resetPassword(this.userEmail, otp, password)
+      .resetPassword(this.userEmail, this.resetPasswordToken, password)
       .subscribe({
         next: () => {
           void this.router.navigate(['/login'], {
@@ -305,6 +320,9 @@ export class ResetPasswordComponent implements OnDestroy {
 
   protected goToPreviousStep(): void {
     this.identityFacade.clearError();
+    if (this.currentStep === 3) {
+      this.resetPasswordToken = '';
+    }
     if (this.currentStep > 1) {
       this.currentStep = (this.currentStep - 1) as 1 | 2 | 3;
     }

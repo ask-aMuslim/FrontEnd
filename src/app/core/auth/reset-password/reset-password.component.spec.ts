@@ -10,7 +10,7 @@ describe('ResetPasswordComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ResetPasswordComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(ResetPasswordComponent);
     component = fixture.componentInstance;
@@ -19,5 +19,28 @@ describe('ResetPasswordComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should count down the OTP resend timer and re-enable resend', () => {
+    jasmine.clock().install();
+
+    try {
+      (component as any).startOtpTimer();
+
+      expect((component as any).otpTimer()).toBe(60);
+      expect((component as any).canResendOtp()).toBeFalse();
+
+      jasmine.clock().tick(3000);
+
+      expect((component as any).otpTimer()).toBe(57);
+      expect((component as any).formattedTimer()).toBe('00:57');
+
+      jasmine.clock().tick(57000);
+
+      expect((component as any).otpTimer()).toBe(0);
+      expect((component as any).canResendOtp()).toBeTrue();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 });

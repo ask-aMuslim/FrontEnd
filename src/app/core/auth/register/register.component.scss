@@ -16,6 +16,22 @@
   overflow: visible;
 }
 
+.step-container {
+  animation: fadeIn 0.25s ease;
+}
+
+.otp-subtitle {
+  color: var(--color-text-caption);
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+
+  strong {
+    color: var(--color-text-body);
+    font-weight: 600;
+  }
+}
+
 .page-header {
   display: flex;
   align-items: center;
@@ -254,7 +270,7 @@
 
 .religion-selection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 
@@ -590,6 +606,84 @@
   display: inline-block;
   object-fit: contain;
   transition: transform 0.2s ease;
+}
+
+.otp-inputs {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.otp-input-wrapper {
+  flex: 1;
+  max-width: 3.5rem;
+}
+
+.otp-input {
+  width: 100%;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  border: 2px solid var(--color-border-default);
+  border-radius: 0.625rem;
+  background: var(--color-background-white);
+  color: var(--color-text-body);
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-button-primary-normal);
+    box-shadow: 0 0 0 3px var(--color-button-primary-soft);
+    transform: translateY(-1px);
+  }
+}
+
+.otp-resend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.otp-resend-text {
+  color: var(--color-text-caption);
+}
+
+.otp-resend-link {
+  background: transparent;
+  border: none;
+  color: var(--color-button-primary-normal);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--color-button-primary-hovering);
+    text-decoration: underline;
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .timer {
+    color: var(--color-button-secondary-normal);
+    font-weight: 700;
+  }
+}
+
+.otp-error {
+  color: var(--color-error);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
 }
 
 .submit-btn {

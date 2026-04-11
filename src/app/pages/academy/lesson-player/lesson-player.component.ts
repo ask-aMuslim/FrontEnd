@@ -9,6 +9,7 @@ import { takeUntil } from 'rxjs/operators';
 import { LessonContentService } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { QuizzesService } from '../../../core/services/quizzes.service';
+import { TokenService } from '../../../core/auth/token.service';
 import { QuizReadDto } from '../../../api/facades/quiz.facade';
 import { toApiMediaUrl } from '../../../core/helpers/media-url.helper';
 import {
@@ -105,6 +106,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
+    private readonly tokenService = inject(TokenService);
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -855,7 +857,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     private async resolveImageDataUrl(source: string): Promise<string | null> {
-        const authToken = this.readAccessTokenFromStorage();
+        const authToken = this.readAccessTokenFromMemory();
         const requestOptions: RequestInit[] = authToken
             ? [
                 {
@@ -908,24 +910,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return null;
     }
 
-    private readAccessTokenFromStorage(): string | null {
-        if (!this.isBrowser) {
-            return null;
-        }
-
-        try {
-            const raw = globalThis.localStorage.getItem('aam_auth');
-            if (!raw) {
-                return null;
-            }
-
-            const parsed = JSON.parse(raw) as { accessToken?: unknown };
-            return typeof parsed.accessToken === 'string' && parsed.accessToken.trim().length > 0
-                ? parsed.accessToken
-                : null;
-        } catch {
-            return null;
-        }
+    private readAccessTokenFromMemory(): string | null {
+        const accessToken = this.tokenService.accessToken();
+        return accessToken && accessToken.trim().length > 0 ? accessToken : null;
     }
 
     private isCrossOriginSource(source: string): boolean {
