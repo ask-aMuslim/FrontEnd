@@ -149,6 +149,10 @@
             </p>
           </div>
           <div class="about-section__field">
+            <span class="about-section__label">Country Code</span>
+            <p class="about-section__value">{{ about.countryCode }}</p>
+          </div>
+          <div class="about-section__field">
             <span class="about-section__label">Phone Number</span>
             <p class="about-section__value">{{ about.phoneNumber }}</p>
           </div>
@@ -165,6 +169,7 @@
         class="animate-fade-in"
         [city]="about.city"
         [country]="about.country"
+        [countryCode]="about.countryCode"
         [phoneNumber]="about.phoneNumber"
         [email]="about.email"
         (save)="saveContactInfo($event)"

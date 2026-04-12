@@ -7,7 +7,7 @@
  *         reasonForConversion, reasonOfReligion
  */
 
-import { Language } from './enums.model';
+import { Language, ReligiousStatus } from './enums.model';
 
 /**
  * Language detail as returned from the API
@@ -67,6 +67,8 @@ export interface UpdateStudentProfileRequest {
   lastName?: string;
   imageUrl?: string;
   bio?: string;
+  religionStatus?: ReligiousStatus;
+  religiousStatus?: ReligiousStatus;
   languages?: Language[];
   phoneNumber?: string;
   address?: string;

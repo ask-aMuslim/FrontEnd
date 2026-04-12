@@ -167,6 +167,8 @@ export class AboutComponent implements OnInit, OnDestroy {
       }
     }
 
+    const nextProfileImage = this.preferNonEmptyString(profile.imageUrl, this.about.profileImage);
+
     this.about = {
       religion: religionLabel,
       reasonOfReligion: profile.reasonOfReligion ?? profile.reasonForConversion ?? this.about.reasonOfReligion,
@@ -185,8 +187,17 @@ export class AboutComponent implements OnInit, OnDestroy {
       countryCode: profile.countryCode ?? this.about.countryCode,
       phoneNumber: profile.phoneNumber ?? this.about.phoneNumber,
       email: profile.email ?? this.about.email,
-      profileImage: profile.imageUrl ?? this.about.profileImage,
+      profileImage: nextProfileImage,
     };
+  }
+
+  private preferNonEmptyString(value: string | undefined, fallback: string): string {
+    if (typeof value !== 'string') {
+      return fallback;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : fallback;
   }
 
   /**
@@ -260,8 +271,11 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.clearMessages();
 
+    const religionStatus = this.getReligionStatusValue(data.religion);
+
     const payload: UpdateStudentProfileRequest = {
       bio: data.bio,
+      religionStatus,
       oldReligion: data.oldReligion,
       reasonOfReligion: data.reasonOfReligion,
       reasonForConversion: data.reasonForConversion,
@@ -270,6 +284,19 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.executeProfileSave(payload, () => {
       this.isEditingMain = false;
     });
+  }
+
+  private getReligionStatusValue(religion: string): ReligiousStatus | undefined {
+    switch (religion) {
+      case religiousStatusLabels[ReligiousStatus.NonMuslim]:
+        return ReligiousStatus.NonMuslim;
+      case religiousStatusLabels[ReligiousStatus.BornMuslim]:
+        return ReligiousStatus.BornMuslim;
+      case religiousStatusLabels[ReligiousStatus.RevertedMuslim]:
+        return ReligiousStatus.RevertedMuslim;
+      default:
+        return undefined;
+    }
   }
 
   savePersonalInfo(data: {
@@ -305,24 +332,64 @@ export class AboutComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveContactInfo(data: { city: string; country?: string; phoneNumber: string; email: string }): void {
+  saveContactInfo(data: { city: string; country?: string; countryCode?: string; phoneNumber: string; email: string }): void {
+    const providedCountryCode = data.countryCode?.trim() ?? '';
+    const normalizedCountryCode = this.normalizeCountryCode(data.countryCode);
+    const normalizedDialCode = this.normalizeDialCode(data.countryCode);
+    const normalizedPhoneNumber = this.normalizePhoneNumber(data.phoneNumber, normalizedDialCode);
+
+    this.clearMessages();
+
+    if (providedCountryCode.length > 0 && !normalizedCountryCode && !normalizedDialCode) {
+      this.error = 'Country code must be 2-3 letters (EG/USA) or a dial code like +20.';
+      return;
+    }
+
     this.about.city = data.city;
     this.about.country = data.country || '';
-    this.about.phoneNumber = data.phoneNumber;
+    this.about.countryCode = normalizedDialCode || normalizedCountryCode || '';
+    this.about.phoneNumber = normalizedPhoneNumber;
     this.about.email = data.email;
 
     this.isLoading = true;
-    this.clearMessages();
 
     const payload: UpdateStudentProfileRequest = {
       address: data.city,
       country: data.country,
-      phoneNumber: data.phoneNumber,
+      countryCode: normalizedDialCode || normalizedCountryCode,
+      phoneNumber: normalizedPhoneNumber,
     };
 
     this.executeProfileSave(payload, () => {
       this.isEditingContact = false;
     });
+  }
+
+  private normalizeCountryCode(countryCode?: string): string | undefined {
+    if (!countryCode) {
+      return undefined;
+    }
+
+    const normalized = countryCode.trim().toUpperCase();
+    return /^[A-Z]{2,3}$/.test(normalized) ? normalized : undefined;
+  }
+
+  private normalizeDialCode(countryCode?: string): string | undefined {
+    if (!countryCode) {
+      return undefined;
+    }
+
+    const normalized = countryCode.trim();
+    return /^\+[0-9]{1,4}$/.test(normalized) ? normalized : undefined;
+  }
+
+  private normalizePhoneNumber(phoneNumber: string, dialCode?: string): string {
+    const trimmedPhoneNumber = phoneNumber.trim();
+    if (!dialCode || trimmedPhoneNumber.startsWith('+')) {
+      return trimmedPhoneNumber;
+    }
+
+    return `${dialCode} ${trimmedPhoneNumber}`;
   }
 
   /**

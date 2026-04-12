@@ -291,7 +291,7 @@ export class StudentProfileService {
 
     // Validate country code format if provided
     if (request.countryCode && !this.isValidCountryCode(request.countryCode)) {
-      errors.push('Invalid country code format (should be 2-3 letters)');
+      errors.push('Invalid country code format (should be 2-3 letters or +1 to +9999)');
     }
 
     // Validate date format if provided
@@ -315,8 +315,8 @@ export class StudentProfileService {
   }
 
   private isValidCountryCode(code: string): boolean {
-    // ISO 3166-1 alpha-2 or alpha-3
-    return /^[A-Za-z]{2,3}$/.test(code);
+    // ISO 3166-1 alpha-2/alpha-3 or dial code like +20
+    return /^[A-Za-z]{2,3}$/.test(code) || /^\+[0-9]{1,4}$/.test(code);
   }
 
   private isValidDate(date: string): boolean {

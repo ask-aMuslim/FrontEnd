@@ -195,11 +195,12 @@ export class AccountComponent implements OnInit, OnDestroy {
    */
   private updateUserProfile(profile: StudentProfile): void {
     const fullName = this.buildDisplayName(profile.firstName, profile.lastName);
+    const nextImageUrl = this.normalizeImageUrl(profile.imageUrl) || this.userProfile.imageUrl;
 
     this.userProfile = {
       name: fullName ?? '',
       bio: profile.bio ?? '',
-      imageUrl: this.normalizeImageUrl(profile.imageUrl),
+      imageUrl: nextImageUrl,
       gender: profile.gender ?? '',
       religion: profile.oldReligion ?? '',
     };
