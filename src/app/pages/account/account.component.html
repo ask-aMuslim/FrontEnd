@@ -7,14 +7,43 @@
   <div class="profile-header__overlay">
     <div class="section-block profile-header__block">
       <div class="profile-header__info">
-        <img
-          [src]="userProfile.profileImage || '/images/profile-placeholder.svg'"
-          (error)="
-            $event.target.src = '/images/profile-placeholder.svg';
-            $event.target.onerror = null
-          "
-          alt="Profile image"
-          class="profile-avatar"
+        <div class="profile-avatar-wrapper">
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              isUploadingAvatar
+                ? 'Uploading profile image'
+                : 'Change profile image'
+            "
+            [attr.aria-busy]="isUploadingAvatar"
+            (click)="openAvatarFilePicker()"
+            (keydown.enter)="openAvatarFilePicker()"
+            (keydown.space)="openAvatarFilePicker()"
+            (error)="
+              $event.target.src = '/images/profile-placeholder.svg';
+              $event.target.onerror = null
+            "
+            alt="Profile image"
+            class="profile-avatar"
+          />
+          <button
+            type="button"
+            class="profile-avatar-edit-btn"
+            [disabled]="isUploadingAvatar"
+            aria-label="Change profile image"
+            (click)="openAvatarFilePicker()"
+          >
+            <div [inlineSVG]="'/icons/icons-24/user-edit.svg'"></div>
+          </button>
+        </div>
+        <input
+          #avatarFileInput
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          class="profile-avatar-input"
+          (change)="onAvatarFileSelected($event)"
         />
         <div class="profile-details">
           <div class="profile-name-section">

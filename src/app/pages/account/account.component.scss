@@ -50,21 +50,77 @@
   }
 }
 
-.profile-avatar {
-  height: 8rem;
+.profile-avatar-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
   width: 8rem;
-  border-radius: 1rem;
-  object-fit: cover;
+  height: 8rem;
+  border-radius: 50%;
+  overflow: visible;
 
   @media (min-width: 640px) {
-    height: 10rem;
     width: 10rem;
+    height: 10rem;
   }
 
   @media (min-width: 1024px) {
-    height: 12.5rem;
     width: 12.5rem;
+    height: 12.5rem;
   }
+}
+
+.profile-avatar {
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-avatar-edit-btn {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.25rem;
+  z-index: 2;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-background-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    background: var(--color-card-surface-secondary);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  :deep(path) {
+    stroke: var(--color-button-primary-normal);
+  }
+
+  :deep(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.profile-avatar-input {
+  display: none;
 }
 
 .profile-details {
