@@ -75,15 +75,14 @@
   width: 100%;
   border-radius: inherit;
   object-fit: cover;
-  cursor: pointer;
   position: relative;
   z-index: 1;
 }
 
 .profile-avatar-edit-btn {
   position: absolute;
-  right: 0.25rem;
-  bottom: 0.25rem;
+  right: 1rem;
+  bottom: 0.5rem;
   z-index: 2;
   width: 2.1rem;
   height: 2.1rem;
