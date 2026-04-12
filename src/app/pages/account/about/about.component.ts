@@ -6,9 +6,9 @@ import { EditMainInformationComponent } from './edit-main-information/edit-main-
 import { EditPersonalInformationComponent } from './edit-personal-information/edit-personal-information.component';
 import { EditContactInformationComponent } from './edit-contact-information/edit-contact-information.component';
 import { StudentFacade } from '../../../api/facades/student.facade';
-import type { StudentProfile, UpdateStudentProfileRequest } from '../../../api/facades/student.facade';
-import { religiousStatusLabels } from '../../../core/helpers/enum-labels.helper';
-import { ReligiousStatus } from '../../../core/models/interfaces/enums.model';
+import type { StudentProfile, UpdateStudentProfileRequest, LanguageDetail } from '../../../api/facades/student.facade';
+import { languageLabels, religiousStatusLabels } from '../../../core/helpers/enum-labels.helper';
+import { Language, ReligiousStatus } from '../../../core/models/interfaces/enums.model';
 import { ProfileError } from '../../../core/services/student-profile.service';
 
 /**
@@ -28,7 +28,7 @@ export interface AboutModel {
   dateOfBirth: string;
   dateOfIslamConversion: string;
   age: number;
-  languages: string[];
+  languages: LanguageDetail[];
   languagesSpeaks: string;
   city: string;
   country: string;
@@ -229,13 +229,13 @@ export class AboutComponent implements OnInit, OnDestroy {
     name: string;
     gender: string;
     dateOfBirth: string;
-    languagesSpeaks: string;
+    languages: Language[];
   }): void {
     this.about.name = data.name;
     this.about.gender = data.gender;
     this.about.dateOfBirth = data.dateOfBirth;
-    this.about.languagesSpeaks = data.languagesSpeaks;
-    this.about.languages = this.parseLanguages(data.languagesSpeaks);
+    // Update display with language names from enum labels (will be replaced by API response)
+    this.about.languagesSpeaks = data.languages.map((langId) => languageLabels[langId]).join(', ');
 
     this.isLoading = true;
     this.clearMessages();
@@ -248,7 +248,7 @@ export class AboutComponent implements OnInit, OnDestroy {
       lastName: lastName || undefined,
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
-      languages: this.about.languages,
+      languages: data.languages,
     };
 
     this.executeProfileSave(payload, () => {
@@ -301,15 +301,8 @@ export class AboutComponent implements OnInit, OnDestroy {
     });
   }
 
-  private parseLanguages(languagesSpeaks: string): string[] {
-    return languagesSpeaks
-      .split(',')
-      .map((language) => language.trim())
-      .filter((language) => language.length > 0);
-  }
-
-  private formatLanguages(languages?: string[]): string {
-    return languages?.filter((language) => language.trim().length > 0).join(', ') ?? '';
+  private formatLanguages(languages?: LanguageDetail[]): string {
+    return languages?.map((language) => language.name).join(', ') ?? '';
   }
 
   cancelMainEdit(): void {

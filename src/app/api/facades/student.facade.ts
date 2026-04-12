@@ -12,12 +12,14 @@ import type {
   StudentProfile,
   CreateStudentProfileRequest,
   UpdateStudentProfileRequest,
+  LanguageDetail,
 } from '../../core/models/interfaces/student-profile.model';
 
 export type {
   StudentProfile,
   CreateStudentProfileRequest,
   UpdateStudentProfileRequest,
+  LanguageDetail,
 };
 
 export interface StudentCourseDto {

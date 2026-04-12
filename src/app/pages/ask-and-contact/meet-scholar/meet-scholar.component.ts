@@ -77,6 +77,7 @@ export class MeetScholarComponent {
     { value: Language.French, label: 'French' },
     { value: Language.Spanish, label: 'Spanish' },
     { value: Language.German, label: 'German' },
+    { value: Language.Portuguese, label: 'Portuguese' },
   ];
 
   availableLanguages = signal<LanguageOption[]>(this.languages);

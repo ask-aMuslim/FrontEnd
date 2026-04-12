@@ -7,6 +7,18 @@
  *         reasonForConversion, reasonOfReligion
  */
 
+import { Language } from './enums.model';
+
+/**
+ * Language detail as returned from the API
+ * GET endpoints return full language objects, PUT/POST send just IDs
+ */
+export interface LanguageDetail {
+  id: Language;
+  name: string;
+  code: string;
+}
+
 export interface StudentProfile {
   id?: string;
   studentId?: string;
@@ -20,7 +32,7 @@ export interface StudentProfile {
   address?: string;
   country?: string;
   countryCode?: string;
-  languages?: string[];
+  languages?: LanguageDetail[];
   dateOfBirth?: string;
   dateOfIslamConversion?: string;
   oldReligion?: string;
@@ -38,7 +50,7 @@ export interface CreateStudentProfileRequest {
   // Note: firstName, lastName, imageUrl are NOT included in Create request per API contract
   // These fields are only available in Update request
   bio?: string;
-  languages?: string[];
+  languages?: Language[];
   phoneNumber?: string;
   address?: string;
   country?: string;
@@ -55,7 +67,7 @@ export interface UpdateStudentProfileRequest {
   lastName?: string;
   imageUrl?: string;
   bio?: string;
-  languages?: string[];
+  languages?: Language[];
   phoneNumber?: string;
   address?: string;
   country?: string;

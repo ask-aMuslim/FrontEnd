@@ -34,6 +34,7 @@ export const languageLabels: Readonly<Record<Language, string>> = {
   [Language.French]: 'French',
   [Language.Spanish]: 'Spanish',
   [Language.German]: 'German',
+  [Language.Portuguese]: 'Portuguese',
 };
 
 export const lessonTypeLabels: Readonly<Record<LessonType, string>> = {

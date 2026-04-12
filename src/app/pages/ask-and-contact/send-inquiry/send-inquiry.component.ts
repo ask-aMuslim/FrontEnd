@@ -56,6 +56,7 @@ export class SendInquiryComponent implements OnInit, OnChanges {
     { value: Language.French, label: 'French' },
     { value: Language.Spanish, label: 'Spanish' },
     { value: Language.German, label: 'German' },
+    { value: Language.Portuguese, label: 'Portuguese' },
   ];
 
   form = input<FormGroup | null>(null);
