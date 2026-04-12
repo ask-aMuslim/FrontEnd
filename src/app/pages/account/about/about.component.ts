@@ -82,6 +82,7 @@ export class AboutComponent implements OnInit, OnDestroy {
   isLoading = false;
   error: string | null = null;
   successMessage: string | null = null;
+  private lastSentLanguageIds: Language[] = [];
 
   ngOnInit(): void {
     this.loadProfile();
@@ -116,37 +117,83 @@ export class AboutComponent implements OnInit, OnDestroy {
 
   /**
    * Map API profile data to the local view model
-   * All data comes from the API - no static fallbacks
+   * Preserves local language state if API response doesn't include languages
    */
   private mapProfileToModel(profile: StudentProfile): void {
     // Calculate age from date of birth
     const age = this.calculateAge(profile.dateOfBirth);
 
     // Build full name from API data
-    const name = [profile.firstName, profile.lastName]
+    const profileName = [profile.firstName, profile.lastName]
       .filter(Boolean)
       .join(' ');
+    const name = profileName || this.about.name;
+
+    const religionLabel =
+      profile.religiousStatus !== undefined
+        ? this.getReligionLabel(profile.religiousStatus)
+        : this.about.religion;
+
+    // Handle languages from partial or inconsistent API responses.
+    let languages = profile.languages ?? [];
+    let languagesSpeaks = this.about.languagesSpeaks;
+
+    if (languages.length > 0 && this.isLanguageDetailArray(languages)) {
+      // Response has full language details
+      languagesSpeaks = this.formatLanguages(languages);
+    } else if (languages.length > 0) {
+      // Response has language IDs only
+      const languageIds = languages as unknown as Language[];
+      languages = languageIds.map((id) => ({
+        id,
+        name: languageLabels[id],
+        code: '',
+      }));
+      languagesSpeaks = this.formatLanguages(languageIds);
+    } else if (languages.length === 0) {
+      // API response is empty - use fallbacks in order of preference
+      if (this.about.languages.length > 0) {
+        // First try: preserve existing local data
+        languages = this.about.languages;
+        languagesSpeaks = this.about.languagesSpeaks;
+      } else if (this.lastSentLanguageIds.length > 0) {
+        // Second try: reconstruct from the IDs we just sent, using enum labels
+        languages = this.lastSentLanguageIds.map((id) => ({
+          id,
+          name: languageLabels[id],
+          code: '',
+        }));
+        languagesSpeaks = this.lastSentLanguageIds.map((id) => languageLabels[id]).join(', ');
+      }
+    }
 
     this.about = {
-      religion: this.getReligionLabel(profile.religiousStatus),
-      reasonOfReligion: profile.reasonOfReligion ?? profile.reasonForConversion ?? '',
-      reasonForConversion: profile.reasonForConversion ?? '',
-      oldReligion: profile.oldReligion ?? '',
-      bio: profile.bio ?? '',
+      religion: religionLabel,
+      reasonOfReligion: profile.reasonOfReligion ?? profile.reasonForConversion ?? this.about.reasonOfReligion,
+      reasonForConversion: profile.reasonForConversion ?? this.about.reasonForConversion,
+      oldReligion: profile.oldReligion ?? this.about.oldReligion,
+      bio: profile.bio ?? this.about.bio,
       name: name,
-      gender: profile.gender ?? '',
-      dateOfBirth: profile.dateOfBirth ?? '',
-      dateOfIslamConversion: profile.dateOfIslamConversion ?? '',
-      age: age ?? 0,
-      languages: profile.languages ?? [],
-      languagesSpeaks: this.formatLanguages(profile.languages),
-      city: profile.address ?? '',
-      country: profile.country ?? '',
-      countryCode: profile.countryCode ?? '',
-      phoneNumber: profile.phoneNumber ?? '',
-      email: profile.email ?? '',
-      profileImage: profile.imageUrl ?? '',
+      gender: profile.gender ?? this.about.gender,
+      dateOfBirth: profile.dateOfBirth ?? this.about.dateOfBirth,
+      dateOfIslamConversion: profile.dateOfIslamConversion ?? this.about.dateOfIslamConversion,
+      age: age ?? this.about.age,
+      languages: languages,
+      languagesSpeaks: languagesSpeaks,
+      city: profile.address ?? this.about.city,
+      country: profile.country ?? this.about.country,
+      countryCode: profile.countryCode ?? this.about.countryCode,
+      phoneNumber: profile.phoneNumber ?? this.about.phoneNumber,
+      email: profile.email ?? this.about.email,
+      profileImage: profile.imageUrl ?? this.about.profileImage,
     };
+  }
+
+  /**
+   * Check if an array is LanguageDetail[] (has name property)
+   */
+  private isLanguageDetailArray(arr: unknown[]): boolean {
+    return arr.length > 0 && typeof arr[0] === 'object' && arr[0] !== null && 'name' in arr[0];
   }
 
   /**
@@ -234,6 +281,8 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.about.name = data.name;
     this.about.gender = data.gender;
     this.about.dateOfBirth = data.dateOfBirth;
+    // Store the language IDs in case the API response doesn't include them
+    this.lastSentLanguageIds = data.languages;
     // Update display with language names from enum labels (will be replaced by API response)
     this.about.languagesSpeaks = data.languages.map((langId) => languageLabels[langId]).join(', ');
 
@@ -301,8 +350,21 @@ export class AboutComponent implements OnInit, OnDestroy {
     });
   }
 
-  private formatLanguages(languages?: LanguageDetail[]): string {
-    return languages?.map((language) => language.name).join(', ') ?? '';
+  private formatLanguages(languages?: LanguageDetail[] | unknown[]): string {
+    if (!languages || languages.length === 0) {
+      return '';
+    }
+    // Handle both LanguageDetail objects and raw IDs
+    return languages
+      .map((lang) => {
+        if (typeof lang === 'object' && lang !== null && 'name' in lang) {
+          return (lang as LanguageDetail).name;
+        }
+        // Fallback: treat as ID and look up in enum labels
+        return languageLabels[lang as Language] || '';
+      })
+      .filter((name) => name.length > 0)
+      .join(', ');
   }
 
   cancelMainEdit(): void {
