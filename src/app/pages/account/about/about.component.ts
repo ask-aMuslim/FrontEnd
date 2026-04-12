@@ -1,12 +1,14 @@
 import { Component, OnInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Subject, takeUntil, finalize, take } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
 import { EditPersonalInformationComponent } from './edit-personal-information/edit-personal-information.component';
 import { EditContactInformationComponent } from './edit-contact-information/edit-contact-information.component';
 import { StudentFacade } from '../../../api/facades/student.facade';
 import type { StudentProfile, UpdateStudentProfileRequest } from '../../../api/facades/student.facade';
+import { religiousStatusLabels } from '../../../core/helpers/enum-labels.helper';
+import { ReligiousStatus } from '../../../core/models/interfaces/enums.model';
 import { ProfileError } from '../../../core/services/student-profile.service';
 
 /**
@@ -18,14 +20,19 @@ import { ProfileError } from '../../../core/services/student-profile.service';
 export interface AboutModel {
   religion: string;
   reasonOfReligion: string;
+  reasonForConversion: string;
+  oldReligion: string;
   bio: string;
   name: string;
   gender: string;
   dateOfBirth: string;
+  dateOfIslamConversion: string;
   age: number;
+  languages: string[];
   languagesSpeaks: string;
   city: string;
   country: string;
+  countryCode: string;
   phoneNumber: string;
   email: string;
   profileImage: string;
@@ -51,14 +58,19 @@ export class AboutComponent implements OnInit, OnDestroy {
   about: AboutModel = {
     religion: '',
     reasonOfReligion: '',
+    reasonForConversion: '',
+    oldReligion: '',
     bio: '',
     name: '',
     gender: '',
     dateOfBirth: '',
+    dateOfIslamConversion: '',
     age: 0,
+    languages: [],
     languagesSpeaks: '',
     city: '',
     country: '',
+    countryCode: '',
     phoneNumber: '',
     email: '',
     profileImage: '',
@@ -70,8 +82,6 @@ export class AboutComponent implements OnInit, OnDestroy {
   isLoading = false;
   error: string | null = null;
   successMessage: string | null = null;
-
-  private currentProfile: StudentProfile | null = null;
 
   ngOnInit(): void {
     this.loadProfile();
@@ -87,21 +97,18 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.error = null;
 
     this.studentFacade
-      .me()
+      .getMyProfileFromApi()
       .pipe(
-        take(1),
         takeUntil(this.destroy$),
         finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (profile) => {
-          this.currentProfile = profile;
           if (profile) {
             this.mapProfileToModel(profile);
           }
         },
         error: (err: ProfileError) => {
-          console.error('Failed to load profile:', err);
           this.error = this.getErrorMessage(err);
         },
       });
@@ -121,16 +128,21 @@ export class AboutComponent implements OnInit, OnDestroy {
       .join(' ');
 
     this.about = {
-      religion: profile.oldReligion ?? '',
-      reasonOfReligion: profile.reasonForConversion ?? '',
+      religion: this.getReligionLabel(profile.religiousStatus),
+      reasonOfReligion: profile.reasonOfReligion ?? profile.reasonForConversion ?? '',
+      reasonForConversion: profile.reasonForConversion ?? '',
+      oldReligion: profile.oldReligion ?? '',
       bio: profile.bio ?? '',
       name: name,
       gender: profile.gender ?? '',
       dateOfBirth: profile.dateOfBirth ?? '',
+      dateOfIslamConversion: profile.dateOfIslamConversion ?? '',
       age: age ?? 0,
-      languagesSpeaks: '', // Not provided by API yet
+      languages: profile.languages ?? [],
+      languagesSpeaks: this.formatLanguages(profile.languages),
       city: profile.address ?? '',
       country: profile.country ?? '',
+      countryCode: profile.countryCode ?? '',
       phoneNumber: profile.phoneNumber ?? '',
       email: profile.email ?? '',
       profileImage: profile.imageUrl ?? '',
@@ -157,6 +169,19 @@ export class AboutComponent implements OnInit, OnDestroy {
     return age;
   }
 
+  private getReligionLabel(religiousStatus?: number): string {
+    switch (religiousStatus) {
+      case ReligiousStatus.NonMuslim:
+        return religiousStatusLabels[ReligiousStatus.NonMuslim];
+      case ReligiousStatus.BornMuslim:
+        return religiousStatusLabels[ReligiousStatus.BornMuslim];
+      case ReligiousStatus.RevertedMuslim:
+        return religiousStatusLabels[ReligiousStatus.RevertedMuslim];
+      default:
+        return '';
+    }
+  }
+
   editMainInfo(): void {
     this.isEditingMain = true;
     this.clearMessages();
@@ -172,21 +197,27 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.clearMessages();
   }
 
-  saveMainInfo(data: { religion: string; reasonOfReligion: string; bio: string }): void {
+  saveMainInfo(data: {
+    religion: string;
+    reasonOfReligion?: string;
+    reasonForConversion?: string;
+    oldReligion?: string;
+    bio: string;
+  }): void {
     this.about.religion = data.religion;
-    this.about.reasonOfReligion = data.reasonOfReligion;
+    this.about.reasonOfReligion = data.reasonOfReligion ?? '';
+    this.about.reasonForConversion = data.reasonForConversion ?? '';
+    this.about.oldReligion = data.oldReligion ?? '';
     this.about.bio = data.bio;
 
     this.isLoading = true;
     this.clearMessages();
 
-    const [firstName, lastName] = this.about.name.split(' ');
     const payload: UpdateStudentProfileRequest = {
-      firstName: firstName ?? undefined,
-      lastName: lastName ?? undefined,
       bio: data.bio,
-      oldReligion: data.religion,
-      reasonForConversion: data.reasonOfReligion,
+      oldReligion: data.oldReligion,
+      reasonOfReligion: data.reasonOfReligion,
+      reasonForConversion: data.reasonForConversion,
     };
 
     this.executeProfileSave(payload, () => {
@@ -204,16 +235,20 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.about.gender = data.gender;
     this.about.dateOfBirth = data.dateOfBirth;
     this.about.languagesSpeaks = data.languagesSpeaks;
+    this.about.languages = this.parseLanguages(data.languagesSpeaks);
 
     this.isLoading = true;
     this.clearMessages();
 
-    const [firstName, lastName] = data.name.split(' ');
+    const [firstName, ...lastNameParts] = data.name.trim().split(/\s+/).filter(Boolean);
+    const lastName = lastNameParts.join(' ');
+
     const payload: UpdateStudentProfileRequest = {
-      firstName: firstName ?? undefined,
-      lastName: lastName ?? undefined,
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
+      languages: this.about.languages,
     };
 
     this.executeProfileSave(payload, () => {
@@ -248,31 +283,33 @@ export class AboutComponent implements OnInit, OnDestroy {
     payload: UpdateStudentProfileRequest,
     onSuccess: () => void
   ): void {
-    const op$ = this.currentProfile
-      ? this.studentFacade.updateProfile(payload)
-      : this.studentFacade.createProfile(payload);
-
-    op$.pipe(
+    this.studentFacade.updateProfile(payload).pipe(
       takeUntil(this.destroy$),
       finalize(() => (this.isLoading = false))
     ).subscribe({
       next: (profile) => {
         if (profile) {
-          this.currentProfile = profile;
           this.mapProfileToModel(profile);
-        } else {
-          // Server returns void, mark that a profile now exists
-          this.currentProfile = this.currentProfile ?? {} as StudentProfile;
         }
         onSuccess();
         this.successMessage = 'Profile updated successfully!';
         this.autoClearSuccessMessage();
       },
       error: (err: ProfileError) => {
-        console.error('Failed to save profile:', err);
         this.error = this.getErrorMessage(err);
       },
     });
+  }
+
+  private parseLanguages(languagesSpeaks: string): string[] {
+    return languagesSpeaks
+      .split(',')
+      .map((language) => language.trim())
+      .filter((language) => language.length > 0);
+  }
+
+  private formatLanguages(languages?: string[]): string {
+    return languages?.filter((language) => language.trim().length > 0).join(', ') ?? '';
   }
 
   cancelMainEdit(): void {

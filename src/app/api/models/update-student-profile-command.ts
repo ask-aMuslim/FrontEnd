@@ -12,6 +12,8 @@ export interface UpdateStudentProfileCommand {
   imageUrl?: string | null;
   lastName?: string | null;
   oldReligion?: string | null;
+  languages?: string[] | null;
   phoneNumber?: string | null;
   reasonForConversion?: string | null;
+  reasonOfReligion?: string | null;
 }

@@ -38,10 +38,24 @@
             <span class="about-section__label">Religion</span>
             <p class="about-section__value">{{ about.religion }}</p>
           </div>
-          <div class="about-section__field">
-            <span class="about-section__label">Reason of your Religion</span>
-            <p class="about-section__value">{{ about.reasonOfReligion }}</p>
-          </div>
+          @if (about.religion === "Non-Muslim") {
+            <div class="about-section__field">
+              <span class="about-section__label">Reason of your Religion</span>
+              <p class="about-section__value">{{ about.reasonOfReligion }}</p>
+            </div>
+          }
+          @if (about.religion === "New Muslim") {
+            <div class="about-section__field">
+              <span class="about-section__label">Reason for conversion</span>
+              <p class="about-section__value">
+                {{ about.reasonForConversion }}
+              </p>
+            </div>
+            <div class="about-section__field">
+              <span class="about-section__label">Old Religion</span>
+              <p class="about-section__value">{{ about.oldReligion }}</p>
+            </div>
+          }
           <div class="about-section__field">
             <span class="about-section__label">Your Life Goal (Bio)</span>
             <p class="about-section__value">{{ about.bio }}</p>
@@ -55,9 +69,11 @@
         class="animate-fade-in"
         [religion]="about.religion"
         [reasonOfReligion]="about.reasonOfReligion"
+        [reasonForConversion]="about.reasonForConversion"
+        [oldReligion]="about.oldReligion"
         [bio]="about.bio"
         (save)="saveMainInfo($event)"
-        (cancel)="cancelMainEdit()"
+        (cancelEdit)="cancelMainEdit()"
       ></app-edit-main-information>
     }
   </div>

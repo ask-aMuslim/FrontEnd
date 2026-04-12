@@ -9,6 +9,8 @@ export interface CreateStudentProfileCommand {
   dateOfBirth?: string | null;
   dateOfIslamConversion?: string | null;
   oldReligion?: string | null;
+  languages?: string[] | null;
   phoneNumber?: string | null;
   reasonForConversion?: string | null;
+  reasonOfReligion?: string | null;
 }
