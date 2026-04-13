@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { InlineSvgDirective } from '../../../../shared/directives/inline-svg.directive';
@@ -10,6 +10,7 @@ import {
   ChipsMultiselectComponent,
   ChipOption,
 } from '../../../../shared/reusable-components/chips-multiselect/chips-multiselect.component';
+import { Language } from '../../../../core/models/interfaces/enums.model';
 
 @Component({
   selector: 'app-edit-personal-information',
@@ -19,11 +20,11 @@ import {
     InlineSvgDirective,
     SelectDropdownComponent,
     ChipsMultiselectComponent
-],
+  ],
   templateUrl: './edit-personal-information.component.html',
   styleUrls: ['./edit-personal-information.component.scss'],
 })
-export class EditPersonalInformationComponent {
+export class EditPersonalInformationComponent implements OnInit {
   @Input() name: string = '';
   @Input() gender: string = '';
   @Input() dateOfBirth: string = '';
@@ -32,50 +33,50 @@ export class EditPersonalInformationComponent {
     name: string;
     gender: string;
     dateOfBirth: string;
-    languagesSpeaks: string;
+    languages: Language[];
   }>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() cancelEdit = new EventEmitter<void>();
 
   genderOptions: SelectOption<string>[] = [
     { value: 'Male', label: 'Male' },
     { value: 'Female', label: 'Female' },
   ];
 
-  languageOptions: ChipOption<string>[] = [
-    { value: 'English', label: 'English' },
-    { value: 'Arabic', label: 'Arabic' },
-    { value: 'French', label: 'French' },
-    { value: 'Spanish', label: 'Spanish' },
-    { value: 'German', label: 'German' },
-    { value: 'Urdu', label: 'Urdu' },
-    { value: 'Turkish', label: 'Turkish' },
-    { value: 'Indonesian', label: 'Indonesian' },
+  languageOptions: ChipOption<Language>[] = [
+    { value: Language.English, label: 'English' },
+    { value: Language.Arabic, label: 'Arabic' },
+    { value: Language.French, label: 'French' },
+    { value: Language.Spanish, label: 'Spanish' },
+    { value: Language.German, label: 'German' },
+    { value: Language.Portuguese, label: 'Portuguese' },
   ];
 
-  selectedLanguages: ChipOption<string>[] = [];
+  selectedLanguages: ChipOption<Language>[] = [];
+
+  private readonly languageLookup: Record<string, Language> = {
+    English: Language.English,
+    Arabic: Language.Arabic,
+    French: Language.French,
+    Spanish: Language.Spanish,
+    German: Language.German,
+    Portuguese: Language.Portuguese,
+  };
 
   ngOnInit() {
-    // Parse languagesSpeaks string into selectedLanguages array
-    if (this.languagesSpeaks) {
-      const languages = this.languagesSpeaks.split(',').map((lang) => lang.trim());
-      this.selectedLanguages = languages.map((lang) => ({
-        value: lang,
-        label: lang,
-      }));
-    }
+    this.selectedLanguages = this.parseLanguages(this.languagesSpeaks);
   }
 
   onGenderSelect(value: string) {
     this.gender = value;
   }
 
-  onLanguageAdd(option: ChipOption<string>) {
+  onLanguageAdd(option: ChipOption<Language>) {
     if (!this.selectedLanguages.find((lang) => lang.value === option.value)) {
       this.selectedLanguages = [...this.selectedLanguages, option];
     }
   }
 
-  onLanguageRemove(option: ChipOption<string>) {
+  onLanguageRemove(option: ChipOption<Language>) {
     this.selectedLanguages = this.selectedLanguages.filter((lang) => lang.value !== option.value);
   }
 
@@ -84,11 +85,26 @@ export class EditPersonalInformationComponent {
       name: this.name,
       gender: this.gender,
       dateOfBirth: this.dateOfBirth,
-      languagesSpeaks: this.selectedLanguages.map((lang) => lang.label).join(', '),
+      languages: this.selectedLanguages.map((lang) => lang.value),
     });
   }
 
   onCancel() {
-    this.cancel.emit();
+    this.cancelEdit.emit();
+  }
+
+  private parseLanguages(languagesSpeaks: string): ChipOption<Language>[] {
+    if (!languagesSpeaks) {
+      return [];
+    }
+
+    return languagesSpeaks
+      .split(',')
+      .map((language) => language.trim())
+      .map((language) => {
+        const value = this.languageLookup[language];
+        return value ? { value, label: language } : null;
+      })
+      .filter((language): language is ChipOption<Language> => language !== null);
   }
 }

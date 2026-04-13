@@ -25,6 +25,7 @@ export enum Language {
   French = 3,
   Spanish = 4,
   German = 5,
+  Portuguese = 6,
 }
 
 export enum LessonType {
