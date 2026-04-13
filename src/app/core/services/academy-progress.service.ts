@@ -106,8 +106,8 @@ export class AcademyProgressService {
     private academyCoursesRequest$: Observable<AcademyCourse[]> | null = null;
     private studentProgressRequest$: Observable<StudentProgress> | null = null;
     private readonly lessonsCache = new Map<string, AcademyLesson[]>();
-    private readonly videoDurationSecondsCache = new Map<string, number>();
-    private readonly videoDurationRequestCache = new Map<string, Observable<number>>();
+    private readonly mediaDurationSecondsCache = new Map<string, number>();
+    private readonly mediaDurationRequestCache = new Map<string, Observable<number>>();
 
     constructor() {
         this.initializeProgress();
@@ -387,6 +387,7 @@ export class AcademyProgressService {
                     map(coursesByLevel => coursesByLevel.flat())
                 );
             }),
+            switchMap((courses) => this.hydrateCoursesWithPublishedLessons(courses)),
             tap(courses => { this.academyCoursesCache = courses; }),
             catchError(() => of([])),
             shareReplay(1)
@@ -408,6 +409,7 @@ export class AcademyProgressService {
                 })
                 .map(c => this.mapCourseDtoToAcademyCourse(c, levelId, stageNumber))
             ),
+            switchMap((courses) => this.hydrateCoursesWithPublishedLessons(courses)),
             catchError(() => of([]))
         );
     }
@@ -437,6 +439,7 @@ export class AcademyProgressService {
 
                 return this.mapCourseDtoToAcademyCourse(course, resolvedLevelId, resolvedStageNumber);
             }),
+            switchMap((course) => this.hydrateCourseWithPublishedLessons(course)),
             tap(course => {
                 const index = this.academyCoursesCache.findIndex(existing => existing.id === course.id);
                 if (index === -1) {
@@ -924,23 +927,22 @@ export class AcademyProgressService {
             return null;
         }
 
-        const effectiveTotalLessons = Math.max(course.lessons, sortedLessons.length);
-        const completedLessons = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
+        const effectiveTotalLessons = sortedLessons.length > 0
+            ? sortedLessons.length
+            : Math.max(0, course.lessons);
+        const completedFromProgress = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
+        const completedFromLocal = this.resolveLocalCompletedLessonCount(
+            course.id,
+            sortedLessons,
+            effectiveTotalLessons,
+        );
+        const completedLessons = Math.max(completedFromProgress, completedFromLocal);
         const preferredLesson = preferredLessonId
             ? sortedLessons.find((lesson) => lesson.id === preferredLessonId)
             : undefined;
         const resolvedLessonIndex = this.resolveRecentLessonIndex(completedLessons, sortedLessons.length);
         const resolvedLesson = preferredLesson ?? sortedLessons[resolvedLessonIndex] ?? fallbackLesson;
-
-        const apiProgress = this.normalizeProgressPercentage(
-            progressRecord?.lessonCompletionRate
-            ?? progressRecord?.progress
-            ?? 0,
-        );
-        const fallbackProgress = effectiveTotalLessons > 0
-            ? this.normalizeProgressPercentage((completedLessons / effectiveTotalLessons) * 100)
-            : 0;
-        const courseProgress = Math.max(apiProgress, fallbackProgress);
+        const courseProgress = this.calculateCourseCompletionProgress(completedLessons, effectiveTotalLessons);
 
         const playbackSnapshot = this.resolveMediaPlaybackSnapshot(resolvedLesson, visitSnapshot);
 
@@ -967,17 +969,10 @@ export class AcademyProgressService {
         visitSnapshot: RecentLessonVisitSnapshot,
     ): RecentLessonInfo {
         const effectiveTotalLessons = Math.max(0, course.lessons);
-        const completedLessons = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
-
-        const apiProgress = this.normalizeProgressPercentage(
-            progressRecord?.lessonCompletionRate
-            ?? progressRecord?.progress
-            ?? 0,
-        );
-        const fallbackProgress = effectiveTotalLessons > 0
-            ? this.normalizeProgressPercentage((completedLessons / effectiveTotalLessons) * 100)
-            : 0;
-        const courseProgress = Math.max(apiProgress, fallbackProgress);
+        const completedFromProgress = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
+        const completedFromLocal = this.resolveLocalCompletedLessonCount(course.id, [], effectiveTotalLessons);
+        const completedLessons = Math.max(completedFromProgress, completedFromLocal);
+        const courseProgress = this.calculateCourseCompletionProgress(completedLessons, effectiveTotalLessons);
 
         const totalSeconds =
             typeof visitSnapshot.totalTimeSeconds === 'number' && Number.isFinite(visitSnapshot.totalTimeSeconds)
@@ -1044,6 +1039,38 @@ export class AcademyProgressService {
         return totalLessons > 0
             ? Math.min(totalLessons, boundedCompletedCount)
             : boundedCompletedCount;
+    }
+
+    private resolveLocalCompletedLessonCount(
+        courseId: string,
+        publishedLessons: AcademyLesson[],
+        totalLessons: number,
+    ): number {
+        const localCompletedIds = this.getLocallyCompletedLessonIds(courseId);
+        if (localCompletedIds.size === 0) {
+            return 0;
+        }
+
+        if (publishedLessons.length === 0) {
+            return totalLessons > 0
+                ? Math.min(totalLessons, localCompletedIds.size)
+                : localCompletedIds.size;
+        }
+
+        const publishedLessonIdSet = new Set(publishedLessons.map((lesson) => lesson.id));
+        const matchingCompletedCount = Array.from(localCompletedIds).filter((lessonId) => publishedLessonIdSet.has(lessonId)).length;
+
+        return totalLessons > 0
+            ? Math.min(totalLessons, matchingCompletedCount)
+            : matchingCompletedCount;
+    }
+
+    private calculateCourseCompletionProgress(completedLessons: number, totalLessons: number): number {
+        if (totalLessons <= 0) {
+            return 0;
+        }
+
+        return this.normalizeProgressPercentage((Math.min(totalLessons, Math.max(0, completedLessons)) / totalLessons) * 100);
     }
 
     private resolveRecentLessonIndex(completedLessons: number, totalLessons: number): number {
@@ -1396,7 +1423,7 @@ export class AcademyProgressService {
         const id = lesson.id ?? '';
         const title = lesson.title ?? `Lesson ${index + 1}`;
         const type = this.mapLessonType(lesson, index);
-        const normalizedVideoUrl = toApiMediaUrl(
+        const normalizedMediaUrl = toApiMediaUrl(
             lesson.externalVideoUrl ?? lesson.videoUrl ?? lesson.contentUrl ?? null,
         ) ?? undefined;
 
@@ -1406,7 +1433,8 @@ export class AcademyProgressService {
             title,
             isPublished: lesson.isPublished,
             duration: this.resolveLessonDurationFromDto(lesson, type),
-            videoUrl: type === 'video' ? normalizedVideoUrl : undefined,
+            videoUrl: type === 'video' ? normalizedMediaUrl : undefined,
+            audioUrl: type === 'audio' ? normalizedMediaUrl : undefined,
             type,
             order: lesson.order ?? (index + 1),
             description: lesson.content ?? undefined,
@@ -1486,7 +1514,7 @@ export class AcademyProgressService {
     private buildCategoryLabel(value: unknown): string {
         const normalized = this.normalizeCategory(value);
         if (!normalized) {
-            return 'Course';
+            return '';
         }
 
         return normalized
@@ -1498,6 +1526,36 @@ export class AcademyProgressService {
 
     private normalizeCategory(value: unknown): string {
         return typeof value === 'string' ? value.trim() : '';
+    }
+
+    private hydrateCoursesWithPublishedLessons(courses: AcademyCourse[]): Observable<AcademyCourse[]> {
+        if (courses.length === 0) {
+            return of([]);
+        }
+
+        return forkJoin(
+            courses.map((course) => this.hydrateCourseWithPublishedLessons(course)),
+        );
+    }
+
+    private hydrateCourseWithPublishedLessons(course: AcademyCourse): Observable<AcademyCourse> {
+        if (!course.id) {
+            return of(course);
+        }
+
+        return this.getAcademyLessons(course.id).pipe(
+            map((publishedLessons) => {
+                const lessonCount = publishedLessons.length;
+                const fallbackDuration = this.buildDurationText(lessonCount);
+
+                return {
+                    ...course,
+                    lessons: lessonCount,
+                    duration: this.calculateCourseVideoDuration(publishedLessons, fallbackDuration),
+                };
+            }),
+            catchError(() => of(course)),
+        );
     }
 
     private buildDurationText(lessonCount: number): string {
@@ -1596,31 +1654,43 @@ export class AcademyProgressService {
         }
 
         const durationRequests = lessons.map((lesson) => {
-            if (lesson.type !== 'video' || !lesson.videoUrl) {
-                return of(lesson);
-            }
+            if (lesson.type === 'video' && lesson.videoUrl) {
+                const youtubeVideoId = this.extractVideoId(lesson.videoUrl);
+                if (youtubeVideoId) {
+                    return from(this.fetchVideoDuration(youtubeVideoId)).pipe(
+                        map((isoDuration) => this.renderDuration(this.formatDuration(isoDuration))),
+                        map((formattedDuration) => ({
+                            ...lesson,
+                            duration: formattedDuration,
+                        })),
+                        catchError(() => of(lesson)),
+                    );
+                }
 
-            const youtubeVideoId = this.extractVideoId(lesson.videoUrl);
-            if (youtubeVideoId) {
-                return from(this.fetchVideoDuration(youtubeVideoId)).pipe(
-                    map((isoDuration) => this.renderDuration(this.formatDuration(isoDuration))),
-                    map((formattedDuration) => ({
+                return this.resolveVideoDurationSeconds(lesson.videoUrl).pipe(
+                    map((durationSeconds) => ({
                         ...lesson,
-                        duration: formattedDuration,
+                        duration: durationSeconds > 0
+                            ? this.formatVideoDurationLabel(durationSeconds)
+                            : lesson.duration,
                     })),
                     catchError(() => of(lesson)),
                 );
             }
 
-            return this.resolveVideoDurationSeconds(lesson.videoUrl).pipe(
-                map((durationSeconds) => ({
-                    ...lesson,
-                    duration: durationSeconds > 0
-                        ? this.formatVideoDurationLabel(durationSeconds)
-                        : lesson.duration,
-                })),
-                catchError(() => of(lesson)),
-            );
+            if (lesson.type === 'audio' && lesson.audioUrl) {
+                return this.resolveAudioDurationSeconds(lesson.audioUrl).pipe(
+                    map((durationSeconds) => ({
+                        ...lesson,
+                        duration: durationSeconds > 0
+                            ? this.formatVideoDurationLabel(durationSeconds)
+                            : lesson.duration,
+                    })),
+                    catchError(() => of(lesson)),
+                );
+            }
+
+            return of(lesson);
         });
 
         return forkJoin(durationRequests);
@@ -1667,41 +1737,59 @@ export class AcademyProgressService {
     }
 
     private resolveVideoDurationSeconds(videoUrl: string): Observable<number> {
-        const cachedDuration = this.videoDurationSecondsCache.get(videoUrl);
+        return this.resolveMediaDurationSeconds(videoUrl, 'video');
+    }
+
+    private resolveAudioDurationSeconds(audioUrl: string): Observable<number> {
+        return this.resolveMediaDurationSeconds(audioUrl, 'audio');
+    }
+
+    private resolveMediaDurationSeconds(
+        mediaUrl: string,
+        mediaType: 'video' | 'audio',
+    ): Observable<number> {
+        const cacheKey = `${mediaType}:${mediaUrl}`;
+        const cachedDuration = this.mediaDurationSecondsCache.get(cacheKey);
         if (typeof cachedDuration === 'number') {
             return of(cachedDuration);
         }
 
-        const pendingRequest = this.videoDurationRequestCache.get(videoUrl);
+        const pendingRequest = this.mediaDurationRequestCache.get(cacheKey);
         if (pendingRequest) {
             return pendingRequest;
         }
 
-        const request$ = this.measureVideoDurationSeconds(videoUrl).pipe(
-            tap((durationSeconds) => this.videoDurationSecondsCache.set(videoUrl, durationSeconds)),
+        const request$ = this.measureMediaDurationSeconds(mediaUrl, mediaType).pipe(
+            tap((durationSeconds) => this.mediaDurationSecondsCache.set(cacheKey, durationSeconds)),
             catchError(() => of(0)),
             shareReplay(1),
         );
 
-        this.videoDurationRequestCache.set(videoUrl, request$);
+        this.mediaDurationRequestCache.set(cacheKey, request$);
         return request$;
     }
 
-    private measureVideoDurationSeconds(videoUrl: string): Observable<number> {
+    private measureMediaDurationSeconds(
+        mediaUrl: string,
+        mediaType: 'video' | 'audio',
+    ): Observable<number> {
         if (!this.isBrowser) {
             return of(0);
         }
 
-        return this.measureHtmlVideoDurationSeconds(videoUrl);
+        return this.measureHtmlMediaDurationSeconds(mediaUrl, mediaType);
     }
 
-    private measureHtmlVideoDurationSeconds(videoUrl: string): Observable<number> {
+    private measureHtmlMediaDurationSeconds(
+        mediaUrl: string,
+        mediaType: 'video' | 'audio',
+    ): Observable<number> {
         if (!this.isBrowser) {
             return of(0);
         }
 
         return new Observable<number>((observer) => {
-            const mediaElement = globalThis.document.createElement('video');
+            const mediaElement = globalThis.document.createElement(mediaType) as HTMLMediaElement;
             let settled = false;
             const timeoutId = globalThis.setTimeout(() => {
                 completeWith(0);
@@ -1738,7 +1826,7 @@ export class AcademyProgressService {
             mediaElement.preload = 'metadata';
             mediaElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
             mediaElement.addEventListener('error', handleError, { once: true });
-            mediaElement.src = videoUrl;
+            mediaElement.src = mediaUrl;
             mediaElement.load();
 
             return cleanup;

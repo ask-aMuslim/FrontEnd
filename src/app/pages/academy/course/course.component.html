@@ -116,17 +116,27 @@
               } @else {
                 <!-- Available State -->
                 @if (hasQuizLesson) {
-                  <button (click)="onTakeQuizClick()" class="btn btn-ghost">
+                  <button
+                    type="button"
+                    (click)="onTakeQuizClick()"
+                    class="btn btn-ghost"
+                  >
                     <span>Take the Quiz</span>
                   </button>
                 }
-                <button
-                  (click)="onBeginClick()"
-                  class="btn btn-primary"
-                  [disabled]="isBeginDisabled"
-                >
-                  <span>Begin</span>
-                </button>
+                @if (isBeginDisabled) {
+                  <button type="button" class="btn btn-disabled" disabled>
+                    <span>Begin</span>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="onBeginClick()"
+                    class="btn btn-primary"
+                  >
+                    <span>Begin</span>
+                  </button>
+                }
               }
             </div>
           </div>

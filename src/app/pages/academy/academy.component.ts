@@ -195,9 +195,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
             ? lessonsFromCourseFeed
             : (matchedCourse?.lessons ?? info.totalLessons);
         const completedLessons = Math.min(info.completedLessons, totalLessons);
-        const computedProgress = totalLessons > 0
-            ? Math.round((completedLessons / totalLessons) * 100)
-            : info.progress;
+        const computedProgress = this.calculateCourseCompletionProgress(completedLessons, totalLessons);
         const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
         let mediaType: 'video' | 'audio' | null = null;
         if (matchedLesson?.type === 'video' || matchedLesson?.type === 'audio') {
@@ -220,7 +218,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
             stageNumber: info.stageNumber,
             courseId: info.courseId,
             courseName: info.courseName,
-            categoryLabel: matchedCourse?.categoryLabel ?? 'Course',
+            categoryLabel: matchedCourse?.categoryLabel?.trim() ?? '',
             lessonId: info.lessonId,
             lessonNumber: info.lessonNumber,
             thumbnailUrl: toApiMediaUrl(info.thumbnailUrl ?? null) || '/images/recent-lesson-thumbnail.jpg',
@@ -232,6 +230,14 @@ export class AcademyComponent implements OnInit, OnDestroy {
             completedLessons,
             totalLessons,
         };
+    }
+
+    private calculateCourseCompletionProgress(completedLessons: number, totalLessons: number): number {
+        if (totalLessons <= 0) {
+            return 0;
+        }
+
+        return Math.round((Math.min(totalLessons, Math.max(0, completedLessons)) / totalLessons) * 100);
     }
 
     private buildStagesFromApi(
@@ -295,14 +301,20 @@ export class AcademyComponent implements OnInit, OnDestroy {
             status = progress.status;
         }
 
+        const totalLessons = Math.max(0, progress?.totalLessons ?? course.lessons);
+        const completedLessons = Math.max(0, Math.min(totalLessons, progress?.completedLessons ?? 0));
+        const normalizedProgress = status === 'completed'
+            ? 100
+            : this.calculateCourseCompletionProgress(completedLessons, totalLessons);
+
         return {
             id: course.id,
             title: course.title,
             category: course.category,
             categoryLabel: course.categoryLabel,
-            lessons: course.lessons,
+            lessons: totalLessons,
             duration: course.duration,
-            progress: progress?.progress ?? 0,
+            progress: normalizedProgress,
             status,
             hasUnmetPrerequisites: hasUnfinishedPrereqs,
             thumbnailUrl: course.thumbnailUrl,

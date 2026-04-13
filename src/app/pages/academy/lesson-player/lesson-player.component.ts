@@ -125,6 +125,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     previousNotes: LessonNoteItem[] = [];
     notesFilter: 'latest' | 'current-lesson' = 'latest';
     notesSearchQuery: string = '';
+    activeNoteMenuId: string | null = null;
+    editingNote: LessonNoteItem | null = null;
 
     lessonRating: number = 0;
     feedbackText: string = '';
@@ -369,6 +371,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.hasSyncedCompletion = false;
         this.pendingSeekSeconds = pendingSeekSeconds;
         this.pendingYouTubeRestorePercentage = null;
+        this.noteText = '';
+        this.previousNotes = [];
+        this.notesFilter = 'latest';
+        this.notesSearchQuery = '';
+        this.activeNoteMenuId = null;
+        this.editingNote = null;
     }
 
     get isIntroContent(): boolean { return this.lessonContent ? isIntroContent(this.lessonContent) : false; }
@@ -459,6 +467,37 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     onStartQuizClick(): void {
+        if (!this.hasCourseQuiz) {
+            return;
+        }
+
+        if (!this.lessonId || !this.courseId) {
+            this.navigateToCourseQuiz();
+            return;
+        }
+
+        this.academyProgressService
+            .markLessonCompleted(this.lessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.navigateToCourseQuiz();
+                },
+                error: () => {
+                    this.navigateToCourseQuiz();
+                },
+            });
+    }
+
+    get completedCourseLessonsCount(): number {
+        return this.getContentLessons().filter((lesson) => lesson.progress.isCompleted).length;
+    }
+
+    get totalCourseLessonsCount(): number {
+        return this.getContentLessons().length;
+    }
+
+    private navigateToCourseQuiz(): void {
         if (!this.hasCourseQuiz) {
             return;
         }
@@ -597,6 +636,42 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         if (!trimmedNote) {
             return;
         }
+
+        const editingNote = this.editingNote;
+
+        if (editingNote) {
+            this.lessonContentService
+                .updateLessonNote(editingNote.id, trimmedNote, editingNote.progressSeconds)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: (updated) => {
+                        if (!updated) {
+                            this.activeNoteMenuId = null;
+                            this.cdr.markForCheck();
+                            return;
+                        }
+
+                        const updatedNote: LessonNoteItem = {
+                            ...editingNote,
+                            text: trimmedNote,
+                        };
+
+                        this.previousNotes = this.previousNotes.map((note) => (
+                            note.id === editingNote.id ? updatedNote : note
+                        ));
+
+                        this.resetNoteComposer();
+                        this.cdr.markForCheck();
+                    },
+                    error: () => {
+                        this.activeNoteMenuId = null;
+                        this.cdr.markForCheck();
+                    },
+                });
+
+            return;
+        }
+
         const timestampSeconds = this.resolveCurrentLessonTimestampSeconds();
 
         this.lessonContentService
@@ -605,38 +680,75 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (createdNote) => {
                     this.previousNotes = [createdNote, ...this.previousNotes];
-                    this.noteText = '';
+                    this.resetNoteComposer();
                     this.cdr.markForCheck();
                 },
                 error: () => {
-                    this.noteText = '';
+                    this.activeNoteMenuId = null;
                     this.cdr.markForCheck();
                 },
             });
     }
 
-    onDeleteNoteClick(event: Event, noteId: string, index: number): void {
+    onDeleteNoteClick(event: Event, noteId: string): void {
         event.stopPropagation();
-        this.deleteNote(noteId, index);
+        this.deleteNote(noteId);
+    }
+
+    toggleNoteMenu(event: Event, noteId: string): void {
+        event.stopPropagation();
+        event.preventDefault();
+        this.activeNoteMenuId = this.activeNoteMenuId === noteId ? null : noteId;
+    }
+
+    goToNoteTimestamp(event: Event, note: LessonNoteItem): void {
+        event.stopPropagation();
+        event.preventDefault();
+        this.onLessonNoteClick(note);
+    }
+
+    beginEditNote(event: Event, note: LessonNoteItem): void {
+        event.stopPropagation();
+        event.preventDefault();
+        this.activeNoteMenuId = null;
+        this.editingNote = { ...note };
+        this.noteText = note.text;
+        this.cdr.markForCheck();
+    }
+
+    cancelNoteEdit(): void {
+        this.resetNoteComposer();
+        this.cdr.markForCheck();
     }
 
     onLessonNoteClick(note: LessonNoteItem): void {
+        this.activeNoteMenuId = null;
         this.scrollToMediaSection();
         this.seekPlaybackTo(note.progressSeconds);
     }
 
-    deleteNote(noteId: string, index: number): void {
+    deleteNote(noteId: string): void {
+        this.activeNoteMenuId = null;
         this.lessonContentService
             .deleteLessonNote(noteId)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (deleted) => {
                     if (deleted) {
-                        this.previousNotes.splice(index, 1);
+                        this.previousNotes = this.previousNotes.filter((note) => note.id !== noteId);
+                        if (this.editingNote?.id === noteId) {
+                            this.editingNote = null;
+                            this.noteText = '';
+                        }
                         this.cdr.markForCheck();
                     }
                 },
             });
+    }
+
+    getNoteTimestampLabel(note: LessonNoteItem): string {
+        const lessonTitle = this.lessonContent?.title || this.currentLesson?.title || 'Lesson';
+        return `${lessonTitle} ${note.timestamp}`.trim();
     }
 
     setRating(stars: number): void { this.lessonRating = stars; }
@@ -657,12 +769,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     get courseInfo(): { stage: number; code: string; title: string; stats: string } {
         const stage = this.currentCourse?.stageId || 0;
         const title = this.currentCourse?.title || '';
-        const currentOrder = this.lessonData?.metadata.order || (this.currentLesson?.order || 0);
         return {
             stage,
             code: '',
             title,
-            stats: `Lesson: ${currentOrder}/${this.courseLessons.length}`
+            stats: `Lesson: ${this.completedCourseLessonsCount}/${this.totalCourseLessonsCount}`
         };
     }
 
@@ -679,6 +790,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         return notesForLesson.filter(note => note.text.toLowerCase().includes(query));
+    }
+
+    private resetNoteComposer(): void {
+        this.noteText = '';
+        this.editingNote = null;
+        this.activeNoteMenuId = null;
     }
 
     get sidebarLessons(): AcademySidebarLessonItem[] {
@@ -720,12 +837,15 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     private getLastContentLessonId(): string | null {
-        const nonQuizLessons = this.courseLessons
-            .filter((lesson) => lesson.type !== 'quiz')
+        const nonQuizLessons = this.getContentLessons()
             .sort((a, b) => a.order - b.order);
 
         const lastLesson = nonQuizLessons.at(-1);
         return lastLesson?.id ?? null;
+    }
+
+    private getContentLessons(): Array<AcademyLesson & { progress: LessonProgress }> {
+        return this.courseLessons.filter((lesson) => lesson.type !== 'quiz');
     }
 
     onSidebarLessonSelect(lesson: AcademySidebarLessonItem): void {

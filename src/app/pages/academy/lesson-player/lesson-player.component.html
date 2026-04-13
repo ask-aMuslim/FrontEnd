@@ -621,10 +621,20 @@
           @if (activeTab === "notes") {
             <div class="tab-pane notes-pane">
               <div class="note-input-wrapper">
+                @if (editingNote) {
+                  <div class="note-edit-banner">
+                    <span>
+                      Editing note at {{ getNoteTimestampLabel(editingNote) }}
+                    </span>
+                    <button type="button" class="note-edit-cancel" (click)="cancelNoteEdit()">
+                      Cancel
+                    </button>
+                  </div>
+                }
                 <textarea
                   class="note-textarea"
                   [(ngModel)]="noteText"
-                  placeholder="Write your note here .."
+                  [placeholder]="editingNote ? 'Update your note here ..' : 'Write your note here ..'"
                   rows="5"
                 ></textarea>
                 <div class="note-action">
@@ -633,7 +643,7 @@
                     (click)="addNote()"
                     [disabled]="!noteText.trim()"
                   >
-                    <span>Add</span>
+                    <span>{{ editingNote ? 'Save' : 'Add' }}</span>
                   </button>
                 </div>
               </div>
@@ -652,7 +662,7 @@
                   </select>
                 </div>
                 <div class="notes-list">
-                  @for (note of filteredNotes; track note.id; let i = $index) {
+                  @for (note of filteredNotes; track note.id) {
                     <div
                       class="note-item"
                       role="button"
@@ -664,14 +674,54 @@
                       "
                     >
                       <div class="note-header">
-                        <span class="note-timestamp">{{ note.timestamp }}</span>
-                        <button
-                          class="btn-more"
-                          type="button"
-                          (click)="onDeleteNoteClick($event, note.id, i)"
-                        >
-                          Delete
-                        </button>
+                        <span class="note-timestamp">{{ getNoteTimestampLabel(note) }}</span>
+                        <div class="note-actions">
+                          <button
+                            class="btn-more"
+                            type="button"
+                            [attr.aria-expanded]="activeNoteMenuId === note.id"
+                            [attr.aria-label]="'Note actions for ' + getNoteTimestampLabel(note)"
+                            (click)="toggleNoteMenu($event, note.id)"
+                          >
+                            <img
+                              src="/icons/icons-24/more.svg"
+                              width="24"
+                              height="24"
+                              alt=""
+                              aria-hidden="true"
+                              draggable="false"
+                            />
+                          </button>
+
+                          @if (activeNoteMenuId === note.id) {
+                            <div class="note-menu" role="menu" aria-label="Note actions">
+                              <button
+                                type="button"
+                                class="note-menu-item"
+                                role="menuitem"
+                                (click)="goToNoteTimestamp($event, note)"
+                              >
+                                Go To Timestamp
+                              </button>
+                              <button
+                                type="button"
+                                class="note-menu-item"
+                                role="menuitem"
+                                (click)="beginEditNote($event, note)"
+                              >
+                                Edit Note
+                              </button>
+                              <button
+                                type="button"
+                                class="note-menu-item note-menu-item--danger"
+                                role="menuitem"
+                                (click)="onDeleteNoteClick($event, note.id)"
+                              >
+                                Delete Note
+                              </button>
+                            </div>
+                          }
+                        </div>
                       </div>
                       <p class="note-text">{{ note.text }}</p>
                     </div>
@@ -764,10 +814,8 @@
     <app-academy-sidebar-host
       [stageNumber]="courseInfo.stage"
       [title]="courseInfo.title"
-      [currentLessonNumber]="
-        lessonData?.metadata?.order ?? currentLesson?.order ?? null
-      "
-      [totalLessons]="courseLessons.length"
+      [currentLessonNumber]="completedCourseLessonsCount"
+      [totalLessons]="totalCourseLessonsCount"
       [duration]="resolvedCourseDuration"
       [overviewLink]="['/academy/course', courseId]"
       overviewLinkLabel="Course overview"
