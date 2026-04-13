@@ -380,8 +380,8 @@
   justify-content: center;
 
   .app-icon {
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
   }
 
   span {
@@ -406,8 +406,9 @@
 }
 
 .app-qr {
-  width: clamp(40px, 5vw, 52px);
-  height: clamp(40px, 5vw, 52px);
+  width: 48px;
+  height: 48px;
+  max-width: 48px;
   object-fit: contain;
 }
 

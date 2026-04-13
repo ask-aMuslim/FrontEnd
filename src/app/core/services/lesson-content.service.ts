@@ -191,6 +191,21 @@ export class LessonContentService {
     );
   }
 
+  updateLessonNote(
+    noteId: Id,
+    note: string,
+    timestampSeconds: number,
+  ): Observable<boolean> {
+    const safeProgressSeconds = Math.max(0, timestampSeconds);
+
+    return this.lessonsService
+      .updateNote(noteId, { timestampSeconds: safeProgressSeconds, text: note })
+      .pipe(
+        map((updated) => updated === true),
+        catchError(() => of(false)),
+      );
+  }
+
   deleteLessonNote(noteId: Id): Observable<boolean> {
     return this.lessonsService.deleteNote(noteId).pipe(
       map(() => true),
@@ -684,9 +699,9 @@ export class LessonContentService {
     const seconds = safeSeconds % 60;
 
     if (hours > 0) {
-      return `[Lesson] ${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    return `[Lesson] ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 }

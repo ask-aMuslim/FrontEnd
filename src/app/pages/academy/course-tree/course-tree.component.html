@@ -29,34 +29,6 @@
               [attr.tabindex]="node.status === 'locked' ? -1 : 0"
               (click)="onNodeClick(node)"
             >
-              <div class="course-card__header">
-                <span
-                  class="course-card__status"
-                  [class.course-card__status--available]="
-                    node.status === 'available'
-                  "
-                  [class.course-card__status--in-progress]="
-                    node.status === 'in-progress'
-                  "
-                  [class.course-card__status--completed]="
-                    node.status === 'completed'
-                  "
-                  [class.course-card__status--locked]="node.status === 'locked'"
-                  >{{ node.status | titlecase }}</span
-                >
-                @if (node.status === "completed") {
-                  <img
-                    class="course-card__medal"
-                    src="/academy/medal.svg"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                }
-                @if (node.status === "locked") {
-                  <span class="course-card__lock" aria-hidden="true">🔒</span>
-                }
-              </div>
-
               <h4 class="course-card__title">{{ node.title }}</h4>
 
               @if (node.description) {

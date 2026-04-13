@@ -69,6 +69,7 @@ export interface AcademyLesson {
     isPublished?: boolean;
     duration: string;
     videoUrl?: string;
+    audioUrl?: string;
     type: AcademyLessonType;
     order: number;
     description?: string;

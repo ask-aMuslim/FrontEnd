@@ -95,10 +95,12 @@
                 </div>
                 <div class="lesson-info">
                   <div class="info-row">
-                    <span class="course-category">{{
-                      recentLesson.categoryLabel
-                    }}</span>
-                    <span class="separator">-</span>
+                    @if (recentLesson.categoryLabel) {
+                      <span class="course-category">{{
+                        recentLesson.categoryLabel
+                      }}</span>
+                      <span class="separator">-</span>
+                    }
                     <span class="lesson-count"
                       >{{ recentLesson.completedLessons }} out of
                       {{ recentLesson.totalLessons }} lessons</span

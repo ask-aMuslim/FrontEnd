@@ -8,6 +8,7 @@
   width: 100%;
   min-height: 180px;
   border-radius: 8px;
+  padding: 0 2rem;
   border: 1px solid var(--colors-rare-grays-20);
   background: var(--colors-rare-grays-0);
   display: flex;
@@ -119,51 +120,6 @@
       border-color: var(--colors-green-60);
     }
   }
-}
-
-.course-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.course-card__status {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--colors-rare-grays-20);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  color: var(--colors-rare-grays-60);
-}
-
-.course-card__status--available {
-  color: var(--colors-green-100);
-  background: rgba(26, 157, 112, 0.14);
-}
-
-.course-card__status--in-progress {
-  color: var(--colors-orange-100);
-  background: rgba(249, 115, 22, 0.14);
-}
-
-.course-card__status--completed {
-  color: var(--colors-green-100);
-  background: rgba(26, 157, 112, 0.14);
-}
-
-.course-card__status--locked {
-  color: var(--colors-rare-grays-60);
-  background: var(--colors-rare-grays-20);
-}
-
-.course-card__medal {
-  width: 22px;
-  height: 22px;
-}
-
-.course-card__lock {
-  font-size: 16px;
 }
 
 .course-card__title {
