@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, combineLatest } from 'rxjs';
@@ -73,6 +73,13 @@ export class CourseComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private courseId: string = '';
 
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+    private readonly academyProgressService = inject(AcademyProgressService);
+    private readonly quizzesService = inject(QuizzesService);
+    private readonly authService = inject(AuthService);
+    private readonly cdr = inject(ChangeDetectorRef);
+
     // Course data loaded from service
     course: CourseDetails | null = null;
 
@@ -90,8 +97,8 @@ export class CourseComponent implements OnInit, OnDestroy {
         );
     }
 
-    get hasCourseLessons(): boolean {
-        return !!this.course?.lessons?.length;
+    get hasPublishedLessons(): boolean {
+        return !!this.course?.lessonsList.length;
     }
 
     get hasQuizLesson(): boolean {
@@ -106,9 +113,7 @@ export class CourseComponent implements OnInit, OnDestroy {
         }
 
         return (
-            !this.hasCourseLessons ||
-            this.course.totalLessons === 0 ||
-            this.course.lessonsList.length === 0 ||
+            !this.hasPublishedLessons ||
             !this.hasPlayableLesson
         );
     }
@@ -140,15 +145,6 @@ export class CourseComponent implements OnInit, OnDestroy {
     readonly breadcrumbs: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
     ];
-
-    constructor(
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly academyProgressService: AcademyProgressService,
-        private readonly quizzesService: QuizzesService,
-        private readonly authService: AuthService,
-        private readonly cdr: ChangeDetectorRef,
-    ) { }
 
     ngOnInit(): void {
         // Get course ID from route params using snapshot for SSR compatibility

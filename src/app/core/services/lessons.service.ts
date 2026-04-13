@@ -1,9 +1,23 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, filter, map, of, switchMap, take } from 'rxjs';
-import { LessonFacade, LessonReadDto, CreateLessonRequest, UpdateLessonRequest } from '../../api/facades/lesson.facade';
+import {
+  LessonFacade,
+  LessonReadDto,
+  CreateLessonRequest,
+  UpdateLessonRequest,
+  LessonNote,
+} from '../../api/facades/lesson.facade';
 import { Id } from '../models/interfaces/base.model';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { StudentProfile } from '../models/interfaces/student-profile.model';
+
+export interface LessonNoteSummary {
+  id: Id;
+  timestamp: string;
+  progressSeconds: number;
+  text: string;
+  createdAt: string;
+}
 
 /**
  * Service to handle all lesson-related API calls
@@ -77,13 +91,14 @@ export class LessonsService {
   /**
    * Get student notes for a lesson
    */
-  getNotes(lessonId: Id): Observable<Array<{ id: Id; timestamp: string; text: string; createdAt: string }>> {
+  getNotes(lessonId: Id): Observable<LessonNoteSummary[]> {
     return this.facade.getNotes(String(lessonId)).pipe(
       map(notes => notes.map(note => ({
         id: note.id,
-        timestamp: this.formatNoteTimestamp(note.createdAt),
+        timestamp: this.formatProgressTime(this.toProgressSeconds(note)),
+        progressSeconds: this.toProgressSeconds(note),
         text: note.text ?? note.content ?? '',
-        createdAt: note.createdAt
+        createdAt: this.normalizeCreatedAt(note.createdAt)
       })))
     );
   }
@@ -91,16 +106,27 @@ export class LessonsService {
   /**
    * Add a note to a lesson
    */
-  addNote(lessonId: Id, note: { timestamp: string; text: string }): Observable<{ id: Id; timestamp: string; text: string; createdAt: string } | null> {
+  addNote(
+    lessonId: Id,
+    note: { timestampSeconds: number; text: string },
+  ): Observable<LessonNoteSummary | null> {
     return this.studentFacade.me().pipe(
       filter((profile): profile is StudentProfile & { studentId: string } => typeof profile?.studentId === 'string' && profile.studentId.length > 0),
       take(1),
-      switchMap((profile) => this.facade.addNote(String(lessonId), profile.studentId, note.text)),
+      switchMap((profile) =>
+        this.facade.addNote(
+          String(lessonId),
+          profile.studentId,
+          note.text,
+          Math.max(0, note.timestampSeconds),
+        ),
+      ),
       map(result => result ? {
         id: result.id,
-        timestamp: note.timestamp,
+        timestamp: this.formatProgressTime(this.toProgressSeconds(result, note.timestampSeconds)),
+        progressSeconds: this.toProgressSeconds(result, note.timestampSeconds),
         text: result.text ?? result.content ?? note.text,
-        createdAt: result.createdAt
+        createdAt: this.normalizeCreatedAt(result.createdAt)
       } : null),
       catchError(() => of(null))
     );
@@ -115,14 +141,47 @@ export class LessonsService {
     );
   }
 
-  private formatNoteTimestamp(createdAt: string): string {
-    const parsedDate = new Date(createdAt);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return '[Lesson] --:--';
+  private toProgressSeconds(note: LessonNote, fallbackSeconds = 0): number {
+    const candidate = note.timestamp;
+    let numericValue = Number.NaN;
+    if (typeof candidate === 'number') {
+      numericValue = candidate;
+    } else if (typeof candidate === 'string') {
+      numericValue = Number.parseFloat(candidate);
     }
 
-    const hours = String(parsedDate.getHours()).padStart(2, '0');
-    const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
-    return `[Lesson] ${hours}:${minutes}`;
+    if (Number.isFinite(numericValue) && numericValue >= 0) {
+      if (numericValue <= 86_400) {
+        return numericValue;
+      }
+
+      // Backward compatibility for legacy notes created with epoch milliseconds.
+      if (numericValue > 1_000_000_000) {
+        return fallbackSeconds;
+      }
+
+      return numericValue;
+    }
+
+    return Math.max(0, fallbackSeconds);
+  }
+
+  private formatProgressTime(totalSeconds: number): string {
+    const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const seconds = safeSeconds % 60;
+
+    if (hours > 0) {
+      return `[Lesson] ${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    return `[Lesson] ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  private normalizeCreatedAt(createdAt: string | undefined): string {
+    return typeof createdAt === 'string' && createdAt.trim().length > 0
+      ? createdAt
+      : new Date().toISOString();
   }
 }

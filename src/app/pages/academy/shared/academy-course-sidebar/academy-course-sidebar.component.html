@@ -79,7 +79,10 @@
           >
             {{ lesson.title }}
           </h4>
-          @if (lesson.type === "video" && lesson.duration) {
+          @if (
+            (lesson.type === "video" || lesson.type === "audio") &&
+            lesson.duration
+          ) {
             <span class="lesson-duration">{{ lesson.duration }}</span>
           }
         </div>

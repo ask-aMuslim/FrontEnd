@@ -8,6 +8,7 @@ import { StudentFacade } from '../../../api/facades/student.facade';
 import { EnrollmentFacade, EnrollmentReadDto } from '../../../api/facades/enrollment.facade';
 import { CourseFacade, CourseReadDto } from '../../../api/facades/course.facade';
 import { LessonFacade, LessonReadDto, LessonNote } from '../../../api/facades/lesson.facade';
+import { LevelFacade, LevelReadDto } from '../../../api/facades/level.facade';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { AcademyCourse, CourseProgress } from '../../../core/models/interfaces/academy-progress.model';
 
@@ -22,10 +23,16 @@ interface SavedLesson {
 
 interface Note {
   id: string;
+  lessonId: string;
+  courseId: string;
+  levelId: string;
+  level: string;
   course: string;
-  label: string;
+  lesson: string;
+  progressTime: string;
+  progressSeconds: number;
   body: string;
-  html: string;
+  createdAt: string;
 }
 
 interface CourseWithLessons {
@@ -51,10 +58,12 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly enrollmentFacade = inject(EnrollmentFacade);
   private readonly courseFacade = inject(CourseFacade);
   private readonly lessonFacade = inject(LessonFacade);
+  private readonly levelFacade = inject(LevelFacade);
   private readonly academyProgressService = inject(AcademyProgressService);
   readonly scrollRow = viewChild<ElementRef<HTMLDivElement>>('scrollRow');
 
   private readonly destroy$ = new Subject<void>();
+  private readonly levelTitlesById = new Map<string, string>();
 
   // Drag scroll state
   private isDragging = false;
@@ -63,7 +72,9 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
 
   searchQuery = '';
   selectedCourseFilter = 'All Courses';
-  selectedSortOrder = 'Latest';
+  selectedLessonFilter = 'All Lessons';
+  selectedLevelFilter = 'All Levels';
+  selectedSortOrder: 'Latest' | 'Oldest' = 'Latest';
 
   // Loading and error states
   isLoading = signal(false);
@@ -89,6 +100,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
   filteredNotes: Note[] = [];
 
   ngOnInit(): void {
+    this.loadLevelTitles();
     this.loadStudentData();
   }
 
@@ -101,9 +113,34 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  private loadLevelTitles(): void {
+    this.levelFacade
+      .getAllLevels()
+      .pipe(
+        take(1),
+        catchError(() => of([] as LevelReadDto[])),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((levels) => {
+        this.levelTitlesById.clear();
+        levels.forEach((level) => {
+          if (level.id && level.title) {
+            this.levelTitlesById.set(level.id, level.title);
+          }
+        });
+
+        this.refreshExistingNoteLevels();
+      });
+  }
+
   private loadStudentData(): void {
     this.isLoading.set(true);
     this.error.set(null);
+    this.notesError.set(null);
+    this.savedLessonsSignal.set([]);
+    this.coursesSignal.set([]);
+    this.allNotesSignal.set([]);
+    this.filteredNotes = [];
 
     // Load remaining courses for the current stage
     this.academyProgressService.getStudentProgress().pipe(
@@ -113,10 +150,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
           map(courses => courses.filter(c => c.progress.status !== 'completed'))
         );
       }),
-      catchError(() => {
-        this.error.set('Unable to load your stage progress right now.');
-        return of([]);
-      }),
+      catchError(() => of([])),
       tap(remaining => this.remainingCoursesSignal.set(remaining)),
       takeUntil(this.destroy$)
     ).subscribe();
@@ -160,10 +194,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
         // Load notes for all lessons
         this.loadNotesForLessons(validCourses);
       }),
-      catchError(() => {
-        this.error.set('Failed to load your learning data. Please try again.');
-        return of(null);
-      }),
+      catchError(() => of([] as CourseWithLessons[])),
       finalize(() => this.isLoading.set(false)),
       takeUntil(this.destroy$)
     ).subscribe();
@@ -186,6 +217,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private appendSavedLessons(course: CourseReadDto, lessons: LessonReadDto[]): void {
     const currentLessons = this.savedLessonsSignal();
+    const savedLessonsById = new Map(currentLessons.map((lesson) => [lesson.id, lesson]));
     const newLessons: SavedLesson[] = lessons.map((lesson, index) => ({
       id: lesson.id || `lesson-${index}`,
       courseId: course.id || '',
@@ -195,7 +227,11 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
       badge: String.fromCodePoint(65 + (index % 26)), // A, B, C...
     }));
 
-    this.savedLessonsSignal.set([...currentLessons, ...newLessons]);
+    newLessons.forEach((lesson) => {
+      savedLessonsById.set(lesson.id, lesson);
+    });
+
+    this.savedLessonsSignal.set(Array.from(savedLessonsById.values()));
   }
 
   private loadNotesForLessons(coursesWithLessons: CourseWithLessons[]): void {
@@ -216,6 +252,8 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     if (lessonNoteRequests.length === 0) {
+      this.allNotesSignal.set([]);
+      this.filteredNotes = [];
       this.isLoadingNotes.set(false);
       return;
     }
@@ -227,12 +265,21 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
 
           lessonWithNotesArray.forEach((item) => {
             item.notes.forEach((note) => {
+              const progressSeconds = this.resolveProgressSeconds(note);
+              const levelId = this.resolveLevelId(item.course);
+              const rawBody = (note.content ?? note.text ?? '').trim();
               allNotes.push({
                 id: note.id,
+                lessonId: item.lesson.id || '',
+                courseId: item.course.id || '',
+                levelId,
+                level: this.resolveLevelTitle(item.course, levelId),
                 course: item.course.title || 'Unknown Course',
-                label: `{${item.lesson.title}} ${new Date(note.createdAt).toLocaleTimeString()}`,
-                body: note.content ?? note.text ?? '',
-                html: '',
+                lesson: item.lesson.title || 'Untitled Lesson',
+                progressTime: this.formatProgressTime(progressSeconds),
+                progressSeconds,
+                body: rawBody.length > 0 ? rawBody : 'No note content',
+                createdAt: this.toIsoDate(note.createdAt),
               });
             });
           });
@@ -285,6 +332,84 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
     el.addEventListener('mouseleave', stopDrag);
   }
 
+  private refreshExistingNoteLevels(): void {
+    const existingNotes = this.allNotesSignal();
+    if (existingNotes.length === 0) {
+      return;
+    }
+
+    const nextNotes = existingNotes.map((note) => ({
+      ...note,
+      level: this.resolveLevelTitleById(note.levelId, note.level),
+    }));
+
+    this.allNotesSignal.set(nextNotes);
+    this.updateFilteredNotes();
+  }
+
+  private resolveLevelId(course: CourseReadDto): string {
+    return typeof course.levelId === 'string' ? course.levelId : '';
+  }
+
+  private resolveLevelTitle(course: CourseReadDto, levelId: string): string {
+    if (typeof course.level === 'string' && course.level.trim().length > 0) {
+      return course.level.trim();
+    }
+
+    return this.resolveLevelTitleById(levelId, 'Unknown Level');
+  }
+
+  private resolveLevelTitleById(levelId: string, fallback: string): string {
+    if (levelId && this.levelTitlesById.has(levelId)) {
+      return this.levelTitlesById.get(levelId) ?? fallback;
+    }
+
+    return fallback;
+  }
+
+  private resolveProgressSeconds(note: LessonNote): number {
+    const candidate = note.timestamp;
+    if (typeof candidate === 'number' && Number.isFinite(candidate) && candidate >= 0) {
+      return candidate <= 86_400 ? candidate : 0;
+    }
+
+    if (typeof candidate === 'string') {
+      const parsed = Number.parseFloat(candidate);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed <= 86_400 ? parsed : 0;
+      }
+    }
+
+    return 0;
+  }
+
+  private formatProgressTime(progressSeconds: number): string {
+    const totalSeconds = Math.max(0, Math.floor(progressSeconds));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  private toIsoDate(createdAt: string | undefined): string {
+    const parsed = typeof createdAt === 'string' ? new Date(createdAt) : null;
+    if (parsed && Number.isFinite(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+
+    return new Date().toISOString();
+  }
+
+  private toTimestampMillis(value: string): number {
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   updateFilteredNotes(): void {
     let filtered = this.allNotesSignal();
 
@@ -292,19 +417,80 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
       filtered = filtered.filter((note) => note.course === this.selectedCourseFilter);
     }
 
+    if (this.selectedLessonFilter !== 'All Lessons') {
+      filtered = filtered.filter((note) => note.lesson === this.selectedLessonFilter);
+    }
+
+    if (this.selectedLevelFilter !== 'All Levels') {
+      filtered = filtered.filter((note) => note.level === this.selectedLevelFilter);
+    }
+
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
       filtered = filtered.filter(
         (note) =>
-          note.label.toLowerCase().includes(query) || note.body.toLowerCase().includes(query),
+          note.lesson.toLowerCase().includes(query)
+          || note.course.toLowerCase().includes(query)
+          || note.level.toLowerCase().includes(query)
+          || note.body.toLowerCase().includes(query)
+          || note.progressTime.toLowerCase().includes(query),
       );
     }
 
-    if (this.selectedSortOrder === 'Latest') {
-      filtered = [...filtered].reverse();
+    filtered = [...filtered].sort((a, b) => this.toTimestampMillis(b.createdAt) - this.toTimestampMillis(a.createdAt));
+
+    if (this.selectedSortOrder === 'Oldest') {
+      filtered.reverse();
     }
 
     this.filteredNotes = filtered;
+  }
+
+  get hasActiveNoteFilters(): boolean {
+    return this.searchQuery.trim().length > 0
+      || this.selectedSortOrder !== 'Latest'
+      || this.selectedCourseFilter !== 'All Courses'
+      || this.selectedLessonFilter !== 'All Lessons'
+      || this.selectedLevelFilter !== 'All Levels';
+  }
+
+  get noteResultsSummary(): string {
+    const total = this.allNotesSignal().length;
+    const visible = this.filteredNotes.length;
+
+    if (total === 0) {
+      return 'No notes found yet';
+    }
+
+    if (visible === total) {
+      return `Showing all ${total} note${total === 1 ? '' : 's'}`;
+    }
+
+    return `Showing ${visible} of ${total} notes`;
+  }
+
+  clearNoteFilters(): void {
+    this.searchQuery = '';
+    this.selectedCourseFilter = 'All Courses';
+    this.selectedLessonFilter = 'All Lessons';
+    this.selectedLevelFilter = 'All Levels';
+    this.selectedSortOrder = 'Latest';
+    this.updateFilteredNotes();
+  }
+
+  formatNoteCreatedAt(note: Note): string {
+    const timestamp = this.toTimestampMillis(note.createdAt);
+    if (timestamp <= 0) {
+      return 'Unknown date';
+    }
+
+    return new Date(timestamp).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 
   onSearchChange(query: string): void {
@@ -317,18 +503,70 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateFilteredNotes();
   }
 
-  onSortOrderChange(order: string): void {
-    this.selectedSortOrder = order;
+  onLessonFilterChange(lesson: string): void {
+    this.selectedLessonFilter = lesson;
     this.updateFilteredNotes();
   }
 
-  getNotesByCourse(course: string): Note[] {
-    return this.filteredNotes.filter((note) => note.course === course);
+  onLevelFilterChange(level: string): void {
+    this.selectedLevelFilter = level;
+    this.updateFilteredNotes();
   }
 
-  getCoursesWithNotes(): string[] {
-    const courses = new Set(this.filteredNotes.map((note) => note.course));
-    return Array.from(courses);
+  onSortOrderChange(order: string): void {
+    this.selectedSortOrder = order === 'Oldest' ? 'Oldest' : 'Latest';
+    this.updateFilteredNotes();
+  }
+
+  getCourseFilterOptions(): string[] {
+    const scopedNotes = this.selectedLevelFilter === 'All Levels'
+      ? this.allNotesSignal()
+      : this.allNotesSignal().filter((note) => note.level === this.selectedLevelFilter);
+
+    const courses = new Set(scopedNotes.map((note) => note.course));
+    return ['All Courses', ...Array.from(courses).sort((a, b) => a.localeCompare(b))];
+  }
+
+  getLessonFilterOptions(): string[] {
+    let scopedNotes = this.allNotesSignal();
+
+    if (this.selectedCourseFilter !== 'All Courses') {
+      scopedNotes = scopedNotes.filter((note) => note.course === this.selectedCourseFilter);
+    }
+
+    if (this.selectedLevelFilter !== 'All Levels') {
+      scopedNotes = scopedNotes.filter((note) => note.level === this.selectedLevelFilter);
+    }
+
+    const lessons = new Set(scopedNotes.map((note) => note.lesson));
+    return ['All Lessons', ...Array.from(lessons).sort((a, b) => a.localeCompare(b))];
+  }
+
+  getLevelFilterOptions(): string[] {
+    const scopedNotes = this.selectedCourseFilter === 'All Courses'
+      ? this.allNotesSignal()
+      : this.allNotesSignal().filter((note) => note.course === this.selectedCourseFilter);
+
+    const levels = new Set(scopedNotes.map((note) => note.level));
+    return ['All Levels', ...Array.from(levels).sort((a, b) => a.localeCompare(b))];
+  }
+
+  openNoteInLesson(note: Note): void {
+    if (!note.courseId || !note.lessonId) {
+      this.goToCourse(note.courseId || note.course);
+      return;
+    }
+
+    void this.router.navigate(
+      ['/academy/course', note.courseId, 'lesson', note.lessonId],
+      {
+        queryParams: {
+          tab: 'notes',
+          noteId: note.id,
+          seek: Math.max(0, Math.floor(note.progressSeconds)),
+        },
+      },
+    );
   }
 
   goToCourse(courseRef: string): void {

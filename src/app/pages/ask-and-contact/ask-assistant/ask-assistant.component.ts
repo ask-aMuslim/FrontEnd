@@ -29,7 +29,7 @@ export class AskAssistantComponent {
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bottomAnchor') bottomAnchor?: ElementRef<HTMLDivElement>;
   arrow = '/icons/icons-24/arrow-right.svg';
-  logo = '/AskAMuslimLogo.png';
+  logo = '/ask-a-muslim-logo.png';
 
   inputValue = '';
   isSuggestionsOpen = false;

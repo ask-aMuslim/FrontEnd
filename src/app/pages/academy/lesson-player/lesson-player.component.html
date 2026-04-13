@@ -53,7 +53,7 @@
 
       <!-- Video Content -->
       @if (isVideoContent && lessonContent) {
-        <div class="media-container video-container">
+        <div class="media-container video-container" #lessonMediaContainer>
           @if (isYouTubeVideo) {
             <div class="video-embed-wrapper">
               <div
@@ -84,10 +84,15 @@
             </div>
           } @else {
             <video
+              #videoElement
               controls
               class="video-player"
               [src]="videoContent?.videoUrl"
               [poster]="videoContent?.thumbnailUrl"
+              (loadedmetadata)="onVideoLoadedMetadata(videoElement)"
+              (timeupdate)="onVideoTimeUpdate(videoElement)"
+              (pause)="onVideoPause(videoElement)"
+              (ended)="onVideoEnded(videoElement)"
             >
               <track kind="captions" srclang="en" label="English" />
               Your browser does not support the video tag.
@@ -101,14 +106,205 @@
 
       <!-- Audio Content -->
       @if (isAudioContent && lessonContent) {
-        <div class="media-container audio-container">
+        <div class="media-container audio-container" #lessonMediaContainer>
           <div class="audio-player-wrapper">
-            <audio controls class="audio-player">
+            <audio
+              #audioElement
+              class="audio-player audio-player--native"
+              (loadedmetadata)="onAudioLoadedMetadata(audioElement)"
+              (play)="onAudioPlay(audioElement)"
+              (timeupdate)="onAudioTimeUpdate(audioElement)"
+              (pause)="onAudioPause(audioElement)"
+              (ended)="onAudioEnded(audioElement)"
+              (ratechange)="onAudioRateChange(audioElement)"
+              (volumechange)="onAudioVolumeChange(audioElement)"
+            >
               <source [src]="audioContent?.audioUrl" type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
-            <div class="audio-info">
-              <span class="duration">{{ audioContent?.duration }}</span>
+
+            <div class="audio-controls-panel">
+              <button
+                class="audio-primary-action"
+                type="button"
+                [attr.aria-label]="
+                  audioIsPlaying ? 'Pause audio' : 'Play audio'
+                "
+                (click)="toggleAudioPlayback()"
+              >
+                @if (audioIsPlaying) {
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <rect
+                      x="6"
+                      y="5"
+                      width="4"
+                      height="14"
+                      rx="1"
+                      fill="#FFFFFF"
+                    />
+                    <rect
+                      x="14"
+                      y="5"
+                      width="4"
+                      height="14"
+                      rx="1"
+                      fill="#FFFFFF"
+                    />
+                  </svg>
+                } @else {
+                  <img
+                    src="/academy/audio-play.svg"
+                    width="40"
+                    height="40"
+                    alt=""
+                    aria-hidden="true"
+                    draggable="false"
+                  />
+                }
+              </button>
+
+              <div class="audio-controls-main">
+                <div class="audio-controls-row">
+                  <button
+                    class="audio-icon-button"
+                    type="button"
+                    aria-label="Replay 10 seconds"
+                    (click)="seekAudioBy(-10)"
+                  >
+                    <img
+                      src="/academy/backward-10-seconds.svg"
+                      width="32"
+                      height="32"
+                      alt=""
+                      aria-hidden="true"
+                      draggable="false"
+                    />
+                  </button>
+
+                  <button
+                    class="audio-speed-button"
+                    type="button"
+                    title="Change playback speed"
+                    (click)="toggleAudioPlaybackRate()"
+                  >
+                    {{ audioPlaybackRateLabel }}
+                  </button>
+
+                  <button
+                    class="audio-icon-button"
+                    type="button"
+                    aria-label="Forward 10 seconds"
+                    (click)="seekAudioBy(10)"
+                  >
+                    <img
+                      src="/academy/forward-10-seconds.svg"
+                      width="32"
+                      height="32"
+                      alt=""
+                      aria-hidden="true"
+                      draggable="false"
+                    />
+                  </button>
+
+                  <div class="audio-progress-group">
+                    <div class="audio-progress-track" aria-hidden="true">
+                      <div
+                        class="audio-progress-fill"
+                        [style.width.%]="audioProgressPercent"
+                      ></div>
+                    </div>
+                    <input
+                      class="audio-progress-input"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      [value]="audioProgressPercent"
+                      [attr.aria-valuetext]="lessonProgressLabel"
+                      aria-label="Seek audio position"
+                      (input)="onAudioProgressInput($event)"
+                    />
+                  </div>
+
+                  <span class="audio-time">{{ lessonProgressLabel }}</span>
+
+                  <button
+                    class="audio-icon-button"
+                    type="button"
+                    [attr.aria-label]="
+                      audioIsMuted ? 'Unmute audio' : 'Mute audio'
+                    "
+                    (click)="toggleAudioMute()"
+                  >
+                    @if (audioIsMuted) {
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M11 6L7.5 9H5V15H7.5L11 18V6Z"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M15 9L20 14"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                        <path
+                          d="M20 9L15 14"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    } @else {
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M11 6L7.5 9H5V15H7.5L11 18V6Z"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M15 10C16 10.6 16.6 11.6 16.6 12.7C16.6 13.8 16 14.8 15 15.4"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                        <path
+                          d="M17.8 7.8C19.4 8.9 20.3 10.8 20.3 12.7C20.3 14.6 19.4 16.5 17.8 17.6"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    }
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Audio Transcript -->
@@ -457,12 +653,22 @@
                 </div>
                 <div class="notes-list">
                   @for (note of filteredNotes; track note.id; let i = $index) {
-                    <div class="note-item">
+                    <div
+                      class="note-item"
+                      role="button"
+                      tabindex="0"
+                      (click)="onLessonNoteClick(note)"
+                      (keydown.enter)="onLessonNoteClick(note)"
+                      (keydown.space)="
+                        onLessonNoteClick(note); $event.preventDefault()
+                      "
+                    >
                       <div class="note-header">
                         <span class="note-timestamp">{{ note.timestamp }}</span>
                         <button
                           class="btn-more"
-                          (click)="deleteNote(note.id, i)"
+                          type="button"
+                          (click)="onDeleteNoteClick($event, note.id, i)"
                         >
                           Delete
                         </button>
@@ -526,6 +732,14 @@
             class="btn btn-outlined btn-previous"
             (click)="goToPreviousLesson()"
           >
+            <img
+              src="/icons/icons-24/arrow-left.svg"
+              width="24"
+              height="24"
+              alt=""
+              aria-hidden="true"
+              draggable="false"
+            />
             <span>Previous Lesson</span>
           </button>
         }

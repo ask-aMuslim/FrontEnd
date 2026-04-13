@@ -13,6 +13,7 @@ import {
     StageQuizResult,
     AcademyCourse,
     AcademyLesson,
+    AcademyLessonType,
     AcademyStageApi,
     CourseStatus,
     LessonStatus,
@@ -36,6 +37,29 @@ import {
     formatDuration,
     renderDuration,
 } from '../helpers/youtube-duration.helper';
+
+interface RecentLessonVisitSnapshot {
+    courseId: string;
+    lessonId: string;
+    visitedAt: string;
+    lessonType?: AcademyLessonType;
+    lessonNumber?: number;
+    lessonTitle?: string;
+    currentTimeSeconds?: number;
+    totalTimeSeconds?: number;
+    progressPercentage?: number;
+}
+
+export interface RememberRecentLessonVisitRequest {
+    courseId: string;
+    lessonId: string;
+    lessonType?: AcademyLessonType;
+    lessonNumber?: number;
+    lessonTitle?: string;
+    currentTimeSeconds?: number;
+    totalTimeSeconds?: number;
+    progressPercentage?: number;
+}
 
 /**
  * Academy Progress Service
@@ -62,6 +86,7 @@ export class AcademyProgressService {
     private static readonly localCompletedLessonsPrefix = 'aam_course_completed_lessons_';
     private static readonly localQuizPassedPrefix = 'aam_course_quiz_passed_';
     private static readonly localVideoCompletedPrefix = 'video-completed-';
+    private static readonly localRecentLessonKey = 'aam_recent_lesson_visit';
 
     private readonly progressFacade = inject(ProgressFacade);
     private readonly lessonProgressFacade = inject(LessonProgressFacade);
@@ -245,7 +270,8 @@ export class AcademyProgressService {
                     .map(item => item.courseId)
                     .filter((courseId): courseId is string => typeof courseId === 'string' && courseId.length > 0);
                 return new Set(ids);
-            })
+            }),
+            catchError(() => of(new Set<string>())),
         );
     }
 
@@ -468,15 +494,15 @@ export class AcademyProgressService {
         lessons: readonly Pick<AcademyLesson, 'type' | 'duration'>[],
         fallbackDuration = '0m',
     ): string {
-        const totalVideoSeconds = lessons
-            .filter((lesson) => lesson.type === 'video')
+        const totalMediaSeconds = lessons
+            .filter((lesson) => lesson.type === 'video' || lesson.type === 'audio')
             .reduce((total, lesson) => total + this.parseDurationLabelToSeconds(lesson.duration), 0);
 
-        if (totalVideoSeconds <= 0) {
+        if (totalMediaSeconds <= 0) {
             return fallbackDuration;
         }
 
-        return this.formatCourseDurationFromSeconds(totalVideoSeconds);
+        return this.formatCourseDurationFromSeconds(totalMediaSeconds);
     }
 
     /**
@@ -538,6 +564,11 @@ export class AcademyProgressService {
      * Persists completion and watch position through lesson progress APIs.
      */
     updateLessonProgress(request: UpdateLessonProgressRequest): Observable<LessonProgress> {
+        this.rememberRecentLessonVisit({
+            courseId: String(request.courseId),
+            lessonId: String(request.lessonId),
+        });
+
         const requestedProgress = request.isCompleted
             ? 100
             : Math.max(0, Math.min(100, Number(request.watchTime ?? 0)));
@@ -566,6 +597,35 @@ export class AcademyProgressService {
                     return of(this.buildLessonProgress(request.lessonId, request.courseId, !!request.isCompleted));
                 }),
             );
+    }
+
+    rememberRecentLessonVisit(request: RememberRecentLessonVisitRequest): void {
+        if (!this.isBrowser) {
+            return;
+        }
+
+        const courseId = request.courseId?.trim();
+        const lessonId = request.lessonId?.trim();
+        if (!courseId || !lessonId) {
+            return;
+        }
+
+        const snapshot: RecentLessonVisitSnapshot = {
+            courseId,
+            lessonId,
+            visitedAt: new Date().toISOString(),
+            lessonType: this.parseOptionalLessonType(request.lessonType),
+            lessonNumber: this.parseOptionalFiniteNumber(request.lessonNumber, 1, Number.MAX_SAFE_INTEGER),
+            lessonTitle: this.parseOptionalTrimmedString(request.lessonTitle),
+            currentTimeSeconds: this.parseOptionalFiniteNumber(request.currentTimeSeconds, 0, Number.MAX_SAFE_INTEGER),
+            totalTimeSeconds: this.parseOptionalFiniteNumber(request.totalTimeSeconds, 0, Number.MAX_SAFE_INTEGER),
+            progressPercentage: this.parseOptionalFiniteNumber(request.progressPercentage, 0, 100),
+        };
+
+        globalThis.localStorage.setItem(
+            AcademyProgressService.localRecentLessonKey,
+            JSON.stringify(snapshot),
+        );
     }
 
     /**
@@ -785,6 +845,41 @@ export class AcademyProgressService {
         progressRecords: ProgressReadDto[],
     ): Observable<RecentLessonInfo | null> {
         const progressRecordByCourseId = this.normalizeProgressRecords(progressRecords);
+        const recentVisitSnapshot = this.readRecentLessonVisit();
+        const recentVisitedCourse = recentVisitSnapshot
+            ? courses.find((course) => course.id === recentVisitSnapshot.courseId)
+            : undefined;
+
+        if (recentVisitSnapshot && recentVisitedCourse) {
+            return this.getAcademyLessons(String(recentVisitedCourse.id)).pipe(
+                map((lessons) => this.mapRecentLessonInfo(
+                    recentVisitedCourse,
+                    lessons,
+                    progressRecordByCourseId.get(recentVisitedCourse.id),
+                    recentVisitSnapshot.lessonId,
+                    recentVisitSnapshot,
+                )),
+                map((recentLesson) =>
+                    recentLesson
+                    ?? this.mapRecentLessonInfoFromSnapshotFallback(
+                        recentVisitedCourse,
+                        progressRecordByCourseId.get(recentVisitedCourse.id),
+                        recentVisitSnapshot,
+                    )
+                ),
+                catchError(() =>
+                    of(
+                        this.mapRecentLessonInfoFromSnapshotFallback(
+                            recentVisitedCourse,
+                            progressRecordByCourseId.get(recentVisitedCourse.id),
+                            recentVisitSnapshot,
+                        )
+                    )
+                ),
+            );
+        }
+
+        const latestProgressCourse = this.resolveLatestProgressCourse(courses, progressRecords);
         const inProgressFromApi = courses
             .map((course) => ({
                 course,
@@ -800,36 +895,372 @@ export class AcademyProgressService {
 
         const fallbackCourse = courses[0];
         const enrolledCourse = courses.find(course => enrolledCourseIds.has(String(course.id)));
-        const targetCourse = inProgressFromApi ?? enrolledCourse ?? fallbackCourse;
+        const targetCourse = latestProgressCourse ?? inProgressFromApi ?? enrolledCourse ?? fallbackCourse;
 
         if (!targetCourse) {
             return of(null);
         }
 
         return this.getAcademyLessons(String(targetCourse.id)).pipe(
-            map((lessons) => {
-                const firstLesson = lessons[0];
-                if (!firstLesson) {
+            map((lessons) => this.mapRecentLessonInfo(
+                targetCourse,
+                lessons,
+                progressRecordByCourseId.get(targetCourse.id),
+            )),
+            catchError(() => of(null))
+        );
+    }
+
+    private mapRecentLessonInfo(
+        course: AcademyCourse,
+        lessons: AcademyLesson[],
+        progressRecord?: ProgressReadDto,
+        preferredLessonId?: string,
+        visitSnapshot?: RecentLessonVisitSnapshot,
+    ): RecentLessonInfo | null {
+        const sortedLessons = [...lessons].sort((a, b) => a.order - b.order);
+        const fallbackLesson = sortedLessons[0];
+        if (!fallbackLesson) {
+            return null;
+        }
+
+        const effectiveTotalLessons = Math.max(course.lessons, sortedLessons.length);
+        const completedLessons = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
+        const preferredLesson = preferredLessonId
+            ? sortedLessons.find((lesson) => lesson.id === preferredLessonId)
+            : undefined;
+        const resolvedLessonIndex = this.resolveRecentLessonIndex(completedLessons, sortedLessons.length);
+        const resolvedLesson = preferredLesson ?? sortedLessons[resolvedLessonIndex] ?? fallbackLesson;
+
+        const apiProgress = this.normalizeProgressPercentage(
+            progressRecord?.lessonCompletionRate
+            ?? progressRecord?.progress
+            ?? 0,
+        );
+        const fallbackProgress = effectiveTotalLessons > 0
+            ? this.normalizeProgressPercentage((completedLessons / effectiveTotalLessons) * 100)
+            : 0;
+        const courseProgress = Math.max(apiProgress, fallbackProgress);
+
+        const playbackSnapshot = this.resolveMediaPlaybackSnapshot(resolvedLesson, visitSnapshot);
+
+        return {
+            stageNumber: course.stageId,
+            courseId: course.id,
+            courseName: course.title,
+            lessonId: resolvedLesson.id,
+            lessonType: resolvedLesson.type,
+            lessonNumber: resolvedLesson.order,
+            lessonTitle: resolvedLesson.title,
+            thumbnailUrl: course.thumbnailUrl ?? '',
+            progress: courseProgress,
+            currentTime: playbackSnapshot.currentTimeLabel,
+            totalTime: playbackSnapshot.totalTimeLabel,
+            completedLessons: Math.min(effectiveTotalLessons, completedLessons),
+            totalLessons: effectiveTotalLessons,
+        };
+    }
+
+    private mapRecentLessonInfoFromSnapshotFallback(
+        course: AcademyCourse,
+        progressRecord: ProgressReadDto | undefined,
+        visitSnapshot: RecentLessonVisitSnapshot,
+    ): RecentLessonInfo {
+        const effectiveTotalLessons = Math.max(0, course.lessons);
+        const completedLessons = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
+
+        const apiProgress = this.normalizeProgressPercentage(
+            progressRecord?.lessonCompletionRate
+            ?? progressRecord?.progress
+            ?? 0,
+        );
+        const fallbackProgress = effectiveTotalLessons > 0
+            ? this.normalizeProgressPercentage((completedLessons / effectiveTotalLessons) * 100)
+            : 0;
+        const courseProgress = Math.max(apiProgress, fallbackProgress);
+
+        const totalSeconds =
+            typeof visitSnapshot.totalTimeSeconds === 'number' && Number.isFinite(visitSnapshot.totalTimeSeconds)
+                ? Math.max(0, Math.round(visitSnapshot.totalTimeSeconds))
+                : 0;
+        const currentFromSnapshot =
+            typeof visitSnapshot.currentTimeSeconds === 'number' && Number.isFinite(visitSnapshot.currentTimeSeconds)
+                ? Math.max(0, Math.round(visitSnapshot.currentTimeSeconds))
+                : undefined;
+        const percentageFromSnapshot =
+            typeof visitSnapshot.progressPercentage === 'number' && Number.isFinite(visitSnapshot.progressPercentage)
+                ? Math.max(0, Math.min(100, visitSnapshot.progressPercentage))
+                : 0;
+
+        const currentFromPercentage = totalSeconds > 0
+            ? Math.round((percentageFromSnapshot / 100) * totalSeconds)
+            : 0;
+        const currentSeconds = Math.min(
+            totalSeconds > 0 ? totalSeconds : Number.MAX_SAFE_INTEGER,
+            currentFromSnapshot ?? currentFromPercentage,
+        );
+
+        const computedLessonNumber =
+            typeof visitSnapshot.lessonNumber === 'number' && Number.isFinite(visitSnapshot.lessonNumber)
+                ? Math.max(1, Math.round(visitSnapshot.lessonNumber))
+                : this.resolveRecentLessonIndex(completedLessons, Math.max(1, effectiveTotalLessons || 1)) + 1;
+
+        const normalizedLessonTitle =
+            typeof visitSnapshot.lessonTitle === 'string' && visitSnapshot.lessonTitle.trim().length > 0
+                ? visitSnapshot.lessonTitle.trim()
+                : `Lesson ${computedLessonNumber}`;
+
+        return {
+            stageNumber: course.stageId,
+            courseId: course.id,
+            courseName: course.title,
+            lessonId: visitSnapshot.lessonId,
+            lessonType: visitSnapshot.lessonType,
+            lessonNumber: computedLessonNumber,
+            lessonTitle: normalizedLessonTitle,
+            thumbnailUrl: course.thumbnailUrl ?? '',
+            progress: courseProgress,
+            currentTime: this.formatVideoDurationLabel(currentSeconds),
+            totalTime: totalSeconds > 0 ? this.formatVideoDurationLabel(totalSeconds) : '0:00',
+            completedLessons: Math.min(effectiveTotalLessons, completedLessons),
+            totalLessons: effectiveTotalLessons,
+        };
+    }
+
+    private resolveCompletedLessonCount(progressRecord: ProgressReadDto | undefined, totalLessons: number): number {
+        const completedFromProgress = progressRecord?.totalLessonsCompleted;
+        const completedFromAlias = progressRecord?.['completedLessonsCount'];
+
+        let rawCompletedCount = 0;
+        if (typeof completedFromProgress === 'number') {
+            rawCompletedCount = completedFromProgress;
+        } else if (typeof completedFromAlias === 'number') {
+            rawCompletedCount = completedFromAlias;
+        }
+        const boundedCompletedCount = Number.isFinite(rawCompletedCount)
+            ? Math.max(0, Math.floor(rawCompletedCount))
+            : 0;
+
+        return totalLessons > 0
+            ? Math.min(totalLessons, boundedCompletedCount)
+            : boundedCompletedCount;
+    }
+
+    private resolveRecentLessonIndex(completedLessons: number, totalLessons: number): number {
+        if (totalLessons <= 1) {
+            return 0;
+        }
+
+        if (completedLessons >= totalLessons) {
+            return totalLessons - 1;
+        }
+
+        return Math.min(totalLessons - 1, Math.max(0, completedLessons));
+    }
+
+    private resolveMediaPlaybackSnapshot(
+        lesson: AcademyLesson,
+        visitSnapshot?: RecentLessonVisitSnapshot,
+    ): { currentTimeLabel: string; totalTimeLabel: string } {
+        const isMediaLesson = lesson.type === 'video' || lesson.type === 'audio';
+        if (!isMediaLesson) {
+            return {
+                currentTimeLabel: '0:00',
+                totalTimeLabel: lesson.duration || '0:00',
+            };
+        }
+
+        const totalFromLesson = this.parseDurationLabelToSeconds(lesson.duration);
+        const totalFromVisit =
+            typeof visitSnapshot?.totalTimeSeconds === 'number' && Number.isFinite(visitSnapshot.totalTimeSeconds)
+                ? Math.max(0, Math.round(visitSnapshot.totalTimeSeconds))
+                : 0;
+        const totalSeconds = totalFromVisit > 0 ? totalFromVisit : totalFromLesson;
+
+        const percentageFromVisit =
+            typeof visitSnapshot?.progressPercentage === 'number' && Number.isFinite(visitSnapshot.progressPercentage)
+                ? Math.max(0, Math.min(100, visitSnapshot.progressPercentage))
+                : undefined;
+        const percentageFromLocal = this.readStoredPlaybackProgressPercentage(lesson.id);
+        const resolvedPercentage = percentageFromVisit ?? percentageFromLocal;
+
+        const currentFromVisit =
+            typeof visitSnapshot?.currentTimeSeconds === 'number' && Number.isFinite(visitSnapshot.currentTimeSeconds)
+                ? Math.max(0, Math.round(visitSnapshot.currentTimeSeconds))
+                : undefined;
+        const currentFromPercentage = totalSeconds > 0
+            ? Math.round((resolvedPercentage / 100) * totalSeconds)
+            : 0;
+        const currentSeconds = Math.min(
+            totalSeconds > 0 ? totalSeconds : Number.MAX_SAFE_INTEGER,
+            currentFromVisit ?? currentFromPercentage,
+        );
+
+        return {
+            currentTimeLabel: this.formatVideoDurationLabel(currentSeconds),
+            totalTimeLabel: totalSeconds > 0
+                ? this.formatVideoDurationLabel(totalSeconds)
+                : (lesson.duration || '0:00'),
+        };
+    }
+
+    private readStoredPlaybackProgressPercentage(lessonId: string): number {
+        if (!this.isBrowser || !lessonId) {
+            return 0;
+        }
+
+        const rawValue = globalThis.localStorage.getItem(`video-progress-${lessonId}`);
+        if (!rawValue) {
+            return 0;
+        }
+
+        const parsedValue = Number.parseFloat(rawValue);
+        if (!Number.isFinite(parsedValue)) {
+            return 0;
+        }
+
+        return Math.max(0, Math.min(100, parsedValue));
+    }
+
+    private resolveLatestProgressCourse(
+        courses: AcademyCourse[],
+        progressRecords: ProgressReadDto[],
+    ): AcademyCourse | undefined {
+        const latestEntry = progressRecords
+            .map((record) => {
+                const courseId = typeof record.courseId === 'string' ? record.courseId : '';
+                if (!courseId) {
                     return null;
                 }
 
+                const progress = this.normalizeProgressPercentage(
+                    record.lessonCompletionRate
+                    ?? record.progress
+                    ?? 0,
+                );
+
                 return {
-                    stageNumber: targetCourse.stageId,
-                    courseId: targetCourse.id,
-                    courseName: targetCourse.title,
-                    lessonId: firstLesson.id,
-                    lessonNumber: firstLesson.order,
-                    lessonTitle: firstLesson.title,
-                    thumbnailUrl: targetCourse.thumbnailUrl ?? '',
-                    progress: 0,
-                    currentTime: '0:00',
-                    totalTime: firstLesson.duration,
-                    completedLessons: 0,
-                    totalLessons: targetCourse.lessons,
+                    courseId,
+                    timestamp: this.resolveProgressRecordTimestamp(record),
+                    progress,
                 };
-            }),
-            catchError(() => of(null))
-        );
+            })
+            .filter((entry): entry is { courseId: string; timestamp: number; progress: number } => entry !== null)
+            .sort((a, b) => {
+                if (a.timestamp !== b.timestamp) {
+                    return b.timestamp - a.timestamp;
+                }
+
+                return b.progress - a.progress;
+            })
+            .find((entry) => courses.some((course) => course.id === entry.courseId));
+
+        if (!latestEntry) {
+            return undefined;
+        }
+
+        return courses.find((course) => course.id === latestEntry.courseId);
+    }
+
+    private resolveProgressRecordTimestamp(record: ProgressReadDto): number {
+        const timestampCandidates: unknown[] = [
+            record.lastUpdated,
+            record['updatedAt'],
+            record['modifiedAt'],
+            record['createdAt'],
+        ];
+
+        for (const candidate of timestampCandidates) {
+            if (typeof candidate !== 'string' || candidate.trim().length === 0) {
+                continue;
+            }
+
+            const parsedTimestamp = Date.parse(candidate);
+            if (!Number.isNaN(parsedTimestamp)) {
+                return parsedTimestamp;
+            }
+        }
+
+        return 0;
+    }
+
+    private readRecentLessonVisit(): RecentLessonVisitSnapshot | null {
+        if (!this.isBrowser) {
+            return null;
+        }
+
+        const rawSnapshot = globalThis.localStorage.getItem(AcademyProgressService.localRecentLessonKey);
+        if (!rawSnapshot) {
+            return null;
+        }
+
+        try {
+            const parsed = JSON.parse(rawSnapshot) as Partial<RecentLessonVisitSnapshot>;
+            const courseId = this.parseOptionalTrimmedString(parsed.courseId) ?? '';
+            const lessonId = this.parseOptionalTrimmedString(parsed.lessonId) ?? '';
+            if (!courseId || !lessonId) {
+                return null;
+            }
+
+            return {
+                courseId,
+                lessonId,
+                visitedAt: this.parseOptionalTrimmedString(parsed.visitedAt) ?? '',
+                lessonType: this.parseOptionalLessonType(parsed.lessonType),
+                lessonNumber: this.parseOptionalRoundedPositiveInt(parsed.lessonNumber),
+                lessonTitle: this.parseOptionalTrimmedString(parsed.lessonTitle),
+                currentTimeSeconds: this.parseOptionalFiniteNumber(parsed.currentTimeSeconds, 0),
+                totalTimeSeconds: this.parseOptionalFiniteNumber(parsed.totalTimeSeconds, 0),
+                progressPercentage: this.parseOptionalFiniteNumber(parsed.progressPercentage, 0, 100),
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private parseOptionalTrimmedString(value: unknown): string | undefined {
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+
+        const trimmedValue = value.trim();
+        return trimmedValue.length > 0 ? trimmedValue : undefined;
+    }
+
+    private parseOptionalLessonType(value: unknown): AcademyLessonType | undefined {
+        return value === 'intro'
+            || value === 'video'
+            || value === 'article'
+            || value === 'quiz'
+            || value === 'audio'
+            ? value
+            : undefined;
+    }
+
+    private parseOptionalRoundedPositiveInt(value: unknown): number | undefined {
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            return undefined;
+        }
+
+        return Math.max(1, Math.round(value));
+    }
+
+    private parseOptionalFiniteNumber(value: unknown, min?: number, max?: number): number | undefined {
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            return undefined;
+        }
+
+        let normalizedValue = value;
+
+        if (typeof min === 'number') {
+            normalizedValue = Math.max(min, normalizedValue);
+        }
+
+        if (typeof max === 'number') {
+            normalizedValue = Math.min(max, normalizedValue);
+        }
+
+        return normalizedValue;
     }
 
     private normalizeProgressRecords(progressRecords: ProgressReadDto[]): Map<string, ProgressReadDto> {
@@ -1087,7 +1518,8 @@ export class AcademyProgressService {
             return 'Assessment';
         }
 
-        if (type !== 'video') {
+        const supportsPlaybackDuration = type === 'video' || type === 'audio';
+        if (!supportsPlaybackDuration) {
             return '';
         }
 

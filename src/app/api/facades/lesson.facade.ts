@@ -24,10 +24,12 @@ export type UpdateLessonRequest = Record<string, unknown>;
 
 export interface LessonNote {
     id: string;
+    lessonId?: string;
     content?: string;
     text?: string;
+    timestamp?: number | string;
     studentId?: string;
-    createdAt: string;
+    createdAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -73,12 +75,12 @@ export class LessonFacade {
         return extractData(this.api.get<unknown>(`/api/StudentNotes/by-lesson/${lessonId}`), []).pipe(map(asArray<LessonNote>));
     }
 
-    addNote(lessonId: string, studentId: string, text: string): Observable<LessonNote | null> {
+    addNote(lessonId: string, studentId: string, text: string, timestamp: number): Observable<LessonNote | null> {
         return extractData(this.api.post<unknown>('/api/StudentNotes', {
             lessonId,
             studentId,
             text,
-            timestamp: Date.now(),
+            timestamp,
         }), null);
     }
 
