@@ -260,12 +260,14 @@ export class AboutComponent implements OnInit, OnDestroy {
     reasonOfReligion?: string;
     reasonForConversion?: string;
     oldReligion?: string;
+    dateOfIslamConversion?: string;
     bio: string;
   }): void {
     this.about.religion = data.religion;
     this.about.reasonOfReligion = data.reasonOfReligion ?? '';
     this.about.reasonForConversion = data.reasonForConversion ?? '';
     this.about.oldReligion = data.oldReligion ?? '';
+    this.about.dateOfIslamConversion = data.dateOfIslamConversion ?? '';
     this.about.bio = data.bio;
 
     this.isLoading = true;
@@ -279,6 +281,7 @@ export class AboutComponent implements OnInit, OnDestroy {
       oldReligion: data.oldReligion,
       reasonOfReligion: data.reasonOfReligion,
       reasonForConversion: data.reasonForConversion,
+      dateOfIslamConversion: data.dateOfIslamConversion,
     };
 
     this.executeProfileSave(payload, () => {

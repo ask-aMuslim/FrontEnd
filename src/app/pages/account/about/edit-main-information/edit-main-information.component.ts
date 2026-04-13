@@ -21,6 +21,7 @@ export class EditMainInformationComponent {
   @Input() reasonOfReligion: string = '';
   @Input() reasonForConversion: string = '';
   @Input() oldReligion: string = '';
+  @Input() dateOfIslamConversion: string = '';
   @Input() bio: string = '';
   protected readonly religionOptions = religionOptions;
   @Output() save = new EventEmitter<{
@@ -28,6 +29,7 @@ export class EditMainInformationComponent {
     reasonOfReligion?: string;
     reasonForConversion?: string;
     oldReligion?: string;
+    dateOfIslamConversion?: string;
     bio: string;
   }>();
   @Output() cancelEdit = new EventEmitter<void>();
@@ -44,6 +46,7 @@ export class EditMainInformationComponent {
     if (this.isNonMuslim) {
       this.reasonForConversion = '';
       this.oldReligion = '';
+      this.dateOfIslamConversion = '';
       return;
     }
 
@@ -55,6 +58,7 @@ export class EditMainInformationComponent {
     this.reasonOfReligion = '';
     this.reasonForConversion = '';
     this.oldReligion = '';
+    this.dateOfIslamConversion = '';
   }
 
   onSave() {
@@ -67,6 +71,7 @@ export class EditMainInformationComponent {
       reasonOfReligion: this.isNonMuslim ? this.reasonOfReligion : undefined,
       reasonForConversion: this.isNewMuslim ? this.reasonForConversion : undefined,
       oldReligion: this.isNewMuslim ? this.oldReligion : undefined,
+      dateOfIslamConversion: this.isNewMuslim ? this.dateOfIslamConversion : undefined,
       bio: this.bio,
     });
   }

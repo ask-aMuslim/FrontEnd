@@ -55,6 +55,12 @@
               <span class="about-section__label">Old Religion</span>
               <p class="about-section__value">{{ about.oldReligion }}</p>
             </div>
+            <div class="about-section__field">
+              <span class="about-section__label">Date of Islam Conversion</span>
+              <p class="about-section__value">
+                {{ about.dateOfIslamConversion }}
+              </p>
+            </div>
           }
           <div class="about-section__field">
             <span class="about-section__label">Your Life Goal (Bio)</span>
@@ -71,6 +77,7 @@
         [reasonOfReligion]="about.reasonOfReligion"
         [reasonForConversion]="about.reasonForConversion"
         [oldReligion]="about.oldReligion"
+        [dateOfIslamConversion]="about.dateOfIslamConversion"
         [bio]="about.bio"
         (save)="saveMainInfo($event)"
         (cancelEdit)="cancelMainEdit()"
