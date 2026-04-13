@@ -13,6 +13,8 @@ import type { StudentProfile } from '../../api/facades/student.facade';
 import { EventsService } from '../../core/services/events.service';
 import { asRecord, extractArray, getValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
+import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
+import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
 
 interface UserProfile {
   name: string;
@@ -62,7 +64,7 @@ export class AccountComponent implements OnInit, OnDestroy {
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['My Learning', 'About', 'My Inquiries'];
+  tabs = ['About', 'My Learning', 'My Inquiries'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {
@@ -196,14 +198,42 @@ export class AccountComponent implements OnInit, OnDestroy {
   private updateUserProfile(profile: StudentProfile): void {
     const fullName = this.buildDisplayName(profile.firstName, profile.lastName);
     const nextImageUrl = this.normalizeImageUrl(profile.imageUrl) || this.userProfile.imageUrl;
+    const nextReligion =
+      this.getReligionLabel(profile.religiousStatus) ??
+      this.toNonEmptyString(profile.oldReligion) ??
+      this.userProfile.religion;
+    const nextBio = this.toNonEmptyString(profile.bio) ?? this.userProfile.bio;
+    const nextGender = this.toNonEmptyString(profile.gender) ?? this.userProfile.gender;
 
     this.userProfile = {
-      name: fullName ?? '',
-      bio: profile.bio ?? '',
+      name: fullName ?? this.userProfile.name,
+      bio: nextBio,
       imageUrl: nextImageUrl,
-      gender: profile.gender ?? '',
-      religion: profile.oldReligion ?? '',
+      gender: nextGender,
+      religion: nextReligion,
     };
+  }
+
+  private toNonEmptyString(value: string | null | undefined): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private getReligionLabel(religiousStatus?: number): string | null {
+    switch (religiousStatus) {
+      case ReligiousStatus.NonMuslim:
+        return religiousStatusLabels[ReligiousStatus.NonMuslim];
+      case ReligiousStatus.BornMuslim:
+        return religiousStatusLabels[ReligiousStatus.BornMuslim];
+      case ReligiousStatus.RevertedMuslim:
+        return religiousStatusLabels[ReligiousStatus.RevertedMuslim];
+      default:
+        return null;
+    }
   }
 
   private normalizeImageUrl(imageUrl?: string | null, appendCacheBuster = false): string {

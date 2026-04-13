@@ -50,20 +50,20 @@
               <h2 class="profile-name">{{ userProfile.name }}</h2>
               @if (userProfile.gender === "Male") {
                 <span class="profile-gender-badge profile-gender-badge--male">
+                  {{ userProfile.religion }}
                   <div
                     [inlineSVG]="'/icons/icons-24/male.svg'"
                     class="profile-gender-icon profile-gender-icon--male"
                   ></div>
-                  {{ userProfile.religion }}
                 </span>
               }
               @if (userProfile.gender === "Female") {
                 <span class="profile-gender-badge profile-gender-badge--female">
+                  {{ userProfile.religion }}
                   <div
                     [inlineSVG]="'/icons/icons-24/female.svg'"
                     class="profile-gender-icon profile-gender-icon--female"
                   ></div>
-                  {{ userProfile.religion }}
                 </span>
               }
               <button
@@ -189,14 +189,14 @@
             }
           </div>
 
-          <!-- My Learning Tab -->
+          <!-- About Tab -->
           @if (activeTabIndex === 0) {
-            <app-my-learning></app-my-learning>
+            <app-about></app-about>
           }
 
-          <!-- About Tab -->
+          <!-- My Learning Tab -->
           @if (activeTabIndex === 1) {
-            <app-about></app-about>
+            <app-my-learning></app-my-learning>
           }
 
           <!-- My Inquiries Tab -->
