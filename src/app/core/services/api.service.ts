@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+
+interface ApiRequestOptions {
+  context?: HttpContext;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -14,7 +18,7 @@ export class ApiService {
 
   constructor(private readonly http: HttpClient) { }
 
-  get<T>(url: string, params?: Record<string, unknown>): Observable<T> {
+  get<T>(url: string, params?: Record<string, unknown>, options?: ApiRequestOptions): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach((key) => {
@@ -25,25 +29,38 @@ export class ApiService {
       });
     }
     return this.http
-      .get<T>(this.resolveUrl(url), { headers: this.jsonHeaders, params: httpParams })
+      .get<T>(this.resolveUrl(url), {
+        headers: this.jsonHeaders,
+        params: httpParams,
+        context: options?.context,
+      })
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  post<T>(url: string, body: unknown): Observable<T> {
+  post<T>(url: string, body: unknown, options?: ApiRequestOptions): Observable<T> {
     return this.http
-      .post<T>(this.resolveUrl(url), body, { headers: this.jsonHeaders })
+      .post<T>(this.resolveUrl(url), body, {
+        headers: this.jsonHeaders,
+        context: options?.context,
+      })
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  put<T>(url: string, body: unknown): Observable<T> {
+  put<T>(url: string, body: unknown, options?: ApiRequestOptions): Observable<T> {
     return this.http
-      .put<T>(this.resolveUrl(url), body, { headers: this.jsonHeaders })
+      .put<T>(this.resolveUrl(url), body, {
+        headers: this.jsonHeaders,
+        context: options?.context,
+      })
       .pipe(retry(1), catchError(this.handleError));
   }
 
-  delete<T>(url: string): Observable<T> {
+  delete<T>(url: string, options?: ApiRequestOptions): Observable<T> {
     return this.http
-      .delete<T>(this.resolveUrl(url), { headers: this.jsonHeaders })
+      .delete<T>(this.resolveUrl(url), {
+        headers: this.jsonHeaders,
+        context: options?.context,
+      })
       .pipe(retry(1), catchError(this.handleError));
   }
 

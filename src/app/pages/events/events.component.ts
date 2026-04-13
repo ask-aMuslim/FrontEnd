@@ -79,6 +79,10 @@ export class EventsComponent implements OnInit {
     return this.currentPage === this.pages.length;
   }
 
+  get showPagination(): boolean {
+    return this.pages.length > 1;
+  }
+
   get paginatedEventCards(): EventCard[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;

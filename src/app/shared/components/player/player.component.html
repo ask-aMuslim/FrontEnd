@@ -1,0 +1,99 @@
+<section class="fixed inset-x-0 bottom-0 z-50 border-t border-white/40 bg-white/70 px-3 py-3 shadow-xl backdrop-blur-lg md:px-5">
+  <div class="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-3 md:grid-cols-[1fr_1.4fr_1fr] md:gap-4">
+    <div class="flex min-w-0 items-center gap-3">
+      @if (audioService.currentTrack(); as track) {
+        <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-200/70">
+          @if (track.artwork) {
+            <img [src]="track.artwork" [alt]="track.title" class="h-full w-full object-cover" loading="lazy" />
+          } @else {
+            <div class="flex h-full w-full items-center justify-center text-xs font-semibold text-gray-500">AUDIO</div>
+          }
+        </div>
+
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-(--color-text-title)">
+            {{ track.title || 'Untitled track' }}
+          </p>
+          <p class="truncate text-xs text-(--color-text-caption)">
+            {{ track.artist || 'Unknown artist' }}
+          </p>
+        </div>
+      } @else {
+        <div class="rounded-lg bg-gray-100/70 px-3 py-2 text-sm text-(--color-text-caption)">
+          No audio selected
+        </div>
+      }
+    </div>
+
+    <div class="flex w-full flex-col items-center gap-2">
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="grid h-9 w-9 place-items-center rounded-full border border-gray-300/70 bg-white/80 text-sm text-(--color-text-title) transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!hasTrack()"
+          (click)="onPreviousTrack()"
+          aria-label="Previous track"
+        >
+          ⏮
+        </button>
+
+        <button
+          type="button"
+          class="grid h-11 w-11 place-items-center rounded-full bg-(--color-button-primary-normal) text-base text-white shadow-md transition hover:bg-(--color-button-primary-hovering) disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!hasTrack()"
+          (click)="onTogglePlayPause()"
+          [attr.aria-label]="audioService.isPlaying() ? 'Pause' : 'Play'"
+        >
+          {{ audioService.isPlaying() ? '⏸' : '▶' }}
+        </button>
+
+        <button
+          type="button"
+          class="grid h-9 w-9 place-items-center rounded-full border border-gray-300/70 bg-white/80 text-sm text-(--color-text-title) transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!hasTrack()"
+          (click)="onNextTrack()"
+          aria-label="Next track"
+        >
+          ⏭
+        </button>
+      </div>
+
+      <div class="flex w-full items-center gap-2">
+        <span class="w-12 text-right text-xs text-(--color-text-caption)">
+          {{ audioService.currentTime() | timeFormat }}
+        </span>
+
+        <input
+          type="range"
+          class="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-transparent"
+          min="0"
+          [max]="audioService.duration() || 0"
+          [value]="audioService.currentTime()"
+          [style.background]="seekBarBackground()"
+          [disabled]="!hasTrack() || audioService.duration() <= 0"
+          (input)="onSeek($event)"
+          aria-label="Seek playback"
+        />
+
+        <span class="w-12 text-xs text-(--color-text-caption)">
+          {{ audioService.duration() | timeFormat }}
+        </span>
+      </div>
+    </div>
+
+    <div class="ml-auto flex w-full max-w-52 items-center gap-2 justify-self-end">
+      <span class="text-xs text-(--color-text-caption)" aria-hidden="true">🔊</span>
+
+      <input
+        type="range"
+        class="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-transparent"
+        min="0"
+        max="100"
+        [value]="audioService.volume() * 100"
+        [style.background]="volumeBarBackground()"
+        (input)="onVolumeChange($event)"
+        aria-label="Volume"
+      />
+    </div>
+  </div>
+</section>

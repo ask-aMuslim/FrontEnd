@@ -46,10 +46,30 @@ Ignore any deleted legacy instruction files and avoid loading broad skill packs 
 
 ### Skill System (must remain intact)
 - This repo includes a global AI skill system; do not delete or ignore it.
-- When working on a task, run the skill discovery script:
-  `node get_skills.js "<short task description>"`
-- Open the top 1–3 resulting `SKILL.md` files under `./.agents/skills/` and follow their guidance.
-- Do not load all 600+ skills into the context; only use the subset returned by the script.
+- Follow skill guidance when the task or maintainers explicitly require it.
+- Do not load all 600+ skills into the context; only use the subset that applies to the task.
+
+### Figma MCP (Talk-to-Figma) — usage
+- Purpose: concise recipe for using the Talk-to-Figma MCP tools to join any Figma channel and fetch node information for any node.
+- Quick steps:
+  1. Join a Figma channel: call `mcp_talktofigma_join_channel` with the channel string (e.g., `{"channel":"qen7sxyt"}`). Wait for confirmation.
+  2. Extract the node id from a Figma URL and prefer the colon format: `1091:40748`.
+    - If the URL shows a hyphen form (e.g., `1091-40748`), convert the hyphen to a colon before calling the tool.
+  3. Get node info: call `mcp_talktofigma_get_node_info` with the nodeId (e.g., `{"nodeId":"1091:40748"}`). The tool returns JSON with node metadata, fills, styles, absoluteBoundingBox, and children.
+  4. For multiple nodes use `mcp_talktofigma_get_nodes_info` with an array of nodeIds.
+  5. Useful related tools:
+    - `mcp_talktofigma_get_local_components` — list local components in the document.
+    - `mcp_talktofigma_get_reactions` — retrieve prototyping reactions for nodes (useful when creating connectors).
+    - `mcp_talktofigma_clone_node`, `mcp_talktofigma_move_node`, `mcp_talktofigma_delete_node` — modify nodes (use carefully; confirm nodeIds and coords).
+    - `mcp_talktofigma_scan_text_nodes` — extract text content from a frame or selection.
+  6. Common errors & remedies:
+    - "Node not found": ensure the nodeId uses colon format (`1091:40748`) and that the agent has joined the correct channel; re-join the channel if needed.
+    - Web fetch shows "WebGL not supported": this is expected when fetching the public Figma URL in a headless/webfetch context — still use MCP tools to operate on nodes.
+    - Access denied: request the file be shared or perform the action from an account with access.
+  7. Example payloads:
+    - Join channel: `{ "channel": "qen7sxyt" }`
+    - Get node info: `{ "nodeId": "1091:40748" }`
+
 
 ### Verification Tools & Environments
 - **UI tasks**: Use Chrome DevTools MCP to validate UI updates, component render trees, and state changes.

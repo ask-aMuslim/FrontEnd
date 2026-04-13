@@ -104,10 +104,13 @@
                       {{ recentLesson.totalLessons }} lessons</span
                     >
                   </div>
-                  @if (recentLesson.videoDuration) {
-                    <span class="duration">{{
-                      recentLesson.videoDuration
-                    }}</span>
+                  @if (recentLesson.mediaProgressLabel) {
+                    <span class="duration"
+                      >{{
+                        recentLesson.mediaType === "audio" ? "Audio" : "Video"
+                      }}
+                      • {{ recentLesson.mediaProgressLabel }}</span
+                    >
                   }
                 </div>
                 <div class="progress-bar-container">
@@ -195,9 +198,11 @@
                 (retryAction)="ngOnInit()"
               >
               </app-course-tree>
+              <div class="stage-footer">
+                <div class="stage-divider"></div>
+                <p class="stage-description">{{ stage.description }}</p>
+              </div>
             </div>
-            <div class="stage-divider"></div>
-            <p class="stage-description">{{ stage.description }}</p>
           </div>
           @if (!isLast) {
             <!-- New academy connector design commented out as requested.

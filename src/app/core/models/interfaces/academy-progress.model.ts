@@ -121,6 +121,7 @@ export interface RecentLessonInfo {
     courseId: Id;
     courseName: string;
     lessonId: Id;
+    lessonType?: AcademyLessonType;
     lessonNumber: number;
     lessonTitle: string;
     thumbnailUrl: string;

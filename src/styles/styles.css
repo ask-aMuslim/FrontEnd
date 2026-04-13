@@ -156,3 +156,9 @@ img.aam-late-image.aam-late-image--loaded {
   justify-content: center;
   align-items: center;
 }
+
+.video-embed-wrapper iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+}

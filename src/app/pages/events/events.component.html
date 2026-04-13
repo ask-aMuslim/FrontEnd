@@ -15,7 +15,7 @@
           </div>
 
           <span class="events-hero__title">
-            {{ featuredEvent?.title || '—' }}
+            {{ featuredEvent?.title || "—" }}
           </span>
         </div>
 
@@ -26,7 +26,9 @@
               alt="Calendar Icon"
               class="events-hero__detail-icon"
             />
-            <span class="events-hero__detail-text">{{ featuredEvent?.date || '—' }}</span>
+            <span class="events-hero__detail-text">{{
+              featuredEvent?.date || "—"
+            }}</span>
           </div>
 
           <div class="events-hero__detail-item">
@@ -35,7 +37,9 @@
               alt="Clock Icon"
               class="events-hero__detail-icon"
             />
-            <span class="events-hero__detail-text">{{ featuredEvent?.timeRange || '—' }}</span>
+            <span class="events-hero__detail-text">{{
+              featuredEvent?.timeRange || "—"
+            }}</span>
           </div>
 
           <div class="events-hero__detail-item">
@@ -89,13 +93,20 @@
     </div>
 
     <!-- Recorded Events Section -->
-    <div id="events-recorded-section" class="events-recorded" data-aos="fade-up">
+    <div
+      id="events-recorded-section"
+      class="events-recorded"
+      data-aos="fade-up"
+    >
       <div class="events-recorded__header">
         <h2 class="events-recorded__title">Recorded Events</h2>
 
         <div class="events-search">
           <div class="events-search__input-wrapper">
-            <div [inlineSVG]="'/icons/icons-24/search.svg'" class="events-search__icon"></div>
+            <div
+              [inlineSVG]="'/icons/icons-24/search.svg'"
+              class="events-search__icon"
+            ></div>
             <input
               id="events-search"
               name="events-search"
@@ -118,15 +129,21 @@
           </div>
         } @else {
           <div class="events-empty-state">
-            <span class="events-empty-state__text">No events are available right now.</span>
+            <span class="events-empty-state__text"
+              >No events are available right now.</span
+            >
           </div>
         }
       </div>
 
       <!-- Pagination -->
-      @if (pages.length > 0) {
+      @if (showPagination) {
         <div class="events-pagination">
-          <button type="button" (click)="prevPage()" class="events-pagination__arrow">
+          <button
+            type="button"
+            (click)="prevPage()"
+            class="events-pagination__arrow"
+          >
             <div
               [inlineSVG]="'/icons/icons-24/arrow-left.svg'"
               [class.events-pagination__arrow-icon--disabled]="isFirstPage"
@@ -146,7 +163,11 @@
             </button>
           }
 
-          <button type="button" (click)="nextPage()" class="events-pagination__arrow">
+          <button
+            type="button"
+            (click)="nextPage()"
+            class="events-pagination__arrow"
+          >
             <div
               [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
               [class.events-pagination__arrow-icon--disabled]="isLastPage"
