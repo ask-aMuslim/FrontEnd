@@ -26,6 +26,15 @@ export const SKIP_AUTH = new HttpContextToken<boolean>(() => false);
 export const SKIP_ERROR_HANDLING = new HttpContextToken<boolean>(() => false);
 
 /**
+ * Skip global loading indicator for this request.
+ * Use for frequent background sync calls (for example lesson progress writes).
+ *
+ * @example
+ * this.http.get(url, { context: new HttpContext().set(SKIP_LOADING, true) })
+ */
+export const SKIP_LOADING = new HttpContextToken<boolean>(() => false);
+
+/**
  * Custom retry count for this request.
  * Default is 0 (no retries). Set higher for resilient requests.
  *

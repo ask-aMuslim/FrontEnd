@@ -46,9 +46,10 @@ describe('NotFound', () => {
     expect(quickLinks.length).toBe(4);
   });
 
-  it('should display an inspirational quote', () => {
+  it('should display guidance subtitle', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const quote = compiled.querySelector('blockquote');
-    expect(quote).toBeTruthy();
+    const subtitle = compiled.querySelector('.subtitle');
+    expect(subtitle).toBeTruthy();
+    expect(subtitle?.textContent).toContain('The path you seek is not here');
   });
 });

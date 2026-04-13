@@ -1,4 +1,5 @@
 export * from './api.service';
+export * from './audio.service';
 export * from './auth.service';
 export * from './courses.service';
 export * from './enrollments.service';

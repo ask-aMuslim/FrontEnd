@@ -16,6 +16,14 @@ import { LessonReadDto } from '../../api/facades/lesson.facade';
 import { Id } from '../models/interfaces/base.model';
 import { toApiMediaUrl } from '../helpers/media-url.helper';
 
+export interface LessonNoteItem {
+  id: string;
+  timestamp: string;
+  progressSeconds: number;
+  text: string;
+  createdAt: string;
+}
+
 /**
  * Service to manage lesson content and metadata
  * Handles fetching, structuring, and navigating between lessons
@@ -128,11 +136,12 @@ export class LessonContentService {
    */
   getLessonNotes(
     lessonId: Id,
-  ): Observable<Array<{ id: string; timestamp: string; text: string; createdAt: string }>> {
+  ): Observable<LessonNoteItem[]> {
     return this.lessonsService.getNotes(lessonId).pipe(
       map(notes => notes.map(note => ({
         id: String(note.id),
         timestamp: note.timestamp,
+        progressSeconds: note.progressSeconds,
         text: note.text,
         createdAt: note.createdAt,
       }))),
@@ -146,14 +155,18 @@ export class LessonContentService {
   addLessonNote(
     lessonId: Id,
     note: string,
-    timestamp: string,
-  ): Observable<{ id: string; timestamp: string; text: string; createdAt: string }> {
-    return this.lessonsService.addNote(lessonId, { timestamp, text: note }).pipe(
+    timestampSeconds: number,
+  ): Observable<LessonNoteItem> {
+    const safeProgressSeconds = Math.max(0, timestampSeconds);
+    const fallbackTimestamp = this.formatLessonProgressTime(safeProgressSeconds);
+
+    return this.lessonsService.addNote(lessonId, { timestampSeconds: safeProgressSeconds, text: note }).pipe(
       map(createdNote => {
         if (!createdNote) {
           return {
             id: `${String(lessonId)}-${Date.now()}`,
-            timestamp,
+            timestamp: fallbackTimestamp,
+            progressSeconds: safeProgressSeconds,
             text: note,
             createdAt: new Date().toISOString(),
           };
@@ -161,6 +174,7 @@ export class LessonContentService {
         return {
           id: String(createdNote.id),
           timestamp: createdNote.timestamp,
+          progressSeconds: createdNote.progressSeconds,
           text: createdNote.text,
           createdAt: createdNote.createdAt,
         };
@@ -168,7 +182,8 @@ export class LessonContentService {
       catchError(() =>
         of({
           id: `${String(lessonId)}-${Date.now()}`,
-          timestamp,
+          timestamp: fallbackTimestamp,
+          progressSeconds: safeProgressSeconds,
           text: note,
           createdAt: new Date().toISOString(),
         }),
@@ -660,5 +675,18 @@ export class LessonContentService {
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;');
+  }
+
+  private formatLessonProgressTime(totalSeconds: number): string {
+    const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const seconds = safeSeconds % 60;
+
+    if (hours > 0) {
+      return `[Lesson] ${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    return `[Lesson] ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 }

@@ -58,7 +58,8 @@ interface RecentLesson {
     lessonNumber: number;
     thumbnailUrl: string;
     progress: number;
-    videoDuration: string | null;
+    mediaType: 'video' | 'audio' | null;
+    mediaProgressLabel: string | null;
     completedLessons: number;
     totalLessons: number;
 }
@@ -198,11 +199,22 @@ export class AcademyComponent implements OnInit, OnDestroy {
             ? Math.round((completedLessons / totalLessons) * 100)
             : info.progress;
         const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
-        const hasVideoDuration = matchedLesson?.type === 'video'
-            && typeof info.totalTime === 'string'
-            && info.totalTime.trim().length > 0
-            && info.totalTime !== '0:00'
-            && info.totalTime !== '0m';
+        let mediaType: 'video' | 'audio' | null = null;
+        if (matchedLesson?.type === 'video' || matchedLesson?.type === 'audio') {
+            mediaType = matchedLesson.type;
+        } else if (info.lessonType === 'video' || info.lessonType === 'audio') {
+            mediaType = info.lessonType;
+        }
+        const normalizedCurrentTime = typeof info.currentTime === 'string' && info.currentTime.trim().length > 0
+            ? info.currentTime.trim()
+            : '0:00';
+        const normalizedTotalTime = typeof info.totalTime === 'string' && info.totalTime.trim().length > 0
+            ? info.totalTime.trim()
+            : '';
+        const hasMediaProgress = !!mediaType
+            && normalizedTotalTime.length > 0
+            && normalizedTotalTime !== '0:00'
+            && normalizedTotalTime !== '0m';
 
         return {
             stageNumber: info.stageNumber,
@@ -213,7 +225,10 @@ export class AcademyComponent implements OnInit, OnDestroy {
             lessonNumber: info.lessonNumber,
             thumbnailUrl: toApiMediaUrl(info.thumbnailUrl ?? null) || '/images/recent-lesson-thumbnail.jpg',
             progress: normalizedProgress,
-            videoDuration: hasVideoDuration ? info.totalTime : null,
+            mediaType,
+            mediaProgressLabel: hasMediaProgress
+                ? `${normalizedCurrentTime} / ${normalizedTotalTime}`
+                : null,
             completedLessons,
             totalLessons,
         };

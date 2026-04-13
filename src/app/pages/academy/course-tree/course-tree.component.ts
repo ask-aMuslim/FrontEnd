@@ -6,6 +6,10 @@ export interface CourseNode {
     title: string;
     status: 'completed' | 'available' | 'locked' | 'in-progress';
     description?: string;
+    categoryLabel?: string;
+    lessons?: number;
+    duration?: string;
+    progress?: number;
     prerequisites?: string[];
 }
 
@@ -74,6 +78,15 @@ export class CourseTreeComponent {
             return;
         }
         this.courseClick.emit(node);
+    }
+
+    getProgressPercentage(node: CourseNode): number {
+        if (node.status === 'completed') {
+            return 100;
+        }
+
+        const normalizedProgress = Math.round(node.progress ?? 0);
+        return Math.min(100, Math.max(0, normalizedProgress));
     }
 }
 

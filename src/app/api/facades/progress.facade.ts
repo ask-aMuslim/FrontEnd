@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { HttpContext } from '@angular/common/http';
+import { Observable, catchError, map, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
+import { SKIP_LOADING } from '../../core/http/context-tokens';
 
 export interface ProgressCreateDto {
     courseId: string;
@@ -37,26 +39,109 @@ export interface ProgressReadDto {
 
 @Injectable({ providedIn: 'root' })
 export class ProgressFacade {
+    private readonly skipLoadingContext = new HttpContext().set(SKIP_LOADING, true);
+
     constructor(private readonly _api: ApiService) { }
 
     getProgressByStudentId(studentId: string): Observable<ProgressReadDto[]> {
         return extractData(
-            this._api.get<unknown>(`/api/Progress/GetProgressByStudentId/ByStudent/${studentId}`),
+            this._api.get<unknown>(`/api/Progress/GetProgressByStudentId/ByStudent/${studentId}`, undefined, {
+                context: this.skipLoadingContext,
+            }),
             [],
         ).pipe(map(asArray<ProgressReadDto>));
     }
 
     createProgress(payload: ProgressCreateDto): Observable<ProgressReadDto | null> {
-        return extractData(this._api.post<unknown>('/api/Progress/CreateProgress', payload), null);
+        return extractData(
+            this._api.post<unknown>('/api/Progress/CreateProgress', payload, {
+                context: this.skipLoadingContext,
+            }),
+            null,
+        );
     }
 
     updateProgress(progressId: string, payload: ProgressUpdateDto): Observable<boolean> {
         return this._api
-            .put<unknown>(`/api/Progress/UpdateProgress/${progressId}`, payload)
+            .put<unknown>(`/api/Progress/UpdateProgress/${progressId}`, payload, {
+                context: this.skipLoadingContext,
+            })
             .pipe(map(() => true));
     }
 
     getCourseProgress(courseId: string): Observable<CourseProgressSummaryDto | null> {
-        return extractData(this._api.get<unknown>(`/api/Progress/course/${courseId}`), null);
+        return extractData(
+            this._api.get<unknown>(`/api/Progress/course/${courseId}`, undefined, {
+                context: this.skipLoadingContext,
+            }),
+            null,
+        ).pipe(
+            map((payload) => this.normalizeCourseProgressSummary(payload)),
+            catchError(() =>
+                extractData(
+                    this._api.get<unknown>(`/api/Progress/GetProgressByCourseId/ByCourse/${courseId}`, undefined, {
+                        context: this.skipLoadingContext,
+                    }),
+                    null,
+                ).pipe(
+                    map((payload) => this.normalizeCourseProgressSummary(payload)),
+                    catchError(() => of(null)),
+                )
+            ),
+        );
+    }
+
+    private normalizeCourseProgressSummary(payload: unknown): CourseProgressSummaryDto | null {
+        if (!payload) {
+            return null;
+        }
+
+        const rawSummary = Array.isArray(payload) ? payload[0] : payload;
+        if (!rawSummary || typeof rawSummary !== 'object') {
+            return null;
+        }
+
+        const summary = rawSummary as Record<string, unknown>;
+
+        const completedLessonsCount = this.readNumber(summary['completedLessonsCount'])
+            ?? this.readNumber(summary['totalLessonsCompleted']);
+        const totalLessonsCount = this.readNumber(summary['totalLessonsCount']);
+        const progressPercentage = this.readNumber(summary['progressPercentage'])
+            ?? this.readNumber(summary['lessonCompletionRate'])
+            ?? this.readNumber(summary['progress']);
+        const isCompleted = this.readBoolean(summary['isCompleted'])
+            ?? this.readBoolean(summary['completedProgress']);
+
+        if (
+            completedLessonsCount === undefined
+            && totalLessonsCount === undefined
+            && progressPercentage === undefined
+            && isCompleted === undefined
+        ) {
+            return null;
+        }
+
+        return {
+            completedLessonsCount,
+            totalLessonsCount,
+            progressPercentage,
+            isCompleted,
+        };
+    }
+
+    private readNumber(value: unknown): number | undefined {
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            return undefined;
+        }
+
+        return value;
+    }
+
+    private readBoolean(value: unknown): boolean | undefined {
+        if (typeof value !== 'boolean') {
+            return undefined;
+        }
+
+        return value;
     }
 }

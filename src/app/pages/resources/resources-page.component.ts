@@ -140,15 +140,15 @@ export class ResourcesPageComponent {
     };
 
     private readonly pamphletPdfFiles: readonly string[] = [
-        "Finalized 289x214mm AAM Da'wah Pamphlet.pdf",
+        'Finalized 289x214mm AAM Truth Pamphlet.pdf',
+        'Finalized 289x214mm AAM Science Pamphlet.pdf',
+        'Finalized 289x214mm AAM Prophecy Pamphlet.pdf',
         'Finalized 289x214mm AAM Foretold Pamphlet.pdf',
         'Finalized 289x214mm AAM Jesus Pamphlet.pdf',
-        'Finalized 289x214mm AAM Misconceptions Pamphlet.pdf',
-        'Finalized 289x214mm AAM Prophecy Pamphlet.pdf',
         'Finalized 289x214mm AAM Prophet Muhammad Pamphlet.pdf',
-        'Finalized 289x214mm AAM Science Pamphlet.pdf',
-        'Finalized 289x214mm AAM Truth Pamphlet.pdf',
+        'Finalized 289x214mm AAM Misconceptions Pamphlet.pdf',
         'Finalized 289x214mm AAM Women Pamphlet.pdf',
+        "Finalized 289x214mm AAM Da'wah Pamphlet.pdf",
     ];
 
     private readonly scientificPosterPdfFiles: readonly string[] = [
@@ -389,10 +389,9 @@ export class ResourcesPageComponent {
         const tabCards = gallery.cardsByTab[selectedTab] ?? [];
         const tabKey = this.buildTabKey(gallery.id, selectedTab);
         this.visibleCountByTabKey.update((current) => {
-            const currentCount = current[tabKey] ?? this.itemsPerLoad;
             return {
                 ...current,
-                [tabKey]: Math.min(currentCount + this.itemsPerLoad, tabCards.length),
+                [tabKey]: tabCards.length,
             };
         });
     }
