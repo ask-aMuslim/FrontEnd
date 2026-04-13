@@ -7,14 +7,42 @@
   <div class="profile-header__overlay">
     <div class="section-block profile-header__block">
       <div class="profile-header__info">
-        <img
-          [src]="userProfile.profileImage || '/images/profile-placeholder.svg'"
-          (error)="
-            $event.target.src = '/images/profile-placeholder.svg';
-            $event.target.onerror = null
-          "
-          alt="Profile image"
-          class="profile-avatar"
+        <div class="profile-avatar-wrapper">
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              isUploadingAvatar
+                ? 'Uploading profile image'
+                : 'Change profile image'
+            "
+            [attr.aria-busy]="isUploadingAvatar"
+            (keydown.enter)="openAvatarFilePicker()"
+            (keydown.space)="openAvatarFilePicker()"
+            (error)="
+              $event.target.src = '/images/profile-placeholder.svg';
+              $event.target.onerror = null
+            "
+            alt="Profile image"
+            class="profile-avatar"
+          />
+          <button
+            type="button"
+            class="profile-avatar-edit-btn"
+            [disabled]="isUploadingAvatar"
+            aria-label="Change profile image"
+            (click)="openAvatarFilePicker()"
+          >
+            <div [inlineSVG]="'/icons/icons-24/user-edit.svg'"></div>
+          </button>
+        </div>
+        <input
+          #avatarFileInput
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          class="profile-avatar-input"
+          (change)="onAvatarFileSelected($event)"
         />
         <div class="profile-details">
           <div class="profile-name-section">
@@ -22,20 +50,20 @@
               <h2 class="profile-name">{{ userProfile.name }}</h2>
               @if (userProfile.gender === "Male") {
                 <span class="profile-gender-badge profile-gender-badge--male">
+                  {{ userProfile.religion }}
                   <div
                     [inlineSVG]="'/icons/icons-24/male.svg'"
                     class="profile-gender-icon profile-gender-icon--male"
                   ></div>
-                  {{ userProfile.religion }}
                 </span>
               }
               @if (userProfile.gender === "Female") {
                 <span class="profile-gender-badge profile-gender-badge--female">
+                  {{ userProfile.religion }}
                   <div
                     [inlineSVG]="'/icons/icons-24/female.svg'"
                     class="profile-gender-icon profile-gender-icon--female"
                   ></div>
-                  {{ userProfile.religion }}
                 </span>
               }
               <button
@@ -161,14 +189,14 @@
             }
           </div>
 
-          <!-- My Learning Tab -->
+          <!-- About Tab -->
           @if (activeTabIndex === 0) {
-            <app-my-learning></app-my-learning>
+            <app-about></app-about>
           }
 
-          <!-- About Tab -->
+          <!-- My Learning Tab -->
           @if (activeTabIndex === 1) {
-            <app-about></app-about>
+            <app-my-learning></app-my-learning>
           }
 
           <!-- My Inquiries Tab -->

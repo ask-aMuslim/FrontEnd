@@ -13,15 +13,17 @@ import { InlineSvgDirective } from '../../../../shared/directives/inline-svg.dir
 export class EditContactInformationComponent {
   @Input() city: string = '';
   @Input() country: string = '';
+  @Input() countryCode: string = '';
   @Input() phoneNumber: string = '';
   @Input() email: string = '';
-  @Output() save = new EventEmitter<{ city: string; country?: string; phoneNumber: string; email: string }>();
+  @Output() save = new EventEmitter<{ city: string; country?: string; countryCode?: string; phoneNumber: string; email: string }>();
   @Output() cancel = new EventEmitter<void>();
 
   onSave() {
     this.save.emit({
       city: this.city,
       country: this.country || undefined,
+      countryCode: this.countryCode || undefined,
       phoneNumber: this.phoneNumber,
       email: this.email,
     });

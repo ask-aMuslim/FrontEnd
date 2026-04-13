@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
@@ -13,11 +13,13 @@ import type { StudentProfile } from '../../api/facades/student.facade';
 import { EventsService } from '../../core/services/events.service';
 import { asRecord, extractArray, getValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
+import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
+import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
 
 interface UserProfile {
   name: string;
   bio: string;
-  profileImage: string;
+  imageUrl: string;
   gender: string;
   religion: string;
 }
@@ -51,6 +53,8 @@ interface Verse {
   styleUrls: ['./account.component.scss'],
 })
 export class AccountComponent implements OnInit, OnDestroy {
+  @ViewChild('avatarFileInput') avatarFileInput?: ElementRef<HTMLInputElement>;
+
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly academyProgressService = inject(AcademyProgressService);
@@ -60,13 +64,13 @@ export class AccountComponent implements OnInit, OnDestroy {
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['My Learning', 'About', 'My Inquiries'];
+  tabs = ['About', 'My Learning', 'My Inquiries'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {
     name: '',
     bio: '',
-    profileImage: '',
+    imageUrl: '',
     gender: '',
     religion: '',
   };
@@ -79,6 +83,7 @@ export class AccountComponent implements OnInit, OnDestroy {
   };
 
   upcomingEvent: UpcomingEvent | null = null;
+  isUploadingAvatar = false;
 
   ngOnInit(): void {
     this.loadProfile();
@@ -123,6 +128,49 @@ export class AccountComponent implements OnInit, OnDestroy {
     }
   }
 
+  openAvatarFilePicker(): void {
+    if (this.isUploadingAvatar) {
+      return;
+    }
+
+    this.avatarFileInput?.nativeElement.click();
+  }
+
+  onAvatarFileSelected(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    const file = target?.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    this.isUploadingAvatar = true;
+
+    this.studentFacade.updateProfilePicture(file).pipe(take(1)).subscribe({
+      next: (result) => {
+        if (result?.imageUrl) {
+          this.userProfile = {
+            ...this.userProfile,
+            imageUrl: this.normalizeImageUrl(result.imageUrl, true),
+          };
+        }
+      },
+      error: () => {
+        this.isUploadingAvatar = false;
+        if (target) {
+          target.value = '';
+        }
+      },
+      complete: () => {
+        this.isUploadingAvatar = false;
+
+        if (target) {
+          target.value = '';
+        }
+      },
+    });
+  }
+
   logout(): void {
     this.studentFacade.clearCache();
     this.authService.logout().subscribe({
@@ -149,14 +197,57 @@ export class AccountComponent implements OnInit, OnDestroy {
    */
   private updateUserProfile(profile: StudentProfile): void {
     const fullName = this.buildDisplayName(profile.firstName, profile.lastName);
+    const nextImageUrl = this.normalizeImageUrl(profile.imageUrl) || this.userProfile.imageUrl;
+    const nextReligion =
+      this.getReligionLabel(profile.religiousStatus) ??
+      this.toNonEmptyString(profile.oldReligion) ??
+      this.userProfile.religion;
+    const nextBio = this.toNonEmptyString(profile.bio) ?? this.userProfile.bio;
+    const nextGender = this.toNonEmptyString(profile.gender) ?? this.userProfile.gender;
 
     this.userProfile = {
-      name: fullName ?? '',
-      bio: profile.bio ?? '',
-      profileImage: profile.imageUrl ?? '',
-      gender: profile.gender ?? '',
-      religion: profile.oldReligion ?? '',
+      name: fullName ?? this.userProfile.name,
+      bio: nextBio,
+      imageUrl: nextImageUrl,
+      gender: nextGender,
+      religion: nextReligion,
     };
+  }
+
+  private toNonEmptyString(value: string | null | undefined): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private getReligionLabel(religiousStatus?: number): string | null {
+    switch (religiousStatus) {
+      case ReligiousStatus.NonMuslim:
+        return religiousStatusLabels[ReligiousStatus.NonMuslim];
+      case ReligiousStatus.BornMuslim:
+        return religiousStatusLabels[ReligiousStatus.BornMuslim];
+      case ReligiousStatus.RevertedMuslim:
+        return religiousStatusLabels[ReligiousStatus.RevertedMuslim];
+      default:
+        return null;
+    }
+  }
+
+  private normalizeImageUrl(imageUrl?: string | null, appendCacheBuster = false): string {
+    const normalized = toApiMediaUrl(toStringValue(imageUrl ?? null));
+    if (!normalized) {
+      return '';
+    }
+
+    if (!appendCacheBuster) {
+      return normalized;
+    }
+
+    const separator = normalized.includes('?') ? '&' : '?';
+    return `${normalized}${separator}t=${Date.now()}`;
   }
 
   private loadUpcomingEvent(): void {

@@ -1,57 +1,101 @@
 <div class="edit-form">
   <div class="edit-form__header">
     <h2 class="edit-form__title">Edit Main Information</h2>
-    <div [inlineSVG]="'/icons/icons-24/user-edit.svg'" class="edit-form__icon"></div>
+    <div
+      [inlineSVG]="'/icons/icons-24/user-edit.svg'"
+      class="edit-form__icon"
+    ></div>
   </div>
 
   <div class="edit-form__fields">
     <div class="edit-form__field">
       <label class="edit-form__label" for="religion">Religion</label>
       <div class="religion-selection">
-        <label class="religion-option" [class.selected]="religion === 'Muslim'">
-          <input
-            id="religion"
-            type="radio"
-            name="religion"
-            value="Muslim"
-            [(ngModel)]="religion"
-            class="religion-radio"
-          />
-          <span class="religion-radio-visual"></span>
-          <span class="religion-label">Muslim</span>
-        </label>
-        <label class="religion-option" [class.selected]="religion === 'Non-Muslim'">
-          <input
-            type="radio"
-            name="religion"
-            value="Non-Muslim"
-            [(ngModel)]="religion"
-            class="religion-radio"
-          />
-          <span class="religion-radio-visual"></span>
-          <span class="religion-label">Non-Muslim</span>
-        </label>
+        @for (option of religionOptions; track option; let index = $index) {
+          <label class="religion-option" [class.selected]="religion === option">
+            <input
+              [id]="'religion-' + index"
+              type="radio"
+              name="religion"
+              [value]="option"
+              [(ngModel)]="religion"
+              (ngModelChange)="onReligionChange()"
+              class="religion-radio"
+            />
+            <span class="religion-radio-visual"></span>
+            <span class="religion-label">{{ option }}</span>
+          </label>
+        }
       </div>
     </div>
 
+    @if (isNonMuslim) {
+      <div class="edit-form__field">
+        <label class="edit-form__label" for="reasonOfReligion"
+          >Reason of your Religion</label
+        >
+        <textarea
+          id="reasonOfReligion"
+          [(ngModel)]="reasonOfReligion"
+          rows="3"
+          class="edit-form__textarea"
+        ></textarea>
+      </div>
+    }
+
+    @if (isNewMuslim) {
+      <div class="edit-form__field">
+        <label class="edit-form__label" for="reasonForConversion"
+          >Reason for conversion</label
+        >
+        <textarea
+          id="reasonForConversion"
+          [(ngModel)]="reasonForConversion"
+          rows="3"
+          class="edit-form__textarea"
+        ></textarea>
+      </div>
+
+      <div class="edit-form__field">
+        <label class="edit-form__label" for="oldReligion">Old Religion</label>
+        <input
+          id="oldReligion"
+          type="text"
+          [(ngModel)]="oldReligion"
+          class="edit-form__input"
+        />
+      </div>
+
+      <div class="edit-form__field">
+        <label class="edit-form__label" for="dateOfIslamConversion"
+          >Date of Islam Conversion</label
+        >
+        <input
+          id="dateOfIslamConversion"
+          type="date"
+          [(ngModel)]="dateOfIslamConversion"
+          class="edit-form__input"
+        />
+      </div>
+    }
+
     <div class="edit-form__field">
-      <label class="edit-form__label" for="reasonOfReligion">Reason of your Religion</label>
+      <label class="edit-form__label" for="bio">Your Life Goal (Bio)</label>
       <textarea
-        id="reasonOfReligion"
-        [(ngModel)]="reasonOfReligion"
+        id="bio"
+        [(ngModel)]="bio"
         rows="3"
         class="edit-form__textarea"
       ></textarea>
     </div>
-
-    <div class="edit-form__field">
-      <label class="edit-form__label" for="bio">Your Life Goal (Bio)</label>
-      <textarea id="bio" [(ngModel)]="bio" rows="3" class="edit-form__textarea"></textarea>
-    </div>
   </div>
 
   <div class="edit-form__actions">
-    <button (click)="onCancel()" class="edit-form__btn edit-form__btn--cancel">Cancel</button>
-    <button (click)="onSave()" class="edit-form__btn edit-form__btn--save">Save</button>
+    <button (click)="onCancel()" class="edit-form__btn edit-form__btn--cancel">
+      Cancel
+    </button>
+    <button (click)="onSave()" class="edit-form__btn edit-form__btn--save">
+      Save
+    </button>
   </div>
 </div>
