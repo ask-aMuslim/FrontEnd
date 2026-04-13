@@ -54,18 +54,22 @@ Ignore any deleted legacy instruction files and avoid loading broad skill packs 
 - Quick steps:
   1. Join a Figma channel: call `mcp_talktofigma_join_channel` with the channel string (e.g., `{"channel":"qen7sxyt"}`). Wait for confirmation.
   2. Extract the node id from a Figma URL and prefer the colon format: `1091:40748`.
-    - If the URL shows a hyphen form (e.g., `1091-40748`), convert the hyphen to a colon before calling the tool.
+    - If the URL shows a hyphen form (e.g., `1091-40748`), convert the hyphen to a colon before calling the tool. If the URL is URL-encoded (e.g., `%2D`), decode it first.
   3. Get node info: call `mcp_talktofigma_get_node_info` with the nodeId (e.g., `{"nodeId":"1091:40748"}`). The tool returns JSON with node metadata, fills, styles, absoluteBoundingBox, and children.
   4. For multiple nodes use `mcp_talktofigma_get_nodes_info` with an array of nodeIds.
-  5. Useful related tools:
-    - `mcp_talktofigma_get_local_components` — list local components in the document.
-    - `mcp_talktofigma_get_reactions` — retrieve prototyping reactions for nodes (useful when creating connectors).
-    - `mcp_talktofigma_clone_node`, `mcp_talktofigma_move_node`, `mcp_talktofigma_delete_node` — modify nodes (use carefully; confirm nodeIds and coords).
+  5. Useful related tools (preferred order):
+    - `mcp_talktofigma_get_node_info` / `mcp_talktofigma_read_my_design` — primary ways to obtain full node JSON. If one times out, try the other.
+    - `mcp_talktofigma_get_styles` — retrieve document text/effect/grid styles for mapping design tokens.
     - `mcp_talktofigma_scan_text_nodes` — extract text content from a frame or selection.
+    - `mcp_talktofigma_get_local_components` — list local components in the document. This call can time out; if it errors, retry or re-join the channel first.
+    - `mcp_talktofigma_clone_node`, `mcp_talktofigma_move_node`, `mcp_talktofigma_delete_node` — modify nodes (use carefully; confirm nodeIds and coordinates).
+    - `mcp_talktofigma_get_reactions` — optional and unreliable in many files. It often returns empty (`nodesWithReactions: 0`) and may trigger connector prompts; only use it when you specifically need prototyping reaction data for connector creation.
   6. Common errors & remedies:
-    - "Node not found": ensure the nodeId uses colon format (`1091:40748`) and that the agent has joined the correct channel; re-join the channel if needed.
-    - Web fetch shows "WebGL not supported": this is expected when fetching the public Figma URL in a headless/webfetch context — still use MCP tools to operate on nodes.
-    - Access denied: request the file be shared or perform the action from an account with access.
+    - "Node not found": ensure the nodeId uses colon format (`1091:40748`) and that the agent has joined the correct channel; re-join the channel and retry.
+    - "Error executing command" / timeouts: some MCP calls (like `get_local_components` or `get_styles`) can fail transiently. Retry, re-join the channel, or fetch the node with `get_node_info` or `read_my_design` as a fallback.
+    - "nodesWithReactions: 0": common outcome. Do NOT follow connector-creation prompts (e.g., `reaction_to_connector_strategy`) when reactions are empty.
+    - Web fetch shows "WebGL not supported": expected in headless/webfetch contexts — use MCP tools for authoritative node data.
+    - Access denied: ensure the file is shared with the agent account or ask the file owner to grant access.
   7. Example payloads:
     - Join channel: `{ "channel": "qen7sxyt" }`
     - Get node info: `{ "nodeId": "1091:40748" }`

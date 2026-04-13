@@ -133,6 +133,21 @@ export class LessonsService {
   }
 
   /**
+   * Update an existing note without changing its timestamp position
+   */
+  updateNote(
+    noteId: Id,
+    note: { timestampSeconds: number; text: string },
+  ): Observable<boolean> {
+    return this.facade.updateNote(String(noteId), {
+      text: note.text,
+      timestamp: Math.max(0, note.timestampSeconds),
+    }).pipe(
+      catchError(() => of(false)),
+    );
+  }
+
+  /**
    * Delete a note
    */
   deleteNote(noteId: Id): Observable<void> {
@@ -173,10 +188,10 @@ export class LessonsService {
     const seconds = safeSeconds % 60;
 
     if (hours > 0) {
-      return `[Lesson] ${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    return `[Lesson] ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 
   private normalizeCreatedAt(createdAt: string | undefined): string {

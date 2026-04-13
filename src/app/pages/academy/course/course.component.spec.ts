@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { Subject } from 'rxjs';
 
 import { CourseComponent } from './course.component';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
@@ -10,7 +11,6 @@ import { AuthService } from '../../../core/services/auth.service';
 describe('CourseComponent', () => {
     let component: CourseComponent;
     let fixture: ComponentFixture<CourseComponent>;
-    let authServiceSpy: jasmine.SpyObj<AuthService>;
 
     const createCourse = (
         lessonsList: NonNullable<CourseComponent['course']>['lessonsList'],
@@ -34,15 +34,20 @@ describe('CourseComponent', () => {
     });
 
     beforeEach(async () => {
-        authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['isAuthenticated']);
-        authServiceSpy.isAuthenticated.and.returnValue(true);
+        spyOn(CourseComponent.prototype, 'ngOnInit').and.stub();
+
+        const routerEvents$ = new Subject<void>();
+        const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+        Object.defineProperty(routerSpy, 'events', { value: routerEvents$.asObservable() });
+        routerSpy.createUrlTree.and.returnValue({} as never);
+        routerSpy.serializeUrl.and.returnValue('/');
 
         await TestBed.configureTestingModule({
             imports: [CourseComponent],
             providers: [
                 {
                     provide: Router,
-                    useValue: jasmine.createSpyObj<Router>('Router', ['navigate']),
+                    useValue: routerSpy,
                 },
                 {
                     provide: ActivatedRoute,
@@ -52,12 +57,13 @@ describe('CourseComponent', () => {
                 },
                 { provide: AcademyProgressService, useValue: {} },
                 { provide: QuizzesService, useValue: {} },
-                { provide: AuthService, useValue: authServiceSpy },
+                { provide: AuthService, useValue: { isAuthenticated: () => true } },
             ],
         }).compileComponents();
 
         fixture = TestBed.createComponent(CourseComponent);
         component = fixture.componentInstance;
+        fixture.detectChanges();
     });
 
     it('should create', () => {
@@ -65,10 +71,17 @@ describe('CourseComponent', () => {
     });
 
     it('should disable Begin when the course has no published lessons', () => {
+        component.isLoading = false;
         component.course = createCourse([], []);
+        fixture.detectChanges();
 
         expect(component.hasPublishedLessons).toBeFalse();
         expect(component.isBeginDisabled).toBeTrue();
+
+        const beginButton = fixture.nativeElement.querySelector('button.btn-disabled') as HTMLButtonElement | null;
+        expect(beginButton).toBeTruthy();
+        expect(beginButton?.hasAttribute('disabled')).toBeTrue();
+        expect(beginButton?.disabled).toBeTrue();
     });
 
     it('should enable Begin when the course has a published playable lesson', () => {
