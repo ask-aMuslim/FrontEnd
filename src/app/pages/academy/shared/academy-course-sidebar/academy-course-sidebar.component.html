@@ -49,7 +49,13 @@
   >
     @for (lesson of lessons; track trackByLessonId($index, lesson)) {
       @if (showReadyDividerBeforeQuiz && lesson.type === "quiz") {
-        <div class="ready-divider">
+        <div
+          class="ready-divider"
+          [class.ready-divider--highlight]="
+            highlightReadyDividerBeforeQuiz &&
+            lessons[$index - 1]?.isLastCourseLesson
+          "
+        >
           <div class="divider-line"></div>
           <span class="ready-text">Ready?</span>
           <div class="divider-line"></div>
@@ -73,17 +79,36 @@
         (click)="onLessonClick(lesson)"
       >
         <div class="lesson-info">
-          <h4
-            [class.lesson-title]="lesson.type !== 'quiz'"
-            [class.quiz-title]="lesson.type === 'quiz'"
-          >
-            {{ lesson.title }}
-          </h4>
-          @if (
-            (lesson.type === "video" || lesson.type === "audio") &&
-            lesson.duration
-          ) {
-            <span class="lesson-duration">{{ lesson.duration }}</span>
+          <div class="lesson-title-row">
+            <img
+              class="lesson-type-icon"
+              [src]="getLessonIconPath(lesson)"
+              [alt]="getLessonIconAlt(lesson)"
+              width="16"
+              height="16"
+              draggable="false"
+            />
+            <h4
+              [class.lesson-title]="lesson.type !== 'quiz'"
+              [class.quiz-title]="lesson.type === 'quiz'"
+            >
+              {{ lesson.title }}
+            </h4>
+          </div>
+
+          @if (shouldShowDuration(lesson)) {
+            <span class="lesson-duration">
+              <img
+                class="lesson-duration-icon"
+                src="/academy/duration.svg"
+                alt=""
+                aria-hidden="true"
+                width="14"
+                height="14"
+                draggable="false"
+              />
+              <span>{{ lesson.duration }}</span>
+            </span>
           }
         </div>
 

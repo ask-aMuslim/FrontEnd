@@ -100,10 +100,13 @@
   display: flex;
   justify-content: center;
   width: fit-content;
-  // border: 1px solid var(--color-border-brand-low);
-  // border-radius: var(--border-radius-default);
   background: var(--color-background-white);
   overflow: hidden;
+  width: 100%;
+  asl-google-signin-button {
+    width: 80% !important;
+    border-radius: inherit !important;
+  }
 }
 
 :host ::ng-deep .google-btn-wrapper > div,

@@ -57,6 +57,7 @@ export interface ArticleLessonContent {
   title: string;
   description: string;
   sections: ArticleSection[];
+  documentUrl?: string;
   language?: 'English' | 'Arabic';
   lastUpdated?: string;
 }

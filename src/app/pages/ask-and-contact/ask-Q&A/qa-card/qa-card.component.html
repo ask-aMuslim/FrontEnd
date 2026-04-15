@@ -1,38 +1,38 @@
-<div class="flex flex-col items-start gap-3 bg-white">
-  <div class="flex flex-col items-start gap-2 w-full">
-    <div class="flex items-center gap-2">
+<div class="topics-question-card flex flex-col items-start gap-3 bg-white">
+  <div class="topics-question-card__content flex flex-col items-start gap-2 w-full">
+    <div class="topics-question-card__categories flex items-center gap-2">
       @for (
         category of question.categories;
         track category;
         let isLast = $last
       ) {
-        <span class="flex items-center gap-2 text-(--color-text-caption)">
-          <span class="text-xs leading-5">{{ category }}</span>
+        <span class="topics-question-card__category flex items-center gap-2 text-(--color-text-caption)">
+          <span class="topics-question-card__category-label text-xs leading-5">{{ category }}</span>
           @if (!isLast) {
-            <span class="text-sm">•</span>
+            <span class="topics-question-card__category-separator text-sm">•</span>
           }
         </span>
       }
     </div>
 
-    <div class="flex items-start py-0.5 w-full">
-      <h3 class="flex-1 text-xl font-medium text-(--color-text-title)">
+    <div class="topics-question-card__heading flex items-start py-0.5 w-full">
+      <h3 class="topics-question-card__title flex-1 text-xl font-medium text-(--color-text-title)">
         {{ question.title }}
       </h3>
     </div>
 
-    <p class="text-base leading-[160%] text-text-body line-clamp-3 w-full">
+    <p class="topics-question-card__description text-base leading-[160%] text-text-body line-clamp-3 w-full">
       {{ question.description }}
     </p>
   </div>
 
   <button
-    class="learn-more flex h-8 items-center gap-2 rounded-lg group cursor-pointer"
+    class="topics-question-card__learn-more learn-more flex h-8 items-center gap-2 rounded-lg group cursor-pointer"
     (click)="openQuestion()"
   >
-    <span class="text-lg font-semibold">Learn more</span>
+    <span class="topics-question-card__learn-more-label text-lg font-semibold">Learn more</span>
     <span
-      class="learn-more-icon h-6 w-6"
+      class="topics-question-card__learn-more-icon learn-more-icon h-6 w-6"
       role="img"
       aria-label="Learn more"
       style="

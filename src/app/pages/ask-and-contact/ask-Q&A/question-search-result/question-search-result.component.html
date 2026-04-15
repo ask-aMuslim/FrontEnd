@@ -1,8 +1,8 @@
-<div class="search-results">
-  <div class="search-results__header">
-    <div class="search-results__title">
-      <p class="search-results__eyebrow">Search results</p>
-      <h2 class="search-results__summary">
+<div class="topics-search-results search-results">
+  <div class="topics-search-results__header search-results__header">
+    <div class="topics-search-results__title search-results__title">
+      <p class="topics-search-results__eyebrow search-results__eyebrow">Search results</p>
+      <h2 class="topics-search-results__summary search-results__summary">
         Showing {{ results.length }} result{{
           results.length === 1 ? "" : "s"
         }}
@@ -10,32 +10,32 @@
       </h2>
     </div>
 
-    <button type="button" class="clear-btn" (click)="onClear()">
+    <button type="button" class="topics-search-results__clear-button clear-btn" (click)="onClear()">
       Clear search
     </button>
   </div>
 
   @if (hasResults) {
-    <div class="search-results__list">
+    <div class="topics-search-results__list search-results__list">
       @for (
         question of results;
         track trackByQuestionId($index, question);
         let isLast = $last
       ) {
-        <app-qa-card [question]="question" />
+        <app-qa-card class="topics-search-results__item" [question]="question" />
         @if (!isLast) {
-          <div class="search-results__divider"></div>
+          <div class="topics-search-results__divider search-results__divider"></div>
         }
       }
     </div>
   } @else {
-    <div class="search-results__empty">
-      <h3 class="search-results__empty-title">No results found</h3>
-      <p class="search-results__empty-description">
+    <div class="topics-search-results__empty search-results__empty">
+      <h3 class="topics-search-results__empty-title search-results__empty-title">No results found</h3>
+      <p class="topics-search-results__empty-description search-results__empty-description">
         We couldn't find any questions that match “{{ query }}”. Try another
         keyword or browse all questions.
       </p>
-      <button type="button" class="browse-btn" (click)="onClear()">
+      <button type="button" class="topics-search-results__browse-button browse-btn" (click)="onClear()">
         Back to Topics
       </button>
     </div>

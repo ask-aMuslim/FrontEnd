@@ -6,7 +6,7 @@ import { Router, RouterLink } from '@angular/router';
   selector: 'app-meet-scholar-success',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './meet-scholar-success.component.html',
+  templateUrl: './meet-scholar-success.clean.component.html',
   styleUrl: './meet-scholar-success.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

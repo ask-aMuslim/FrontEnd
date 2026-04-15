@@ -3,7 +3,10 @@ import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import {
+    AcademyProgressService,
+    CourseEnrollmentState,
+} from '../../../core/services/academy-progress.service';
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { QuizReadDto } from '../../../api/facades/quiz.facade';
 import { AuthService } from '../../../core/services/auth.service';
@@ -31,7 +34,7 @@ interface Lesson {
     quizLessonId?: string;
     title: string;
     duration: string;
-    type: 'intro' | 'video' | 'article' | 'quiz' | 'audio';
+    type: 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
     isLocked: boolean;
     isCompleted: boolean;
     isCurrent: boolean;
@@ -56,6 +59,8 @@ interface CourseDetails {
     isLocked: boolean;
     hasUnmetPrerequisites: boolean;
     unmetPrerequisiteNames: string[];
+    isEnrolled: boolean;
+    isEnrollmentCompleted: boolean;
     lessonsList: Lesson[];
     prerequisitesList: { id: string; title: string; isCompleted: boolean }[];
 }
@@ -87,6 +92,7 @@ export class CourseComponent implements OnInit, OnDestroy {
     isLoading = true;
     error: string | null = null;
     showSignInPrompt = false;
+    isEnrolling = false;
 
     backgroundImageUrl =
         '/backgrounds/course-background.png'; // Default background image for all courses (can be customized per course if needed)
@@ -105,6 +111,18 @@ export class CourseComponent implements OnInit, OnDestroy {
         return !!this.course?.lessonsList.some(
             (lesson) => !lesson.isLocked && lesson.type === 'quiz',
         );
+    }
+
+    get hasCourseEnrollment(): boolean {
+        return !!this.course && (this.course.isEnrolled || this.course.isEnrollmentCompleted);
+    }
+
+    get canTakeQuiz(): boolean {
+        return this.hasQuizLesson && this.hasCourseEnrollment;
+    }
+
+    get primaryActionLabel(): string {
+        return this.hasCourseEnrollment ? 'Continue' : 'Enroll';
     }
 
     get isBeginDisabled(): boolean {
@@ -177,11 +195,21 @@ export class CourseComponent implements OnInit, OnDestroy {
             this.academyProgressService.getAcademyCourses(),
             this.academyProgressService.getAcademyStages(),
             this.academyProgressService.getStudentProgress(),
+            this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId),
             this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([courseData, courseProgress, lessonsWithProgress, allCourses, stages, studentProgress, quizzes]) => {
+                next: ([
+                    courseData,
+                    courseProgress,
+                    lessonsWithProgress,
+                    allCourses,
+                    stages,
+                    studentProgress,
+                    enrollmentState,
+                    quizzes,
+                ]) => {
                     const isPublishedCourse = allCourses.some((course) => course.id === courseData.id);
                     if (!isPublishedCourse) {
                         this.error = 'This course is unavailable right now.';
@@ -197,6 +225,7 @@ export class CourseComponent implements OnInit, OnDestroy {
                         allCourses,
                         stages,
                         studentProgress.courseProgress,
+                        enrollmentState,
                         quizzes,
                     );
                     this.error = null;
@@ -221,6 +250,7 @@ export class CourseComponent implements OnInit, OnDestroy {
         allCourses: AcademyCourse[],
         stages: AcademyStageApi[],
         allCourseProgress: CourseProgress[],
+        enrollmentState: CourseEnrollmentState,
         quizzes: QuizReadDto[],
     ): CourseDetails {
         const isLocked = this.isUserAuthenticated
@@ -244,6 +274,8 @@ export class CourseComponent implements OnInit, OnDestroy {
             .filter((name): name is string => !!name);
 
         const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+        const isEnrolled = this.isUserAuthenticated && enrollmentState.isEnrolled;
+        const isEnrollmentCompleted = this.isUserAuthenticated && enrollmentState.isCompleted;
 
         const prerequisitesList = effectivePrereqIds
             .filter(prereqId => prereqId !== courseData.id)
@@ -306,6 +338,8 @@ export class CourseComponent implements OnInit, OnDestroy {
             isLocked,
             hasUnmetPrerequisites,
             unmetPrerequisiteNames,
+            isEnrolled,
+            isEnrollmentCompleted,
             lessonsList: sidebarLessons,
             prerequisitesList,
         };
@@ -380,13 +414,51 @@ export class CourseComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.hasPlayableLesson) {
+        if (!this.hasPlayableLesson || this.isEnrolling) {
+            return;
+        }
+
+        if (!this.hasCourseEnrollment) {
+            this.isEnrolling = true;
+            this.academyProgressService
+                .enrollCurrentStudentInCourse(this.course.id)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: (isEnrolled) => {
+                        this.isEnrolling = false;
+
+                        if (!this.course || !isEnrolled) {
+                            this.cdr.detectChanges();
+                            return;
+                        }
+
+                        this.course = {
+                            ...this.course,
+                            isEnrolled: true,
+                            isEnrollmentCompleted: this.course.isEnrollmentCompleted,
+                        };
+                        this.navigateToFirstAvailableLesson();
+                    },
+                    error: () => {
+                        this.isEnrolling = false;
+                        this.cdr.detectChanges();
+                    },
+                });
+            return;
+        }
+
+        this.navigateToFirstAvailableLesson();
+    }
+
+    private navigateToFirstAvailableLesson(): void {
+        if (!this.course) {
             return;
         }
 
         const firstLesson = this.course.lessonsList.find((lesson) => !lesson.isLocked);
         if (firstLesson) {
             this.router.navigate(['lesson', firstLesson.id], { relativeTo: this.route });
+            this.cdr.detectChanges();
         }
     }
 

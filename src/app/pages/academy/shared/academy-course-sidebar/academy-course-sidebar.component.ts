@@ -39,6 +39,7 @@ export class AcademyCourseSidebarComponent {
     @Input() lessons: readonly AcademySidebarLessonItem[] = [];
 
     @Input() showReadyDividerBeforeQuiz = false;
+    @Input() highlightReadyDividerBeforeQuiz = false;
     @Input() allowLessonSelection = true;
     @Input() disableLockedLessonClick = true;
     @Input() scrollThreshold = 6;
@@ -71,5 +72,55 @@ export class AcademyCourseSidebarComponent {
         }
 
         this.lessonSelect.emit(lesson);
+    }
+
+    shouldShowDuration(lesson: AcademySidebarLessonItem): boolean {
+        if (lesson.type === 'quiz') {
+            return false;
+        }
+
+        return lesson.duration.trim().length > 0;
+    }
+
+    getLessonIconPath(lesson: AcademySidebarLessonItem): string {
+        if (lesson.isCompleted) {
+            return '/academy/checked.svg';
+        }
+
+        switch (lesson.type) {
+            case 'article':
+                return '/academy/article-lesson.svg';
+            case 'audio':
+                return '/academy/audio-lesson.svg';
+            case 'document':
+                return '/academy/document-lesson.svg';
+            case 'quiz':
+                return '/academy/quiz.svg';
+            case 'video':
+                return '/academy/video-lesson.svg';
+            default:
+                return '/academy/video-lesson.svg';
+        }
+    }
+
+    getLessonIconAlt(lesson: AcademySidebarLessonItem): string {
+        if (lesson.isCompleted) {
+            return 'Completed lesson';
+        }
+
+        switch (lesson.type) {
+            case 'article':
+                return 'Article lesson';
+            case 'audio':
+                return 'Audio lesson';
+            case 'document':
+                return 'Document lesson';
+            case 'quiz':
+                return 'Quiz';
+            case 'video':
+                return 'Video lesson';
+            default:
+                return 'Lesson';
+        }
     }
 }

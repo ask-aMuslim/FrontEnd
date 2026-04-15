@@ -29,19 +29,25 @@
             <h1 class="course-title">{{ course.title }}</h1>
             @if (course.prerequisitesList.length > 0) {
               <div class="course-prerequisites-overview">
-                <h2 class="section-title">Course's prerequisites</h2>
-                <p class="section-text course-prerequisite-names">
-                  @for (
-                    prereq of course.prerequisitesList;
-                    track prereq.id;
-                    let last = $last
-                  ) {
-                    {{ prereq.title }}
-                    @if (!last) {
-                      <br />
-                    }
+                <h2 class="section-title">Course prerequisites</h2>
+                <div class="prerequisites-list" role="list">
+                  @for (prereq of course.prerequisitesList; track prereq.id) {
+                    <div
+                      class="prereq-item"
+                      role="listitem"
+                      [class.completed]="prereq.isCompleted"
+                    >
+                      <span class="status-dot" aria-hidden="true"></span>
+                      <span class="prereq-title">{{ prereq.title }}</span>
+                      <span
+                        class="prereq-state"
+                        [class.completed]="prereq.isCompleted"
+                      >
+                        {{ prereq.isCompleted ? "Completed" : "Required" }}
+                      </span>
+                    </div>
                   }
-                </p>
+                </div>
               </div>
             }
             <!-- Intro Section -->
@@ -101,7 +107,7 @@
                   "
                 >
                   @if (!isUserAuthenticated) {
-                    Please sign in to begin this course.
+                    Please sign in to enroll in this course.
                   } @else if (course.isLocked) {
                     You must finish the quizzes of all previous stages to unlock
                     this course.
@@ -111,11 +117,11 @@
                   }
                 </span>
                 <button class="btn btn-disabled" disabled>
-                  <span>Begin</span>
+                  <span>{{ primaryActionLabel }}</span>
                 </button>
               } @else {
                 <!-- Available State -->
-                @if (hasQuizLesson) {
+                @if (canTakeQuiz) {
                   <button
                     type="button"
                     (click)="onTakeQuizClick()"
@@ -126,15 +132,18 @@
                 }
                 @if (isBeginDisabled) {
                   <button type="button" class="btn btn-disabled" disabled>
-                    <span>Begin</span>
+                    <span>{{ primaryActionLabel }}</span>
                   </button>
                 } @else {
                   <button
                     type="button"
                     (click)="onBeginClick()"
                     class="btn btn-primary"
+                    [disabled]="isEnrolling"
                   >
-                    <span>Begin</span>
+                    <span>{{
+                      isEnrolling ? "Enrolling..." : primaryActionLabel
+                    }}</span>
                   </button>
                 }
               }

@@ -253,12 +253,11 @@ export class AcademyComponent implements OnInit, OnDestroy {
             const stageCourses = courses.filter(course =>
                 course.stageId === stageData.number || course.levelId === stageData.id
             );
-            const stageCourseIds = new Set(stageCourses.map((course) => course.id));
 
             const sortedStageCourses = [...stageCourses];
             sortedStageCourses.sort((a: AcademyCourse, b: AcademyCourse) => (a.order ?? 0) - (b.order ?? 0));
             let allCourses = sortedStageCourses
-                .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress, stageCourseIds));
+                .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress));
 
             // Safety valve: if a stage is unlocked but no course is actionable, open the first course.
             if (!isLocked && allCourses.length > 0 && allCourses.every((course) => course.status === 'locked')) {
@@ -280,13 +279,12 @@ export class AcademyComponent implements OnInit, OnDestroy {
     private mapCourseWithProgress(
         course: AcademyCourse,
         courseProgress: CourseProgress[],
-        stageCourseIds: Set<string>,
     ): Course {
         const progress = courseProgress.find((cp) => cp.courseId === course.id);
 
         // Evaluate dynamic API prerequisites
         const effectivePrerequisites = (course.prerequisites ?? []).filter(
-            (prereqId) => prereqId !== course.id && stageCourseIds.has(prereqId),
+            (prereqId) => prereqId !== course.id,
         );
 
         const hasUnfinishedPrereqs = effectivePrerequisites.some(prereqId => {

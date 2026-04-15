@@ -1,6 +1,7 @@
 export const environment = {
     production: false,
     apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
+    askAssistantApiBaseUrl: 'https://packard-zone-compromise-except.trycloudflare.com',
     authWithCredentials: false,
     youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
     BearerToken: '',

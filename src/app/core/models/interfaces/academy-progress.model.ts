@@ -21,7 +21,7 @@ export type LessonStatus = 'completed' | 'current' | 'locked' | 'available';
 /**
  * Lesson type for categorization
  */
-export type AcademyLessonType = 'intro' | 'video' | 'article' | 'quiz' | 'audio';
+export type AcademyLessonType = 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
 
 /**
  * Course category within a stage

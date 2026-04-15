@@ -236,6 +236,7 @@ export class ResourcesPageComponent {
     protected readonly galleries: readonly ResourceGallery[] = [
         {
             id: 'gallery-1',
+            eyebrow: 'Seek. Learn. Understand.',
             title: 'Ask A Muslim Resources',
             surface: 'base',
             tabs: [

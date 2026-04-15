@@ -333,6 +333,7 @@
   border-radius: 8px;
   border: 0.5px solid #adb5bd;
   padding: 0;
+  padding-bottom: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -371,6 +372,7 @@
     flex-direction: row;
     justify-content: space-between;
     padding: 0;
+    padding-bottom: 10px;
     overflow-y: visible;
     flex-wrap: wrap;
   }
