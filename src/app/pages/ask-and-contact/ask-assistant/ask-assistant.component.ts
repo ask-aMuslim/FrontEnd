@@ -18,6 +18,11 @@ import {
 } from './ask-assistant.model';
 import { AskAssistantService } from './ask-assistant.service';
 
+interface AskAssistantConversationSection {
+  label: string;
+  items: AskAssistantConversation[];
+}
+
 @Component({
   selector: 'app-ask-assistant',
   standalone: true,
@@ -35,20 +40,24 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-  @ViewChild('askInput') askInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('askInput') askInput?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bottomAnchor') bottomAnchor?: ElementRef<HTMLDivElement>;
 
-  arrow = '/icons/icons-24/arrow-right.svg';
+  historyToggleIcon = '/icons/icons-24/arrow-right.svg';
+  closeIcon = '/icons/icons-24/arrow-right.svg';
+  newChatIcon = '/icons/icons-24/plus.svg';
   logo = '/ask-a-muslim-logo.png';
 
   inputValue = '';
   userId = '';
   activeThreadId: string | null = null;
+  isHistoryDrawerOpen = false;
 
   messages: ChatMessage[] = [];
   conversations: AskAssistantConversation[] = [];
   isLoadingConversations = false;
+  conversationErrorMessage: string | null = null;
   errorMessage: string | null = null;
   isResponding = false;
 
@@ -67,12 +76,35 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
 
   onInput(value: string): void {
     this.inputValue = value;
+    this.resizeComposer();
+  }
+
+  onComposerKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+    this.submitQuestion(event);
+  }
+
+  toggleHistoryDrawer(): void {
+    this.isHistoryDrawerOpen = !this.isHistoryDrawerOpen;
+    this.cdr.markForCheck();
+  }
+
+  closeHistoryDrawer(): void {
+    this.isHistoryDrawerOpen = false;
+    this.cdr.markForCheck();
   }
 
   startNewConversation(): void {
+    this.closeHistoryDrawer();
     this.activeThreadId = null;
     this.messages = [];
     this.errorMessage = null;
+    this.resetInput();
+    this.resizeComposer();
     this.messageId = 0;
     this.cdr.markForCheck();
     this.scrollToBottom(false);
@@ -84,7 +116,10 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     }
 
     this.activeThreadId = threadId;
+    this.closeHistoryDrawer();
     this.errorMessage = null;
+    this.resetInput();
+    this.resizeComposer();
 
     this.askAssistantService
       .getThreadMessages(threadId)
@@ -114,6 +149,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     this.errorMessage = null;
     this.appendMessage('user', question);
     this.resetInput();
+    this.resizeComposer();
     const assistantMessageId = this.appendMessage('assistant', '');
     this.scrollToBottom(true);
 
@@ -171,11 +207,36 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     return this.activeThreadId === threadId;
   }
 
+  get conversationSections(): AskAssistantConversationSection[] {
+    if (this.conversations.length === 0) {
+      return [];
+    }
+
+    const sections = new Map<string, AskAssistantConversation[]>();
+    for (const conversation of this.conversations) {
+      const label = this.getConversationSectionLabel(conversation.updatedAt);
+      const existing = sections.get(label);
+      if (existing) {
+        existing.push(conversation);
+        continue;
+      }
+
+      sections.set(label, [conversation]);
+    }
+
+    return Array.from(sections.entries()).map(([label, items]) => ({
+      label,
+      items,
+    }));
+  }
+
   trackByMessage = (_: number, message: ChatMessage): number => message.id;
   trackByConversation = (_: number, conversation: AskAssistantConversation): string => conversation.threadId;
+  trackByConversationSection = (_: number, section: AskAssistantConversationSection): string => section.label;
 
   private loadConversations(): void {
     this.isLoadingConversations = true;
+    this.conversationErrorMessage = null;
 
     this.askAssistantService
       .getConversations(this.userId)
@@ -192,10 +253,40 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: () => {
-          this.errorMessage = this.errorMessage ?? 'Unable to load previous conversations.';
+          this.conversationErrorMessage = 'Unable to load previous conversations.';
           this.cdr.markForCheck();
         },
       });
+  }
+
+  private getConversationSectionLabel(updatedAt: number): string {
+    const updatedDate = new Date(updatedAt);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfUpdatedDate = new Date(
+      updatedDate.getFullYear(),
+      updatedDate.getMonth(),
+      updatedDate.getDate(),
+    );
+    const diffDays = Math.round((startOfToday.getTime() - startOfUpdatedDate.getTime()) / 86_400_000);
+
+    if (diffDays <= 0) {
+      return 'Today';
+    }
+
+    if (diffDays === 1) {
+      return 'Yesterday';
+    }
+
+    if (diffDays < 7) {
+      return 'This week';
+    }
+
+    if (diffDays < 30) {
+      return 'This month';
+    }
+
+    return 'Earlier';
   }
 
   private toChatMessage(message: AskAssistantMessageSeed): ChatMessage {
@@ -239,6 +330,16 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     this.inputValue = '';
   }
 
+  private resizeComposer(): void {
+    if (!this.isBrowser || !this.askInput) {
+      return;
+    }
+
+    const composer = this.askInput.nativeElement;
+    composer.style.height = 'auto';
+    composer.style.height = `${composer.scrollHeight}px`;
+  }
+
   private scrollToBottom(smooth = true): void {
     if (!this.isBrowser) {
       return;
@@ -251,11 +352,14 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       const anchor = this.bottomAnchor?.nativeElement;
       if (anchor) {
         anchor.scrollIntoView({ behavior, block: 'end' });
-        return;
       }
       const container = this.messagesContainer?.nativeElement;
       if (container) {
         container.scrollTo({ top: container.scrollHeight, behavior });
+      }
+
+      if (this.messages.length > 0) {
+        this.askInput?.nativeElement.scrollIntoView({ behavior, block: 'end' });
       }
     }, 0);
   }
