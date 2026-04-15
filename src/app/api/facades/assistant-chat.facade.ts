@@ -42,9 +42,6 @@ interface ChatStreamBody {
   userId: string;
   question: string;
   threadId: string | null;
-  UserId: string;
-  Message: string;
-  ThreadId: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -52,17 +49,17 @@ export class AssistantChatFacade {
   private readonly baseUrl = environment.askAssistantApiBaseUrl.replaceAll(/\/+$/g, '');
   private readonly jsonHeaders = new HttpHeaders({ Accept: 'application/json' });
   private readonly streamHeaders = new HttpHeaders({
-    Accept: 'text/event-stream',
+    Accept: 'application/x-ndjson, text/event-stream, application/json',
     'Content-Type': 'application/json',
-    'X-Stream': 'true',
+    'X-stream': 'true',
   });
 
   constructor(private readonly http: HttpClient) { }
 
   listUserThreads(userId: string): Observable<AssistantThreadRecord[]> {
     const encodedUserId = encodeURIComponent(userId);
-    const primaryUrl = `${this.baseUrl}/api/conversations/${encodedUserId}`;
-    const fallbackUrl = `${this.baseUrl}/api/users/${encodedUserId}/threads`;
+    const primaryUrl = `${this.baseUrl}/api/users/${encodedUserId}/threads`;
+    const fallbackUrl = `${this.baseUrl}/api/conversations/${encodedUserId}`;
 
     return this
       .getWithNotFoundFallback(primaryUrl, fallbackUrl)
@@ -71,8 +68,8 @@ export class AssistantChatFacade {
 
   getThreadHistory(threadId: string): Observable<AssistantHistoryRecord[]> {
     const encodedThreadId = encodeURIComponent(threadId);
-    const primaryUrl = `${this.baseUrl}/api/Conversations/${encodedThreadId}`;
-    const fallbackUrl = `${this.baseUrl}/api/threads/${encodedThreadId}/history`;
+    const primaryUrl = `${this.baseUrl}/api/threads/${encodedThreadId}/history`;
+    const fallbackUrl = `${this.baseUrl}/api/Conversations/${encodedThreadId}`;
 
     return this
       .getWithNotFoundFallback(primaryUrl, fallbackUrl)
@@ -81,7 +78,7 @@ export class AssistantChatFacade {
 
   streamChat(request: AssistantChatRequest): Observable<AssistantStreamRecord> {
     const body = this.buildStreamBody(request);
-    const endpoint = `${this.baseUrl}/api/chat`;
+    const endpoint = `${this.baseUrl}/api/chat?stream=true`;
 
     return new Observable<AssistantStreamRecord>((subscriber) => {
       let processedLength = 0;
@@ -178,6 +175,15 @@ export class AssistantChatFacade {
       return [];
     }
 
+    if (
+      normalizedLine.startsWith('event:')
+      || normalizedLine.startsWith('id:')
+      || normalizedLine.startsWith('retry:')
+      || normalizedLine.startsWith(':')
+    ) {
+      return [];
+    }
+
     const payload = normalizedLine.startsWith('data:')
       ? normalizedLine.slice(5).trim()
       : normalizedLine;
@@ -200,11 +206,24 @@ export class AssistantChatFacade {
       }];
     }
 
-    const threadId = this.readString(parsed, ['threadId', 'thread_id']);
-    const statusCode = this.readNumber(parsed, ['statusCode', 'status', 'code']);
-    const text = this.readString(parsed, ['data', 'message', 'content']) ?? '';
+    const parsedData = this.asRecord(parsed['data']);
+    const threadId = this.readString(parsed, ['threadId', 'thread_id'])
+      ?? (parsedData ? this.readString(parsedData, ['threadId', 'thread_id']) : null);
+    const statusCode = this.readNumber(parsed, ['statusCode', 'status', 'code'])
+      ?? (parsedData ? this.readNumber(parsedData, ['statusCode', 'status', 'code']) : null);
+    const text = this.readString(parsed, ['message', 'content', 'response', 'delta'])
+      ?? (parsedData ? this.readString(parsedData, ['response', 'message', 'content', 'delta']) : null)
+      ?? '';
 
-    const isError = statusCode !== null && statusCode >= 400;
+    const parsedErrors = parsed['errors'];
+    const errors = Array.isArray(parsedErrors)
+      ? parsedErrors.map((entry) => `${entry ?? ''}`.trim()).filter((entry) => entry.length > 0)
+      : [];
+    const firstError = this.readString(parsed, ['error', 'detail']);
+
+    const isError = (statusCode !== null && statusCode >= 400)
+      || errors.length > 0
+      || (!!firstError && !text);
     let kind: AssistantStreamKind = 'meta';
     if (isError) {
       kind = 'error';
@@ -212,9 +231,13 @@ export class AssistantChatFacade {
       kind = 'delta';
     }
 
+    const errorText = errors.length > 0
+      ? errors.join('\n')
+      : (firstError ?? '');
+
     return [{
       kind,
-      text,
+      text: kind === 'error' && errorText ? errorText : text,
       threadId,
       statusCode,
     }];
@@ -306,9 +329,6 @@ export class AssistantChatFacade {
       userId: request.userId,
       question: request.message,
       threadId: request.threadId,
-      UserId: request.userId,
-      Message: request.message,
-      ThreadId: request.threadId,
     };
   }
 
