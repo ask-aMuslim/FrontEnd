@@ -37,6 +37,13 @@ export interface UpdateStudentNotePayload {
     timestamp: number;
 }
 
+export interface CreateStudentQuestionPayload {
+    studentId: string;
+    lessonId: string;
+    questionText: string;
+    timestamp: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class LessonFacade {
     constructor(private readonly api: ApiService) { }
@@ -87,6 +94,10 @@ export class LessonFacade {
             text,
             timestamp,
         }), null);
+    }
+
+    createStudentQuestion(payload: CreateStudentQuestionPayload): Observable<boolean> {
+        return this.api.post<unknown>('/api/StudentQuestions', payload).pipe(map(() => true));
     }
 
     updateNote(noteId: string, payload: UpdateStudentNotePayload): Observable<boolean> {

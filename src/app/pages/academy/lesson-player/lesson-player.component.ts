@@ -1,14 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    ElementRef,
-    OnDestroy,
-    OnInit,
-    PLATFORM_ID,
-    inject,
-    viewChild,
-} from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, HostListener, inject, PLATFORM_ID, ElementRef, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
@@ -69,7 +59,6 @@ interface ImageInliningReport {
 @Component({
     selector: 'app-lesson-player',
     standalone: true,
-    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         FormsModule,
         AcademyPageShellComponent,
@@ -85,8 +74,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private static readonly youtubeEmbedOrigin = 'https://www.youtube-nocookie.com';
     private static readonly youtubePlayerHostElementId = 'lesson-youtube-player-host';
     private static readonly completionThresholdPercentage = 90;
-    private static readonly youtubeLabelUpdateIntervalMs = 250;
-    private static readonly youtubeProgressSyncIntervalMs = 1000;
 
     courseId: string = '';
     lessonId: string = '';
@@ -122,15 +109,18 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     courseQuizTitle = 'Quiz';
 
     noteText: string = '';
+    activeNoteMenuId: string | null = null;
+    editingNote: LessonNoteItem | null = null;
     previousNotes: LessonNoteItem[] = [];
     notesFilter: 'latest' | 'current-lesson' = 'latest';
     notesSearchQuery: string = '';
-    activeNoteMenuId: string | null = null;
-    editingNote: LessonNoteItem | null = null;
+    appliedNotesSearchQuery: string = '';
 
     lessonRating: number = 0;
     feedbackText: string = '';
     feedbackSubmissionMessage: string | null = null;
+    feedbackSubmissionStatus: 'success' | 'error' | null = null;
+    isSubmittingFeedback = false;
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
@@ -146,10 +136,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private readonly flushProgressOnUnload = () => this.flushVideoProgress();
     private youtubePlayer: YouTubePlayer | null = null;
     private youtubeProgressIntervalId: ReturnType<typeof globalThis.setInterval> | null = null;
-    private lastYouTubeProgressSyncAt = 0;
     private hasSyncedCompletion = false;
     private pendingSeekSeconds: number | null = null;
-    private pendingYouTubeRestorePercentage: number | null = null;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -197,6 +185,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return this.lessonContent?.title || this.currentLesson?.title || 'Lesson';
     }
 
+    get currentLessonTitle(): string {
+        return this.lessonContent?.title || this.currentLesson?.title || 'this lesson';
+    }
+
     get resolvedCourseDuration(): string {
         const fallbackDuration = '0m';
         return this.academyProgressService.calculateCourseVideoDuration(this.courseLessons, fallbackDuration);
@@ -206,15 +198,13 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         combineLatest([this.route.paramMap, this.route.queryParamMap])
             .pipe(takeUntil(this.destroy$))
             .subscribe(([params, queryParams]) => {
-                const nextCourseId = params.get('courseId') || '';
-                const nextLessonId = params.get('lessonId') || '';
+                this.courseId = params.get('courseId') || '';
+                this.lessonId = params.get('lessonId') || '';
 
-                if (nextCourseId && nextLessonId) {
+                if (this.courseId && this.lessonId) {
                     const requestedTab = queryParams.get('tab') === 'notes' ? 'notes' : 'overview';
                     const requestedSeekSeconds = this.parseSeekQueryParam(queryParams.get('seek'));
                     this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
-                    this.courseId = nextCourseId;
-                    this.lessonId = nextLessonId;
                     this.loadLessonData();
                 }
             });
@@ -250,7 +240,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                         this.error = 'Lesson not found';
                         this.isLoading = false;
                         this.isContentLoading = false;
-                        this.cdr.markForCheck();
+                        this.cdr.detectChanges();
                         return;
                     }
 
@@ -280,7 +270,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
                     this.isIntroLesson = this.currentLesson.type === 'intro';
 
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
 
                     this.academyProgressService.updateLessonProgress({
                         lessonId: this.lessonId,
@@ -294,7 +284,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.error = 'Unable to load this lesson right now. Please try again.';
                     this.isLoading = false;
                     this.isContentLoading = false;
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                 }
             });
     }
@@ -312,10 +302,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.previousLesson = data.previousLesson;
                     this.error = null;
                     this.hasSyncedCompletion = this.videoProgressService.isLessonCompleted(this.lessonId);
-                    this.initializeLessonProgressLabel();
                     this.isLoading = false;
                     this.isContentLoading = false;
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                     this.initializeYouTubeIntegration();
                     this.captureRecentLessonSnapshot();
                     this.applyPendingPlaybackSeek();
@@ -324,7 +313,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.error = 'Unable to load lesson content right now. Please try again.';
                     this.isLoading = false;
                     this.isContentLoading = false;
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                 }
             });
     }
@@ -336,11 +325,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (notes) => {
                     this.previousNotes = notes;
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                 },
                 error: () => {
                     this.previousNotes = [];
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                 },
             });
     }
@@ -350,6 +339,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.error = null;
         this.lessonData = null;
         this.lessonContent = null;
+        this.currentCourse = undefined;
         this.currentLesson = undefined;
         this.nextAcademyLesson = undefined;
         this.previousAcademyLesson = undefined;
@@ -361,6 +351,13 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.courseQuizTitle = 'Quiz';
         this.activeTab = initialTab;
         this.lessonProgressLabel = '0:00 / 0:00';
+        this.hasSyncedCompletion = false;
+        this.pendingSeekSeconds = pendingSeekSeconds;
+        this.lessonRating = 0;
+        this.feedbackText = '';
+        this.feedbackSubmissionMessage = null;
+        this.feedbackSubmissionStatus = null;
+        this.isSubmittingFeedback = false;
         this.audioProgressPercent = 0;
         this.audioPlaybackRate = 1;
         this.audioIsPlaying = false;
@@ -368,13 +365,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.audioVolume = 1;
         this.audioCurrentSeconds = 0;
         this.audioDurationSeconds = 0;
-        this.hasSyncedCompletion = false;
-        this.pendingSeekSeconds = pendingSeekSeconds;
-        this.pendingYouTubeRestorePercentage = null;
-        this.noteText = '';
-        this.previousNotes = [];
         this.notesFilter = 'latest';
         this.notesSearchQuery = '';
+        this.appliedNotesSearchQuery = '';
         this.activeNoteMenuId = null;
         this.editingNote = null;
     }
@@ -383,11 +376,33 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     get isVideoContent(): boolean { return this.lessonContent ? isVideoContent(this.lessonContent) : false; }
     get isAudioContent(): boolean { return this.lessonContent ? isAudioContent(this.lessonContent) : false; }
     get isArticleContent(): boolean { return this.lessonContent ? isArticleContent(this.lessonContent) : false; }
+    get isDocumentContent(): boolean { return this.lessonContent?.type === LessonType.Document; }
 
     get introContent(): IntroLessonContent | null { return this.isIntroContent ? this.lessonContent as IntroLessonContent : null; }
     get videoContent(): VideoLessonContent | null { return this.isVideoContent ? this.lessonContent as VideoLessonContent : null; }
     get audioContent(): AudioLessonContent | null { return this.isAudioContent ? this.lessonContent as AudioLessonContent : null; }
     get articleContent(): ArticleLessonContent | null { return this.isArticleContent ? this.lessonContent as ArticleLessonContent : null; }
+
+    get audioPlaybackRateLabel(): string {
+        if (Number.isInteger(this.audioPlaybackRate)) {
+            return `${this.audioPlaybackRate.toFixed(0)}x`;
+        }
+
+        return `${this.audioPlaybackRate}x`;
+    }
+
+    get documentEmbedUrl(): SafeResourceUrl | null {
+        if (!this.isDocumentContent) {
+            return null;
+        }
+
+        const rawUrl = this.articleContent?.documentUrl?.trim() ?? '';
+        if (!rawUrl) {
+            return null;
+        }
+
+        return this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
+    }
 
     get isYouTubeVideo(): boolean {
         return this.getYouTubeVideoId(this.videoContent?.videoUrl ?? '') !== null;
@@ -421,15 +436,69 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
     }
 
-    get audioPlaybackRateLabel(): string {
-        if (Number.isInteger(this.audioPlaybackRate)) {
-            return `${this.audioPlaybackRate.toFixed(0)}x`;
-        }
-
-        return `${this.audioPlaybackRate}x`;
+    setActiveTab(tab: LessonPlayerTab): void {
+        this.activeTab = tab;
+        this.activeNoteMenuId = null;
     }
 
-    setActiveTab(tab: LessonPlayerTab): void { this.activeTab = tab; }
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent): void {
+        if (!this.activeNoteMenuId) {
+            return;
+        }
+
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        const clickedInsideMenu = path.some((target) =>
+            target instanceof HTMLElement
+            && (
+                target.classList.contains('note-actions')
+                || target.classList.contains('note-menu')
+                || target.classList.contains('btn-more')
+            ),
+        );
+
+        if (!clickedInsideMenu) {
+            this.activeNoteMenuId = null;
+            this.cdr.detectChanges();
+        }
+    }
+
+    closeNoteMenu(): void {
+        if (!this.activeNoteMenuId) {
+            return;
+        }
+
+        this.activeNoteMenuId = null;
+    }
+
+    toggleNoteMenu(event: MouseEvent, noteId: string): void {
+        event.stopPropagation();
+        this.activeNoteMenuId = this.activeNoteMenuId === noteId ? null : noteId;
+    }
+
+    goToTimestamp(note: LessonNoteItem): void {
+        this.closeNoteMenu();
+        this.scrollToMediaSection();
+        this.seekPlaybackTo(note.progressSeconds);
+    }
+
+    editNote(note: LessonNoteItem, event?: Event): void {
+        event?.stopPropagation();
+        this.activeNoteMenuId = null;
+        this.editingNote = note;
+        this.noteText = note.text;
+        this.cdr.detectChanges();
+    }
+
+    cancelNoteEdit(): void {
+        if (!this.editingNote) {
+            return;
+        }
+
+        this.editingNote = null;
+        this.noteText = '';
+        this.cdr.detectChanges();
+    }
 
     goToNextLesson(): void {
         const nextId = this.nextAcademyLesson?.id || this.nextLesson?.id;
@@ -460,10 +529,15 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     get shouldShowStartQuizButton(): boolean {
-        const lastContentLessonId = this.getLastContentLessonId();
-        return this.hasCourseQuiz
-            && !!lastContentLessonId
-            && this.lessonId === lastContentLessonId;
+        return this.hasCourseQuiz && this.isLastContentLesson;
+    }
+
+    get shouldShowCompletedButton(): boolean {
+        return !this.hasCourseQuiz && this.isLastContentLesson;
+    }
+
+    get shouldHighlightReadyDividerBeforeQuiz(): boolean {
+        return this.shouldShowStartQuizButton;
     }
 
     onStartQuizClick(): void {
@@ -471,43 +545,20 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.lessonId || !this.courseId) {
-            this.navigateToCourseQuiz();
-            return;
-        }
+        const navigateToQuiz = () => {
+            if (this.courseQuizLessonId) {
+                void this.router.navigate(['/academy/course', this.courseId, 'quiz', this.courseQuizLessonId]);
+                return;
+            }
 
-        this.academyProgressService
-            .markLessonCompleted(this.lessonId, this.courseId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.navigateToCourseQuiz();
-                },
-                error: () => {
-                    this.navigateToCourseQuiz();
-                },
-            });
+            void this.router.navigate(['/academy/course', this.courseId, 'quiz']);
+        };
+
+        this.markCurrentLessonCompletedByAction(navigateToQuiz);
     }
 
-    get completedCourseLessonsCount(): number {
-        return this.getContentLessons().filter((lesson) => lesson.progress.isCompleted).length;
-    }
-
-    get totalCourseLessonsCount(): number {
-        return this.getContentLessons().length;
-    }
-
-    private navigateToCourseQuiz(): void {
-        if (!this.hasCourseQuiz) {
-            return;
-        }
-
-        if (this.courseQuizLessonId) {
-            void this.router.navigate(['/academy/course', this.courseId, 'quiz', this.courseQuizLessonId]);
-            return;
-        }
-
-        void this.router.navigate(['/academy/course', this.courseId, 'quiz']);
+    onCompleteLessonClick(): void {
+        this.markCurrentLessonCompletedByAction();
     }
 
     onSave(): void {
@@ -636,43 +687,33 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         if (!trimmedNote) {
             return;
         }
-
         const editingNote = this.editingNote;
+        const timestampSeconds = editingNote?.progressSeconds ?? this.resolveCurrentLessonTimestampSeconds();
 
         if (editingNote) {
             this.lessonContentService
-                .updateLessonNote(editingNote.id, trimmedNote, editingNote.progressSeconds)
+                .updateLessonNote(editingNote.id, trimmedNote, timestampSeconds)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
                     next: (updated) => {
                         if (!updated) {
-                            this.activeNoteMenuId = null;
-                            this.cdr.markForCheck();
                             return;
                         }
 
-                        const updatedNote: LessonNoteItem = {
-                            ...editingNote,
-                            text: trimmedNote,
-                        };
-
-                        this.previousNotes = this.previousNotes.map((note) => (
-                            note.id === editingNote.id ? updatedNote : note
-                        ));
-
-                        this.resetNoteComposer();
-                        this.cdr.markForCheck();
-                    },
-                    error: () => {
+                        this.previousNotes = this.previousNotes.map((note) =>
+                            note.id === editingNote.id
+                                ? { ...note, text: trimmedNote }
+                                : note,
+                        );
+                        this.editingNote = null;
+                        this.noteText = '';
                         this.activeNoteMenuId = null;
-                        this.cdr.markForCheck();
+                        this.cdr.detectChanges();
                     },
+                    error: () => void 0,
                 });
-
             return;
         }
-
-        const timestampSeconds = this.resolveCurrentLessonTimestampSeconds();
 
         this.lessonContentService
             .addLessonNote(this.lessonId, trimmedNote, timestampSeconds)
@@ -680,55 +721,23 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (createdNote) => {
                     this.previousNotes = [createdNote, ...this.previousNotes];
-                    this.resetNoteComposer();
-                    this.cdr.markForCheck();
+                    this.noteText = '';
+                    this.activeNoteMenuId = null;
+                    this.cdr.detectChanges();
                 },
                 error: () => {
-                    this.activeNoteMenuId = null;
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                 },
             });
     }
 
-    onDeleteNoteClick(event: Event, noteId: string): void {
-        event.stopPropagation();
-        this.deleteNote(noteId);
-    }
-
-    toggleNoteMenu(event: Event, noteId: string): void {
-        event.stopPropagation();
-        event.preventDefault();
-        this.activeNoteMenuId = this.activeNoteMenuId === noteId ? null : noteId;
-    }
-
-    goToNoteTimestamp(event: Event, note: LessonNoteItem): void {
-        event.stopPropagation();
-        event.preventDefault();
-        this.onLessonNoteClick(note);
-    }
-
-    beginEditNote(event: Event, note: LessonNoteItem): void {
-        event.stopPropagation();
-        event.preventDefault();
-        this.activeNoteMenuId = null;
-        this.editingNote = { ...note };
-        this.noteText = note.text;
-        this.cdr.markForCheck();
-    }
-
-    cancelNoteEdit(): void {
-        this.resetNoteComposer();
-        this.cdr.markForCheck();
-    }
-
     onLessonNoteClick(note: LessonNoteItem): void {
-        this.activeNoteMenuId = null;
-        this.scrollToMediaSection();
-        this.seekPlaybackTo(note.progressSeconds);
+        this.goToTimestamp(note);
     }
 
     deleteNote(noteId: string): void {
         this.activeNoteMenuId = null;
+
         this.lessonContentService
             .deleteLessonNote(noteId)
             .pipe(takeUntil(this.destroy$))
@@ -737,27 +746,61 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     if (deleted) {
                         this.previousNotes = this.previousNotes.filter((note) => note.id !== noteId);
                         if (this.editingNote?.id === noteId) {
-                            this.editingNote = null;
-                            this.noteText = '';
+                            this.cancelNoteEdit();
                         }
-                        this.cdr.markForCheck();
+                        if (this.activeNoteMenuId === noteId) {
+                            this.activeNoteMenuId = null;
+                        }
+                        this.cdr.detectChanges();
                     }
                 },
             });
     }
 
-    getNoteTimestampLabel(note: LessonNoteItem): string {
-        const lessonTitle = this.lessonContent?.title || this.currentLesson?.title || 'Lesson';
-        return `${lessonTitle} ${note.timestamp}`.trim();
+    setRating(stars: number): void {
+        this.lessonRating = stars;
+        this.feedbackSubmissionMessage = null;
+        this.feedbackSubmissionStatus = null;
     }
 
-    setRating(stars: number): void { this.lessonRating = stars; }
-
     submitFeedback(): void {
-        if (this.lessonRating > 0 || this.feedbackText.trim()) {
-            this.feedbackText = '';
-            this.feedbackSubmissionMessage = 'Thank you for your feedback!';
+        const trimmedFeedback = this.feedbackText.trim();
+        const hasFeedbackPayload = this.lessonRating > 0 || trimmedFeedback.length > 0;
+
+        if (!this.lessonId || this.isSubmittingFeedback || !hasFeedbackPayload) {
+            return;
         }
+
+        this.feedbackSubmissionMessage = null;
+        this.feedbackSubmissionStatus = null;
+        this.isSubmittingFeedback = true;
+
+        this.lessonContentService
+            .submitLessonFeedback(this.lessonId, this.lessonRating, trimmedFeedback.length > 0 ? trimmedFeedback : undefined)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (submitted) => {
+                    this.isSubmittingFeedback = false;
+
+                    if (submitted) {
+                        this.lessonRating = 0;
+                        this.feedbackText = '';
+                        this.feedbackSubmissionMessage = 'Thank you for your feedback!';
+                        this.feedbackSubmissionStatus = 'success';
+                    } else {
+                        this.feedbackSubmissionMessage = 'Unable to submit feedback right now. Please try again.';
+                        this.feedbackSubmissionStatus = 'error';
+                    }
+
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.isSubmittingFeedback = false;
+                    this.feedbackSubmissionMessage = 'Unable to submit feedback right now. Please try again.';
+                    this.feedbackSubmissionStatus = 'error';
+                    this.cdr.detectChanges();
+                },
+            });
     }
 
     get breadcrumbItems(): string[] {
@@ -769,21 +812,20 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     get courseInfo(): { stage: number; code: string; title: string; stats: string } {
         const stage = this.currentCourse?.stageId || 0;
         const title = this.currentCourse?.title || '';
+        const currentOrder = this.lessonData?.metadata.order || (this.currentLesson?.order || 0);
         return {
             stage,
             code: '',
             title,
-            stats: `Lesson: ${this.completedCourseLessonsCount}/${this.totalCourseLessonsCount}`
+            stats: `Lesson: ${currentOrder}/${this.courseLessons.length}`
         };
     }
 
     get filteredNotes(): LessonNoteItem[] {
-        const query = this.notesSearchQuery.trim().toLowerCase();
-        const notesForLesson = this.notesFilter === 'latest'
-            ? [...this.previousNotes].sort(
-                (a, b) => this.toTimestampMillis(b.createdAt) - this.toTimestampMillis(a.createdAt),
-            )
-            : this.previousNotes;
+        const query = this.appliedNotesSearchQuery.trim().toLowerCase();
+        const notesForLesson = [...this.previousNotes].sort(
+            (a, b) => this.toTimestampMillis(b.createdAt) - this.toTimestampMillis(a.createdAt),
+        );
 
         if (!query) {
             return notesForLesson;
@@ -792,10 +834,19 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return notesForLesson.filter(note => note.text.toLowerCase().includes(query));
     }
 
-    private resetNoteComposer(): void {
-        this.noteText = '';
-        this.editingNote = null;
-        this.activeNoteMenuId = null;
+    applyNotesSearch(): void {
+        this.appliedNotesSearchQuery = this.notesSearchQuery.trim();
+        this.cdr.detectChanges();
+    }
+
+    clearNotesSearch(): void {
+        if (!this.notesSearchQuery && !this.appliedNotesSearchQuery) {
+            return;
+        }
+
+        this.notesSearchQuery = '';
+        this.appliedNotesSearchQuery = '';
+        this.cdr.detectChanges();
     }
 
     get sidebarLessons(): AcademySidebarLessonItem[] {
@@ -837,15 +888,82 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     private getLastContentLessonId(): string | null {
-        const nonQuizLessons = this.getContentLessons()
+        const nonQuizLessons = this.courseLessons
+            .filter((lesson) => lesson.type !== 'quiz')
             .sort((a, b) => a.order - b.order);
 
         const lastLesson = nonQuizLessons.at(-1);
         return lastLesson?.id ?? null;
     }
 
-    private getContentLessons(): Array<AcademyLesson & { progress: LessonProgress }> {
-        return this.courseLessons.filter((lesson) => lesson.type !== 'quiz');
+    private get isLastContentLesson(): boolean {
+        const lastContentLessonId = this.getLastContentLessonId();
+        return !!lastContentLessonId && this.lessonId === lastContentLessonId;
+    }
+
+    private requiresExplicitCompletionAction(): boolean {
+        return this.isLastContentLesson;
+    }
+
+    private markCurrentLessonCompletedByAction(onAfterCompletion?: () => void): void {
+        const finalizeCompletion = () => {
+            this.markCurrentLessonAsCompletedInUi();
+            onAfterCompletion?.();
+        };
+
+        if (!this.courseId || !this.lessonId) {
+            onAfterCompletion?.();
+            return;
+        }
+
+        if (this.hasSyncedCompletion) {
+            this.academyProgressService
+                .markLessonCompleted(this.lessonId, this.courseId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => {
+                        finalizeCompletion();
+                    },
+                    error: () => {
+                        finalizeCompletion();
+                    },
+                });
+            return;
+        }
+
+        this.hasSyncedCompletion = true;
+        this.videoProgressService.markLessonCompleted(this.lessonId);
+
+        this.academyProgressService
+            .markLessonCompleted(this.lessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    finalizeCompletion();
+                },
+                error: () => {
+                    finalizeCompletion();
+                },
+            });
+    }
+
+    private markCurrentLessonAsCompletedInUi(): void {
+        this.courseLessons = this.courseLessons.map((lesson) => {
+            if (lesson.id !== this.lessonId) {
+                return lesson;
+            }
+
+            return {
+                ...lesson,
+                progress: {
+                    ...lesson.progress,
+                    status: 'completed',
+                    isCompleted: true,
+                    completedAt: lesson.progress.completedAt ?? new Date().toISOString(),
+                },
+            };
+        });
+        this.cdr.detectChanges();
     }
 
     onSidebarLessonSelect(lesson: AcademySidebarLessonItem): void {
@@ -898,7 +1016,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.startYouTubeProgressTracking();
 
                     globalThis.addEventListener('beforeunload', this.flushProgressOnUnload);
-                    this.cdr.markForCheck();
+                    this.cdr.detectChanges();
                 })
                 .catch(() => {
                     this.teardownYouTubeIntegration(false);
@@ -908,8 +1026,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     private onYouTubePlayerStateChange(state: YouTubePlayerState): void {
         if (state === YOUTUBE_PLAYER_STATE.PAUSED) {
-            this.updateVideoProgressLabel();
-            this.trackVideoProgress();
             this.flushVideoProgress();
             return;
         }
@@ -930,16 +1046,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private startYouTubeProgressTracking(): void {
         this.stopYouTubeProgressTracking();
         this.updateVideoProgressLabel();
-        this.lastYouTubeProgressSyncAt = 0;
 
         this.youtubeProgressIntervalId = globalThis.setInterval(() => {
             this.updateVideoProgressLabel();
-            const now = Date.now();
-            if (now - this.lastYouTubeProgressSyncAt >= LessonPlayerComponent.youtubeProgressSyncIntervalMs) {
-                this.trackVideoProgress();
-                this.lastYouTubeProgressSyncAt = now;
-            }
-        }, LessonPlayerComponent.youtubeLabelUpdateIntervalMs);
+            this.trackVideoProgress();
+        }, 1000);
     }
 
     private stopYouTubeProgressTracking(): void {
@@ -951,9 +1062,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     private updateVideoProgressLabel(): void {
         const duration = this.safelyGetYouTubeDuration();
-        const restoredCurrentTime = this.tryApplyPendingYouTubeRestore(duration);
-        const currentTime = restoredCurrentTime
-            ?? this.boundPlaybackTime(this.safelyGetYouTubeCurrentTime(), duration);
+        const currentTime = this.safelyGetYouTubeCurrentTime();
 
         this.lessonProgressLabel = `${this.formatPlaybackClock(currentTime)} / ${this.formatPlaybackClock(duration)}`;
         const playbackProgress = duration > 0
@@ -964,93 +1073,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             totalTimeSeconds: duration,
             progressPercentage: playbackProgress,
         });
-        this.cdr.markForCheck();
-    }
-
-    private initializeLessonProgressLabel(): void {
-        const savedProgressPercentage = this.videoProgressService.getSavedProgressPercentage(this.lessonId);
-        const boundedProgressPercentage = Math.max(0, Math.min(100, savedProgressPercentage));
-
-        if (this.isVideoContent) {
-            const totalSeconds = this.parseDurationLabelToSeconds(
-                this.videoContent?.duration ?? this.currentLesson?.duration ?? '',
-            );
-            this.lessonProgressLabel = this.buildProgressLabel(boundedProgressPercentage, totalSeconds);
-            return;
-        }
-
-        if (this.isAudioContent) {
-            const totalSeconds = this.parseDurationLabelToSeconds(
-                this.audioContent?.duration ?? this.currentLesson?.duration ?? '',
-            );
-            const currentSeconds = totalSeconds > 0
-                ? (boundedProgressPercentage / 100) * totalSeconds
-                : 0;
-
-            this.audioCurrentSeconds = currentSeconds;
-            this.audioDurationSeconds = totalSeconds;
-            this.audioProgressPercent = boundedProgressPercentage;
-            this.audioPlaybackRate = 1;
-            this.audioIsPlaying = false;
-            this.audioIsMuted = false;
-            this.audioVolume = 1;
-            this.lessonProgressLabel = this.buildProgressLabel(boundedProgressPercentage, totalSeconds);
-            return;
-        }
-
-        this.lessonProgressLabel = '0:00 / 0:00';
-    }
-
-    private buildProgressLabel(savedProgressPercentage: number, totalSeconds: number): string {
-        const boundedTotalSeconds = Math.max(0, totalSeconds);
-        const boundedProgressPercentage = Math.max(0, Math.min(100, savedProgressPercentage));
-        const currentSeconds = boundedTotalSeconds > 0
-            ? (boundedProgressPercentage / 100) * boundedTotalSeconds
-            : 0;
-
-        return `${this.formatPlaybackClock(currentSeconds)} / ${this.formatPlaybackClock(boundedTotalSeconds)}`;
-    }
-
-    private parseDurationLabelToSeconds(durationLabel: string): number {
-        const normalized = durationLabel.trim().toLowerCase();
-        if (normalized.length === 0) {
-            return 0;
-        }
-
-        if (normalized.includes(':')) {
-            const parts = normalized
-                .split(':')
-                .map((part) => Number.parseInt(part, 10))
-                .filter((part) => Number.isFinite(part) && part >= 0);
-
-            if (parts.length === 2) {
-                return (parts[0] * 60) + parts[1];
-            }
-
-            if (parts.length === 3) {
-                return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-            }
-        }
-
-        const hourMatch = /([\d.]+)\s*h/.exec(normalized);
-        const minuteMatch = /([\d.]+)\s*m/.exec(normalized);
-        const secondMatch = /([\d.]+)\s*s/.exec(normalized);
-
-        const hours = hourMatch ? Number.parseFloat(hourMatch[1]) : 0;
-        const minutes = minuteMatch ? Number.parseFloat(minuteMatch[1]) : 0;
-        const seconds = secondMatch ? Number.parseFloat(secondMatch[1]) : 0;
-
-        const computedSeconds = (hours * 3600) + (minutes * 60) + seconds;
-        if (Number.isFinite(computedSeconds) && computedSeconds > 0) {
-            return Math.max(0, Math.round(computedSeconds));
-        }
-
-        const directMinutes = Number.parseFloat(normalized);
-        if (Number.isFinite(directMinutes) && directMinutes >= 0) {
-            return Math.round(directMinutes * 60);
-        }
-
-        return 0;
     }
 
     onVideoLoadedMetadata(player: HTMLVideoElement): void {
@@ -1058,7 +1080,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.restoreMediaProgress(player);
+        this.restoreNativeVideoProgress(player);
         this.syncNativeVideoProgress(player, false, false);
     }
 
@@ -1115,7 +1137,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             totalTimeSeconds: duration,
             progressPercentage,
         });
-        this.cdr.markForCheck();
+    }
+
+    private restoreNativeVideoProgress(player: HTMLVideoElement): void {
+        this.restoreMediaProgress(player);
     }
 
     onAudioLoadedMetadata(player: HTMLAudioElement): void {
@@ -1123,7 +1148,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.restoreMediaProgress(player);
+        this.restoreAudioProgress(player);
         this.syncAudioProgress(player, false, false);
         this.applyPendingPlaybackSeek();
     }
@@ -1145,14 +1170,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.audioPlaybackRate = Number.isFinite(player.playbackRate)
             ? Math.max(0.25, player.playbackRate)
             : 1;
-        this.cdr.markForCheck();
     }
 
     onAudioRateChange(player: HTMLAudioElement): void {
         this.audioPlaybackRate = Number.isFinite(player.playbackRate)
             ? Math.max(0.25, player.playbackRate)
             : 1;
-        this.cdr.markForCheck();
     }
 
     onAudioVolumeChange(player: HTMLAudioElement): void {
@@ -1160,7 +1183,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ? Math.max(0, Math.min(1, player.volume))
             : 1;
         this.audioIsMuted = player.muted || this.audioVolume <= 0;
-        this.cdr.markForCheck();
     }
 
     toggleAudioPlayback(): void {
@@ -1210,7 +1232,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
         audioPlayer.playbackRate = nextRate;
         this.audioPlaybackRate = nextRate;
-        this.cdr.markForCheck();
     }
 
     onAudioProgressInput(event: Event): void {
@@ -1252,7 +1273,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.audioVolume = Number.isFinite(audioPlayer.volume)
             ? Math.max(0, Math.min(1, audioPlayer.volume))
             : this.audioVolume;
-        this.cdr.markForCheck();
     }
 
     private syncAudioProgress(
@@ -1272,17 +1292,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ? 100
             : Math.max(0, Math.min(100, rawProgress));
 
-        this.audioCurrentSeconds = boundedCurrent;
-        this.audioDurationSeconds = duration;
-        this.audioProgressPercent = progressPercentage;
-        this.audioIsPlaying = !player.paused && !player.ended;
-        this.audioPlaybackRate = Number.isFinite(player.playbackRate)
-            ? Math.max(0.25, player.playbackRate)
-            : this.audioPlaybackRate;
-        this.audioVolume = Number.isFinite(player.volume)
-            ? Math.max(0, Math.min(1, player.volume))
-            : this.audioVolume;
-        this.audioIsMuted = player.muted || this.audioVolume <= 0;
         this.lessonProgressLabel = `${this.formatPlaybackClock(boundedCurrent)} / ${this.formatPlaybackClock(duration)}`;
 
         const payload = this.buildMediaProgressPayload(progressPercentage);
@@ -1307,27 +1316,29 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             totalTimeSeconds: duration,
             progressPercentage,
         });
-        this.cdr.markForCheck();
+    }
+
+    private restoreAudioProgress(player: HTMLAudioElement): void {
+        this.restoreMediaProgress(player);
+    }
+
+    private getAudioElement(): HTMLAudioElement | null {
+        return this.audioElementRef()?.nativeElement ?? null;
     }
 
     private restoreMediaProgress(player: HTMLMediaElement): void {
-        const duration = Number.isFinite(player.duration) ? Math.max(0, player.duration) : 0;
-        const restoredPositionSeconds = this.resolveRestoredPlaybackPosition(duration);
-        if (restoredPositionSeconds === null) {
+        const savedProgressPercentage = this.videoProgressService.getSavedProgressPercentage(this.lessonId);
+        if (savedProgressPercentage <= 0) {
             return;
         }
 
-        player.currentTime = restoredPositionSeconds;
-    }
-
-    private resolveRestoredPlaybackPosition(durationSeconds: number): number | null {
-        const savedProgressPercentage = this.videoProgressService.getSavedProgressPercentage(this.lessonId);
-        if (savedProgressPercentage <= 0 || durationSeconds <= 0) {
-            return null;
+        const duration = Number.isFinite(player.duration) ? Math.max(0, player.duration) : 0;
+        if (duration <= 0) {
+            return;
         }
 
-        const restoredPositionSeconds = (savedProgressPercentage / 100) * durationSeconds;
-        return Math.max(0, Math.min(durationSeconds, restoredPositionSeconds));
+        const restoredPositionSeconds = (savedProgressPercentage / 100) * duration;
+        player.currentTime = Math.max(0, Math.min(duration, restoredPositionSeconds));
     }
 
     private buildMediaProgressPayload(videoProgressPercentage: number): {
@@ -1369,35 +1380,21 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         const savedProgressPercentage = this.videoProgressService.getSavedProgressPercentage(this.lessonId);
-        const boundedProgressPercentage = Math.max(0, Math.min(100, savedProgressPercentage));
-        if (boundedProgressPercentage <= 0) {
-            this.pendingYouTubeRestorePercentage = null;
+        if (savedProgressPercentage <= 0) {
             return;
         }
 
-        this.pendingYouTubeRestorePercentage = boundedProgressPercentage;
-        this.tryApplyPendingYouTubeRestore(this.safelyGetYouTubeDuration());
-    }
-
-    private tryApplyPendingYouTubeRestore(duration: number): number | null {
-        if (!this.youtubePlayer || this.pendingYouTubeRestorePercentage === null) {
-            return null;
+        const duration = this.safelyGetYouTubeDuration();
+        if (duration <= 0) {
+            return;
         }
 
-        if (!Number.isFinite(duration) || duration <= 0) {
-            return null;
-        }
-
-        const savedPositionSeconds = (this.pendingYouTubeRestorePercentage / 100) * duration;
+        const savedPositionSeconds = (savedProgressPercentage / 100) * duration;
         const seekPosition = Math.max(0, Math.min(duration, savedPositionSeconds));
 
         if (seekPosition > 0) {
             this.youtubePlayer.seekTo(seekPosition, true);
         }
-
-        this.pendingYouTubeRestorePercentage = null;
-
-        return seekPosition;
     }
 
     private flushVideoProgress(): void {
@@ -1422,13 +1419,22 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return;
         }
 
+        if (this.requiresExplicitCompletionAction()) {
+            return;
+        }
+
         this.hasSyncedCompletion = true;
         this.videoProgressService.markLessonCompleted(this.lessonId);
 
         this.academyProgressService
             .markLessonCompleted(this.lessonId, this.courseId)
             .pipe(takeUntil(this.destroy$))
-            .subscribe();
+            .subscribe({
+                next: () => {
+                    this.markCurrentLessonAsCompletedInUi();
+                },
+                error: () => void 0,
+            });
     }
 
     private buildVideoProgressPayload(): {
@@ -1445,13 +1451,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return null;
         }
 
-        const restoredCurrentTime = this.tryApplyPendingYouTubeRestore(duration);
-        if (this.pendingYouTubeRestorePercentage !== null) {
-            return null;
-        }
-
-        const currentTime = restoredCurrentTime
-            ?? this.boundPlaybackTime(this.safelyGetYouTubeCurrentTime(), duration);
+        const currentTime = this.safelyGetYouTubeCurrentTime();
         const rawProgress = (currentTime / duration) * 100;
         const videoProgressPercentage = Number.isFinite(rawProgress)
             ? Math.max(0, Math.min(100, rawProgress))
@@ -1490,18 +1490,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
     }
 
-    private boundPlaybackTime(rawCurrentTime: number, duration: number): number {
-        const boundedCurrentTime = Number.isFinite(rawCurrentTime)
-            ? Math.max(0, rawCurrentTime)
-            : 0;
-
-        if (!Number.isFinite(duration) || duration <= 0) {
-            return boundedCurrentTime;
-        }
-
-        return Math.min(duration, boundedCurrentTime);
-    }
-
     private formatPlaybackClock(totalSeconds: number): string {
         const safeSeconds = Math.max(0, Math.floor(totalSeconds));
         const hours = Math.floor(safeSeconds / 3600);
@@ -1533,8 +1521,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         if (this.isAudioContent && this.isBrowser) {
-            const audioElement = this.getAudioElement();
-            if (audioElement && Number.isFinite(audioElement.currentTime)) {
+            const audioElement = globalThis.document.querySelector('.audio-player');
+            if (audioElement instanceof HTMLAudioElement && Number.isFinite(audioElement.currentTime)) {
                 return Math.max(0, Math.floor(audioElement.currentTime));
             }
         }
@@ -1552,8 +1540,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         if (this.isAudioContent && this.isBrowser) {
-            const audioElement = this.getAudioElement();
-            if (audioElement) {
+            const audioElement = globalThis.document.querySelector('.audio-player');
+            if (audioElement instanceof HTMLAudioElement) {
                 audioElement.currentTime = safeTarget;
                 this.syncAudioProgress(audioElement, false, false);
                 return true;
@@ -1614,10 +1602,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         globalThis.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    private getAudioElement(): HTMLAudioElement | null {
-        return this.audioElementRef()?.nativeElement ?? null;
-    }
-
     private toTimestampMillis(value: string): number {
         const parsed = new Date(value).getTime();
         return Number.isFinite(parsed) ? parsed : 0;
@@ -1635,9 +1619,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.academyProgressService.rememberRecentLessonVisit({
             courseId: this.courseId,
             lessonId: this.lessonId,
-            lessonType: this.currentLesson?.type,
-            lessonNumber: this.currentLesson?.order,
-            lessonTitle: this.currentLesson?.title,
             currentTimeSeconds: snapshot?.currentTimeSeconds,
             totalTimeSeconds: snapshot?.totalTimeSeconds,
             progressPercentage: snapshot?.progressPercentage,
@@ -2136,6 +2117,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         lessons: Array<AcademyLesson & { progress: LessonProgress }>,
         quizzes: QuizReadDto[],
     ): string {
+        const orderedQuizLessons = [...lessons]
+            .filter((lesson) => lesson.type === 'quiz')
+            .sort((a, b) => a.order - b.order);
+
         const courseQuiz = quizzes.find(
             (quiz) => !quiz.lessonId || (typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length === 0),
         );
@@ -2144,7 +2129,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return courseQuiz.title.trim();
         }
 
-        const explicitQuizLesson = lessons.find((lesson) => lesson.type === 'quiz');
+        const explicitQuizLesson = orderedQuizLessons[0];
         const lessonQuiz = explicitQuizLesson
             ? quizzes.find(
                 (quiz) => quiz.lessonId === explicitQuizLesson.id
@@ -2182,6 +2167,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         lessons: Array<AcademyLesson & { progress: LessonProgress }>,
         quizzes: QuizReadDto[],
     ): string | null {
+        const orderedQuizLessons = [...lessons]
+            .filter((lesson) => lesson.type === 'quiz')
+            .sort((a, b) => a.order - b.order);
+
         // First, look for a course quiz (quiz without a specific lessonId)
         const courseQuiz = quizzes.find(
             (quiz) => !quiz.lessonId || (typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length === 0),
@@ -2189,7 +2178,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
         if (courseQuiz) {
             // If there's an explicit quiz lesson, return it to potentially link with that
-            const quizLesson = lessons.find((lesson) => lesson.type === 'quiz');
+            const quizLesson = orderedQuizLessons[0];
             if (quizLesson) {
                 return quizLesson.id;
             }
@@ -2198,7 +2187,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         // Fall back to lesson quiz
-        const explicitQuizLesson = lessons.find((lesson) => lesson.type === 'quiz');
+        const explicitQuizLesson = orderedQuizLessons[0];
         if (explicitQuizLesson) {
             return explicitQuizLesson.id;
         }
@@ -2212,9 +2201,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return {
             id: lesson.id,
             courseId: lesson.courseId,
+            isPublished: lesson.isPublished,
             title: lesson.title,
             duration: lesson.duration,
             videoUrl: lesson.videoUrl,
+            audioUrl: lesson.audioUrl,
             type: lesson.type,
             order: lesson.order,
             description: lesson.description,

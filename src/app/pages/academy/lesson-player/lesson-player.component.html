@@ -175,7 +175,7 @@
                   <button
                     class="audio-icon-button"
                     type="button"
-                    aria-label="Replay 10 seconds"
+                    aria-label="Back 10 seconds"
                     (click)="seekAudioBy(-10)"
                   >
                     <img
@@ -187,11 +187,13 @@
                       draggable="false"
                     />
                   </button>
-
+                  
                   <button
                     class="audio-speed-button"
                     type="button"
-                    title="Change playback speed"
+                    [attr.aria-label]="
+                      'Change playback speed. Current ' + audioPlaybackRateLabel
+                    "
                     (click)="toggleAudioPlaybackRate()"
                   >
                     {{ audioPlaybackRateLabel }}
@@ -212,28 +214,6 @@
                       draggable="false"
                     />
                   </button>
-
-                  <div class="audio-progress-group">
-                    <div class="audio-progress-track" aria-hidden="true">
-                      <div
-                        class="audio-progress-fill"
-                        [style.width.%]="audioProgressPercent"
-                      ></div>
-                    </div>
-                    <input
-                      class="audio-progress-input"
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      [value]="audioProgressPercent"
-                      [attr.aria-valuetext]="lessonProgressLabel"
-                      aria-label="Seek audio position"
-                      (input)="onAudioProgressInput($event)"
-                    />
-                  </div>
-
-                  <span class="audio-time">{{ lessonProgressLabel }}</span>
 
                   <button
                     class="audio-icon-button"
@@ -303,6 +283,27 @@
                       </svg>
                     }
                   </button>
+
+                  <div class="audio-progress-group">
+                    <div class="audio-progress-track">
+                      <div
+                        class="audio-progress-fill"
+                        [style.width.%]="audioProgressPercent"
+                      ></div>
+                    </div>
+                    <input
+                      class="audio-progress-input"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      [value]="audioProgressPercent"
+                      (input)="onAudioProgressInput($event)"
+                      aria-label="Audio progress"
+                    />
+                  </div>
+
+                  <span class="audio-time">{{ lessonProgressLabel }}</span>
                 </div>
               </div>
             </div>
@@ -374,23 +375,48 @@
             </div>
           }
           <div class="article-header-content">
-            <p class="article-type">Article</p>
+            <p class="article-type">
+              {{ isDocumentContent ? "Document" : "Article" }}
+            </p>
             @if (articleContent.description) {
               <p class="article-description">
                 {{ articleContent.description }}
               </p>
             }
 
-            @for (section of articleContent.sections; track section) {
-              <div class="article-section">
-                @if (section.header) {
-                  <h2 class="section-header">{{ section.header }}</h2>
-                }
-                <app-tiptap-viewer
-                  class="section-content"
-                  [content]="section.contentJson || section.content"
-                ></app-tiptap-viewer>
+            @if (
+              isDocumentContent &&
+              articleContent.documentUrl &&
+              documentEmbedUrl
+            ) {
+              <div class="document-viewer">
+                <iframe
+                  class="document-viewer__frame"
+                  [src]="documentEmbedUrl"
+                  title="Lesson document"
+                  loading="lazy"
+                ></iframe>
+                <a
+                  class="document-viewer__link"
+                  [href]="articleContent.documentUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open document in a new tab
+                </a>
               </div>
+            } @else {
+              @for (section of articleContent.sections; track section) {
+                <div class="article-section">
+                  @if (section.header) {
+                    <h2 class="section-header">{{ section.header }}</h2>
+                  }
+                  <app-tiptap-viewer
+                    class="section-content"
+                    [content]="section.contentJson || section.content"
+                  ></app-tiptap-viewer>
+                </div>
+              }
             }
           </div>
         </div>
@@ -623,10 +649,12 @@
               <div class="note-input-wrapper">
                 @if (editingNote) {
                   <div class="note-edit-banner">
-                    <span>
-                      Editing note at {{ getNoteTimestampLabel(editingNote) }}
-                    </span>
-                    <button type="button" class="note-edit-cancel" (click)="cancelNoteEdit()">
+                    <span>Editing note for {{ currentLessonTitle }}</span>
+                    <button
+                      type="button"
+                      class="note-edit-cancel"
+                      (click)="cancelNoteEdit()"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -634,7 +662,11 @@
                 <textarea
                   class="note-textarea"
                   [(ngModel)]="noteText"
-                  [placeholder]="editingNote ? 'Update your note here ..' : 'Write your note here ..'"
+                  [placeholder]="
+                    editingNote
+                      ? 'Update your note here ..'
+                      : 'Write your note here ..'
+                  "
                   rows="5"
                 ></textarea>
                 <div class="note-action">
@@ -643,19 +675,65 @@
                     (click)="addNote()"
                     [disabled]="!noteText.trim()"
                   >
-                    <span>{{ editingNote ? 'Save' : 'Add' }}</span>
+                    <span>{{ editingNote ? "Update" : "Add" }}</span>
                   </button>
                 </div>
               </div>
               <div class="other-notes-section">
                 <h3 class="other-notes-title">Other Notes</h3>
                 <div class="notes-filters">
-                  <input
-                    type="text"
-                    class="search-input"
-                    [(ngModel)]="notesSearchQuery"
-                    placeholder="Search"
-                  />
+                  <div class="search-input-wrapper">
+                    <input
+                      type="text"
+                      class="search-input"
+                      [(ngModel)]="notesSearchQuery"
+                      (keydown.enter)="applyNotesSearch()"
+                      placeholder="Search"
+                    />
+                    <button
+                      type="button"
+                      class="search-clear-button"
+                      (click)="clearNotesSearch()"
+                      [style.display]="
+                        notesSearchQuery || appliedNotesSearchQuery
+                          ? 'inline-flex'
+                          : 'none'
+                      "
+                      aria-label="Clear note search"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-primary notes-search-button"
+                    (click)="applyNotesSearch()"
+                  >
+                    <span>Search</span>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M21 21L16.65 16.65"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
                   <select class="filter-select" [(ngModel)]="notesFilter">
                     <option value="latest">Latest</option>
                     <option value="current-lesson">Current Lesson</option>
@@ -674,32 +752,35 @@
                       "
                     >
                       <div class="note-header">
-                        <span class="note-timestamp">{{ getNoteTimestampLabel(note) }}</span>
+                        <span class="note-timestamp">{{ note.timestamp }}</span>
                         <div class="note-actions">
                           <button
                             class="btn-more"
                             type="button"
                             [attr.aria-expanded]="activeNoteMenuId === note.id"
-                            [attr.aria-label]="'Note actions for ' + getNoteTimestampLabel(note)"
+                            aria-haspopup="menu"
+                            aria-label="Open note actions"
                             (click)="toggleNoteMenu($event, note.id)"
                           >
                             <img
                               src="/icons/icons-24/more.svg"
-                              width="24"
-                              height="24"
                               alt=""
                               aria-hidden="true"
-                              draggable="false"
                             />
                           </button>
 
                           @if (activeNoteMenuId === note.id) {
-                            <div class="note-menu" role="menu" aria-label="Note actions">
+                            <div
+                              class="note-menu"
+                              role="menu"
+                              aria-label="Note actions"
+                              (click)="$event.stopPropagation()"
+                            >
                               <button
                                 type="button"
                                 class="note-menu-item"
                                 role="menuitem"
-                                (click)="goToNoteTimestamp($event, note)"
+                                (click)="goToTimestamp(note)"
                               >
                                 Go To Timestamp
                               </button>
@@ -707,7 +788,7 @@
                                 type="button"
                                 class="note-menu-item"
                                 role="menuitem"
-                                (click)="beginEditNote($event, note)"
+                                (click)="editNote(note, $event)"
                               >
                                 Edit Note
                               </button>
@@ -715,7 +796,7 @@
                                 type="button"
                                 class="note-menu-item note-menu-item--danger"
                                 role="menuitem"
-                                (click)="onDeleteNoteClick($event, note.id)"
+                                (click)="deleteNote(note.id)"
                               >
                                 Delete Note
                               </button>
@@ -759,13 +840,21 @@
                   <button
                     class="btn-icon-add"
                     (click)="submitFeedback()"
-                    [disabled]="lessonRating === 0 && !feedbackText.trim()"
+                    [disabled]="
+                      isSubmittingFeedback ||
+                      (lessonRating === 0 && !feedbackText.trim())
+                    "
                   >
-                    Submit
+                    {{ isSubmittingFeedback ? "Submitting..." : "Submit" }}
                   </button>
                 </div>
                 @if (feedbackSubmissionMessage) {
-                  <p class="text-sm text-(--color-success-base)">
+                  <p
+                    class="feedback-submission-message"
+                    [class.feedback-submission-message--error]="
+                      feedbackSubmissionStatus === 'error'
+                    "
+                  >
                     {{ feedbackSubmissionMessage }}
                   </p>
                 }
@@ -782,14 +871,22 @@
             class="btn btn-outlined btn-previous"
             (click)="goToPreviousLesson()"
           >
-            <img
-              src="/icons/icons-24/arrow-left.svg"
-              width="24"
-              height="24"
-              alt=""
+            <svg
+              class="btn-arrow-icon"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
               aria-hidden="true"
-              draggable="false"
-            />
+            >
+              <path
+                d="M15 19L8 12L15 5"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
             <span>Previous Lesson</span>
           </button>
         }
@@ -804,6 +901,29 @@
         } @else if (nextAcademyLesson || nextLesson) {
           <button class="btn btn-primary btn-next" (click)="goToNextLesson()">
             <span>{{ isIntroContent ? "Begin" : "Next Lesson" }}</span>
+            <svg
+              class="btn-arrow-icon"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 5L16 12L9 19"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        } @else if (shouldShowCompletedButton) {
+          <button
+            class="btn btn-primary btn-completed"
+            (click)="onCompleteLessonClick()"
+          >
+            <span>Completed</span>
           </button>
         }
       </div>
@@ -814,13 +934,16 @@
     <app-academy-sidebar-host
       [stageNumber]="courseInfo.stage"
       [title]="courseInfo.title"
-      [currentLessonNumber]="completedCourseLessonsCount"
-      [totalLessons]="totalCourseLessonsCount"
+      [currentLessonNumber]="
+        lessonData?.metadata?.order ?? currentLesson?.order ?? null
+      "
+      [totalLessons]="courseLessons.length"
       [duration]="resolvedCourseDuration"
       [overviewLink]="['/academy/course', courseId]"
       overviewLinkLabel="Course overview"
       [lessons]="sidebarLessons"
       [showReadyDividerBeforeQuiz]="true"
+      [highlightReadyDividerBeforeQuiz]="shouldHighlightReadyDividerBeforeQuiz"
       (lessonSelect)="onSidebarLessonSelect($event)"
     />
   </div>

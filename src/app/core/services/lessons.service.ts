@@ -88,6 +88,34 @@ export class LessonsService {
     );
   }
 
+  submitFeedback(lessonId: Id, payload: { rating: number; feedback?: string }): Observable<boolean> {
+    const normalizedFeedback = payload.feedback?.trim() ?? '';
+    const hasFeedbackPayload = payload.rating > 0 || normalizedFeedback.length > 0;
+
+    if (!hasFeedbackPayload) {
+      return of(false);
+    }
+
+    return this.studentFacade.getMyProfileFromApi().pipe(
+      map((profile) => this.resolveStudentId(profile)),
+      switchMap((studentId) => {
+        if (!studentId) {
+          return of(false);
+        }
+
+        return this.facade.createStudentQuestion({
+          studentId,
+          lessonId: String(lessonId),
+          questionText: this.buildLessonFeedbackText(payload.rating, normalizedFeedback),
+          timestamp: Math.floor(Date.now() / 1000),
+        }).pipe(
+          catchError(() => of(false)),
+        );
+      }),
+      catchError(() => of(false)),
+    );
+  }
+
   /**
    * Get student notes for a lesson
    */
@@ -154,6 +182,31 @@ export class LessonsService {
     return this.facade.deleteNote(String(noteId)).pipe(
       map(() => void 0)
     );
+  }
+
+  private resolveStudentId(profile: StudentProfile | null): string | null {
+    const candidates = [profile?.studentId, profile?.id, profile?.userId];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private buildLessonFeedbackText(rating: number, feedback: string): string {
+    const feedbackLines = ['[Lesson Feedback]'];
+
+    if (rating > 0) {
+      feedbackLines.push(`Rating: ${rating}/5`);
+    }
+
+    if (feedback.length > 0) {
+      feedbackLines.push(`Feedback: ${feedback}`);
+    }
+
+    return feedbackLines.join('\n');
   }
 
   private toProgressSeconds(note: LessonNote, fallbackSeconds = 0): number {

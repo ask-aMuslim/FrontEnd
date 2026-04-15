@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, BehaviorSubject, of, forkJoin, from } from 'rxjs';
-import { map, catchError, tap, switchMap, shareReplay } from 'rxjs/operators';
+import { map, catchError, tap, switchMap, shareReplay, take } from 'rxjs/operators';
 import {
     StudentProgress,
     StageProgress,
@@ -27,8 +27,10 @@ import { LessonProgressFacade } from '../../api/facades/lesson-progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
 import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
 import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
-import { StudentFacade } from '../../api/facades/student.facade';
-import { EnrollmentFacade } from '../../api/facades/enrollment.facade';
+import { StudentFacade, StudentProfile } from '../../api/facades/student.facade';
+import { EnrollmentFacade, EnrollmentReadDto } from '../../api/facades/enrollment.facade';
+import { QuizFacade, QuizReadDto } from '../../api/facades/quiz.facade';
+import { EnrollmentStatus } from '../models/interfaces/enums.model';
 import { toApiMediaUrl } from '../helpers/media-url.helper';
 import { environment } from '../../../environments/environment';
 import {
@@ -59,6 +61,13 @@ export interface RememberRecentLessonVisitRequest {
     currentTimeSeconds?: number;
     totalTimeSeconds?: number;
     progressPercentage?: number;
+}
+
+export interface CourseEnrollmentState {
+    enrollmentId: string | null;
+    status: EnrollmentStatus | null;
+    isEnrolled: boolean;
+    isCompleted: boolean;
 }
 
 /**
@@ -95,6 +104,7 @@ export class AcademyProgressService {
     private readonly levelFacade = inject(LevelFacade);
     private readonly studentFacade = inject(StudentFacade);
     private readonly enrollmentFacade = inject(EnrollmentFacade);
+    private readonly quizFacade = inject(QuizFacade);
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
 
@@ -168,8 +178,10 @@ export class AcademyProgressService {
         this.studentProgressRequest$ = this.getAcademyCourses().pipe(
             switchMap(courses =>
                 this.studentFacade.me().pipe(
-                    switchMap(student => this.buildProgressForStudent(courses, student?.id)),
-                    catchError(() => of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null, [])))
+                    switchMap(student => this.buildProgressForStudent(courses, this.resolveStudentId(student))),
+                    catchError(() =>
+                        of(this.buildStudentProgress('anonymous', courses, new Map<string, EnrollmentReadDto>(), null, []))
+                    )
                 )
             ),
             tap(progress => this.progressSubject.next(progress)),
@@ -181,25 +193,27 @@ export class AcademyProgressService {
 
     private buildProgressForStudent(courses: AcademyCourse[], studentId?: string): Observable<StudentProgress> {
         if (!studentId) {
-            return of(this.buildStudentProgress('anonymous', courses, new Set<string>(), null, []));
+            return of(this.buildStudentProgress('anonymous', courses, new Map<string, EnrollmentReadDto>(), null, []));
         }
 
         return forkJoin({
-            enrolledCourseIds: this.getEnrolledCourseIds(studentId),
+            enrollmentRecordsByCourseId: this.getEnrollmentRecordsByCourseId(studentId),
             progressRecords: this.getCourseProgressRecords(courses),
         }).pipe(
-            switchMap(({ enrolledCourseIds, progressRecords }) =>
-                this.resolveRecentLesson(courses, enrolledCourseIds, progressRecords).pipe(
+            switchMap(({ enrollmentRecordsByCourseId, progressRecords }) =>
+                this.resolveRecentLesson(courses, this.toEnrolledCourseIds(enrollmentRecordsByCourseId), progressRecords).pipe(
                     map((recentLesson) => this.buildStudentProgress(
                         studentId,
                         courses,
-                        enrolledCourseIds,
+                        enrollmentRecordsByCourseId,
                         recentLesson,
                         progressRecords,
                     )),
                 ),
             ),
-            catchError(() => of(this.buildStudentProgress(studentId, courses, new Set<string>(), null, []))),
+            catchError(() =>
+                of(this.buildStudentProgress(studentId, courses, new Map<string, EnrollmentReadDto>(), null, []))
+            ),
         );
     }
 
@@ -263,16 +277,46 @@ export class AcademyProgressService {
         };
     }
 
-    private getEnrolledCourseIds(studentId: string): Observable<Set<string>> {
+    private getEnrollmentRecordsByCourseId(studentId: string): Observable<Map<string, EnrollmentReadDto>> {
         return this.enrollmentFacade.getEnrolledCoursesByStudent(studentId).pipe(
-            map(enrollments => {
-                const ids = enrollments
-                    .map(item => item.courseId)
-                    .filter((courseId): courseId is string => typeof courseId === 'string' && courseId.length > 0);
-                return new Set(ids);
+            map((enrollments) => {
+                const enrollmentMap = new Map<string, EnrollmentReadDto>();
+
+                for (const enrollment of enrollments) {
+                    const courseId = typeof enrollment.courseId === 'string' ? enrollment.courseId : '';
+                    if (!courseId) {
+                        continue;
+                    }
+
+                    const existingEnrollment = enrollmentMap.get(courseId);
+                    if (!existingEnrollment) {
+                        enrollmentMap.set(courseId, enrollment);
+                        continue;
+                    }
+
+                    const existingPriority = this.getEnrollmentStatusPriority(existingEnrollment.status);
+                    const currentPriority = this.getEnrollmentStatusPriority(enrollment.status);
+                    if (currentPriority >= existingPriority) {
+                        enrollmentMap.set(courseId, enrollment);
+                    }
+                }
+
+                return enrollmentMap;
             }),
-            catchError(() => of(new Set<string>())),
+            catchError(() => of(new Map<string, EnrollmentReadDto>())),
         );
+    }
+
+    private toEnrolledCourseIds(enrollmentRecordsByCourseId: Map<string, EnrollmentReadDto>): Set<string> {
+        const enrolledCourseIds = new Set<string>();
+
+        for (const [courseId, enrollment] of enrollmentRecordsByCourseId.entries()) {
+            if (this.isEnrollmentConsideredEnrolled(enrollment.status)) {
+                enrolledCourseIds.add(courseId);
+            }
+        }
+
+        return enrolledCourseIds;
     }
 
     /**
@@ -308,6 +352,78 @@ export class AcademyProgressService {
     getCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
         return this.getStudentProgress().pipe(
             map((progress) => progress.courseProgress.find((c) => c.courseId === courseId))
+        );
+    }
+
+    getCurrentStudentCourseEnrollment(courseId: string): Observable<CourseEnrollmentState> {
+        if (!courseId) {
+            return of(this.createEmptyEnrollmentState());
+        }
+
+        return this.getCurrentStudentId().pipe(
+            switchMap((studentId) => {
+                if (!studentId) {
+                    return of(this.createEmptyEnrollmentState());
+                }
+
+                return this.getEnrollmentRecordsByCourseId(studentId).pipe(
+                    map((recordsByCourseId) => this.resolveCourseEnrollmentState(recordsByCourseId.get(courseId))),
+                    catchError(() => of(this.createEmptyEnrollmentState())),
+                );
+            }),
+            catchError(() => of(this.createEmptyEnrollmentState())),
+        );
+    }
+
+    enrollCurrentStudentInCourse(courseId: string): Observable<boolean> {
+        if (!courseId) {
+            return of(false);
+        }
+
+        return this.getCurrentStudentId().pipe(
+            switchMap((studentId) => {
+                if (!studentId) {
+                    return of(false);
+                }
+
+                return this.getEnrollmentRecordsByCourseId(studentId).pipe(
+                    take(1),
+                    switchMap((recordsByCourseId) => {
+                        const existingEnrollment = recordsByCourseId.get(courseId);
+                        const existingState = this.resolveCourseEnrollmentState(existingEnrollment);
+
+                        if (existingState.isEnrolled) {
+                            return of(true);
+                        }
+
+                        if (
+                            existingEnrollment?.id
+                            && existingState.status === EnrollmentStatus.Cancelled
+                        ) {
+                            return this.enrollmentFacade
+                                .updateEnrollmentStatus(existingEnrollment.id, EnrollmentStatus.Active)
+                                .pipe(
+                                    tap((updated) => {
+                                        if (updated) {
+                                            this.invalidateProgressCache();
+                                        }
+                                    }),
+                                    catchError(() => of(false)),
+                                );
+                        }
+
+                        return this.enrollmentFacade
+                            .createEnrollment({ studentId, courseId })
+                            .pipe(
+                                map(() => true),
+                                tap(() => this.invalidateProgressCache()),
+                                catchError(() => of(false)),
+                            );
+                    }),
+                    catchError(() => of(false)),
+                );
+            }),
+            catchError(() => of(false)),
         );
     }
 
@@ -498,7 +614,7 @@ export class AcademyProgressService {
         fallbackDuration = '0m',
     ): string {
         const totalMediaSeconds = lessons
-            .filter((lesson) => lesson.type === 'video' || lesson.type === 'audio')
+            .filter((lesson) => lesson.type !== 'quiz')
             .reduce((total, lesson) => total + this.parseDurationLabelToSeconds(lesson.duration), 0);
 
         if (totalMediaSeconds <= 0) {
@@ -586,6 +702,7 @@ export class AcademyProgressService {
                 map(() => {
                     if (request.isCompleted) {
                         this.markLocalLessonCompleted(request.courseId, request.lessonId);
+                        this.ensureCourseEnrollmentCompletionStatus(String(request.courseId));
                     }
 
                     this.invalidateProgressCache();
@@ -594,6 +711,7 @@ export class AcademyProgressService {
                 catchError(() => {
                     if (request.isCompleted) {
                         this.markLocalLessonCompleted(request.courseId, request.lessonId);
+                        this.ensureCourseEnrollmentCompletionStatus(String(request.courseId));
                     }
 
                     this.invalidateProgressCache();
@@ -651,6 +769,7 @@ export class AcademyProgressService {
             `${AcademyProgressService.localQuizPassedPrefix}${courseId}`,
             'true',
         );
+        this.ensureCourseEnrollmentCompletionStatus(courseId);
         this.invalidateProgressCache();
     }
 
@@ -746,7 +865,7 @@ export class AcademyProgressService {
     private buildStudentProgress(
         studentId: string,
         courses: AcademyCourse[],
-        enrolledCourseIds: Set<string>,
+        enrollmentRecordsByCourseId: Map<string, EnrollmentReadDto>,
         recentLesson: RecentLessonInfo | null,
         progressRecords: ProgressReadDto[],
     ): StudentProgress {
@@ -758,7 +877,10 @@ export class AcademyProgressService {
         const sortedCourses = [...courses].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
         const courseProgress = sortedCourses.map((course) => {
-            const isEnrolled = enrolledCourseIds.has(String(course.id));
+            const enrollment = enrollmentRecordsByCourseId.get(String(course.id));
+            const enrollmentStatus = this.parseEnrollmentStatus(enrollment?.status);
+            const isEnrolled = this.isEnrollmentConsideredEnrolled(enrollment?.status);
+            const isEnrollmentCompleted = enrollmentStatus === EnrollmentStatus.Completed;
             const prerequisites = (course.prerequisites ?? []).filter((prereqId) => prereqId !== course.id);
             const hasUnfinishedPrerequisites = prerequisites.some((prereqId) => {
                 const prereqProgress = courseProgressById.get(prereqId);
@@ -773,6 +895,10 @@ export class AcademyProgressService {
 
             if (isEnrolled) {
                 status = 'in-progress';
+            }
+
+            if (isEnrollmentCompleted) {
+                status = 'completed';
             }
 
             const apiProgress = progressRecordByCourseId.get(course.id);
@@ -791,13 +917,13 @@ export class AcademyProgressService {
             const effectiveProgress = isApiCompleted
                 ? 100
                 : Math.max(normalizedProgress, completionRateFromLessons);
-            const quizPassed = isApiCompleted || this.isCourseQuizPassedLocally(course.id);
+            const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
             const completedByRule = completedLessonsCount >= course.lessons && quizPassed;
-            const isCourseCompleted = isApiCompleted || completedByRule;
+            const isCourseCompleted = isApiCompleted || completedByRule || isEnrollmentCompleted;
 
             if (isCourseCompleted) {
                 status = 'completed';
-            } else if (effectiveProgress > 0) {
+            } else if (effectiveProgress > 0 || isEnrolled) {
                 status = 'in-progress';
             }
 
@@ -1466,6 +1592,16 @@ export class AcademyProgressService {
         }
 
         if (
+            lessonType === 3
+            || content.includes('document')
+            || title.includes('document')
+            || content.includes('pdf')
+            || title.includes('pdf')
+        ) {
+            return 'document';
+        }
+
+        if (
             lessonType === 2 ||
             content.includes('article') ||
             content.includes('text') ||
@@ -1574,6 +1710,10 @@ export class AcademyProgressService {
     private resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
         if (type === 'quiz') {
             return 'Assessment';
+        }
+
+        if (type === 'article' || type === 'document') {
+            return '~5 min';
         }
 
         const supportsPlaybackDuration = type === 'video' || type === 'audio';
@@ -1859,7 +1999,7 @@ export class AcademyProgressService {
     }
 
     private parseDurationLabelToSeconds(duration: string): number {
-        const normalized = duration.trim().toLowerCase();
+        const normalized = duration.trim().toLowerCase().replace(/^~\s*/, '');
         if (!normalized || normalized === 'assessment') {
             return 0;
         }
@@ -1962,6 +2102,226 @@ export class AcademyProgressService {
 
         const storageKey = `${AcademyProgressService.localQuizPassedPrefix}${courseId}`;
         return globalThis.localStorage.getItem(storageKey) === 'true';
+    }
+
+    private ensureCourseEnrollmentCompletionStatus(courseId: string): void {
+        if (!courseId) {
+            return;
+        }
+
+        this.getCurrentStudentId().pipe(
+            take(1),
+            switchMap((studentId) => {
+                if (!studentId) {
+                    return of(false);
+                }
+
+                return forkJoin({
+                    enrollmentsByCourseId: this.getEnrollmentRecordsByCourseId(studentId).pipe(take(1)),
+                    lessons: this.getAcademyLessons(courseId).pipe(take(1)),
+                    quizzes: this.quizFacade.getAllQuizzes({
+                        courseId,
+                        pageNumber: 1,
+                        pageSize: 200,
+                    }).pipe(catchError(() => of([] as QuizReadDto[]))),
+                }).pipe(
+                    switchMap(({ enrollmentsByCourseId, lessons, quizzes }) => {
+                        const enrollment = enrollmentsByCourseId.get(courseId);
+                        const enrollmentId = typeof enrollment?.id === 'string'
+                            ? enrollment.id
+                            : '';
+
+                        if (!enrollmentId) {
+                            return of(false);
+                        }
+
+                        const currentStatus = this.parseEnrollmentStatus(enrollment?.status);
+                        if (currentStatus === EnrollmentStatus.Completed) {
+                            return of(false);
+                        }
+
+                        const shouldMarkEnrollmentCompleted = this.isCourseCompletionSatisfied(
+                            courseId,
+                            lessons,
+                            quizzes,
+                        );
+
+                        if (!shouldMarkEnrollmentCompleted) {
+                            return of(false);
+                        }
+
+                        return this.enrollmentFacade
+                            .updateEnrollmentStatus(enrollmentId, EnrollmentStatus.Completed)
+                            .pipe(catchError(() => of(false)));
+                    }),
+                );
+            }),
+            catchError(() => of(false)),
+        ).subscribe({
+            next: (updated) => {
+                if (updated) {
+                    this.invalidateProgressCache();
+                }
+            },
+            error: () => void 0,
+        });
+    }
+
+    private isCourseCompletionSatisfied(
+        courseId: string,
+        lessons: AcademyLesson[],
+        quizzes: QuizReadDto[],
+    ): boolean {
+        const hasAnyCourseItems = lessons.length > 0 || quizzes.length > 0;
+        if (!hasAnyCourseItems) {
+            return false;
+        }
+
+        const completedLessonIds = this.getLocallyCompletedLessonIds(courseId);
+        const nonQuizLessons = lessons.filter((lesson) => lesson.type !== 'quiz');
+        const quizLessons = lessons.filter((lesson) => lesson.type === 'quiz');
+
+        const allNonQuizLessonsCompleted = nonQuizLessons.every((lesson) => completedLessonIds.has(lesson.id));
+        const allQuizLessonsCompleted = quizLessons.every((lesson) => completedLessonIds.has(lesson.id));
+
+        const hasCourseLevelQuiz = quizzes.some((quiz) => {
+            const lessonId = typeof quiz.lessonId === 'string' ? quiz.lessonId.trim() : '';
+            return lessonId.length === 0;
+        });
+        const hasAnyQuiz = quizLessons.length > 0 || quizzes.length > 0;
+        const hasPassedCourseQuiz = this.isCourseQuizPassedLocally(courseId);
+
+        const areQuizRequirementsSatisfied = !hasAnyQuiz
+            || (
+                (quizLessons.length === 0 || allQuizLessonsCompleted)
+                && (!hasCourseLevelQuiz || hasPassedCourseQuiz)
+            );
+
+        return allNonQuizLessonsCompleted && areQuizRequirementsSatisfied;
+    }
+
+    private resolveStudentId(profile: StudentProfile | null): string | undefined {
+        const candidates = [profile?.studentId, profile?.id, profile?.userId];
+
+        for (const candidate of candidates) {
+            if (typeof candidate === 'string' && candidate.trim().length > 0) {
+                return candidate;
+            }
+        }
+
+        return undefined;
+    }
+
+    private getCurrentStudentId(): Observable<string | undefined> {
+        return this.studentFacade.getMyProfileFromApi().pipe(
+            switchMap((profile) => {
+                const resolvedStudentId = this.resolveStudentId(profile);
+                if (resolvedStudentId) {
+                    return of(resolvedStudentId);
+                }
+
+                return this.studentFacade.me().pipe(
+                    map((fallbackProfile) => this.resolveStudentId(fallbackProfile)),
+                    take(1),
+                    catchError(() => of(undefined)),
+                );
+            }),
+            catchError(() =>
+                this.studentFacade.me().pipe(
+                    map((profile) => this.resolveStudentId(profile)),
+                    take(1),
+                )
+            ),
+        );
+    }
+
+    private createEmptyEnrollmentState(): CourseEnrollmentState {
+        return {
+            enrollmentId: null,
+            status: null,
+            isEnrolled: false,
+            isCompleted: false,
+        };
+    }
+
+    private resolveCourseEnrollmentState(enrollment: EnrollmentReadDto | undefined): CourseEnrollmentState {
+        if (!enrollment) {
+            return this.createEmptyEnrollmentState();
+        }
+
+        const parsedStatus = this.parseEnrollmentStatus(enrollment.status);
+
+        return {
+            enrollmentId: typeof enrollment.id === 'string' ? enrollment.id : null,
+            status: parsedStatus,
+            isEnrolled: this.isEnrollmentConsideredEnrolled(enrollment.status),
+            isCompleted: parsedStatus === EnrollmentStatus.Completed,
+        };
+    }
+
+    private parseEnrollmentStatus(value: unknown): EnrollmentStatus | null {
+        if (typeof value === 'number') {
+            return this.normalizeNumericEnrollmentStatus(value);
+        }
+
+        if (typeof value !== 'string') {
+            return null;
+        }
+
+        const normalized = value.trim().toLowerCase();
+        switch (normalized) {
+            case '1':
+            case 'active':
+                return EnrollmentStatus.Active;
+            case '2':
+            case 'completed':
+                return EnrollmentStatus.Completed;
+            case '3':
+            case 'cancelled':
+            case 'canceled':
+                return EnrollmentStatus.Cancelled;
+            case '4':
+            case 'paused':
+                return EnrollmentStatus.Paused;
+            default:
+                return null;
+        }
+    }
+
+    private normalizeNumericEnrollmentStatus(value: number): EnrollmentStatus | null {
+        switch (value) {
+            case EnrollmentStatus.Active:
+            case EnrollmentStatus.Completed:
+            case EnrollmentStatus.Cancelled:
+            case EnrollmentStatus.Paused:
+                return value;
+            default:
+                return null;
+        }
+    }
+
+    private isEnrollmentConsideredEnrolled(value: unknown): boolean {
+        const status = this.parseEnrollmentStatus(value);
+        return status === EnrollmentStatus.Active
+            || status === EnrollmentStatus.Completed
+            || status === EnrollmentStatus.Paused;
+    }
+
+    private getEnrollmentStatusPriority(value: unknown): number {
+        const status = this.parseEnrollmentStatus(value);
+
+        switch (status) {
+            case EnrollmentStatus.Completed:
+                return 4;
+            case EnrollmentStatus.Active:
+                return 3;
+            case EnrollmentStatus.Paused:
+                return 2;
+            case EnrollmentStatus.Cancelled:
+                return 1;
+            default:
+                return 0;
+        }
     }
 
     private invalidateProgressCache(): void {

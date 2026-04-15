@@ -1,54 +1,55 @@
-<div class="flex flex-col gap-10">
-  <div>
+<div class="topics-question-page flex flex-col gap-10">
+  <div class="topics-question-page__breadcrumb">
     <a
       routerLink="/question-and-answer/topics"
-      class="text-(--color-text-placeholder) hover:underline cursor-pointer"
+      class="topics-question-page__breadcrumb-link text-(--color-text-placeholder) hover:underline cursor-pointer"
       >Topics</a
     >
-    <span class="text-(--color-text-placeholder)"> / </span>
-    <span class="text-(--color-button-secondary-normal)">{{
+    <span class="topics-question-page__breadcrumb-separator text-(--color-text-placeholder)"> / </span>
+    <span class="topics-question-page__breadcrumb-current text-(--color-button-secondary-normal)">{{
       categories[0] || title
     }}</span>
   </div>
 
-  <div>
+  <div class="topics-question-page__header">
     @if (questionHtml) {
       <div
-        class="question rich-content rich-content--question flex-1"
+        class="topics-question-page__question rich-content rich-content--question flex-1"
         [innerHTML]="questionHtml"
       ></div>
     } @else {
-      <h1 class="question flex-1">
+      <h1 class="topics-question-page__question-title question flex-1">
         {{ title }}
       </h1>
     }
 
-    <div class="flex justify-end w-full">
-      <div class="flex gap-8">
+    <div class="topics-question-page__actions flex justify-end w-full">
+      <div class="topics-question-page__action-group flex gap-8">
         <button
-          class="hidden"
+          class="topics-question-page__save-button hidden"
           (click)="toggleSave()"
           aria-hidden="true"
           tabindex="-1"
         >
-          <img [src]="isSaved ? savedIcon : saveIcon" />
-          <span class="label">Save</span>
+          <img [src]="isSaved ? savedIcon : saveIcon" alt="" aria-hidden="true" />
+          <span class="topics-question-page__action-label label">Save</span>
         </button>
 
         <button
-          class="flex items-center gap-2 cursor-pointer"
+          class="topics-question-page__share-button flex items-center gap-2 cursor-pointer"
           (click)="share()"
         >
-          <img [src]="shareIcon" />
-          <span class="label">Share</span>
+          <img [src]="shareIcon" alt="" aria-hidden="true" />
+          <span class="topics-question-page__action-label label">Share</span>
         </button>
       </div>
     </div>
   </div>
 
   @if (imageUrl) {
-    <div class="overflow-hidden rounded-lg">
+    <div class="topics-question-page__image-container overflow-hidden rounded-lg">
       <img
+        class="topics-question-page__image"
         [src]="imageUrl"
         [alt]="title"
         loading="lazy"
@@ -57,17 +58,17 @@
     </div>
   }
 
-  <div class="paragraph">
+  <div class="topics-question-page__answer paragraph">
     <app-tiptap-viewer [content]="answerViewerContent"></app-tiptap-viewer>
   </div>
 
-  <div class="flex justify-end mb-4">
+  <div class="topics-question-page__download flex justify-end mb-4">
     <button
       type="button"
-      class="flex justify-center items-center w-50 h-14 border-[1.5px] border-(--color-text-placeholder) rounded-lg px-8 cursor-pointer hover:bg-(--color-card-surface-secondary) transition-colors"
+      class="topics-question-page__download-button flex justify-center items-center w-50 h-14 border-[1.5px] border-(--color-text-placeholder) rounded-lg px-8 cursor-pointer hover:bg-(--color-card-surface-secondary) transition-colors"
       (click)="downloadPdf()"
     >
-      <img [src]="downloadIcon" class="inline-block mr-2 w-6 h-6" />
+      <img [src]="downloadIcon" alt="" aria-hidden="true" class="topics-question-page__download-icon inline-block mr-2 w-6 h-6" />
       Download
     </button>
   </div>

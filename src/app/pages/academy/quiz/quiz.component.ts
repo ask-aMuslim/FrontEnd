@@ -12,7 +12,7 @@ import { OptionsService } from '../../../core/services/options.service';
 import { QuizAttemptsService } from '../../../core/services/quiz-attempts.service';
 import { QuizAnswerDto } from '../../../api/models/quiz-answer-dto';
 import { ACADEMY_COURSES, ACADEMY_LESSONS } from '../../../core/services/academy-data';
-import { AcademyLesson } from '../../../core/models/interfaces/academy-progress.model';
+import { AcademyLesson, LessonProgress } from '../../../core/models/interfaces/academy-progress.model';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
@@ -37,7 +37,7 @@ interface QuizOption {
     readonly text: string;
 }
 
-type SidebarLessonType = 'intro' | 'video' | 'article' | 'quiz' | 'audio';
+type SidebarLessonType = 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
 
 interface QuizAnswer {
     readonly questionId: string;
@@ -64,7 +64,7 @@ interface StoredQuizResult {
     readonly answers: readonly StoredQuizAnswer[];
 }
 
-type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
+type QuizState = 'intro' | 'in-progress' | 'review' | 'results';
 
 interface CourseInfo {
     stage: number | null;
@@ -86,6 +86,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     private static readonly optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
     private static readonly questionNumberOffset = 1;
     private static readonly syntheticQuizLessonPrefix = 'synthetic-quiz-';
+    private static readonly questionsPageSize = 1000;
     // Route params
     courseId = '';
     lessonId = '';
@@ -138,6 +139,11 @@ export class QuizComponent implements OnInit, OnDestroy {
     readonly currentQuestion = computed(() => this.questions()[this.currentQuestionIndex()]);
     readonly isLastQuestion = computed(() => this.currentQuestionIndex() === this.questions().length - 1);
     readonly isFirstQuestion = computed(() => this.currentQuestionIndex() === 0);
+    readonly displayQuestionCount = computed(() =>
+        this.questions().length > 0
+            ? this.questions().length
+            : this.quizConfig.totalQuestions,
+    );
 
     readonly correctAnswersCount = computed(() =>
         this.answers().filter(a => a.isCorrect).length
@@ -193,6 +199,11 @@ export class QuizComponent implements OnInit, OnDestroy {
         return (percentage / 100) * 270;
     });
 
+    readonly nextQuizLessonId = computed(() => this.resolveNextQuizLessonId());
+    readonly nextPassedActionLabel = computed(() =>
+        this.nextQuizLessonId() ? 'Next Quiz' : 'Pass',
+    );
+
     readonly formattedCompletionTime = computed(() => {
         const totalSeconds = this.quizCompletionTime();
         const minutes = Math.floor(totalSeconds / 60);
@@ -208,13 +219,9 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     // Lessons for sidebar
     readonly lessons = signal<AcademySidebarLessonItem[]>([]);
+    readonly courseLessons = signal<Array<AcademyLesson & { progress: LessonProgress }>>([]);
     private courseQuizTitle = 'Quiz';
     private courseQuizLessonId: string | null = null;
-
-    // Passed/Completed state
-    readonly userRating = signal<number>(0);
-    readonly userFeedback = signal<string>('');
-    readonly nextCourseName = signal<string>('Prophet Mohamed\'s Journey');
 
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
@@ -285,6 +292,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.activeAttemptId.set(null);
         this.questions.set([]);
         this.answers.set([]);
+        this.courseLessons.set([]);
 
         this.quizCompletionTime.set(0);
     }
@@ -358,6 +366,8 @@ export class QuizComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: ([lessons, quizzes]) => {
+                    this.courseLessons.set(lessons);
+
                     const quizLesson = lessons.find((lesson) => this.mapLessonType(lesson.type) === 'quiz');
                     const linkedCourseQuiz = quizLesson
                         ? quizzes.find((quiz) => quiz.lessonId === quizLesson.id)
@@ -404,8 +414,8 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     private loadQuizData(): void {
         const query = this.lessonId
-            ? { lessonId: this.lessonId, pageSize: 50 }
-            : { courseId: this.courseId, pageSize: 50 };
+            ? { lessonId: this.lessonId, pageNumber: 1, pageSize: 200 }
+            : { courseId: this.courseId, pageNumber: 1, pageSize: 200 };
 
         this.quizzesService.getAll(query)
             .pipe(
@@ -424,7 +434,7 @@ export class QuizComponent implements OnInit, OnDestroy {
                                 return of(quizzes);
                             }
 
-                            return this.quizzesService.getAll({ lessonId: quizLessonId, pageSize: 50 });
+                            return this.quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 });
                         }),
                         catchError(() => of(quizzes)),
                     );
@@ -451,7 +461,10 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     private buildQuestionsFromQuizId(quizId: string): Observable<QuizQuestion[]> {
-        return this.questionsService.getAllByQuizId(quizId).pipe(
+        return this.questionsService.getAllByQuizId(quizId, {
+            pageNumber: 1,
+            pageSize: QuizComponent.questionsPageSize,
+        }).pipe(
             switchMap((questions) => {
                 if (!questions.length) {
                     return of([] as QuizQuestion[]);
@@ -663,30 +676,26 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.startQuiz();
     }
 
-    completeQuiz(): void {
-        if (this.hasPassed()) {
-            this.academyProgressService.markCourseQuizPassed(this.courseId);
+    onPassedNextActionClick(): void {
+        if (!this.hasPassed()) {
+            return;
+        }
 
-            const resolvedQuizLessonId = this.courseQuizLessonId || this.lessonId;
-            if (resolvedQuizLessonId) {
-                this.academyProgressService
-                    .markLessonCompleted(resolvedQuizLessonId, this.courseId)
-                    .pipe(takeUntil(this.destroy$))
-                    .subscribe({
-                        next: () => void 0,
-                        error: () => void 0,
-                    });
+        const nextQuizLessonId = this.nextQuizLessonId();
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+
+        this.markCurrentQuizLessonCompleted(() => {
+            if (nextQuizLessonId) {
+                void this.router.navigate(['/academy/course', this.courseId, 'quiz', nextQuizLessonId]);
+                return;
             }
 
-            this.quizState.set('completed');
-        } else {
-            this.retakeQuiz();
-        }
-    }
+            this.academyProgressService.markCourseQuizPassed(this.courseId);
 
-    goToNextCourse(): void {
-        // Navigate to next course
-        this.router.navigate(['/academy']);
+            void this.router.navigate(['/academy/course', this.courseId, 'congratulations'], {
+                queryParams: currentQuizLessonId ? { lessonId: currentQuizLessonId } : {},
+            });
+        });
     }
 
     goToPreviousLesson(): void {
@@ -708,40 +717,24 @@ export class QuizComponent implements OnInit, OnDestroy {
         void this.router.navigate(['/academy/course', this.courseId]);
     }
 
-    onLessonSelect(lesson: any): void {
+    onLessonSelect(lesson: AcademySidebarLessonItem): void {
         // Navigate to the selected lesson or quiz
         if (lesson.type === 'quiz') {
-            // Navigate to course quiz
-            this.router.navigate(['quiz'], {
+            const targetQuizLessonId = lesson.quizLessonId && lesson.quizLessonId !== this.courseId
+                ? lesson.quizLessonId
+                : this.resolveCurrentQuizLessonId();
+            if (targetQuizLessonId) {
+                void this.router.navigate(['/academy/course', this.courseId, 'quiz', targetQuizLessonId]);
+                return;
+            }
+
+            void this.router.navigate(['quiz'], {
                 relativeTo: this.route.parent,
             });
         } else {
             // Navigate to lesson - use absolute path to course/lesson
-            this.router.navigate(['/academy/course', this.courseId, 'lesson', lesson.id]);
+            void this.router.navigate(['/academy/course', this.courseId, 'lesson', lesson.id]);
         }
-    }
-
-    setRating(rating: number): void {
-        this.userRating.set(rating);
-    }
-
-    updateFeedback(value: string): void {
-        this.userFeedback.set(value);
-    }
-
-    submitFeedback(): void {
-        const feedback = this.userFeedback();
-        const rating = this.userRating();
-
-        // Send feedback and rating to backend via API service
-        if (rating > 0 || feedback.trim().length > 0) {
-            // Feedback submission would be integrated with backend API
-            // placeholder for future implementation
-        }
-
-        // Clear the feedback
-        this.userFeedback.set('');
-        this.userRating.set(0);
     }
 
     // Timer methods
@@ -820,11 +813,93 @@ export class QuizComponent implements OnInit, OnDestroy {
     goToCertificPage(): void {
         this.router.navigate(['/academy/course', this.courseId, 'certificate']);
     }
+
+    private markCurrentQuizLessonCompleted(onCompletion: () => void): void {
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+        if (!currentQuizLessonId) {
+            onCompletion();
+            return;
+        }
+
+        this.academyProgressService
+            .markLessonCompleted(currentQuizLessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.updateSidebarQuizCompletionState(currentQuizLessonId);
+                    onCompletion();
+                },
+                error: () => {
+                    onCompletion();
+                },
+            });
+    }
+
+    private updateSidebarQuizCompletionState(completedQuizLessonId: string): void {
+        this.lessons.update((currentLessons) => currentLessons.map((lesson) => {
+            if (lesson.type !== 'quiz') {
+                return lesson;
+            }
+
+            const lessonId = lesson.quizLessonId ?? lesson.id;
+            if (lessonId !== completedQuizLessonId) {
+                return lesson;
+            }
+
+            return {
+                ...lesson,
+                isCompleted: true,
+            };
+        }));
+    }
+
+    private resolveCurrentQuizLessonId(): string | null {
+        const routeLessonId = this.lessonId.trim();
+        if (routeLessonId.length > 0) {
+            return routeLessonId;
+        }
+
+        const sidebarQuizLessonId = this.courseQuizLessonId?.trim() ?? '';
+        if (sidebarQuizLessonId.length > 0) {
+            return sidebarQuizLessonId;
+        }
+
+        return this.getOrderedQuizLessonIds()[0] ?? null;
+    }
+
+    private resolveNextQuizLessonId(): string | null {
+        const orderedQuizLessonIds = this.getOrderedQuizLessonIds();
+        if (orderedQuizLessonIds.length <= 1) {
+            return null;
+        }
+
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+        const resolvedCurrentQuizLessonId = currentQuizLessonId && orderedQuizLessonIds.includes(currentQuizLessonId)
+            ? currentQuizLessonId
+            : orderedQuizLessonIds[0];
+        const currentQuizIndex = orderedQuizLessonIds.indexOf(resolvedCurrentQuizLessonId);
+
+        if (currentQuizIndex < 0 || currentQuizIndex >= orderedQuizLessonIds.length - 1) {
+            return null;
+        }
+
+        return orderedQuizLessonIds[currentQuizIndex + 1] ?? null;
+    }
+
+    private getOrderedQuizLessonIds(): string[] {
+        return this.courseLessons()
+            .filter((lesson) => this.mapLessonType(lesson.type) === 'quiz')
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => lesson.id)
+            .filter((lessonId) => lessonId.trim().length > 0);
+    }
+
     private mapLessonType(value: unknown): SidebarLessonType {
         if (value === 'quiz') return 'quiz';
         if (value === 'intro') return 'intro';
         if (value === 'audio' || value === 4) return 'audio';
-        if (value === 'article' || value === 2 || value === 3) return 'article';
+        if (value === 'document' || value === 3) return 'document';
+        if (value === 'article' || value === 2) return 'article';
         if (value === 'video' || value === 1) return 'video';
         return 'video';
     }
@@ -843,10 +918,13 @@ export class QuizComponent implements OnInit, OnDestroy {
     private syncSidebarQuizLesson(activeQuiz: { title?: string; lessonId?: string } | null): void {
         this.lessons.update((currentLessons) => {
             const quizTitle = this.courseQuizTitle || activeQuiz?.title?.trim() || 'Quiz';
-            const quizLessonId = this.courseQuizLessonId
+            const resolvedQuizLessonId = this.courseQuizLessonId
                 || activeQuiz?.lessonId?.trim()
                 || this.lessonId
-                || this.courseId;
+                || '';
+            const quizLessonId = resolvedQuizLessonId.length > 0 && resolvedQuizLessonId !== this.courseId
+                ? resolvedQuizLessonId
+                : undefined;
 
             const updatedLessons = currentLessons.map((lesson) => {
                 if (lesson.type !== 'quiz') {
@@ -871,7 +949,7 @@ export class QuizComponent implements OnInit, OnDestroy {
             return [
                 ...updatedLessons,
                 {
-                    id: `${QuizComponent.syntheticQuizLessonPrefix}${quizLessonId}`,
+                    id: `${QuizComponent.syntheticQuizLessonPrefix}${quizLessonId ?? this.courseId}`,
                     quizLessonId,
                     title: quizTitle,
                     duration: 'Assessment',
