@@ -110,6 +110,11 @@
   width: fit-content;
   background: var(--color-background-white);
   overflow: hidden;
+  width: 100%;
+  asl-google-signin-button {
+    width: 80% !important;
+    border-radius: inherit !important;
+  }
 }
 
 :host ::ng-deep .google-btn-wrapper > div,

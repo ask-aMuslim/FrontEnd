@@ -114,8 +114,10 @@
       font-weight: 500;
     }
 
-    .check-icon {
+    .prereq-state {
       color: var(--colors-green-100, #156b40);
+      background: rgba(21, 107, 64, 0.08);
+      border-color: rgba(21, 107, 64, 0.18);
       margin-left: auto;
     }
   }
@@ -130,6 +132,19 @@
   .prereq-title {
     font-size: 0.938rem;
     color: var(--colors-rare-grays-80, #343a40);
+  }
+
+  .prereq-state {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--colors-rare-grays-60, #6c757d);
+    border: 1px solid var(--colors-rare-grays-30, #dee2e6);
+    border-radius: 999px;
+    padding: 0.35rem 0.6rem;
+    background: var(--colors-rare-grays-0, #fff);
+    white-space: nowrap;
   }
 }
 

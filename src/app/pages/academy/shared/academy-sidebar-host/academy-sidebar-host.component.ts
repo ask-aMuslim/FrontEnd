@@ -28,6 +28,7 @@ export class AcademySidebarHostComponent {
     @Input() overviewLinkLabel = 'Course overview';
 
     @Input() showReadyDividerBeforeQuiz = false;
+    @Input() highlightReadyDividerBeforeQuiz = false;
     @Input() allowLessonSelection = true;
     @Input() disableLockedLessonClick = true;
 

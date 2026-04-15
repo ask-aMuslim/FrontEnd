@@ -1,6 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { QuestionFacade, QuestionReadDto, QuestionCreateDto, QuestionUpdateDto } from '../../api/facades/question.facade';
+import {
+  QuestionFacade,
+  QuestionReadDto,
+  QuestionCreateDto,
+  QuestionUpdateDto,
+  QuestionQuery,
+} from '../../api/facades/question.facade';
 
 /**
  * Domain service for question operations.
@@ -11,8 +17,8 @@ import { QuestionFacade, QuestionReadDto, QuestionCreateDto, QuestionUpdateDto }
 export class QuestionsService {
   private readonly facade = inject(QuestionFacade);
 
-  getAllByQuizId(quizId: string): Observable<QuestionReadDto[]> {
-    return this.facade.getAllQuestions(quizId);
+  getAllByQuizId(quizId: string, query?: QuestionQuery): Observable<QuestionReadDto[]> {
+    return this.facade.getAllQuestions(quizId, query);
   }
 
   create(payload: QuestionCreateDto): Observable<boolean> {

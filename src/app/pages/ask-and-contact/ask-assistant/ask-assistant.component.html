@@ -1,146 +1,188 @@
-<div class="flex w-full flex-col">
-  <div class="flex-1 w-full" [ngClass]="messages.length ? 'pb-28' : ''">
-    @if (!messages.length) {
-      <div class="flex items-center justify-end gap-2 text-lg font-bold">
-        <span>Chats List</span>
-        <img [src]="arrow" alt="arrow" />
+<div class="ask-assistant-page flex w-full flex-col">
+  <div class="ask-assistant-page__content flex-1 w-full" [ngClass]="messages.length ? 'pb-28' : ''">
+    <div class="ask-assistant-page__header flex items-center justify-between gap-3 text-lg font-bold">
+      <div class="ask-assistant-page__header-title flex items-center gap-2">
+        <span class="ask-assistant-page__header-label">Chats List</span>
+        <img [src]="arrow" alt="arrow" class="ask-assistant-page__header-icon" />
       </div>
-      <div
-        class="flex flex-col items-center justify-center gap-2.5 my-12 md:my-24 text-center px-4"
-        >
-        <img [src]="logo" alt="logo" class="h-[100px] w-[126px] md:h-[164px] md:w-[206px]" />
-        <span class="text-lg md:text-2xl font-medium text-(--color-text-placeholder)"
-          >Assalamualaikum</span
-          >
-          <h1 class="text-2xl md:text-[36px] font-bold text-(--color-text-caption)">
-            Do you have a religious question in mind?
-          </h1>
-        </div>
-        <ng-container
-          [ngTemplateOutlet]="askForm"
-          [ngTemplateOutletContext]="{ sticky: false }"
-        ></ng-container>
-      } @else {
-        <div class="flex flex-col gap-4 md:gap-6 px-2 md:px-0">
-          <div
-            class="rounded-xl md:rounded-2xl border border-(--color-border-default) bg-white p-4 md:p-6 shadow-sm"
+      <button
+        type="button"
+        class="ask-assistant-page__new-chat-button rounded-md border border-(--color-border-default) px-3 py-1.5 text-sm font-semibold text-(--color-text-caption) transition-colors hover:bg-(--color-card-surface-primary)"
+        (click)="startNewConversation()"
+      >
+        New chat
+      </button>
+    </div>
+
+    <div
+      class="ask-assistant-page__conversation-panel mt-3 md:mt-4 rounded-xl border border-(--color-border-default) bg-white p-3 md:p-4 shadow-sm"
+    >
+      @if (isLoadingConversations) {
+        <p class="ask-assistant-page__loading-text text-sm text-(--color-text-placeholder)">
+          Loading conversations...
+        </p>
+      } @else if (conversations.length) {
+        <div class="ask-assistant-page__conversation-list flex flex-col gap-2">
+          @for (
+            conversation of conversations;
+            track trackByConversation($index, conversation)
+          ) {
+            <button
+              type="button"
+              class="ask-assistant-page__conversation-button flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors"
+              [ngClass]="
+                isConversationActive(conversation.threadId)
+                  ? 'border-(--color-button-primary-normal) bg-(--color-card-surface-primary)'
+                  : 'border-(--color-border-default) bg-white hover:bg-(--color-card-surface-primary)'
+              "
+              (click)="openConversation(conversation.threadId)"
             >
-            <div
-              #messagesContainer
-              class="flex flex-col gap-3 md:gap-4 max-h-[50vh] md:max-h-[60vh] overflow-y-auto pr-2 scroll-smooth"
-              aria-live="polite"
+              <span
+                class="ask-assistant-page__conversation-title truncate text-sm font-semibold text-(--color-text-caption)"
               >
-              @for (message of messages; track trackByMessage($index, message)) {
-                <div class="flex w-full">
-                  <div
-                    class="flex max-w-[95%] md:max-w-[90%] flex-col gap-1"
-                [ngClass]="
-                  message.role === 'user'
-                    ? 'ml-auto items-end text-right'
-                    : 'mr-auto items-start text-left'
-                "
-                    >
-                    <div
-                      class="rounded-lg px-3 py-3 md:px-4 md:py-4 text-sm md:text-base lg:text-[20px] leading-relaxed wrap-break-word"
+                {{ conversation.title }}
+              </span>
+              <span class="ask-assistant-page__conversation-updated shrink-0 text-xs text-(--color-text-placeholder)">
+                {{ conversation.updatedAt | date: "MMM d, h:mm a" }}
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="ask-assistant-page__empty-state-text text-sm text-(--color-text-placeholder)">
+          No previous conversations yet.
+        </p>
+      }
+    </div>
+
+    @if (errorMessage) {
+      <p class="ask-assistant-page__error-message mt-3 text-sm font-medium text-red-600">{{ errorMessage }}</p>
+    }
+
+    @if (!messages.length) {
+      <div
+        class="ask-assistant-page__empty-state flex flex-col items-center justify-center gap-2.5 my-12 md:my-24 text-center px-4"
+      >
+        <img
+          [src]="logo"
+          alt="logo"
+          class="ask-assistant-page__logo h-[100px] w-[126px] md:h-[164px] md:w-[206px]"
+        />
+        <span
+          class="ask-assistant-page__greeting text-lg md:text-2xl font-medium text-(--color-text-placeholder)"
+          >Assalamualaikum</span
+        >
+        <h1
+          class="ask-assistant-page__title text-2xl md:text-[36px] font-bold text-(--color-text-caption)"
+        >
+          Do you have a religious question in mind?
+        </h1>
+      </div>
+      <ng-container
+        [ngTemplateOutlet]="askForm"
+        [ngTemplateOutletContext]="{ sticky: false }"
+      ></ng-container>
+    } @else {
+      <div class="ask-assistant-page__thread flex flex-col gap-4 md:gap-6 px-2 md:px-0">
+        <div
+          class="ask-assistant-page__messages-panel rounded-xl md:rounded-2xl border border-(--color-border-default) bg-white p-4 md:p-6 shadow-sm"
+        >
+          <div
+            #messagesContainer
+            class="ask-assistant-page__messages-list flex flex-col gap-3 md:gap-4 max-h-[50vh] md:max-h-[60vh] overflow-y-auto pr-2 scroll-smooth"
+            aria-live="polite"
+          >
+            @for (message of messages; track trackByMessage($index, message)) {
+              <div class="ask-assistant-page__message-row flex w-full">
+                <div
+                  class="ask-assistant-page__message-stack flex max-w-[95%] md:max-w-[90%] flex-col gap-1"
                   [ngClass]="
                     message.role === 'user'
-                      ? 'bg-(--color-card-surface-secondary)'
-                      : 'bg-(--color-card-surface-primary) text-(--color-text-body)'
+                      ? 'ask-assistant-page__message-stack--user ml-auto items-end text-right'
+                      : 'ask-assistant-page__message-stack--assistant mr-auto items-start text-left'
                   "
-                      >
-                      {{ message.text }}
-                    </div>
+                >
+                  <div
+                    class="ask-assistant-page__message-bubble rounded-lg px-3 py-3 md:px-4 md:py-4 text-sm md:text-base lg:text-[20px] leading-relaxed whitespace-pre-wrap wrap-break-word"
+                    [ngClass]="
+                      message.role === 'user'
+                        ? 'ask-assistant-page__message-bubble--user bg-(--color-card-surface-secondary)'
+                        : 'ask-assistant-page__message-bubble--assistant bg-(--color-card-surface-primary) text-(--color-text-body)'
+                    "
+                  >
+                    {{ message.text }}
                   </div>
                 </div>
-              }
-              @if (isResponding) {
-                <div
-                  class="mr-auto flex items-center gap-2 text-(--color-text-placeholder)"
-                  >
-                  <span class="h-2 w-2 animate-pulse rounded-full bg-(--color-text-placeholder)"></span>
-                  <span
-                    class="h-2 w-2 animate-pulse rounded-full bg-(--color-text-placeholder)"
-                    style="animation-delay: 120ms"
-                  ></span>
-                  <span
-                    class="h-2 w-2 animate-pulse rounded-full bg-(--color-text-placeholder)"
-                    style="animation-delay: 240ms"
-                  ></span>
-                  <span class="text-sm">Preparing an answer...</span>
-                </div>
-              }
-              <div #bottomAnchor class="h-0" aria-hidden="true"></div>
-            </div>
+              </div>
+            }
+            @if (isResponding) {
+              <div
+                class="ask-assistant-page__typing-indicator mr-auto flex items-center gap-2 text-(--color-text-placeholder)"
+              >
+                <span
+                  class="ask-assistant-page__typing-dot h-2 w-2 animate-pulse rounded-full bg-(--color-text-placeholder)"
+                ></span>
+                <span
+                  class="ask-assistant-page__typing-dot h-2 w-2 animate-pulse rounded-full bg-(--color-text-placeholder)"
+                  style="animation-delay: 120ms"
+                ></span>
+                <span
+                  class="ask-assistant-page__typing-dot h-2 w-2 animate-pulse rounded-full bg-(--color-text-placeholder)"
+                  style="animation-delay: 240ms"
+                ></span>
+                <span class="ask-assistant-page__typing-text text-sm">Streaming answer...</span>
+              </div>
+            }
+            <div #bottomAnchor class="ask-assistant-page__bottom-anchor h-0" aria-hidden="true"></div>
           </div>
         </div>
-        <ng-container
-          [ngTemplateOutlet]="askForm"
-          [ngTemplateOutletContext]="{ sticky: true }"
-        ></ng-container>
-      }
+      </div>
+      <ng-container
+        [ngTemplateOutlet]="askForm"
+        [ngTemplateOutletContext]="{ sticky: true }"
+      ></ng-container>
+    }
+  </div>
 
-    </div>
-
-    <ng-template #askForm let-sticky="sticky">
-      <form
-        (submit)="submitQuestion($event)"
-        class="flex w-full flex-col gap-3 md:gap-4 px-2 md:px-0"
-        [ngClass]="sticky ? 'sticky bottom-0 bg-white pb-4 md:pb-6 pt-3 md:pt-4' : 'mb-15'"
-        autocomplete="off"
+  <ng-template #askForm let-sticky="sticky">
+    <form
+      (submit)="submitQuestion($event)"
+      class="ask-assistant-page__form flex w-full flex-col gap-3 md:gap-4 px-2 md:px-0"
+      [ngClass]="
+        sticky ? 'ask-assistant-page__form--sticky sticky bottom-0 bg-white pb-4 md:pb-6 pt-3 md:pt-4' : 'ask-assistant-page__form--inline mb-15'
+      "
+      autocomplete="off"
+    >
+      <div
+        class="ask-assistant-page__form-row flex flex-col items-stretch gap-3 md:flex-row md:items-center md:gap-4"
+      >
+        <div
+          class="ask-assistant-page__input-shell relative flex h-12 md:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 md:px-6 focus-within:border-(--color-button-primary-normal)"
         >
-        <div class="flex flex-col items-stretch gap-3 md:flex-row md:items-center md:gap-4">
-          <div
-            class="relative flex h-12 md:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 md:px-6 focus-within:border-(--color-button-primary-normal)"
-            >
-            <input
-              type="text"
-              name="ask"
-              #askInput
-              [value]="inputValue"
-              (input)="onInput($event.target.value)"
-              (focus)="onFocus()"
-              (blur)="onBlur()"
-              placeholder="Enter your question .."
-              class="min-w-0 h-12 flex-1 border-none p-0 text-sm md:text-base leading-[160%] focus:placeholder:text-black focus:ring-0"
-              role="combobox"
-              [attr.aria-expanded]="!messages.length && isSuggestionsOpen"
-              />
+          <input
+            type="text"
+            name="ask"
+            #askInput
+            [value]="inputValue"
+            (input)="onInput($event.target.value)"
+            placeholder="Ask your question..."
+            class="ask-assistant-page__input min-w-0 h-12 flex-1 border-none p-0 text-sm md:text-base leading-[160%] focus:placeholder:text-black focus:ring-0"
+          />
 
-              @if (!messages.length && isSuggestionsOpen && filteredSuggestions.length) {
-                <div
-                  class="absolute left-0 right-0 top-[calc(100%+8px)] z-10 max-h-48 md:max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg"
-                  role="listbox"
-                  >
-                  @for (suggestion of filteredSuggestions; track suggestion; let i = $index) {
-                    <div
-                      class="flex flex-col"
-                      >
-                      <button
-                        type="button"
-                        class="cursor-pointer px-4 md:px-6 py-2 text-left text-xs md:text-sm text-(--color-text-caption) hover:bg-gray-100"
-                        (mousedown)="selectSuggestion(suggestion)"
-                        >
-                        {{ suggestion }}
-                      </button>
-                      @if (i < filteredSuggestions.length - 1) {
-                        <div
-                          class="mx-6 h-0 border-b border-dashed border-(--color-border-default)"
-                        ></div>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-            <button
-              type="submit"
-              class="button flex h-12 md:h-14 w-full md:w-[200px] items-center justify-center"
-              >
-              <span class="text-base md:text-lg font-semibold text-white">{{
-                isResponding ? 'Working...' : 'Ask'
-              }}</span>
-            </button>
-          </div>
-        </form>
-      </ng-template>
-    </div>
+          <!--
+              Static suggestion dropdown removed after live API integration.
+              Keeping this comment to document the intentional deprecation of mock hints.
+              -->
+        </div>
+        <button
+          type="submit"
+          class="ask-assistant-page__submit-button button flex h-12 md:h-14 w-full md:w-[200px] items-center justify-center"
+        >
+          <span class="ask-assistant-page__submit-label text-base md:text-lg font-semibold text-white">{{
+            isResponding ? "Working..." : "Ask"
+          }}</span>
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</div>

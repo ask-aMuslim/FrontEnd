@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { CourseComponent } from './course.component';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
@@ -11,6 +11,11 @@ import { AuthService } from '../../../core/services/auth.service';
 describe('CourseComponent', () => {
     let component: CourseComponent;
     let fixture: ComponentFixture<CourseComponent>;
+    let routerSpy: jasmine.SpyObj<Router>;
+    let academyProgressServiceSpy: { enrollCurrentStudentInCourse: jasmine.Spy };
+    const activatedRouteStub = {
+        snapshot: { paramMap: convertToParamMap({ id: 'course-1' }) },
+    };
 
     const createCourse = (
         lessonsList: NonNullable<CourseComponent['course']>['lessonsList'],
@@ -29,6 +34,8 @@ describe('CourseComponent', () => {
         isLocked: false,
         hasUnmetPrerequisites: false,
         unmetPrerequisiteNames: [],
+        isEnrolled: false,
+        isEnrollmentCompleted: false,
         lessonsList,
         prerequisitesList: [],
     });
@@ -37,10 +44,13 @@ describe('CourseComponent', () => {
         spyOn(CourseComponent.prototype, 'ngOnInit').and.stub();
 
         const routerEvents$ = new Subject<void>();
-        const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+        routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
         Object.defineProperty(routerSpy, 'events', { value: routerEvents$.asObservable() });
         routerSpy.createUrlTree.and.returnValue({} as never);
         routerSpy.serializeUrl.and.returnValue('/');
+        academyProgressServiceSpy = {
+            enrollCurrentStudentInCourse: jasmine.createSpy().and.returnValue(of(true)),
+        };
 
         await TestBed.configureTestingModule({
             imports: [CourseComponent],
@@ -51,11 +61,9 @@ describe('CourseComponent', () => {
                 },
                 {
                     provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { paramMap: convertToParamMap({ id: 'course-1' }) },
-                    },
+                    useValue: activatedRouteStub,
                 },
-                { provide: AcademyProgressService, useValue: {} },
+                { provide: AcademyProgressService, useValue: academyProgressServiceSpy },
                 { provide: QuizzesService, useValue: {} },
                 { provide: AuthService, useValue: { isAuthenticated: () => true } },
             ],
@@ -102,5 +110,39 @@ describe('CourseComponent', () => {
 
         expect(component.hasPublishedLessons).toBeTrue();
         expect(component.isBeginDisabled).toBeFalse();
+    });
+
+    it('should show Continue and skip enrollment when the course enrollment is completed', () => {
+        component.isLoading = false;
+        component.course = {
+            ...createCourse(
+                [
+                    {
+                        id: 'lesson-1',
+                        title: 'Lesson 1',
+                        duration: '15m',
+                        type: 'video',
+                        isLocked: false,
+                        isCompleted: false,
+                        isCurrent: false,
+                    },
+                ],
+                ['Lesson 1'],
+            ),
+            isEnrolled: false,
+            isEnrollmentCompleted: true,
+        };
+
+        fixture.detectChanges();
+
+        const actionLabel = fixture.nativeElement.querySelector('button.btn-primary span') as HTMLSpanElement | null;
+        expect(actionLabel?.textContent?.trim()).toBe('Continue');
+
+        component.onBeginClick();
+
+        expect(academyProgressServiceSpy.enrollCurrentStudentInCourse).not.toHaveBeenCalled();
+        expect(routerSpy.navigate).toHaveBeenCalledWith(['lesson', 'lesson-1'], {
+            relativeTo: activatedRouteStub as ActivatedRoute,
+        });
     });
 });

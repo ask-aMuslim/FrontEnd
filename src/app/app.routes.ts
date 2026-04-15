@@ -18,6 +18,7 @@ import { ResetPasswordComponent } from './core/auth/reset-password/reset-passwor
 import { LessonOverviewComponent } from './pages/academy/lesson-overview/lesson-overview.component';
 import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
 import { QuizComponent } from './pages/academy/quiz/quiz.component';
+import { CongratulationsComponent } from './pages/academy/congratulations/congratulations.component';
 
 const createQuestionAndAnswerRoutes = (): Routes => [
   { path: '', pathMatch: 'full', redirectTo: 'topics' },
@@ -211,6 +212,12 @@ export const routes: Routes = [
             component: QuizComponent,
             canActivate: [authGuard],
             title: 'Quiz',
+          },
+          {
+            path: 'course/:courseId/congratulations',
+            component: CongratulationsComponent,
+            canActivate: [authGuard],
+            title: 'Congratulations',
           },
           {
             path: 'lesson/:id',

@@ -19,6 +19,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'academy/course/:courseId/congratulations',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'academy/lesson/:id',
     renderMode: RenderMode.Server,
   },

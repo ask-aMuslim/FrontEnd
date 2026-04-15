@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Observable, map, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { CreateEnrollmentCommand } from '../models';
+import { CreateEnrollmentCommand, EnrollmentStatus } from '../models';
 import { asArray, extractData } from './shared';
 
 export interface EnrollmentReadDto {
     id?: string;
     studentId?: string;
     courseId?: string;
-    status?: string;
+    status?: EnrollmentStatus | string | null;
     [key: string]: unknown;
 }
 
@@ -37,6 +37,10 @@ export class EnrollmentFacade {
 
     createEnrollment(payload: CreateEnrollmentCommand): Observable<EnrollmentReadDto | null> {
         return extractData(this.api.post<unknown>('/api/Enrollments', payload), null);
+    }
+
+    updateEnrollmentStatus(id: string, status: EnrollmentStatus): Observable<boolean> {
+        return this.api.put<unknown>(`/api/Enrollments/${id}/status`, { status }).pipe(map(() => true));
     }
 
     deleteEnrollment(id: string): Observable<boolean> {

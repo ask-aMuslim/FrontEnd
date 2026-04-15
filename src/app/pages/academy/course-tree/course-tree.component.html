@@ -29,6 +29,16 @@
               [attr.tabindex]="node.status === 'locked' ? -1 : 0"
               (click)="onNodeClick(node)"
             >
+              @if (node.status === "locked") {
+                <span class="course-card__locked-badge" aria-hidden="true">
+                  <img
+                    class="course-card__locked-icon"
+                    src="/academy/locked.svg"
+                    alt=""
+                  />
+                </span>
+              }
+
               <h4 class="course-card__title">{{ node.title }}</h4>
 
               @if (node.description) {

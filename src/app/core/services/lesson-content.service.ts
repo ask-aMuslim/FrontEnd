@@ -128,7 +128,10 @@ export class LessonContentService {
    * Submit lesson feedback
    */
   submitLessonFeedback(lessonId: Id, rating: number, feedback?: string): Observable<boolean> {
-    return of([lessonId, rating, feedback].length > 0);
+    return this.lessonsService.submitFeedback(lessonId, { rating, feedback }).pipe(
+      map((submitted) => submitted === true),
+      catchError(() => of(false)),
+    );
   }
 
   /**
@@ -288,27 +291,49 @@ export class LessonContentService {
         } as AudioLessonContent;
       }
 
-      case LessonType.Article:
-      case LessonType.Document:
-        {
-          const contentJson = lessonDto['contentJson'] ?? lessonDto['ContentJson'];
-          const content = this.resolveArticleSectionContent(contentJson, lessonDto.content || '');
+      case LessonType.Article: {
+        const contentJson = lessonDto['contentJson'] ?? lessonDto['ContentJson'];
+        const content = this.resolveArticleSectionContent(contentJson, lessonDto.content || '');
 
-          return {
-            id: String(lessonDto.id ?? ''),
-            type: LessonType.Article,
-            title: lessonDto.title ?? '',
-            description: (lessonDto as { description?: string }).description || '',
-            sections: [
-              {
-                header: '',
-                content,
-                contentJson,
-              }
-            ],
-            language: 'English'
-          } as ArticleLessonContent;
-        }
+        return {
+          id: String(lessonDto.id ?? ''),
+          type: LessonType.Article,
+          title: lessonDto.title ?? '',
+          description: (lessonDto as { description?: string }).description || '',
+          sections: [
+            {
+              header: '',
+              content,
+              contentJson,
+            }
+          ],
+          language: 'English'
+        } as ArticleLessonContent;
+      }
+
+      case LessonType.Document: {
+        const contentJson = lessonDto['contentJson'] ?? lessonDto['ContentJson'];
+        const documentUrl = this.resolveDocumentUrl(lessonDto);
+        const content = documentUrl
+          ? `<p><a href="${this.escapeHtml(documentUrl)}" target="_blank" rel="noopener noreferrer">Open document</a></p>`
+          : this.resolveArticleSectionContent(contentJson, lessonDto.content || '');
+
+        return {
+          id: String(lessonDto.id ?? ''),
+          type: LessonType.Document,
+          title: lessonDto.title ?? '',
+          description: (lessonDto as { description?: string }).description || '',
+          sections: [
+            {
+              header: '',
+              content,
+              contentJson,
+            }
+          ],
+          documentUrl: documentUrl ?? undefined,
+          language: 'English'
+        } as ArticleLessonContent;
+      }
 
       default:
         return {
@@ -370,6 +395,57 @@ export class LessonContentService {
     }
 
     return `<p>${this.escapeHtml(fallbackText).replaceAll('\n', '<br/>')}</p>`;
+  }
+
+  private resolveDocumentUrl(lessonDto: LessonReadDto): string | null {
+    const candidates = [
+      lessonDto.contentUrl,
+      lessonDto.content,
+      lessonDto.externalVideoUrl,
+      lessonDto.videoUrl,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate !== 'string') {
+        continue;
+      }
+
+      const normalizedPath = this.normalizeDocumentPath(candidate);
+      if (!normalizedPath || !this.looksLikeDocumentPath(normalizedPath)) {
+        continue;
+      }
+
+      return toApiMediaUrl(normalizedPath) ?? normalizedPath;
+    }
+
+    return null;
+  }
+
+  private normalizeDocumentPath(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return '';
+    }
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed.replace(/\/api\/uploads\/lesson-content\//i, '/uploads/lesson-content/');
+    }
+
+    if (trimmed.startsWith('/api/uploads/lesson-content/')) {
+      return trimmed.replace('/api/uploads/lesson-content/', '/uploads/lesson-content/');
+    }
+
+    if (trimmed.startsWith('api/uploads/lesson-content/')) {
+      return `/${trimmed.replace('api/uploads/lesson-content/', 'uploads/lesson-content/')}`;
+    }
+
+    return trimmed;
+  }
+
+  private looksLikeDocumentPath(value: string): boolean {
+    const normalized = value.toLowerCase();
+    return normalized.includes('/uploads/lesson-content/')
+      || /\.(pdf|doc|docx|ppt|pptx|xls|xlsx)(\?.*)?$/.test(normalized);
   }
 
   private tryResolveContentJson(value: unknown): string | null {

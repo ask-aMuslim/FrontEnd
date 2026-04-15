@@ -1,15 +1,21 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
-  ViewChild,
-  ChangeDetectorRef,
+  OnDestroy,
+  OnInit,
   PLATFORM_ID,
+  ViewChild,
   inject,
 } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { ChatMessage } from './ask-assistant.model';
+import { Subject, finalize, takeUntil } from 'rxjs';
+import {
+  AskAssistantConversation,
+  AskAssistantMessageSeed,
+  ChatMessage,
+} from './ask-assistant.model';
 import { AskAssistantService } from './ask-assistant.service';
 
 @Component({
@@ -20,66 +26,84 @@ import { AskAssistantService } from './ask-assistant.service';
   styleUrls: ['./ask-assistant.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AskAssistantComponent {
+export class AskAssistantComponent implements OnInit, OnDestroy {
+  private static readonly fallbackAssistantError =
+    'Service temporarily unavailable. Please retry shortly.';
+
   private messageId = 0;
+  private readonly destroy$ = new Subject<void>();
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   @ViewChild('askInput') askInput?: ElementRef<HTMLInputElement>;
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bottomAnchor') bottomAnchor?: ElementRef<HTMLDivElement>;
+
   arrow = '/icons/icons-24/arrow-right.svg';
   logo = '/ask-a-muslim-logo.png';
 
   inputValue = '';
-  isSuggestionsOpen = false;
-  hasSelectedSuggestion = false;
-  suggestions = [
-    'Is it permissible to ....',
-    'Why do Muslims ....',
-    'Is it Haram to ....',
-    'What’s the meaning of ...',
-  ];
-  filteredSuggestions = [...this.suggestions];
+  userId = '';
+  activeThreadId: string | null = null;
 
   messages: ChatMessage[] = [];
+  conversations: AskAssistantConversation[] = [];
+  isLoadingConversations = false;
+  errorMessage: string | null = null;
   isResponding = false;
 
-  constructor(
-    private readonly askAssistantService: AskAssistantService,
-    private readonly cdr: ChangeDetectorRef,
-  ) { }
+  private readonly askAssistantService = inject(AskAssistantService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  ngOnInit(): void {
+    this.userId = this.askAssistantService.getResolvedUserId();
+    this.loadConversations();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   onInput(value: string): void {
     this.inputValue = value;
-    this.hasSelectedSuggestion = false;
-    this.filteredSuggestions = this.filterSuggestions(value);
-    this.isSuggestionsOpen = true;
   }
 
-  onFocus(): void {
-    if (!this.hasSelectedSuggestion) {
-      this.filteredSuggestions = this.filterSuggestions(this.inputValue);
-      this.isSuggestionsOpen = true;
+  startNewConversation(): void {
+    this.activeThreadId = null;
+    this.messages = [];
+    this.errorMessage = null;
+    this.messageId = 0;
+    this.cdr.markForCheck();
+    this.scrollToBottom(false);
+  }
+
+  openConversation(threadId: string): void {
+    if (!threadId) {
+      return;
     }
+
+    this.activeThreadId = threadId;
+    this.errorMessage = null;
+
+    this.askAssistantService
+      .getThreadMessages(threadId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (messages) => {
+          this.messageId = 0;
+          this.messages = messages.map((message) => this.toChatMessage(message));
+          this.cdr.markForCheck();
+          this.scrollToBottom(false);
+        },
+        error: () => {
+          this.errorMessage = 'Unable to load this conversation right now.';
+          this.cdr.markForCheck();
+        },
+      });
   }
 
-  onBlur(): void {
-    this.isSuggestionsOpen = false;
-  }
-
-  selectSuggestion(value: string): void {
-    const cleanValue = value.replace(/[.\u2026]+$/g, '').trim();
-    this.inputValue = cleanValue ? `${cleanValue} ` : '';
-    this.hasSelectedSuggestion = true;
-    this.isSuggestionsOpen = false;
-    // Refocus the input after selection to keep user in the flow
-    if (this.isBrowser) {
-      globalThis.setTimeout(() => this.askInput?.nativeElement.focus({ preventScroll: true }), 0);
-    }
-  }
-
-  async submitQuestion(event?: Event): Promise<void> {
+  submitQuestion(event?: Event): void {
     event?.preventDefault();
 
     const question = this.inputValue.trim();
@@ -87,41 +111,132 @@ export class AskAssistantComponent {
       return;
     }
 
+    this.errorMessage = null;
     this.appendMessage('user', question);
     this.resetInput();
+    const assistantMessageId = this.appendMessage('assistant', '');
     this.scrollToBottom(true);
 
     this.isResponding = true;
-    try {
-      const answer = await firstValueFrom(this.askAssistantService.generateAnswer(question));
-      this.appendMessage('assistant', answer);
-      this.scrollToBottom(true);
-    } finally {
-      this.isResponding = false;
-      this.askInput?.nativeElement.focus({ preventScroll: true });
-    }
+    this.askAssistantService
+      .streamAnswer({
+        userId: this.userId,
+        question,
+        threadId: this.activeThreadId,
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isResponding = false;
+          this.removeEmptyAssistantMessage(assistantMessageId);
+          this.loadConversations();
+          if (this.isBrowser) {
+            this.askInput?.nativeElement.focus({ preventScroll: true });
+          }
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (eventUpdate) => {
+          if (eventUpdate.threadId) {
+            this.activeThreadId = eventUpdate.threadId;
+          }
+
+          if (eventUpdate.kind === 'delta' && eventUpdate.text) {
+            this.patchMessageText(assistantMessageId, (existingText) => `${existingText}${eventUpdate.text}`);
+          }
+
+          if (eventUpdate.kind === 'error') {
+            const errorText = eventUpdate.text || AskAssistantComponent.fallbackAssistantError;
+            this.patchMessageText(assistantMessageId, (existingText) => {
+              if (!existingText) {
+                return errorText;
+              }
+
+              return `${existingText}\n${errorText}`;
+            });
+          }
+
+          this.scrollToBottom(false);
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.patchMessageText(assistantMessageId, () => AskAssistantComponent.fallbackAssistantError);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  isConversationActive(threadId: string): boolean {
+    return this.activeThreadId === threadId;
   }
 
   trackByMessage = (_: number, message: ChatMessage): number => message.id;
+  trackByConversation = (_: number, conversation: AskAssistantConversation): string => conversation.threadId;
 
-  private filterSuggestions(value: string): string[] {
-    const query = value.trim().toLowerCase();
-    if (!query) {
-      return [...this.suggestions];
-    }
+  private loadConversations(): void {
+    this.isLoadingConversations = true;
 
-    return this.suggestions.filter((item) => item.toLowerCase().includes(query));
+    this.askAssistantService
+      .getConversations(this.userId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoadingConversations = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (conversations) => {
+          this.conversations = conversations;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.errorMessage = this.errorMessage ?? 'Unable to load previous conversations.';
+          this.cdr.markForCheck();
+        },
+      });
   }
 
-  private appendMessage(role: ChatMessage['role'], text: string): void {
-    this.messages = [...this.messages, { id: ++this.messageId, role, text, createdAt: Date.now() }];
+  private toChatMessage(message: AskAssistantMessageSeed): ChatMessage {
+    return {
+      id: ++this.messageId,
+      role: message.role,
+      text: message.text,
+      createdAt: message.createdAt,
+    };
+  }
+
+  private appendMessage(role: ChatMessage['role'], text: string): number {
+    const id = ++this.messageId;
+    this.messages = [...this.messages, { id, role, text, createdAt: Date.now() }];
+    return id;
+  }
+
+  private patchMessageText(messageId: number, updater: (currentText: string) => string): void {
+    this.messages = this.messages.map((message) => {
+      if (message.id !== messageId) {
+        return message;
+      }
+
+      return {
+        ...message,
+        text: updater(message.text),
+      };
+    });
+  }
+
+  private removeEmptyAssistantMessage(messageId: number): void {
+    const message = this.messages.find((item) => item.id === messageId);
+    if (message?.role !== 'assistant' || (message?.text.trim().length ?? 0) > 0) {
+      return;
+    }
+
+    this.messages = this.messages.filter((item) => item.id !== messageId);
   }
 
   private resetInput(): void {
     this.inputValue = '';
-    this.isSuggestionsOpen = false;
-    this.hasSelectedSuggestion = false;
-    this.filteredSuggestions = [...this.suggestions];
   }
 
   private scrollToBottom(smooth = true): void {
