@@ -7,6 +7,10 @@
 
 .course-tree-wrapper {
   --course-tree-column-gap: calc(var(--spacing-md) + 36px);
+  --course-tree-card-width: min(
+    320px,
+    max(240px, calc((100% - (2 * var(--course-tree-column-gap))) / 3))
+  );
   width: 100%;
   overflow-x: auto;
   overflow-y: visible;
@@ -112,11 +116,22 @@
   justify-content: flex-start;
 }
 
-.course-card {
-  width: min(
-    320px,
-    max(240px, calc((100% - (2 * var(--course-tree-column-gap))) / 3))
+.course-tree__layer--parent-of-overflow {
+  justify-content: flex-start;
+}
+
+.course-tree__layer--parent-of-overflow .course-card {
+  margin-left: calc(
+    (
+        (var(--course-tree-next-layer-count) - 1) *
+          (var(--course-tree-card-width) + var(--course-tree-column-gap))
+      ) /
+      2
   );
+}
+
+.course-card {
+  width: var(--course-tree-card-width);
   max-width: 320px;
   flex: 0 0 auto;
   border: 1px solid var(--colors-rare-grays-20);
