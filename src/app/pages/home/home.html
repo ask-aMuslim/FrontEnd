@@ -1,7 +1,8 @@
 <div class="home-page">
   <section id="hero" class="hero-section">
     <div class="hero-surface" aria-hidden="true"></div>
-    <div class="section-block section-block--wide">
+    <!-- <div class="section-block section-block--wide"> -->
+    <div>
       <div class="hero-content">
         <div class="hero-message-pill">
           <span class="hero-message-accent">One</span>&nbsp;<span> God</span>
@@ -39,30 +40,30 @@
             }
           </div>
         </div>
+        <div class="section-block">
+          <form
+            class="hero-search"
+            aria-label="Search answered questions"
+            (ngSubmit)="onSearch()"
+            #searchForm="ngForm"
+          >
+            <label class="sr-only" for="home-search">Search question</label>
+            <app-hero-search-input
+              [inputId]="'home-search'"
+              [value]="searchQuery"
+              [placeholder]="'ask to understand ..'"
+              [ariaLabel]="'Search answered questions'"
+              (valueChange)="searchQuery = $event"
+              (submitted)="onSearch()"
+            ></app-hero-search-input>
 
-        <form
-          class="hero-search"
-          aria-label="Search answered questions"
-          (ngSubmit)="onSearch()"
-          #searchForm="ngForm"
-        >
-          <label class="sr-only" for="home-search">Search question</label>
-          <app-hero-search-input
-            [inputId]="'home-search'"
-            [value]="searchQuery"
-            [placeholder]="'ask to understand ..'"
-            [ariaLabel]="'Search answered questions'"
-            (valueChange)="searchQuery = $event"
-            (submitted)="onSearch()"
-          ></app-hero-search-input>
-
-          <div class="hero-search-actions">
-            <button type="submit" class="button hero-search-submit">
-              Search
-            </button>
-          </div>
-        </form>
-
+            <div class="hero-search-actions">
+              <button type="submit" class="button hero-search-submit">
+                Search
+              </button>
+            </div>
+          </form>
+        </div>
         <div class="hero-stat-line">
           @for (stat of heroStats; track $index) {
           <span class="hero-stat-item">
@@ -143,12 +144,14 @@
           }
         </div>
 
-        <div class="hero-caption-line">
-          <span class="hero-caption-value">2,000,000,000+</span>
-          <span class="hero-caption-copy"
-            >Muslim brothers &amp; sisters around the world</span
-          >
-        </div>
+
+          <div class="hero-caption-line">
+            <span class="hero-caption-value">2,000,000,000+</span>
+            <span class="hero-caption-copy"
+              >Muslim brothers &amp; sisters around the world</span
+            >
+          </div>
+
       </div>
     </div>
   </section>
@@ -290,7 +293,11 @@
           <!-- 6 Pillars of Iman (Hexagons) - Top Arc -->
           <div class="iman-arc">
             <!-- Hexagon 1: Allah (bottom left) -->
-            <div class="pillar-card pillar-iman-1">
+            <a
+              class="pillar-card pillar-iman-1"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('c43faa16-99bd-473f-49ed-08de9b548af0', imanPillarTag)"
+            >
               <div class="hexagon">
                 <svg
                   class="pillar-hexagon"
@@ -382,10 +389,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Hexagon 2: Angels (middle left) -->
-            <div class="pillar-card pillar-iman-2">
+            <a
+              class="pillar-card pillar-iman-2"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('97e3c02d-1d8e-45d2-49ee-08de9b548af0', imanPillarTag)"
+            >
               <div class="hexagon">
                 <svg
                   class="pillar-hexagon"
@@ -477,10 +488,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Hexagon 3: Books (top middle-left) -->
-            <div class="pillar-card pillar-iman-3">
+            <a
+              class="pillar-card pillar-iman-3"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('0ca6305d-00d4-4a1a-49ef-08de9b548af0', imanPillarTag)"
+            >
               <div class="hexagon">
                 <svg
                   class="pillar-hexagon"
@@ -572,10 +587,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Hexagon 4: Messengers (top middle-right) -->
-            <div class="pillar-card pillar-iman-4">
+            <a
+              class="pillar-card pillar-iman-4"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('613446e9-39c7-41cc-49f0-08de9b548af0', imanPillarTag)"
+            >
               <div class="hexagon">
                 <svg
                   class="pillar-hexagon"
@@ -667,10 +686,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Hexagon 5: Judgement Day (middle right) -->
-            <div class="pillar-card pillar-iman-5">
+            <a
+              class="pillar-card pillar-iman-5"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('21d8011f-d717-4ade-49f1-08de9b548af0', imanPillarTag)"
+            >
               <div class="hexagon">
                 <svg
                   class="pillar-hexagon"
@@ -762,10 +785,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Hexagon 6: Divine Decree (bottom right) -->
-            <div class="pillar-card pillar-iman-6">
+            <a
+              class="pillar-card pillar-iman-6"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('13159eec-ca70-4071-49f2-08de9b548af0', imanPillarTag)"
+            >
               <div class="hexagon">
                 <svg
                   class="pillar-hexagon"
@@ -857,7 +884,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Title in center -->
             <div class="pillars-label iman-label">The 6 pillars of Iman</div>
@@ -869,7 +896,11 @@
             <div class="pillars-label islam-label">The 5 pillars of Islam</div>
 
             <!-- Pentagon 1: Shahada (far left, lowest) -->
-            <div class="pillar-card pillar-islam-1">
+            <a
+              class="pillar-card pillar-islam-1"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('ff110d68-b49f-4fe0-49f3-08de9b548af0', islamPillarTag)"
+            >
               <div class="pentagon">
                 <svg
                   class="pillar-pentagon"
@@ -961,10 +992,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Pentagon 2: Salah (left-center, higher) -->
-            <div class="pillar-card pillar-islam-2">
+            <a
+              class="pillar-card pillar-islam-2"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('fa55483c-3f55-4aa2-49f4-08de9b548af0', islamPillarTag)"
+            >
               <div class="pentagon">
                 <svg
                   class="pillar-pentagon"
@@ -1056,10 +1091,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Pentagon 3: Zakat (center, highest) -->
-            <div class="pillar-card pillar-islam-3">
+            <a
+              class="pillar-card pillar-islam-3"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('1082c0f9-7fb5-4e81-49f5-08de9b548af0', islamPillarTag)"
+            >
               <div class="pentagon">
                 <svg
                   class="pillar-pentagon"
@@ -1151,10 +1190,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Pentagon 4: Sawm (right-center, higher) -->
-            <div class="pillar-card pillar-islam-4">
+            <a
+              class="pillar-card pillar-islam-4"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('d6e49487-1f68-498f-49f6-08de9b548af0', islamPillarTag)"
+            >
               <div class="pentagon">
                 <svg
                   class="pillar-pentagon"
@@ -1246,10 +1289,14 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Pentagon 5: Hajj (far right, lowest) -->
-            <div class="pillar-card pillar-islam-5">
+            <a
+              class="pillar-card pillar-islam-5"
+              [routerLink]="pillarQuestionRoute"
+              [queryParams]="getQuestionQueryParams('8c1cb6b4-0975-42a9-49f7-08de9b548af0', islamPillarTag)"
+            >
               <div class="pentagon">
                 <svg
                   class="pillar-pentagon"
@@ -1341,7 +1388,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
           </div>
         </div>
       </div>

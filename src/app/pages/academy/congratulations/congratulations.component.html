@@ -1,6 +1,7 @@
 <section class="course-congrats">
   <div class="section-block section-block--wide">
     <app-academy-page-shell
+      class="academy-page-shell--congrats"
       variant="quiz"
       [bannerImageUrl]="bannerImageUrl"
       bannerAlt="Quiz background"
@@ -49,86 +50,13 @@
               You have passed the {{ courseTitle() }} course
             </h1>
             <p class="course-congrats__description">
-              Now you can start the “{{ nextCourseName() }}” course (peace be
-              upon him). Could you please give us a general feedback for this
-              course?
+              @if (nextCourseName()) {
+                Now you can continue with “{{ nextCourseName() }}”.
+              } @else {
+                Now you can continue to the next course.
+              }
             </p>
           </header>
-
-          <section
-            class="course-congrats__feedback"
-            aria-label="Course feedback"
-          >
-            <div
-              class="course-congrats__stars"
-              role="group"
-              aria-label="Rate this course"
-            >
-              @for (star of stars; track star) {
-                <button
-                  type="button"
-                  class="course-congrats__star"
-                  [class.is-active]="rating() >= star"
-                  [attr.aria-label]="
-                    'Rate ' + star + (star > 1 ? ' stars' : ' star')
-                  "
-                  (click)="setRating(star)"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 2L14.9558 8.09789L21.6085 9.05573L16.8042 13.6801L17.9389 20.1943L12 17.02L6.06107 20.1943L7.19577 13.6801L2.39155 9.05573L9.04421 8.09789L12 2Z"
-                      [attr.fill]="rating() >= star ? '#CDA736' : '#E9ECEF'"
-                      [attr.stroke]="rating() >= star ? '#CDA736' : '#ADB5BD'"
-                      stroke-width="1.2"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </button>
-              }
-            </div>
-
-            <div class="course-congrats__feedback-box">
-              <textarea
-                class="course-congrats__textarea"
-                rows="4"
-                placeholder="Write a feedbak so we can improve. (optional)"
-                [value]="feedbackText()"
-                (input)="onFeedbackInput($event)"
-              ></textarea>
-
-              <div class="course-congrats__feedback-footer">
-                <button
-                  type="button"
-                  class="course-congrats__add-btn"
-                  [disabled]="!canSubmitFeedback()"
-                  (click)="submitFeedback()"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 5V19M5 12H19"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                  <span>{{
-                    isSubmittingFeedback() ? "Adding..." : "Add"
-                  }}</span>
-                </button>
-              </div>
-            </div>
-
-            @if (feedbackSubmissionMessage()) {
-              <p
-                class="course-congrats__feedback-message"
-                [class.course-congrats__feedback-message--error]="
-                  feedbackSubmissionStatus() === 'error'
-                "
-              >
-                {{ feedbackSubmissionMessage() }}
-              </p>
-            }
-          </section>
 
           <div class="course-congrats__actions">
             <button
@@ -136,7 +64,7 @@
               class="course-congrats__next-btn"
               (click)="goToNextCourse()"
             >
-              <span>Go Next Course</span>
+              <span>Go To Next Course</span>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M8 20L16 12L8 4"

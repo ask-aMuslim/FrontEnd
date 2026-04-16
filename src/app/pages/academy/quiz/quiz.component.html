@@ -342,7 +342,7 @@
               <div class="quiz-main">
                 <div class="quiz-review">
                   <h1 class="review-title">Quiz Review</h1>
-                  @if (hasPassed()) {
+                  @if (hasSuccessfulDegree()) {
                     <div class="review-success-banner">
                       <div class="success-score">
                         <span class="score-value"
@@ -511,7 +511,7 @@
                   Retake Quiz
                 </button>
 
-                @if (hasPassed()) {
+                @if (hasSuccessfulDegree()) {
                   <button
                     type="button"
                     class="btn btn-primary btn-pass-action"
@@ -572,14 +572,17 @@
                   <!-- Quiz Review Header -->
                   <div class="results-header">
                     <div class="results-score-info">
-                      <div class="score-badge" [class.passed]="hasPassed()">
+                      <div
+                        class="score-badge"
+                        [class.passed]="hasSuccessfulDegree()"
+                      >
                         <span class="score-percentage"
                           >{{ scorePercentage() }}%</span
                         >
                       </div>
                       <div class="score-message">
                         <h1 class="results-title">Quiz Review</h1>
-                        @if (hasPassed()) {
+                        @if (hasSuccessfulDegree()) {
                           <p class="message-text">
                             Great Job! You have answered
                             {{ correctAnswersCount() }} questions out of
@@ -699,7 +702,7 @@
                   Retake Quiz
                 </button>
 
-                @if (hasPassed()) {
+                @if (hasSuccessfulDegree()) {
                   <button
                     type="button"
                     class="btn btn-primary btn-pass-action"
