@@ -41,6 +41,14 @@ interface ConnectorPath {
   d: string;
 }
 
+interface EdgeGeometry {
+  edge: ConnectorEdge;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
 @Component({
   selector: 'app-course-tree',
   standalone: true,
@@ -296,7 +304,10 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
     const nextPaths: ConnectorPath[] = [];
     const minimumParentDrop = 22;
     const minimumChildClearance = 14;
+    const laneGap = 10;
+    const incomingLaneInset = 24;
 
+    const edgeGeometries: EdgeGeometry[] = [];
     for (const edge of this.connectorEdges()) {
       const parentRect = elementRects.get(edge.parentId);
       const childRect = elementRects.get(edge.childId);
@@ -313,23 +324,93 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
         continue;
       }
 
-      let elbowY = this.roundCoordinate(Math.min(startY + minimumParentDrop, endY - minimumChildClearance));
-      if (elbowY <= startY || elbowY >= endY) {
-        elbowY = this.roundCoordinate((startY + endY) / 2);
-      }
-
-      if (elbowY <= startY || elbowY >= endY) {
-        nextPaths.push({
-          id: edge.id,
-          d: `M ${startX} ${startY} L ${endX} ${endY}`,
-        });
-        continue;
-      }
-
-      nextPaths.push({
-        id: edge.id,
-        d: `M ${startX} ${startY} L ${startX} ${elbowY} L ${endX} ${elbowY} L ${endX} ${endY}`,
+      edgeGeometries.push({
+        edge,
+        startX,
+        startY,
+        endX,
+        endY,
       });
+    }
+
+    const incomingByChild = new Map<string, EdgeGeometry[]>();
+    for (const geometry of edgeGeometries) {
+      const list = incomingByChild.get(geometry.edge.childId);
+      if (list) {
+        list.push(geometry);
+      } else {
+        incomingByChild.set(geometry.edge.childId, [geometry]);
+      }
+    }
+
+    for (const incomingEdges of incomingByChild.values()) {
+      incomingEdges.sort((leftEdge, rightEdge) => leftEdge.startX - rightEdge.startX);
+
+      const edgeCount = incomingEdges.length;
+      const sharedEndY = incomingEdges[0]?.endY ?? 0;
+
+      const targetEndXByEdgeId = new Map<string, number>();
+      if (edgeCount === 1) {
+        targetEndXByEdgeId.set(incomingEdges[0].edge.id, incomingEdges[0].endX);
+      } else {
+        const byCenterDistance = [...incomingEdges].sort(
+          (leftEdge, rightEdge) =>
+            Math.abs(leftEdge.startX - leftEdge.endX) - Math.abs(rightEdge.startX - rightEdge.endX),
+        );
+
+        const centerEntryEdge = byCenterDistance[0];
+        targetEndXByEdgeId.set(centerEntryEdge.edge.id, centerEntryEdge.endX);
+
+        const sideEdges = incomingEdges.filter((edge) => edge.edge.id !== centerEntryEdge.edge.id);
+        const leftSideEdges = sideEdges
+          .filter((edge) => edge.startX < centerEntryEdge.endX)
+          .sort((leftEdge, rightEdge) => Math.abs(leftEdge.startX - leftEdge.endX) - Math.abs(rightEdge.startX - rightEdge.endX));
+        const rightSideEdges = sideEdges
+          .filter((edge) => edge.startX >= centerEntryEdge.endX)
+          .sort((leftEdge, rightEdge) => Math.abs(leftEdge.startX - leftEdge.endX) - Math.abs(rightEdge.startX - rightEdge.endX));
+
+        for (let index = 0; index < leftSideEdges.length; index += 1) {
+          const edge = leftSideEdges[index];
+          targetEndXByEdgeId.set(
+            edge.edge.id,
+            this.roundCoordinate(centerEntryEdge.endX - Math.min(incomingLaneInset, laneGap * (index + 1))),
+          );
+        }
+
+        for (let index = 0; index < rightSideEdges.length; index += 1) {
+          const edge = rightSideEdges[index];
+          targetEndXByEdgeId.set(
+            edge.edge.id,
+            this.roundCoordinate(centerEntryEdge.endX + Math.min(incomingLaneInset, laneGap * (index + 1))),
+          );
+        }
+      }
+
+      for (let index = 0; index < incomingEdges.length; index += 1) {
+        const geometry = incomingEdges[index];
+        const targetEndX = targetEndXByEdgeId.get(geometry.edge.id) ?? geometry.endX;
+        const centerOffset = targetEndX - geometry.endX;
+
+        let elbowY = Math.min(
+          geometry.startY + minimumParentDrop + Math.abs(centerOffset),
+          sharedEndY - minimumChildClearance,
+        );
+        elbowY = this.clamp(elbowY, geometry.startY + 4, sharedEndY - 4);
+        elbowY = this.roundCoordinate(elbowY);
+
+        if (elbowY <= geometry.startY || elbowY >= sharedEndY) {
+          nextPaths.push({
+            id: geometry.edge.id,
+            d: `M ${geometry.startX} ${geometry.startY} L ${targetEndX} ${sharedEndY}`,
+          });
+          continue;
+        }
+
+        nextPaths.push({
+          id: geometry.edge.id,
+          d: `M ${geometry.startX} ${geometry.startY} L ${geometry.startX} ${elbowY} L ${targetEndX} ${elbowY} L ${targetEndX} ${sharedEndY}`,
+        });
+      }
     }
 
     return nextPaths;
@@ -522,6 +603,10 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
 
   private roundCoordinate(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  private clamp(value: number, minimum: number, maximum: number): number {
+    return Math.min(maximum, Math.max(minimum, value));
   }
 
   private centerTreeScrollbarIfNeeded(): void {
