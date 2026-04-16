@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, BehaviorSubject, of, forkJoin, from } from 'rxjs';
-import { map, catchError, tap, switchMap, shareReplay, take } from 'rxjs/operators';
+import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize } from 'rxjs/operators';
 import {
     StudentProgress,
     StageProgress,
@@ -110,6 +110,8 @@ export class AcademyProgressService {
 
     private readonly progressSubject = new BehaviorSubject<StudentProgress | null>(null);
     readonly progress$ = this.progressSubject.asObservable();
+    private readonly isRefreshingProgressSubject = new BehaviorSubject<boolean>(false);
+    readonly isRefreshingProgress$ = this.isRefreshingProgressSubject.asObservable();
     private academyCoursesCache: AcademyCourse[] = [];
     private academyStagesCache: AcademyStageApi[] = [];
     private academyStagesRequest$: Observable<AcademyStageApi[]> | null = null;
@@ -326,21 +328,28 @@ export class AcademyProgressService {
      * Derived from the full student progress response.
      */
     getRecentLesson(): Observable<RecentLessonInfo | null> {
-        return this.getStudentProgress().pipe(map((progress) => progress.recentLesson));
+        return this.progress$.pipe(
+            filter((p): p is StudentProgress => p !== null),
+            map((progress) => progress.recentLesson)
+        );
     }
 
     /**
      * Get stage progress for all stages
      */
     getStageProgress(): Observable<StageProgress[]> {
-        return this.getStudentProgress().pipe(map((progress) => progress.stageProgress));
+        return this.progress$.pipe(
+            filter((p): p is StudentProgress => p !== null),
+            map((progress) => progress.stageProgress)
+        );
     }
 
     /**
      * Check if a specific stage is unlocked
      */
     isStageUnlocked(stageNumber: number): Observable<boolean> {
-        return this.getStudentProgress().pipe(
+        return this.progress$.pipe(
+            filter((p): p is StudentProgress => p !== null),
             map((progress) => {
                 const stage = progress.stageProgress.find((s) => s.stageNumber === stageNumber);
                 return stage?.isUnlocked ?? false;
@@ -352,7 +361,8 @@ export class AcademyProgressService {
      * Get course progress for a specific course
      */
     getCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
-        return this.getStudentProgress().pipe(
+        return this.progress$.pipe(
+            filter((p): p is StudentProgress => p !== null),
             map((progress) => progress.courseProgress.find((c) => c.courseId === courseId))
         );
     }
@@ -830,6 +840,9 @@ export class AcademyProgressService {
      * Mark lesson as completed.
      */
     markLessonCompleted(lessonId: string, courseId: string): Observable<LessonProgress> {
+        this.markLocalLessonCompleted(courseId, lessonId);
+        this.invalidateProgressCache();
+        
         return this.updateLessonProgress({
             lessonId,
             courseId,
@@ -2582,5 +2595,10 @@ export class AcademyProgressService {
 
     private invalidateProgressCache(): void {
         this.studentProgressRequest$ = null;
+        this.isRefreshingProgressSubject.next(true);
+        this.getStudentProgress(true).pipe(
+            take(1),
+            finalize(() => this.isRefreshingProgressSubject.next(false))
+        ).subscribe();
     }
 }

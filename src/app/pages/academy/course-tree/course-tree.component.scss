@@ -88,24 +88,17 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  row-gap: calc(var(--spacing-md) + 20px);
-  column-gap: calc(var(--spacing-md) + 20px);
-
-  @media (min-width: 900px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: calc(var(--spacing-md) + 32px);
-  }
-
-  @media (min-width: 1280px) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: calc(var(--spacing-md) + 40px);
-  }
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: calc(var(--spacing-md) + 20px) calc(var(--spacing-md) + 36px);
 }
 
 .course-card {
-  width: 100%;
+  width: min(100%, 320px);
+  max-width: 320px;
+  flex: 1 1 260px;
   border: 1px solid var(--colors-rare-grays-20);
   border-radius: 12px;
   padding: var(--spacing-lg);

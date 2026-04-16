@@ -934,10 +934,8 @@
     <app-academy-sidebar-host
       [stageNumber]="courseInfo.stage"
       [title]="courseInfo.title"
-      [currentLessonNumber]="
-        lessonData?.metadata?.order ?? currentLesson?.order ?? null
-      "
-      [totalLessons]="courseLessons.length"
+      [currentLessonNumber]="currentLessonDisplayOrder"
+      [totalLessons]="totalCourseLessonCount"
       [duration]="resolvedCourseDuration"
       [overviewLink]="['/academy/course', courseId]"
       overviewLinkLabel="Course overview"

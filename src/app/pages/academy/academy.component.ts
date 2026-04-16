@@ -1,8 +1,9 @@
 import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy, Injector } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, combineLatest, of } from 'rxjs';
-import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, map, switchMap, takeUntil, filter } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -73,7 +74,7 @@ interface RecentLesson {
 @Component({
     selector: 'app-academy',
     standalone: true,
-    imports: [CourseTreeComponent],
+    imports: [CourseTreeComponent, AsyncPipe],
     templateUrl: './academy.component.html',
     styleUrls: ['./academy.component.scss'],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -99,6 +100,10 @@ export class AcademyComponent implements OnInit, OnDestroy {
     isLoading = true;
     error: string | null = null;
 
+    get isRefreshingProgress$() {
+        return this.getAcademyProgressService().isRefreshingProgress$;
+    }
+
     ngOnInit(): void {
         if (this.isGuestUser) {
             this.isLoading = false;
@@ -120,7 +125,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
         combineLatest([
             academyProgressService.getAcademyStages(),
             academyProgressService.getAcademyCourses(),
-            academyProgressService.getStudentProgress(),
+            academyProgressService.progress$.pipe(filter(p => p !== null)),
         ])
             .pipe(
                 switchMap(([apiStages, courses, progress]) => {

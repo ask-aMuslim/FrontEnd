@@ -1,4 +1,9 @@
 <div class="academy-container">
+  @if (isRefreshingProgress$ | async) {
+    <div class="academy-global-loader">
+      <div class="progress-bar-indeterminate"></div>
+    </div>
+  }
   <div class="academy-content">
     @if (error) {
       <section class="important-note">
