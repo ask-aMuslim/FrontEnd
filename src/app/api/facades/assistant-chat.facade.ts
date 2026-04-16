@@ -1,5 +1,6 @@
 import {
   HttpClient,
+  HttpContext,
   HttpErrorResponse,
   HttpEvent,
   HttpEventType,
@@ -8,6 +9,7 @@ import {
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SKIP_LOADING } from '../../core/http/context-tokens';
 
 export interface AssistantChatRequest {
   userId: string;
@@ -48,11 +50,13 @@ interface ChatStreamBody {
 export class AssistantChatFacade {
   private readonly baseUrl = environment.askAssistantApiBaseUrl.replaceAll(/\/+$/g, '');
   private readonly jsonHeaders = new HttpHeaders({ Accept: 'application/json' });
+  private readonly jsonContext = new HttpContext().set(SKIP_LOADING, true);
   private readonly streamHeaders = new HttpHeaders({
     Accept: 'application/x-ndjson, text/event-stream, application/json',
     'Content-Type': 'application/json',
     'X-stream': 'true',
   });
+  private readonly streamContext = new HttpContext().set(SKIP_LOADING, true);
 
   constructor(private readonly http: HttpClient) { }
 
@@ -109,6 +113,7 @@ export class AssistantChatFacade {
       const requestSubscription = this.http.request('POST', endpoint, {
         body,
         headers: this.streamHeaders,
+        context: this.streamContext,
         observe: 'events',
         reportProgress: true,
         responseType: 'text',
@@ -139,10 +144,10 @@ export class AssistantChatFacade {
     fallbackUrl: string,
     shouldFallback: (error: unknown) => boolean,
   ): Observable<unknown> {
-    return this.http.get<unknown>(primaryUrl, { headers: this.jsonHeaders }).pipe(
+    return this.http.get<unknown>(primaryUrl, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
       catchError((error: unknown) => {
         if (shouldFallback(error)) {
-          return this.http.get<unknown>(fallbackUrl, { headers: this.jsonHeaders });
+          return this.http.get<unknown>(fallbackUrl, { headers: this.jsonHeaders, context: this.jsonContext });
         }
 
         return throwError(() => error);

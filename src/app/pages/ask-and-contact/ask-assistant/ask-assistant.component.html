@@ -31,12 +31,12 @@
     <main
       class="ask-assistant-page__stage"
       [ngClass]="
-        messages.length
+        messages().length
           ? 'ask-assistant-page__stage--thread'
           : 'ask-assistant-page__stage--empty'
       "
     >
-      @if (!messages.length) {
+      @if (!messages().length) {
         <section class="ask-assistant-page__empty-state">
           <img
             [src]="logo"
@@ -69,8 +69,8 @@
             <p
               class="ask-assistant-page__thread-summary text-sm text-(--color-text-caption)"
             >
-              {{ messages.length }} message{{
-                messages.length === 1 ? "" : "s"
+              {{ messages().length }} message{{
+                messages().length === 1 ? "" : "s"
               }}
               in this chat.
             </p>
@@ -83,7 +83,7 @@
               aria-live="polite"
             >
               @for (
-                message of messages;
+                message of messages();
                 track trackByMessage($index, message)
               ) {
                 <div class="ask-assistant-page__message-row">
@@ -103,20 +103,25 @@
                           : 'ask-assistant-page__message-bubble--assistant'
                       "
                     >
-                      {{ message.text }}
+                      @if (message.role === 'user') {
+                        {{ message.text }}
+                      } @else {
+                        <div
+                          class="ask-assistant-page__message-markdown"
+                          [class.is-streaming]="isResponding() && $last"
+                          [innerHTML]="message.text | markdown"
+                        ></div>
+                      }
                     </div>
                   </div>
                 </div>
               }
 
-              @if (isResponding) {
+              @if (isResponding() && messages()[messages().length - 1]?.role === 'user') {
                 <div class="ask-assistant-page__typing-indicator">
                   <span class="ask-assistant-page__typing-dot"></span>
                   <span class="ask-assistant-page__typing-dot"></span>
                   <span class="ask-assistant-page__typing-dot"></span>
-                  <span class="ask-assistant-page__typing-text text-sm"
-                    >Streaming answer...</span
-                  >
                 </div>
               }
 
@@ -264,7 +269,7 @@
                   >
                     <div class="ask-assistant-page__history-item-top">
                       <div class="ask-assistant-page__history-item-copy">
-                        <span class="ask-assistant-page__history-item-title">{{
+                        <span class="ask-assistant-page__history-item-title truncate">{{
                           conversation.title
                         }}</span>
                         <span
@@ -356,7 +361,7 @@
           <span
             class="ask-assistant-page__submit-label text-base md:text-lg font-semibold text-white"
           >
-            {{ isResponding ? "Working..." : "Ask" }}
+            {{ isResponding() ? "Working..." : "Ask" }}
           </span>
         </button>
       </div>

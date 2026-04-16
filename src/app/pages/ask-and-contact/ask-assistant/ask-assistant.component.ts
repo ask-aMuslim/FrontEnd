@@ -1,16 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  OnDestroy,
-  OnInit,
-  PLATFORM_ID,
-  ViewChild,
-  inject,
-} from '@angular/core';
+import { ApplicationRef, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, OnInit, PLATFORM_ID, ViewChild, WritableSignal, inject, signal } from '@angular/core';
 import { Subject, finalize, takeUntil } from 'rxjs';
 import {
   AskAssistantConversation,
@@ -19,6 +9,7 @@ import {
 } from './ask-assistant.model';
 import { AskAssistantService } from './ask-assistant.service';
 import { buildChatTitleFromMessages } from './ask-assistant-title.util';
+import { MarkdownPipe } from '../../../shared/pipes/markdown.pipe';
 
 interface AskAssistantConversationSection {
   label: string;
@@ -28,14 +19,15 @@ interface AskAssistantConversationSection {
 @Component({
   selector: 'app-ask-assistant',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MarkdownPipe],
   templateUrl: './ask-assistant.component.html',
   styleUrls: ['./ask-assistant.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class AskAssistantComponent implements OnInit, OnDestroy {
   private static readonly fallbackAssistantError =
     'Service temporarily unavailable. Please retry shortly.';
+  private static readonly activeThreadStorageKey = 'aam_ask_assistant_active_thread';
 
   private messageId = 0;
   private readonly destroy$ = new Subject<void>();
@@ -55,19 +47,28 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   activeThreadId: string | null = null;
   isHistoryDrawerOpen = false;
 
-  messages: ChatMessage[] = [];
+  messages: WritableSignal<ChatMessage[]> = signal([]);
   conversations: AskAssistantConversation[] = [];
   isLoadingConversations = false;
   conversationErrorMessage: string | null = null;
   errorMessage: string | null = null;
-  isResponding = false;
+  isResponding: WritableSignal<boolean> = signal(false);
 
   private readonly askAssistantService = inject(AskAssistantService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly ngZone = inject(NgZone);
+  private readonly appRef = inject(ApplicationRef);
 
   ngOnInit(): void {
     this.userId = this.askAssistantService.getResolvedUserId();
+    const savedThreadId = this.readActiveThreadFromStorage();
+    if (savedThreadId) {
+      this.activeThreadId = savedThreadId;
+    }
     this.loadConversations();
+    if (savedThreadId) {
+      this.openConversation(savedThreadId);
+    }
   }
 
   ngOnDestroy(): void {
@@ -102,7 +103,8 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   startNewConversation(): void {
     this.closeHistoryDrawer();
     this.activeThreadId = null;
-    this.messages = [];
+    this.clearActiveThreadFromStorage();
+    this.messages.set([]);
     this.errorMessage = null;
     this.resetInput();
     this.resizeComposer();
@@ -117,6 +119,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     }
 
     this.activeThreadId = threadId;
+    this.saveActiveThreadToStorage(threadId);
     this.closeHistoryDrawer();
     this.errorMessage = null;
     this.resetInput();
@@ -128,7 +131,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (messages) => {
           this.messageId = 0;
-          this.messages = messages.map((message) => this.toChatMessage(message));
+          this.messages.set(messages.map((message) => this.toChatMessage(message)));
           this.cdr.markForCheck();
           this.scrollToBottom(false);
         },
@@ -143,7 +146,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     event?.preventDefault();
 
     const question = this.inputValue.trim();
-    if (!question || this.isResponding) {
+    if (!question || this.isResponding()) {
       return;
     }
 
@@ -151,10 +154,15 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     this.appendMessage('user', question);
     this.resetInput();
     this.resizeComposer();
-    const assistantMessageId = this.appendMessage('assistant', '');
     this.scrollToBottom(true);
 
-    this.isResponding = true;
+    // Reserve a slot but DON'T create an empty assistant bubble yet.
+    // We create the bubble only when the first token arrives so there
+    // is no blank-then-populated flash.
+    const assistantMessageId = ++this.messageId;
+    let assistantMessageCreated = false;
+
+    this.isResponding.set(true);
     this.askAssistantService
       .streamAnswer({
         userId: this.userId,
@@ -164,42 +172,69 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {
-          this.isResponding = false;
-          this.removeEmptyAssistantMessage(assistantMessageId);
+          this.isResponding.set(false);
           this.loadConversations();
+          // After stream ends, reload the thread messages from server to guarantee display
+          // This covers cases where signal-based reactive updates don't re-render in zoneless mode
+          if (this.activeThreadId) {
+            const threadId = this.activeThreadId;
+            globalThis.setTimeout(() => {
+              this.askAssistantService
+                .getThreadMessages(threadId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                  next: (serverMessages) => {
+                    this.messageId = serverMessages.length;
+                    this.messages.set(serverMessages.map((m, i) => ({ id: i + 1, role: m.role, text: m.text, createdAt: m.createdAt })));
+                  },
+                  error: () => { /* keep locally built messages on error */ },
+                });
+            }, 300);
+          }
           if (this.isBrowser) {
             this.askInput?.nativeElement.focus({ preventScroll: true });
           }
-          this.cdr.markForCheck();
         }),
       )
       .subscribe({
         next: (eventUpdate) => {
           if (eventUpdate.threadId) {
             this.activeThreadId = eventUpdate.threadId;
+            this.saveActiveThreadToStorage(eventUpdate.threadId);
           }
 
           if (eventUpdate.kind === 'delta' && eventUpdate.text) {
-            this.patchMessageText(assistantMessageId, (existingText) => `${existingText}${eventUpdate.text}`);
+            if (!assistantMessageCreated) {
+              // First token — create the bubble now
+              this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: eventUpdate.text, createdAt: Date.now() }]);
+              assistantMessageCreated = true;
+            } else {
+              this.patchMessageText(assistantMessageId, (existingText) => `${existingText}${eventUpdate.text}`);
+            }
           }
 
           if (eventUpdate.kind === 'error') {
             const errorText = eventUpdate.text || AskAssistantComponent.fallbackAssistantError;
-            this.patchMessageText(assistantMessageId, (existingText) => {
-              if (!existingText) {
-                return errorText;
-              }
-
-              return `${existingText}\n${errorText}`;
-            });
+            if (!assistantMessageCreated) {
+              this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: errorText, createdAt: Date.now() }]);
+              assistantMessageCreated = true;
+            } else {
+              this.patchMessageText(assistantMessageId, (existingText) => {
+                return existingText ? `${existingText}\n${errorText}` : errorText;
+              });
+            }
           }
 
           this.scrollToBottom(false);
-          this.cdr.markForCheck();
+          this.appRef.tick();
         },
         error: () => {
-          this.patchMessageText(assistantMessageId, () => AskAssistantComponent.fallbackAssistantError);
-          this.cdr.markForCheck();
+          if (!assistantMessageCreated) {
+            this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: AskAssistantComponent.fallbackAssistantError, createdAt: Date.now() }]);
+          } else {
+            this.patchMessageText(assistantMessageId, () => AskAssistantComponent.fallbackAssistantError);
+          }
+          this.appRef.tick();
         },
       });
   }
@@ -214,7 +249,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       : null;
 
     return selectedConversationTitle
-      ?? buildChatTitleFromMessages(this.messages)
+      ?? buildChatTitleFromMessages(this.messages())
       ?? 'New chat';
   }
 
@@ -311,12 +346,12 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
 
   private appendMessage(role: ChatMessage['role'], text: string): number {
     const id = ++this.messageId;
-    this.messages = [...this.messages, { id, role, text, createdAt: Date.now() }];
+    this.messages.update((current) => [...current, { id, role, text, createdAt: Date.now() }]);
     return id;
   }
 
   private patchMessageText(messageId: number, updater: (currentText: string) => string): void {
-    this.messages = this.messages.map((message) => {
+    this.messages.update((current) => current.map((message) => {
       if (message.id !== messageId) {
         return message;
       }
@@ -325,16 +360,16 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         ...message,
         text: updater(message.text),
       };
-    });
+    }));
   }
 
   private removeEmptyAssistantMessage(messageId: number): void {
-    const message = this.messages.find((item) => item.id === messageId);
+    const message = this.messages().find((item) => item.id === messageId);
     if (message?.role !== 'assistant' || (message?.text.trim().length ?? 0) > 0) {
       return;
     }
 
-    this.messages = this.messages.filter((item) => item.id !== messageId);
+    this.messages.update((current) => current.filter((item) => item.id !== messageId));
   }
 
   private buildOpenConversationErrorMessage(error: unknown): string {
@@ -387,6 +422,27 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     return Number.isFinite(value) ? value : null;
   }
 
+  private readActiveThreadFromStorage(): string | null {
+    if (!this.isBrowser) {
+      return null;
+    }
+    return globalThis.sessionStorage.getItem(AskAssistantComponent.activeThreadStorageKey) || null;
+  }
+
+  private saveActiveThreadToStorage(threadId: string): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    globalThis.sessionStorage.setItem(AskAssistantComponent.activeThreadStorageKey, threadId);
+  }
+
+  private clearActiveThreadFromStorage(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    globalThis.sessionStorage.removeItem(AskAssistantComponent.activeThreadStorageKey);
+  }
+
   private resetInput(): void {
     this.inputValue = '';
   }
@@ -407,7 +463,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     }
 
     // Ensure the view reflects latest messages before measuring/scrolling
-    this.cdr.detectChanges();
+    this.appRef.tick();
     globalThis.setTimeout(() => {
       const behavior = smooth ? ('smooth' as ScrollBehavior) : ('auto' as ScrollBehavior);
       const anchor = this.bottomAnchor?.nativeElement;
@@ -419,7 +475,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         container.scrollTo({ top: container.scrollHeight, behavior });
       }
 
-      if (this.messages.length > 0) {
+      if (this.messages().length > 0) {
         this.askInput?.nativeElement.scrollIntoView({ behavior, block: 'end' });
       }
     }, 0);
