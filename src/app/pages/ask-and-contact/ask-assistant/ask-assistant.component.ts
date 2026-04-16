@@ -174,10 +174,26 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         finalize(() => {
           this.isResponding.set(false);
           this.loadConversations();
+          // After stream ends, reload the thread messages from server to guarantee display
+          // This covers cases where signal-based reactive updates don't re-render in zoneless mode
+          if (this.activeThreadId) {
+            const threadId = this.activeThreadId;
+            globalThis.setTimeout(() => {
+              this.askAssistantService
+                .getThreadMessages(threadId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                  next: (serverMessages) => {
+                    this.messageId = serverMessages.length;
+                    this.messages.set(serverMessages.map((m, i) => ({ id: i + 1, role: m.role, text: m.text, createdAt: m.createdAt })));
+                  },
+                  error: () => { /* keep locally built messages on error */ },
+                });
+            }, 300);
+          }
           if (this.isBrowser) {
             this.askInput?.nativeElement.focus({ preventScroll: true });
           }
-          this.appRef.tick();
         }),
       )
       .subscribe({
