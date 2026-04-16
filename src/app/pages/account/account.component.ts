@@ -186,7 +186,7 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.isAvatarPreviewOpen = false;
     this.isUploadingAvatar = true;
 
-    this.studentFacade.updateProfile({ imageUrl: null }).pipe(take(1)).subscribe({
+    this.studentFacade.updateProfile({ imageUrl: "" }).pipe(take(1)).subscribe({
       next: (profile) => {
         this.queueAvatarImageUpdate(profile?.imageUrl ?? null);
       },
