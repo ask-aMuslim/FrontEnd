@@ -53,6 +53,7 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
 
   private readonly hostElement = inject(ElementRef<HTMLElement>);
   private readonly hasDom = globalThis.document !== undefined;
+  private lastCenteredScrollLayoutKey = '';
 
   // Inputs from Academy Component
   nodes = input.required<CourseNode[]>();
@@ -240,6 +241,8 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
     if (!this.areConnectorPathsEqual(this.connectorPaths(), nextPaths)) {
       this.connectorPaths.set(nextPaths);
     }
+
+    this.centerTreeScrollbarIfNeeded();
   }
 
   private getRenderableTreeContainer(): HTMLElement | null {
@@ -519,6 +522,32 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
 
   private roundCoordinate(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  private centerTreeScrollbarIfNeeded(): void {
+    if (!this.hasDom) {
+      return;
+    }
+
+    const hostElement = this.hostElement.nativeElement;
+    const wrapper = hostElement.querySelector('.course-tree-wrapper') as HTMLElement | null;
+    if (!wrapper) {
+      return;
+    }
+
+    const hasHorizontalOverflow = wrapper.scrollWidth > wrapper.clientWidth;
+    const layoutKey = `${wrapper.clientWidth}|${wrapper.scrollWidth}|${this.connectorPaths().length}|${this.nodes().length}`;
+    if (!hasHorizontalOverflow) {
+      this.lastCenteredScrollLayoutKey = layoutKey;
+      return;
+    }
+
+    if (layoutKey === this.lastCenteredScrollLayoutKey) {
+      return;
+    }
+
+    wrapper.scrollLeft = Math.max(0, (wrapper.scrollWidth - wrapper.clientWidth) / 2);
+    this.lastCenteredScrollLayoutKey = layoutKey;
   }
 
   private areConnectorPathsEqual(
