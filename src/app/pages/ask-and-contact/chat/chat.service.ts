@@ -1,6 +1,7 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 
-const CHAT_API_BASE_URL = 'https://travis-photographic-pool-fares.trycloudflare.com';
+const CHAT_API_BASE_URL = environment.askAssistantApiBaseUrl.replaceAll(/\/+$/g, '');
 
 type JsonRecord = Record<string, unknown>;
 
