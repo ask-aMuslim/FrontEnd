@@ -52,9 +52,16 @@ export class LessonContentService {
           map(lessons => {
             const lessonData = this.mapLessonDtoToLessonData(lessonDto, String(lessonId), courseId);
             const currentIndex = lessons.findIndex(lesson => lesson.id === String(lessonId));
+            const currentLessonMetadata = currentIndex >= 0 ? lessons[currentIndex] : undefined;
 
             return {
               ...lessonData,
+              metadata: currentLessonMetadata
+                ? {
+                  ...lessonData.metadata,
+                  order: currentLessonMetadata.order,
+                }
+                : lessonData.metadata,
               previousLesson: currentIndex > 0 ? lessons[currentIndex - 1] : undefined,
               nextLesson: currentIndex >= 0 && currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : undefined,
             };
@@ -108,7 +115,7 @@ export class LessonContentService {
         const withOrder = lessons
           .filter((lesson) => lesson.isPublished !== false) as (LessonReadDto & { order?: number })[];
         const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        return sortedLessons.map(lesson => this.mapLessonDtoToMetadata(lesson));
+        return sortedLessons.map((lesson, index) => this.mapLessonDtoToMetadata(lesson, index + 1));
       }),
       catchError(() => of([]))
     );
@@ -351,7 +358,7 @@ export class LessonContentService {
   /**
    * Map LessonReadDto to LessonMetadata
    */
-  private mapLessonDtoToMetadata(lessonDto: LessonReadDto | null): LessonMetadata {
+  private mapLessonDtoToMetadata(lessonDto: LessonReadDto | null, fallbackOrder = 0): LessonMetadata {
     if (!lessonDto) {
       return {
         id: '',
@@ -364,8 +371,13 @@ export class LessonContentService {
         hasFeedback: false
       };
     }
-    // Note: LessonReadDto doesn't have 'order' from backend, so we use 0 as default
-    // The order is determined by the array position in getCourseLessons
+
+    const apiOrder = typeof lessonDto.order === 'number'
+      && Number.isFinite(lessonDto.order)
+      && lessonDto.order > 0
+      ? Math.floor(lessonDto.order)
+      : null;
+
     return {
       id: String(lessonDto.id ?? ''),
       courseId: String(lessonDto.courseId ?? ''),
@@ -373,7 +385,7 @@ export class LessonContentService {
       type: ((lessonDto as { type?: number }).type as LessonType) || LessonType.Video,
       status: 'pending',
       duration: '0:00',
-      order: 0,
+      order: apiOrder ?? fallbackOrder,
       hasFeedback: false
     };
   }
