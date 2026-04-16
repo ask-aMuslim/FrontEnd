@@ -101,12 +101,30 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
     private readonly connectorEdges = computed<ConnectorEdge[]>(() => {
         const nodeList = this.nodes();
         const availableNodeIds = new Set(nodeList.map((node) => node.id));
+        const nodeIdByNormalizedKey = new Map<string, string>();
+        const nodeIdByNormalizedTitle = new Map<string, string>();
+
+        for (const node of nodeList) {
+            nodeIdByNormalizedKey.set(this.normalizeLookupKey(node.id), node.id);
+            if (node.title.trim().length > 0) {
+                nodeIdByNormalizedTitle.set(this.normalizeLookupKey(node.title), node.id);
+            }
+        }
+
         const seenEdgeIds = new Set<string>();
         const edges: ConnectorEdge[] = [];
 
         for (const childNode of nodeList) {
-            for (const parentId of childNode.prerequisites ?? []) {
-                if (parentId === childNode.id || !availableNodeIds.has(parentId)) {
+            for (const prerequisiteRef of childNode.prerequisites ?? []) {
+                const parentId = this.resolvePrerequisiteNodeId(
+                    prerequisiteRef,
+                    childNode.id,
+                    availableNodeIds,
+                    nodeIdByNormalizedKey,
+                    nodeIdByNormalizedTitle,
+                );
+
+                if (!parentId) {
                     continue;
                 }
 
@@ -232,6 +250,8 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
         containerRect: DOMRect,
     ): ConnectorPath[] {
         const nextPaths: ConnectorPath[] = [];
+        const minimumParentDrop = 22;
+        const minimumChildClearance = 14;
 
         for (const edge of this.connectorEdges()) {
             const parentRect = elementRects.get(edge.parentId);
@@ -249,18 +269,52 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
                 continue;
             }
 
-            const verticalGap = endY - startY;
-            const curveOffset = this.roundCoordinate(Math.max(22, Math.min(96, verticalGap * 0.55)));
-            const controlPoint1Y = this.roundCoordinate(startY + curveOffset);
-            const controlPoint2Y = this.roundCoordinate(endY - curveOffset);
+            let elbowY = this.roundCoordinate(Math.min(startY + minimumParentDrop, endY - minimumChildClearance));
+            if (elbowY <= startY || elbowY >= endY) {
+                elbowY = this.roundCoordinate((startY + endY) / 2);
+            }
+
+            if (elbowY <= startY || elbowY >= endY) {
+                nextPaths.push({
+                    id: edge.id,
+                    d: `M ${startX} ${startY} L ${endX} ${endY}`,
+                });
+                continue;
+            }
 
             nextPaths.push({
                 id: edge.id,
-                d: `M ${startX} ${startY} C ${startX} ${controlPoint1Y}, ${endX} ${controlPoint2Y}, ${endX} ${endY}`,
+                d: `M ${startX} ${startY} L ${startX} ${elbowY} L ${endX} ${elbowY} L ${endX} ${endY}`,
             });
         }
 
         return nextPaths;
+    }
+
+    private resolvePrerequisiteNodeId(
+        prerequisiteRef: string,
+        childNodeId: string,
+        availableNodeIds: ReadonlySet<string>,
+        nodeIdByNormalizedKey: ReadonlyMap<string, string>,
+        nodeIdByNormalizedTitle: ReadonlyMap<string, string>,
+    ): string | null {
+        const trimmedReference = prerequisiteRef.trim();
+        if (trimmedReference.length === 0 || trimmedReference === childNodeId) {
+            return null;
+        }
+
+        if (availableNodeIds.has(trimmedReference)) {
+            return trimmedReference;
+        }
+
+        const normalizedReference = this.normalizeLookupKey(trimmedReference);
+        return nodeIdByNormalizedKey.get(normalizedReference)
+            ?? nodeIdByNormalizedTitle.get(normalizedReference)
+            ?? null;
+    }
+
+    private normalizeLookupKey(value: string): string {
+        return value.trim().toLowerCase();
     }
 
     private resetConnectorState(): void {

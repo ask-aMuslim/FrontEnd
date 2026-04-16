@@ -63,9 +63,9 @@
 .course-tree__connector-path {
   fill: none;
   stroke: var(--colors-rare-grays-50);
-  stroke-width: 3;
+  stroke-width: 2;
   stroke-linecap: round;
-  stroke-dasharray: 10 8;
+  stroke-linejoin: round;
   opacity: 0.9;
 }
 

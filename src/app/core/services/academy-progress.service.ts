@@ -25,7 +25,7 @@ import {
 } from '../../api/facades/progress.facade';
 import { LessonProgressFacade } from '../../api/facades/lesson-progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
-import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
+import { CourseFacade, CourseReadDto, RoadmapCourseDto } from '../../api/facades/course.facade';
 import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
 import { StudentFacade, StudentProfile } from '../../api/facades/student.facade';
 import { EnrollmentFacade, EnrollmentReadDto } from '../../api/facades/enrollment.facade';
@@ -551,14 +551,24 @@ export class AcademyProgressService {
                     );
                 }
                 const courseRequests = stages.map(stage =>
-                    this.courseFacade.getCoursesByLevel(stage.id).pipe(
-                        map(courses => courses
-                            .filter((course) => {
-                                const isPublished = course['isPublished'];
-                                return isPublished !== false;
-                            })
-                            .map((course) => this.mapCourseDtoToAcademyCourse(course, stage.id, stage.number))
+                    forkJoin({
+                        coursesByLevel: this.courseFacade.getCoursesByLevel(stage.id).pipe(
+                            catchError(() => of([] as CourseReadDto[])),
                         ),
+                        roadmapCourses: this.courseFacade.getRoadmap(stage.id).pipe(
+                            catchError(() => of([] as RoadmapCourseDto[])),
+                        ),
+                    }).pipe(
+                        map(({ coursesByLevel, roadmapCourses }) => {
+                            const mappedCourses = coursesByLevel
+                                .filter((course) => {
+                                    const isPublished = course['isPublished'];
+                                    return isPublished !== false;
+                                })
+                                .map((course) => this.mapCourseDtoToAcademyCourse(course, stage.id, stage.number));
+
+                            return this.mergeRoadmapPrerequisites(mappedCourses, roadmapCourses);
+                        }),
                         catchError(() => of([] as AcademyCourse[]))
                     )
                 );
@@ -580,14 +590,24 @@ export class AcademyProgressService {
      */
     getAcademyCoursesByLevel(levelId: string): Observable<AcademyCourse[]> {
         const stageNumber = this.academyStagesCache.find(s => s.id === levelId)?.number ?? 1;
-        return this.courseFacade.getCoursesByLevel(levelId).pipe(
-            map(courses => courses
-                .filter((course) => {
-                    const isPublished = course['isPublished'];
-                    return isPublished !== false;
-                })
-                .map(c => this.mapCourseDtoToAcademyCourse(c, levelId, stageNumber))
+        return forkJoin({
+            coursesByLevel: this.courseFacade.getCoursesByLevel(levelId).pipe(
+                catchError(() => of([] as CourseReadDto[])),
             ),
+            roadmapCourses: this.courseFacade.getRoadmap(levelId).pipe(
+                catchError(() => of([] as RoadmapCourseDto[])),
+            ),
+        }).pipe(
+            map(({ coursesByLevel, roadmapCourses }) => {
+                const mappedCourses = coursesByLevel
+                    .filter((course) => {
+                        const isPublished = course['isPublished'];
+                        return isPublished !== false;
+                    })
+                    .map((course) => this.mapCourseDtoToAcademyCourse(course, levelId, stageNumber));
+
+                return this.mergeRoadmapPrerequisites(mappedCourses, roadmapCourses);
+            }),
             switchMap((courses) => this.hydrateCoursesWithPublishedLessons(courses)),
             catchError(() => of([]))
         );
@@ -1573,6 +1593,7 @@ export class AcademyProgressService {
         const title = course.title ?? 'Untitled course';
         const lessons = this.resolveLessonCount(course);
         const category = this.mapCourseCategory(course.category);
+        const prerequisites = this.extractPrerequisiteIds(course).filter((prerequisiteId) => prerequisiteId !== id);
 
         return {
             id,
@@ -1587,11 +1608,107 @@ export class AcademyProgressService {
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
             order: course.order,
-            prerequisites: [
-                ...(course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []),
-                ...(course.prerequisiteIds ?? [])
-            ]
+            prerequisites,
         };
+    }
+
+    private mergeRoadmapPrerequisites(
+        courses: AcademyCourse[],
+        roadmapCourses: RoadmapCourseDto[],
+    ): AcademyCourse[] {
+        if (courses.length === 0 || roadmapCourses.length === 0) {
+            return courses;
+        }
+
+        const roadmapPrerequisitesByCourseId = new Map<string, string[]>();
+        for (const roadmapCourse of roadmapCourses) {
+            const roadmapCourseId = typeof roadmapCourse.id === 'string'
+                ? roadmapCourse.id.trim()
+                : '';
+
+            if (!roadmapCourseId) {
+                continue;
+            }
+
+            roadmapPrerequisitesByCourseId.set(
+                roadmapCourseId,
+                this.extractPrerequisiteIds(roadmapCourse),
+            );
+        }
+
+        return courses.map((course) => {
+            const roadmapPrerequisites = roadmapPrerequisitesByCourseId.get(course.id) ?? [];
+            if (roadmapPrerequisites.length === 0) {
+                return course;
+            }
+
+            const mergedPrerequisites = Array.from(
+                new Set([
+                    ...(course.prerequisites ?? []),
+                    ...roadmapPrerequisites,
+                ]),
+            ).filter((prerequisiteId) => prerequisiteId !== course.id);
+
+            return {
+                ...course,
+                prerequisites: mergedPrerequisites,
+            };
+        });
+    }
+
+    private extractPrerequisiteIds(source: Record<string, unknown>): string[] {
+        const prerequisiteIdSet = new Set<string>();
+
+        const pushId = (candidate: unknown): void => {
+            if (typeof candidate !== 'string') {
+                return;
+            }
+
+            const normalizedCandidate = candidate.trim();
+            if (!normalizedCandidate) {
+                return;
+            }
+
+            prerequisiteIdSet.add(normalizedCandidate);
+        };
+
+        const collectFromUnknown = (value: unknown): void => {
+            if (Array.isArray(value)) {
+                for (const entry of value) {
+                    collectFromUnknown(entry);
+                }
+                return;
+            }
+
+            if (typeof value === 'string') {
+                pushId(value);
+                return;
+            }
+
+            if (!value || typeof value !== 'object') {
+                return;
+            }
+
+            const record = value as Record<string, unknown>;
+            pushId(record['id']);
+            pushId(record['courseId']);
+            pushId(record['prerequisiteId']);
+            pushId(record['prerequisiteCourseId']);
+            pushId(record['requiredCourseId']);
+
+            const nestedCourse = record['course'];
+            if (nestedCourse && typeof nestedCourse === 'object') {
+                pushId((nestedCourse as Record<string, unknown>)['id']);
+            }
+        };
+
+        collectFromUnknown(source['prerequisiteIds']);
+        collectFromUnknown(source['prerequisiteCourseIds']);
+        collectFromUnknown(source['prerequisites']);
+        collectFromUnknown(source['prerequisiteCourses']);
+        collectFromUnknown(source['dependencies']);
+
+        return Array.from(prerequisiteIdSet);
     }
 
     private resolveLessonCount(source: Record<string, unknown>): number {
