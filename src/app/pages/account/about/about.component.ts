@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, inject, output } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
@@ -38,6 +38,14 @@ export interface AboutModel {
   profileImage: string;
 }
 
+export interface AboutProfileHeaderUpdate {
+  name: string;
+  bio: string;
+  gender: string;
+  religion: string;
+  imageUrl: string;
+}
+
 @Component({
   selector: 'app-about',
   imports: [
@@ -54,6 +62,7 @@ export class AboutComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly destroy$ = new Subject<void>();
+  readonly profileHeaderUpdated = output<AboutProfileHeaderUpdate>();
 
   about: AboutModel = {
     religion: '',
@@ -410,6 +419,7 @@ export class AboutComponent implements OnInit, OnDestroy {
         if (profile) {
           this.mapProfileToModel(profile);
         }
+        this.emitProfileHeaderUpdate();
         onSuccess();
         this.successMessage = 'Profile updated successfully!';
         this.autoClearSuccessMessage();
@@ -417,6 +427,16 @@ export class AboutComponent implements OnInit, OnDestroy {
       error: (err: ProfileError) => {
         this.error = this.getErrorMessage(err);
       },
+    });
+  }
+
+  private emitProfileHeaderUpdate(): void {
+    this.profileHeaderUpdated.emit({
+      name: this.about.name,
+      bio: this.about.bio,
+      gender: this.about.gender,
+      religion: this.about.religion,
+      imageUrl: this.about.profileImage,
     });
   }
 

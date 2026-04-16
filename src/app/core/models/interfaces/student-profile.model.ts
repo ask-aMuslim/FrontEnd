@@ -43,6 +43,7 @@ export interface StudentProfile {
   religiousStatus?: number;
   isMuslim?: boolean;
   isNewMuslim?: boolean;
+  isProfileCompleted?: boolean;
   [key: string]: unknown; // Index signature for compatibility with DTOs
 }
 

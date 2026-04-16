@@ -15,6 +15,7 @@ import { asRecord, extractArray, getValue, toBooleanValue, toStringValue } from 
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
 import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
+import type { AboutProfileHeaderUpdate } from './about/about.component';
 
 interface UserProfile {
   name: string;
@@ -103,6 +104,27 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.activeTabIndex = index;
   }
 
+  onAboutProfileUpdated(update: AboutProfileHeaderUpdate): void {
+    const nextName = this.toNonEmptyString(update.name) ?? this.userProfile.name;
+    const nextBio = this.toNonEmptyString(update.bio) ?? this.userProfile.bio;
+    const nextGender = this.toNonEmptyString(update.gender) ?? this.userProfile.gender;
+    const nextReligion = this.toNonEmptyString(update.religion) ?? this.userProfile.religion;
+    const normalizedUpdatedImageUrl = this.normalizeImageUrl(update.imageUrl);
+    const nextImageUrl = normalizedUpdatedImageUrl || this.userProfile.imageUrl;
+
+    this.userProfile = {
+      ...this.userProfile,
+      name: nextName,
+      bio: nextBio,
+      gender: nextGender,
+      religion: nextReligion,
+      imageUrl: nextImageUrl,
+    };
+
+    this.authService.updateCurrentUserImageUrl(nextImageUrl);
+    this.cdr.detectChanges();
+  }
+
   continueLearnig(): void {
     this.academyProgressService
       .getRecentLesson()
@@ -186,7 +208,7 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.isAvatarPreviewOpen = false;
     this.isUploadingAvatar = true;
 
-    this.studentFacade.updateProfile({ imageUrl: null }).pipe(take(1)).subscribe({
+    this.studentFacade.updateProfile({ imageUrl: "" }).pipe(take(1)).subscribe({
       next: (profile) => {
         this.queueAvatarImageUpdate(profile?.imageUrl ?? null);
       },
@@ -253,7 +275,8 @@ export class AccountComponent implements OnInit, OnDestroy {
    */
   private updateUserProfile(profile: StudentProfile): void {
     const fullName = this.buildDisplayName(profile.firstName, profile.lastName);
-    const nextImageUrl = this.normalizeImageUrl(profile.imageUrl);
+    const normalizedImageUrl = this.normalizeImageUrl(profile.imageUrl);
+    const nextImageUrl = normalizedImageUrl || this.userProfile.imageUrl;
     const nextReligion =
       this.getReligionLabel(profile.religiousStatus) ??
       this.toNonEmptyString(profile.oldReligion) ??
