@@ -105,6 +105,13 @@
                       >{{ recentLesson.completedLessons }} out of
                       {{ recentLesson.totalLessons }} lessons</span
                     >
+                    @if (recentLesson.totalQuizzes > 0) {
+                      <span class="separator">-</span>
+                      <span class="quiz-count"
+                        >{{ recentLesson.completedQuizzes }} out of
+                        {{ recentLesson.totalQuizzes }} quiz(s)</span
+                      >
+                    }
                   </div>
                   @if (recentLesson.mediaProgressLabel) {
                     <span class="duration"

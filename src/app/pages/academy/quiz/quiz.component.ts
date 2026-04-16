@@ -186,9 +186,14 @@ export class QuizComponent implements OnInit, OnDestroy {
             (answer) => answer.selectedOptionId !== null || answer.isSkipped,
         );
 
-        if (this.quizState() === 'results' && !hasAnsweredQuestions && this.restoredQuizResult?.completed) {
-            return this.restoredQuizResult.passed
-                || this.restoredQuizResult.score >= this.quizConfig.passingScore;
+        if (this.quizState() === 'results' && this.restoredQuizResult?.completed) {
+            if (this.restoredQuizResult.passed) {
+                return true;
+            }
+
+            if (!hasAnsweredQuestions) {
+                return this.restoredQuizResult.score >= this.quizConfig.passingScore;
+            }
         }
 
         return this.hasPassed();

@@ -114,6 +114,104 @@ describe('AcademyProgressService progress mapping', () => {
         expect(completeProgress.courseProgress[0].progress).toBe(100);
         expect(completeProgress.courseProgress[0].status).toBe('completed');
     });
+
+    it('keeps quiz-required courses below 100% until quiz is passed', () => {
+        const baseCourse: AcademyCourse = {
+            id: 'course-quiz',
+            stageId: 1,
+            title: 'Quiz course',
+            category: 'social-topics',
+            categoryLabel: 'Social Topics',
+            lessons: 6,
+            duration: '30m',
+        };
+
+        const progressRecord: ProgressReadDto = {
+            courseId: 'course-quiz',
+            lessonCompletionRate: 100,
+            totalLessonsCompleted: 6,
+            isCompleted: false,
+            completedProgress: false,
+        };
+
+        const serviceStub = {
+            normalizeProgressPercentage: (value: number) => Math.max(0, Math.min(100, Math.round(value))),
+            normalizeProgressRecords: () => new Map<string, ProgressReadDto>([['course-quiz', progressRecord]]),
+            getLocallyCompletedLessonIds: () => new Set<string>([
+                'lesson-1',
+                'lesson-2',
+                'lesson-3',
+                'lesson-4',
+                'lesson-5',
+                'lesson-6',
+            ]),
+            getStandaloneQuizCount: () => 1,
+            isCourseQuizPassedLocally: () => false,
+            courseHasAnyQuiz: () => true,
+            resolveCourseItemCount: () => 7,
+            parseEnrollmentStatus: () => null,
+            isEnrollmentConsideredEnrolled: () => false,
+        } as const;
+
+        const progress = buildStudentProgress.call(
+            serviceStub,
+            'student-1',
+            [baseCourse],
+            new Map<string, EnrollmentReadDto>(),
+            null,
+            [progressRecord],
+        );
+
+        expect(progress.courseProgress[0].progress).toBe(86);
+        expect(progress.courseProgress[0].status).toBe('in-progress');
+        expect(progress.courseProgress[0].totalLessons).toBe(7);
+    });
+
+    it('adds standalone quiz completion on top of completed lessons', () => {
+        const baseCourse: AcademyCourse = {
+            id: 'course-standalone-quiz',
+            stageId: 1,
+            title: 'Standalone quiz course',
+            category: 'social-topics',
+            categoryLabel: 'Social Topics',
+            lessons: 3,
+            duration: '30m',
+        };
+
+        const progressRecord: ProgressReadDto = {
+            courseId: 'course-standalone-quiz',
+            lessonCompletionRate: 100,
+            totalLessonsCompleted: 3,
+            isCompleted: false,
+            completedProgress: false,
+        };
+
+        const serviceStub = {
+            normalizeProgressPercentage: (value: number) => Math.max(0, Math.min(100, Math.round(value))),
+            normalizeProgressRecords: () => new Map<string, ProgressReadDto>([['course-standalone-quiz', progressRecord]]),
+            getLocallyCompletedLessonIds: () => new Set<string>(),
+            getStandaloneQuizCount: () => 1,
+            isCourseQuizPassedLocally: () => true,
+            courseHasAnyQuiz: () => true,
+            resolveCourseItemCount: () => 4,
+            parseEnrollmentStatus: () => null,
+            isEnrollmentConsideredEnrolled: () => false,
+        } as const;
+
+        const progress = buildStudentProgress.call(
+            serviceStub,
+            'student-1',
+            [baseCourse],
+            new Map<string, EnrollmentReadDto>(),
+            null,
+            [progressRecord],
+        );
+
+        expect(progress.courseProgress[0].completedLessons).toBe(4);
+        expect(progress.courseProgress[0].totalLessons).toBe(4);
+        expect(progress.courseProgress[0].progress).toBe(100);
+        expect(progress.courseProgress[0].status).toBe('completed');
+    });
 });
 
 describe('AcademyProgressService enrollment resolution', () => {

@@ -31,6 +31,8 @@ describe('AcademyComponent', () => {
             ) => {
                 completedLessons: number;
                 totalLessons: number;
+                completedQuizzes: number;
+                totalQuizzes: number;
                 progress: number;
             } | null;
         };
@@ -92,7 +94,15 @@ describe('AcademyComponent', () => {
 
         expect(recentLesson).not.toBeNull();
         expect(recentLesson?.completedLessons).toBe(2);
-        expect(recentLesson?.totalLessons).toBe(3);
+        expect({
+            totalLessons: recentLesson?.totalLessons,
+            completedQuizzes: recentLesson?.completedQuizzes,
+            totalQuizzes: recentLesson?.totalQuizzes,
+        }).toEqual({
+            totalLessons: 3,
+            completedQuizzes: 0,
+            totalQuizzes: 0,
+        });
         expect(recentLesson?.progress).toBe(67);
     });
 
@@ -105,6 +115,8 @@ describe('AcademyComponent', () => {
             ) => {
                 completedLessons: number;
                 totalLessons: number;
+                completedQuizzes: number;
+                totalQuizzes: number;
                 progress: number;
             } | null;
         };
@@ -141,7 +153,123 @@ describe('AcademyComponent', () => {
 
         expect(recentLesson).not.toBeNull();
         expect(recentLesson?.completedLessons).toBe(6);
-        expect(recentLesson?.totalLessons).toBe(7);
+        expect({
+            totalLessons: recentLesson?.totalLessons,
+            completedQuizzes: recentLesson?.completedQuizzes,
+            totalQuizzes: recentLesson?.totalQuizzes,
+        }).toEqual({
+            totalLessons: 6,
+            completedQuizzes: 0,
+            totalQuizzes: 1,
+        });
+        expect(recentLesson?.progress).toBe(86);
+    });
+
+    it('should keep quiz-inclusive progress when recent lesson feed omits standalone quiz items', () => {
+        const academyComponent = component as unknown as {
+            mapRecentLesson: (
+                info: RecentLessonInfo,
+                courses: AcademyCourse[],
+                courseLessons: AcademyLesson[],
+            ) => {
+                completedLessons: number;
+                totalLessons: number;
+                completedQuizzes: number;
+                totalQuizzes: number;
+                progress: number;
+            } | null;
+        };
+
+        const recentLesson = academyComponent.mapRecentLesson(
+            {
+                stageNumber: 1,
+                courseId: 'course-1',
+                courseName: 'Course title',
+                lessonId: 'lesson-6',
+                lessonType: 'video',
+                lessonNumber: 6,
+                lessonTitle: 'Lesson 6',
+                thumbnailUrl: '',
+                progress: 0,
+                currentTime: '0:00',
+                totalTime: '10:00',
+                completedLessons: 6,
+                totalLessons: 7,
+            },
+            [{
+                id: 'course-1',
+                stageId: 1,
+                title: 'Course title',
+                category: 'main-believes',
+                categoryLabel: 'Belief',
+                lessons: 6,
+                duration: '30m',
+                isPublished: true,
+                prerequisites: [],
+            }],
+            [
+                {
+                    id: 'lesson-1',
+                    courseId: 'course-1',
+                    title: 'Lesson 1',
+                    duration: '10m',
+                    type: 'video',
+                    order: 1,
+                },
+                {
+                    id: 'lesson-2',
+                    courseId: 'course-1',
+                    title: 'Lesson 2',
+                    duration: '10m',
+                    type: 'video',
+                    order: 2,
+                },
+                {
+                    id: 'lesson-3',
+                    courseId: 'course-1',
+                    title: 'Lesson 3',
+                    duration: '10m',
+                    type: 'video',
+                    order: 3,
+                },
+                {
+                    id: 'lesson-4',
+                    courseId: 'course-1',
+                    title: 'Lesson 4',
+                    duration: '10m',
+                    type: 'video',
+                    order: 4,
+                },
+                {
+                    id: 'lesson-5',
+                    courseId: 'course-1',
+                    title: 'Lesson 5',
+                    duration: '10m',
+                    type: 'video',
+                    order: 5,
+                },
+                {
+                    id: 'lesson-6',
+                    courseId: 'course-1',
+                    title: 'Lesson 6',
+                    duration: '10m',
+                    type: 'video',
+                    order: 6,
+                },
+            ],
+        );
+
+        expect(recentLesson).not.toBeNull();
+        expect(recentLesson?.completedLessons).toBe(6);
+        expect({
+            totalLessons: recentLesson?.totalLessons,
+            completedQuizzes: recentLesson?.completedQuizzes,
+            totalQuizzes: recentLesson?.totalQuizzes,
+        }).toEqual({
+            totalLessons: 6,
+            completedQuizzes: 0,
+            totalQuizzes: 1,
+        });
         expect(recentLesson?.progress).toBe(86);
     });
 
@@ -152,6 +280,10 @@ describe('AcademyComponent', () => {
                 courseProgress: CourseProgress[],
             ) => {
                 lessons: number;
+                completedLessonsCount: number;
+                totalLessonsCount: number;
+                completedQuizzesCount: number;
+                totalQuizzesCount: number;
                 progress: number;
                 status: string;
             };
@@ -180,7 +312,54 @@ describe('AcademyComponent', () => {
         );
 
         expect(mappedCourse.lessons).toBe(6);
+        expect(mappedCourse.completedLessonsCount).toBe(6);
+        expect(mappedCourse.totalLessonsCount).toBe(6);
+        expect(mappedCourse.completedQuizzesCount).toBe(1);
+        expect(mappedCourse.totalQuizzesCount).toBe(1);
         expect(mappedCourse.progress).toBe(100);
         expect(mappedCourse.status).toBe('completed');
+    });
+
+    it('should map lesson and quiz progress separately while computing total course progress', () => {
+        const academyComponent = component as unknown as {
+            mapCourseWithProgress: (
+                course: AcademyCourse,
+                courseProgress: CourseProgress[],
+            ) => {
+                completedLessonsCount: number;
+                totalLessonsCount: number;
+                completedQuizzesCount: number;
+                totalQuizzesCount: number;
+                progress: number;
+            };
+        };
+
+        const mappedCourse = academyComponent.mapCourseWithProgress(
+            {
+                id: 'test-course',
+                stageId: 1,
+                title: 'Test Course',
+                category: 'main-believes',
+                categoryLabel: 'Belief',
+                lessons: 6,
+                duration: '59m',
+                isPublished: true,
+                prerequisites: [],
+            },
+            [{
+                courseId: 'test-course',
+                status: 'in-progress',
+                progress: 0,
+                completedLessons: 6,
+                totalLessons: 7,
+                quizPassed: false,
+            }],
+        );
+
+        expect(mappedCourse.completedLessonsCount).toBe(6);
+        expect(mappedCourse.totalLessonsCount).toBe(6);
+        expect(mappedCourse.completedQuizzesCount).toBe(0);
+        expect(mappedCourse.totalQuizzesCount).toBe(1);
+        expect(mappedCourse.progress).toBe(86);
     });
 });
