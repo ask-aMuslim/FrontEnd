@@ -10,7 +10,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
   imports: [CommonModule, RouterOutlet, SidebarComponent],
   templateUrl: './ask-and-contact.component.html',
   styleUrls: ['./ask-and-contact.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class AskAndContactComponent {
   private readonly router = inject(Router);
