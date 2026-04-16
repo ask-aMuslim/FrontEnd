@@ -1,7 +1,7 @@
 export const environment = {
     production: false,
     apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
-    askAssistantApiBaseUrl: 'https://assess-perception-watch-zip.trycloudflare.com',
+    askAssistantApiBaseUrl: 'https://motivated-futures-bridges-overhead.trycloudflare.com',
     authWithCredentials: false,
     youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
     BearerToken: '',
