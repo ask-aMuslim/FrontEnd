@@ -96,6 +96,10 @@
   margin-left: auto;
 }
 
+.user-menu {
+  position: relative;
+}
+
 .user-card {
   display: flex;
   align-items: center;
@@ -108,6 +112,53 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   max-width: 100%;
   min-width: 0;
+}
+
+.user-popup {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 100%;
+  min-width: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 0.65rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  padding: 0.35rem;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.user-popup__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #1d3122;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    background: rgba(21, 107, 64, 0.08);
+    color: var(--color-button-primary-hovering);
+  }
+}
+
+.user-popup__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .user-text {
@@ -349,6 +400,16 @@
 
   .mobile-user-card .user-card {
     width: 100%;
+  }
+
+  .mobile-user-card .user-menu {
+    width: 100%;
+  }
+
+  .mobile-user-card .user-popup {
+    left: 0;
+    right: 0;
+    min-width: 100%;
   }
 
   .mobile-user-card .auth-buttons {

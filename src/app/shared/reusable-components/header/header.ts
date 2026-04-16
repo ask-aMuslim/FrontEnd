@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -43,6 +43,7 @@ export class Header {
   ];
 
   protected isMobileMenuOpen = signal(false);
+  protected isUserMenuOpen = signal(false);
 
   protected toggleNav(): void {
     this.isMobileMenuOpen.update(v => !v);
@@ -50,10 +51,39 @@ export class Header {
 
   protected closeNav(): void {
     this.resetMobileState();
+    this.closeUserMenu();
   }
 
-  private resetMobileState() {
+  private resetMobileState(): void {
     this.isMobileMenuOpen.set(false);
+  }
+
+  protected toggleUserMenu(event: Event): void {
+    event.stopPropagation();
+    this.isUserMenuOpen.update(v => !v);
+  }
+
+  protected goToProfile(): void {
+    this.closeNav();
+    void this.router.navigate(['/account']);
+  }
+
+  protected logout(): void {
+    this.closeNav();
+    this.authService.logout().subscribe();
+  }
+
+  protected closeUserMenu(): void {
+    this.isUserMenuOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.user-menu')) {
+      return;
+    }
+    this.closeUserMenu();
   }
 
   protected trackByLabel(_index: number, item: NavLink): string {
