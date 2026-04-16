@@ -199,6 +199,36 @@
   }
 }
 
+:host(.academy-page-shell--congrats) {
+  .academy-page-shell.variant-quiz {
+    .academy-page-banner {
+      left: 50%;
+      width: 100vw;
+      transform: translateX(-50%);
+    }
+
+    .academy-page-body {
+      gap: 1.25rem;
+
+      @media (min-width: 500px) {
+        gap: 1.5rem;
+      }
+
+      @media (min-width: 768px) {
+        gap: 1.75rem;
+      }
+
+      @media (min-width: 1024px) {
+        gap: 2rem;
+      }
+
+      @media (min-width: 1280px) {
+        gap: 2rem;
+      }
+    }
+  }
+}
+
 .academy-page-shell.variant-course {
   .academy-page-banner {
     height: 256px;

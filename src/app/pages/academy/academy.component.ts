@@ -193,8 +193,8 @@ export class AcademyComponent implements OnInit, OnDestroy {
         const lessonsFromCourseFeed = courseLessons.length;
         const totalLessons = lessonsFromCourseFeed > 0
             ? lessonsFromCourseFeed
-            : (matchedCourse?.lessons ?? info.totalLessons);
-        const completedLessons = Math.min(info.completedLessons, totalLessons);
+            : Math.max(0, info.totalLessons, matchedCourse?.lessons ?? 0);
+        const completedLessons = Math.min(totalLessons, Math.max(0, info.completedLessons));
         const computedProgress = this.calculateCourseCompletionProgress(completedLessons, totalLessons);
         const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
         let mediaType: 'video' | 'audio' | null = null;
@@ -310,7 +310,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
             title: course.title,
             category: course.category,
             categoryLabel: course.categoryLabel,
-            lessons: totalLessons,
+            lessons: Math.max(0, course.lessons),
             duration: course.duration,
             progress: normalizedProgress,
             status,

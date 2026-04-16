@@ -3,7 +3,7 @@
   <ng-template #userCardTemplate>
     <div class="user-card" routerLink="/account" (click)="closeNav()">
       <img
-        [src]="authService.currentUser()?.imageUrl || '/images/profile-placeholder.svg'"
+        [src]="authService.getCurrentUserImageUrl()"
         (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
         alt="{{ authService.currentUser()?.name }}"
         class="user-avatar"

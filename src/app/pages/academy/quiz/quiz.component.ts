@@ -181,6 +181,19 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.effectiveCorrectAnswersCount() >= this.quizConfig.passingScore
     );
 
+    readonly hasSuccessfulDegree = computed(() => {
+        const hasAnsweredQuestions = this.answers().some(
+            (answer) => answer.selectedOptionId !== null || answer.isSkipped,
+        );
+
+        if (this.quizState() === 'results' && !hasAnsweredQuestions && this.restoredQuizResult?.completed) {
+            return this.restoredQuizResult.passed
+                || this.restoredQuizResult.score >= this.quizConfig.passingScore;
+        }
+
+        return this.hasPassed();
+    });
+
     readonly formattedTime = computed(() => {
         const minutes = Math.floor(this.timeRemaining() / 60);
         const seconds = this.timeRemaining() % 60;
@@ -226,6 +239,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
     private isFinishingQuiz = false;
+    private hasSyncedPassedQuizCompletion = false;
     private readonly isBrowser: boolean;
     private restoredQuizResult: StoredQuizResult | null = null;
 
@@ -279,6 +293,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     private resetQuizStateForRoute(): void {
         this.stopTimer();
         this.isFinishingQuiz = false;
+        this.hasSyncedPassedQuizCompletion = false;
         this.quizStartTime = 0;
         this.restoredQuizResult = null;
 
@@ -501,6 +516,9 @@ export class QuizComponent implements OnInit, OnDestroy {
         if (this.questions().length === 0) {
             return;
         }
+
+        this.markLastPublishedLessonCompletedForQuizStart();
+
         this.isFinishingQuiz = false;
         this.quizState.set('in-progress');
         this.currentQuestionIndex.set(0);
@@ -646,6 +664,10 @@ export class QuizComponent implements OnInit, OnDestroy {
             localStorage.setItem(storageKey, JSON.stringify(quizData));
         }
 
+        if (this.hasPassed()) {
+            this.syncPassedQuizCompletion();
+        }
+
         const attemptId = this.activeAttemptId();
         if (attemptId) {
             this.activeAttemptId.set(null);
@@ -668,6 +690,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.resetAnswersToDefault();
         this.activeAttemptId.set(null);
         this.isFinishingQuiz = false;
+        this.hasSyncedPassedQuizCompletion = false;
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
         this.showHint.set(false);
@@ -677,24 +700,23 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     onPassedNextActionClick(): void {
-        if (!this.hasPassed()) {
+        if (!this.hasSuccessfulDegree()) {
             return;
         }
 
+        this.syncPassedQuizCompletion();
+
         const nextQuizLessonId = this.nextQuizLessonId();
+
+        if (nextQuizLessonId) {
+            void this.router.navigate(['/academy/course', this.courseId, 'quiz', nextQuizLessonId]);
+            return;
+        }
+
         const currentQuizLessonId = this.resolveCurrentQuizLessonId();
 
-        this.markCurrentQuizLessonCompleted(() => {
-            if (nextQuizLessonId) {
-                void this.router.navigate(['/academy/course', this.courseId, 'quiz', nextQuizLessonId]);
-                return;
-            }
-
-            this.academyProgressService.markCourseQuizPassed(this.courseId);
-
-            void this.router.navigate(['/academy/course', this.courseId, 'congratulations'], {
-                queryParams: currentQuizLessonId ? { lessonId: currentQuizLessonId } : {},
-            });
+        void this.router.navigate(['/academy/course', this.courseId, 'congratulations'], {
+            queryParams: currentQuizLessonId ? { lessonId: currentQuizLessonId } : {},
         });
     }
 
@@ -821,18 +843,142 @@ export class QuizComponent implements OnInit, OnDestroy {
             return;
         }
 
+        this.updateLocalLessonCompletionState(currentQuizLessonId);
+
         this.academyProgressService
             .markLessonCompleted(currentQuizLessonId, this.courseId)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: () => {
-                    this.updateSidebarQuizCompletionState(currentQuizLessonId);
                     onCompletion();
                 },
                 error: () => {
                     onCompletion();
                 },
             });
+    }
+
+    private markLastPublishedLessonCompletedForQuizStart(): void {
+        const lastPublishedLessonId = this.resolveLastPublishedLessonIdBeforeCurrentQuiz();
+        if (!lastPublishedLessonId) {
+            return;
+        }
+
+        const isAlreadyCompleted = this.courseLessons().some((lesson) => {
+            return lesson.id === lastPublishedLessonId && lesson.progress.isCompleted;
+        }) || this.lessons().some((lesson) => {
+            return lesson.id === lastPublishedLessonId && lesson.isCompleted;
+        });
+
+        if (isAlreadyCompleted) {
+            return;
+        }
+
+        this.updateLocalLessonCompletionState(lastPublishedLessonId);
+        this.academyProgressService
+            .markLessonCompleted(lastPublishedLessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => void 0,
+                error: () => void 0,
+            });
+    }
+
+    private resolveLastPublishedLessonIdBeforeCurrentQuiz(): string | null {
+        const orderedCourseLessons = [...this.courseLessons()]
+            .slice()
+            .sort((left, right) => left.order - right.order);
+
+        const dynamicLessonId = this.resolveLastPublishedLessonIdFromOrderedList(
+            orderedCourseLessons.map((lesson) => ({ id: lesson.id, type: lesson.type })),
+        );
+        if (dynamicLessonId) {
+            return dynamicLessonId;
+        }
+
+        const orderedStaticLessons = this.getStaticLessonsForCourse()
+            .slice()
+            .sort((left, right) => left.order - right.order);
+
+        return this.resolveLastPublishedLessonIdFromOrderedList(
+            orderedStaticLessons.map((lesson) => ({ id: lesson.id, type: lesson.type })),
+        );
+    }
+
+    private resolveLastPublishedLessonIdFromOrderedList(
+        orderedLessons: ReadonlyArray<{ id: string; type: AcademyLesson['type'] }>,
+    ): string | null {
+        if (orderedLessons.length === 0) {
+            return null;
+        }
+
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+        const nonQuizLessons = orderedLessons.filter((lesson) => this.mapLessonType(lesson.type) !== 'quiz');
+
+        if (!currentQuizLessonId) {
+            return nonQuizLessons.at(-1)?.id ?? null;
+        }
+
+        const currentQuizIndex = orderedLessons.findIndex((lesson) => {
+            return lesson.id === currentQuizLessonId && this.mapLessonType(lesson.type) === 'quiz';
+        });
+
+        if (currentQuizIndex > 0) {
+            const lessonsBeforeQuiz = orderedLessons
+                .slice(0, currentQuizIndex)
+                .filter((lesson) => this.mapLessonType(lesson.type) !== 'quiz');
+            return lessonsBeforeQuiz.at(-1)?.id ?? null;
+        }
+
+        return nonQuizLessons.at(-1)?.id ?? null;
+    }
+
+    private updateLocalLessonCompletionState(lessonId: string): void {
+        this.courseLessons.update((currentLessons) => {
+            return currentLessons.map((lesson) => {
+                if (lesson.id !== lessonId) {
+                    return lesson;
+                }
+
+                return {
+                    ...lesson,
+                    progress: {
+                        ...lesson.progress,
+                        isCompleted: true,
+                        status: 'completed',
+                    },
+                };
+            });
+        });
+
+        this.lessons.update((currentLessons) => {
+            return currentLessons.map((lesson) => {
+                const resolvedLessonId = lesson.quizLessonId ?? lesson.id;
+                if (lesson.id !== lessonId && resolvedLessonId !== lessonId) {
+                    return lesson;
+                }
+
+                return {
+                    ...lesson,
+                    isCompleted: true,
+                };
+            });
+        });
+    }
+
+    private syncPassedQuizCompletion(): void {
+        if (this.hasSyncedPassedQuizCompletion || !this.hasSuccessfulDegree()) {
+            return;
+        }
+
+        this.hasSyncedPassedQuizCompletion = true;
+
+        const nextQuizLessonId = this.nextQuizLessonId();
+        this.markCurrentQuizLessonCompleted(() => {
+            if (!nextQuizLessonId) {
+                this.academyProgressService.markCourseQuizPassed(this.courseId);
+            }
+        });
     }
 
     private updateSidebarQuizCompletionState(completedQuizLessonId: string): void {
@@ -887,8 +1033,18 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     private getOrderedQuizLessonIds(): string[] {
-        return this.courseLessons()
+        const orderedQuizLessonIds = this.courseLessons()
             .filter((lesson) => this.mapLessonType(lesson.type) === 'quiz')
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => lesson.id)
+            .filter((lessonId) => lessonId.trim().length > 0);
+
+        if (orderedQuizLessonIds.length > 0) {
+            return orderedQuizLessonIds;
+        }
+
+        return this.getStaticLessonsForCourse()
+            .filter((lesson) => lesson.type === 'quiz')
             .sort((a, b) => a.order - b.order)
             .map((lesson) => lesson.id)
             .filter((lessonId) => lessonId.trim().length > 0);
@@ -1048,6 +1204,10 @@ export class QuizComponent implements OnInit, OnDestroy {
 
         this.quizCompletionTime.set(storedResult.completionTime);
         this.quizState.set('results');
+
+        if (this.hasSuccessfulDegree()) {
+            this.syncPassedQuizCompletion();
+        }
     }
 
     private parseStoredQuizResult(raw: string): StoredQuizResult | null {
@@ -1162,6 +1322,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.resetAnswersToDefault();
         this.activeAttemptId.set(null);
         this.isFinishingQuiz = false;
+        this.hasSyncedPassedQuizCompletion = false;
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
         this.showHint.set(false);

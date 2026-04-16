@@ -189,6 +189,10 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     { number: '5', label: 'Pilgrimage', name: 'Hajj' },
   ];
 
+  protected readonly pillarQuestionRoute = '/question-and-answer/topics/question';
+  protected readonly imanPillarTag = '6 Pillars of Faith';
+  protected readonly islamPillarTag = '5 Pillars of Islam';
+
   protected readonly serveAudienceCards: readonly ServeAudienceCard[] = [
     { title: 'I’m a Christian', topicTag: 'Christianity' },
     { title: 'I’m a Jew', topicTag: 'Judaism' },
@@ -203,6 +207,13 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 
   protected trackByIndex(index: number): number {
     return index;
+  }
+
+  protected getQuestionQueryParams(questionId: string, category: string): { id: string; categories: string } {
+    return {
+      id: questionId,
+      categories: JSON.stringify([category]),
+    };
   }
 
   private cleanupFns: (() => void)[] = [];

@@ -1,8 +1,8 @@
 // CSS custom-property state machine – changes per [data-state]
 .hero-search-input {
-  --_border-color: var(--color-border-normal-medium);   // #adb5bd default
-  --_bg:           var(--color-background-base);        // #ffffff
-  --_ring:         0 0 0 0 transparent;
+  --_border-color: var(--color-border-normal-medium); // #adb5bd default
+  --_bg: var(--color-background-base); // #ffffff
+  --_ring: 0 0 0 0 transparent;
 
   position: relative;
   display: flex;
@@ -13,29 +13,28 @@
   border: 1px solid var(--_border-color);
   background: var(--_bg);
   // Design shadow: md shadow from Figma system
-  box-shadow:
-    var(--shadows-shadow-md),
-    var(--_ring);
+  box-shadow: var(--shadows-shadow-md), var(--_ring);
   padding: 0 1.25rem;
   transition:
     border-color 0.2s ease,
-    box-shadow  0.2s ease;
+    box-shadow 0.2s ease;
+
 
   // ── Hover ─────────────────────────────────────────────────
   &[data-state="hovering"] {
-    --_border-color: var(--color-border-brand-medium);  // #8fb39b
+    --_border-color: var(--color-border-brand-medium); // #8fb39b
   }
 
   // ── Writing / focused ─────────────────────────────────────
   &[data-state="writing"] {
-    --_border-color: var(--color-border-brand-high);    // #156b40
-    --_ring:         0 0 0 3px var(--color-button-primary-soft-10);
+    --_border-color: var(--color-border-brand-high); // #156b40
+    --_ring: 0 0 0 3px var(--color-button-primary-soft-10);
   }
 
   // ── Finished (blurred with content) ───────────────────────
   &[data-state="finished"] {
-    --_border-color: var(--color-border-normal-low);    // #e9ecef
-    --_bg:           var(--color-background-base-surface); // #f8f9fa
+    --_border-color: var(--color-border-normal-low); // #e9ecef
+    --_bg: var(--color-background-base-surface); // #f8f9fa
   }
 
   &.is-disabled {
@@ -53,17 +52,20 @@
   margin-right: 0.75rem;
   // Tint the SVG/img to match placeholder color (#adb5bd)
   // filter generated via: https://codepen.io/sosuke/pen/Pjoqqp for #adb5bd
-  filter: invert(74%) sepia(7%) saturate(538%) hue-rotate(175deg) brightness(95%) contrast(86%);
+  filter: invert(74%) sepia(7%) saturate(538%) hue-rotate(175deg)
+    brightness(95%) contrast(86%);
   transition: filter 0.2s ease;
 
   .hero-search-input[data-state="writing"] & {
     // Shift icon to brand green (#156b40) when focused
-    filter: invert(26%) sepia(49%) saturate(730%) hue-rotate(104deg) brightness(89%) contrast(97%);
+    filter: invert(26%) sepia(49%) saturate(730%) hue-rotate(104deg)
+      brightness(89%) contrast(97%);
   }
 
   .hero-search-input[data-state="finished"] & {
     // Shift icon to body text (#343a40) when content is present
-    filter: invert(22%) sepia(7%) saturate(683%) hue-rotate(172deg) brightness(94%) contrast(91%);
+    filter: invert(22%) sepia(7%) saturate(683%) hue-rotate(172deg)
+      brightness(94%) contrast(91%);
   }
 }
 

@@ -92,6 +92,11 @@
   text-transform: none;
 }
 
+app-hero-search-input {
+  margin-left: 10px !important;
+  margin-right: 10px !important;
+}
+
 .hero-search {
   width: 100%;
   max-width: 520px;
@@ -157,6 +162,7 @@
   width: 100%;
   max-width: 479px;
   min-height: 36px;
+  padding: 0 0.75rem;
   // Pushes caption to bottom of flex column, padding-bottom on .hero-content
   // creates the breathing room above the next section's curved border.
   margin: auto auto 0;
@@ -205,6 +211,7 @@
 
   .hero-caption-line {
     flex-wrap: wrap;
+    margin-top: 3rem;
   }
 }
 
@@ -1490,6 +1497,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
 
   &:hover {

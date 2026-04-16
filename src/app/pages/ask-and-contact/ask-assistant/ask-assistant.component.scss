@@ -34,6 +34,10 @@
   min-width: 0;
 }
 
+.ask-assistant-page__history-drawer-eyebrow {
+  display: none;
+}
+
 .ask-assistant-page__eyebrow,
 .ask-assistant-page__thread-eyebrow,
 .ask-assistant-page__history-drawer-eyebrow {
@@ -60,6 +64,7 @@
 }
 
 .ask-assistant-page__history-toggle {
+  --ask-assistant-history-toggle-icon-color: currentColor;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -77,6 +82,7 @@
 }
 
 .ask-assistant-page__history-toggle:hover {
+  --ask-assistant-history-toggle-icon-color: var(--colors-system-sys-green-100);
   background: transparent;
   box-shadow: none;
   color: var(--color-button-primary-hovering);
@@ -89,7 +95,18 @@
 }
 
 .ask-assistant-page__history-toggle-icon {
+  display: inline-block;
   flex-shrink: 0;
+  background-color: var(--ask-assistant-history-toggle-icon-color);
+  -webkit-mask-image: url("/icons/icons-24/arrow-right.svg");
+  mask-image: url("/icons/icons-24/arrow-right.svg");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  transition: background-color 0.2s ease;
 }
 
 .ask-assistant-page__history-new-chat-icon {
@@ -160,9 +177,6 @@
 .ask-assistant-page__messages-panel {
   border-radius: 1rem;
   padding: 1rem;
-  border: 1px solid var(--color-border-default);
-  background: var(--color-card-surface-primary);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .ask-assistant-page__messages-list {
@@ -256,11 +270,21 @@
 }
 
 .ask-assistant-page__form {
+  --ask-assistant-form-margin-top: 2rem;
   width: 100%;
+  margin-top: var(--ask-assistant-form-margin-top);
 }
 
-.ask-assistant-page__form--inline {
-  margin-top: 0.75rem;
+@media (min-width: 768px) {
+  .ask-assistant-page__form {
+    --ask-assistant-form-margin-top: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ask-assistant-page__form {
+    --ask-assistant-form-margin-top: 5rem;
+  }
 }
 
 .ask-assistant-page__form--sticky {

@@ -143,6 +143,9 @@
   height: 44px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+  background: var(--color-card-surface-secondary);
 }
 
 .mobile-toggle {

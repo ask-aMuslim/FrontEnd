@@ -10,16 +10,6 @@
         <div class="profile-avatar-wrapper">
           <img
             [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
-            role="button"
-            tabindex="0"
-            [attr.aria-label]="
-              isUploadingAvatar
-                ? 'Uploading profile image'
-                : 'Change profile image'
-            "
-            [attr.aria-busy]="isUploadingAvatar"
-            (keydown.enter)="openAvatarFilePicker()"
-            (keydown.space)="openAvatarFilePicker()"
             (error)="
               $event.target.src = '/images/profile-placeholder.svg';
               $event.target.onerror = null
@@ -29,12 +19,14 @@
           />
           <button
             type="button"
-            class="profile-avatar-edit-btn"
+            class="profile-avatar-actions"
             [disabled]="isUploadingAvatar"
-            aria-label="Change profile image"
-            (click)="openAvatarFilePicker()"
+            [attr.aria-expanded]="isAvatarOptionsOpen"
+            aria-haspopup="dialog"
+            aria-label="Open profile picture options"
+            (click)="openAvatarOptionsModal()"
           >
-            <div [inlineSVG]="'/icons/icons-24/user-edit.svg'"></div>
+            <div [inlineSVG]="'/icons/icons-24/more.svg'"></div>
           </button>
         </div>
         <input
@@ -131,6 +123,148 @@
   </div>
 </section>
 
+@if (isAvatarOptionsOpen) {
+  <div class="profile-avatar-modal" (click)="closeAvatarOptionsModal()">
+    <div
+      class="profile-avatar-modal__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-avatar-options-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="profile-avatar-modal__close-btn"
+        aria-label="Close profile picture options"
+        (click)="closeAvatarOptionsModal()"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <div class="profile-avatar-modal__header">
+        <div class="profile-avatar-modal__preview-shell">
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            alt="Current profile picture"
+            class="profile-avatar-modal__preview-image"
+          />
+        </div>
+        <div class="profile-avatar-modal__title-group">
+          <h2 id="profile-avatar-options-title" class="profile-avatar-modal__title">
+            Profile picture options
+          </h2>
+          <p class="profile-avatar-modal__text">
+            Choose how you'd like to manage your profile picture.
+          </p>
+        </div>
+      </div>
+
+      <div class="profile-avatar-modal__actions">
+        <button
+          type="button"
+          class="profile-avatar-modal__action profile-avatar-modal__action--view"
+          (click)="viewAvatarPicture()"
+        >
+          <span class="profile-avatar-modal__action-icon">
+            <div [inlineSVG]="'/icons/icons-24/eye.svg'"></div>
+          </span>
+          <span class="profile-avatar-modal__action-text">
+            <span class="profile-avatar-modal__action-title">View picture</span>
+            <span class="profile-avatar-modal__action-description">Open the full-size image.</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="profile-avatar-modal__action profile-avatar-modal__action--update"
+          [disabled]="isUploadingAvatar"
+          (click)="startAvatarUpdate()"
+        >
+          <span class="profile-avatar-modal__action-icon">
+            <div [inlineSVG]="'/icons/icons-24/user-edit.svg'"></div>
+          </span>
+          <span class="profile-avatar-modal__action-text">
+            <span class="profile-avatar-modal__action-title">Update picture</span>
+            <span class="profile-avatar-modal__action-description">Upload a new profile image.</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="profile-avatar-modal__action profile-avatar-modal__action--delete"
+          [disabled]="isUploadingAvatar || !userProfile.imageUrl"
+          (click)="deleteAvatarPicture()"
+        >
+          <span class="profile-avatar-modal__action-icon">
+            <div [inlineSVG]="'/icons/icons-24/minus.svg'"></div>
+          </span>
+          <span class="profile-avatar-modal__action-text">
+            <span class="profile-avatar-modal__action-title">Delete picture</span>
+            <span class="profile-avatar-modal__action-description">Remove the current profile image.</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (isAvatarPreviewOpen) {
+  <div class="profile-avatar-modal" (click)="closeAvatarPreviewModal()">
+    <div
+      class="profile-avatar-modal__dialog profile-avatar-modal__dialog--preview"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-avatar-preview-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="profile-avatar-modal__close-btn"
+        aria-label="Close profile picture preview"
+        (click)="closeAvatarPreviewModal()"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <div class="profile-avatar-modal__preview-content">
+        <h2 id="profile-avatar-preview-title" class="profile-avatar-modal__title profile-avatar-modal__title--center">
+          Profile picture
+        </h2>
+        <div class="profile-avatar-modal__preview-shell profile-avatar-modal__preview-shell--large">
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            alt="Profile picture preview"
+            class="profile-avatar-modal__preview-image profile-avatar-modal__preview-image--large"
+          />
+        </div>
+        <p class="profile-avatar-modal__text profile-avatar-modal__text--center">
+          {{
+            userProfile.imageUrl
+              ? 'This is your current profile image.'
+              : 'You are using the default placeholder image right now.'
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+}
+
 <section class="section-container profile-content">
   <div class="section-block">
     <div class="profile-content__layout">
@@ -183,6 +317,7 @@
                 (click)="selectTab(i)"
                 class="profile-tab"
                 [class.profile-tab--active]="i === activeTabIndex"
+                [class.profile-tab--hidden]="tab === 'My Inquiries'"
               >
                 {{ tab }}
               </button>
@@ -201,14 +336,19 @@
 
           <!-- My Inquiries Tab -->
           @if (activeTabIndex === 2) {
-            <app-my-inquiries></app-my-inquiries>
+            <div class="profile-tab-panel profile-tab-panel--hidden">
+              <app-my-inquiries></app-my-inquiries>
+            </div>
           }
         </div>
 
         <!-- Right Side -->
         <div class="profile-sidebar">
-          @if (upcomingEvent) {
-            <div class="upcoming-event-widget">
+          <div
+            class="upcoming-event-widget"
+            [class.upcoming-event-widget--hidden]="!upcomingEvent"
+          >
+            @if (upcomingEvent) {
               <h2 class="upcoming-event-widget__title">Upcoming Event</h2>
               <div class="upcoming-event-card">
                 <div class="upcoming-event-card__meta">
@@ -264,7 +404,7 @@
                   >
                     View Details
                   </button>
-                  <div class="upcoming-event-card__status">
+                  <div class="upcoming-event-card__status upcoming-event-card__status--hidden">
                     <div
                       [inlineSVG]="'/icons/icons-24/done.svg'"
                       class="upcoming-event-card__status-icon"
@@ -279,10 +419,10 @@
                   </div>
                 </div>
               </div>
-            </div>
-          }
+            }
+          </div>
 
-          <div class="mosque-widget">
+          <div class="mosque-widget mosque-widget--hidden">
             <h2 class="mosque-widget__title">Looking for a near Mosque?</h2>
             <div class="mosque-widget__selects">
               <button class="mosque-widget__select">

@@ -418,48 +418,56 @@ export class CourseComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.hasCourseEnrollment) {
-            this.isEnrolling = true;
-            this.academyProgressService
-                .enrollCurrentStudentInCourse(this.course.id)
-                .pipe(takeUntil(this.destroy$))
-                .subscribe({
-                    next: (isEnrolled) => {
-                        this.isEnrolling = false;
-
-                        if (!this.course || !isEnrolled) {
-                            this.cdr.detectChanges();
-                            return;
-                        }
-
-                        this.course = {
-                            ...this.course,
-                            isEnrolled: true,
-                            isEnrollmentCompleted: this.course.isEnrollmentCompleted,
-                        };
-                        this.navigateToFirstAvailableLesson();
-                    },
-                    error: () => {
-                        this.isEnrolling = false;
-                        this.cdr.detectChanges();
-                    },
-                });
+        if (this.hasCourseEnrollment) {
+            this.navigateToPrimaryActionLesson(true);
             return;
         }
 
-        this.navigateToFirstAvailableLesson();
+        this.navigateToPrimaryActionLesson(false);
+        this.enrollCurrentStudentInBackground(this.course.id);
     }
 
-    private navigateToFirstAvailableLesson(): void {
+    private navigateToPrimaryActionLesson(preferNextUncompleted: boolean): void {
         if (!this.course) {
             return;
         }
 
-        const firstLesson = this.course.lessonsList.find((lesson) => !lesson.isLocked);
-        if (firstLesson) {
-            this.router.navigate(['lesson', firstLesson.id], { relativeTo: this.route });
-            this.cdr.detectChanges();
+        const unlockedNonQuizLessons = this.course.lessonsList.filter(
+            (lesson) => !lesson.isLocked && lesson.type !== 'quiz',
+        );
+
+        if (unlockedNonQuizLessons.length === 0) {
+            return;
         }
+
+        const nextUncompletedLesson = unlockedNonQuizLessons.find((lesson) => !lesson.isCompleted);
+        const targetLesson = preferNextUncompleted
+            ? (nextUncompletedLesson ?? unlockedNonQuizLessons[0])
+            : unlockedNonQuizLessons[0];
+
+        this.router.navigate(['lesson', targetLesson.id], { relativeTo: this.route });
+        this.cdr.detectChanges();
+    }
+
+    private enrollCurrentStudentInBackground(courseId: string): void {
+        this.academyProgressService
+            .enrollCurrentStudentInCourse(courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (isEnrolled) => {
+                    if (!isEnrolled || this.course?.id !== courseId) {
+                        return;
+                    }
+
+                    this.course = {
+                        ...this.course,
+                        isEnrolled: true,
+                        isEnrollmentCompleted: this.course.isEnrollmentCompleted,
+                    };
+                    this.cdr.detectChanges();
+                },
+                error: () => void 0,
+            });
     }
 
     /**

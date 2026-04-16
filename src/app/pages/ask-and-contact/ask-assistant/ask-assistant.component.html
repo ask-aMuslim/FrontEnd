@@ -21,11 +21,10 @@
         aria-controls="ask-assistant-history-drawer"
       >
         <span class="ask-assistant-page__history-toggle-label">Chats List</span>
-        <img
-          [src]="historyToggleIcon"
-          alt=""
+        <span
           class="ask-assistant-page__history-toggle-icon h-5 w-5 shrink-0"
-        />
+          aria-hidden="true"
+        ></span>
       </button>
     </div>
 
@@ -63,13 +62,9 @@
       } @else {
         <section class="ask-assistant-page__thread">
           <div class="ask-assistant-page__thread-header">
-            <p class="ask-assistant-page__thread-eyebrow">Current thread</p>
+            <p class="ask-assistant-page__thread-eyebrow">Current chat</p>
             <h2 class="ask-assistant-page__thread-title">
-              {{
-                activeThreadId
-                  ? "Thread " + (activeThreadId | slice: 0 : 8)
-                  : "New conversation"
-              }}
+              {{ activeChatTitle }}
             </h2>
             <p
               class="ask-assistant-page__thread-summary text-sm text-(--color-text-caption)"
@@ -77,7 +72,7 @@
               {{ messages.length }} message{{
                 messages.length === 1 ? "" : "s"
               }}
-              in this conversation.
+              in this chat.
             </p>
           </div>
 
@@ -169,7 +164,7 @@
   >
     <div class="ask-assistant-page__history-drawer-header">
       <div>
-        <p class="ask-assistant-page__history-drawer-eyebrow">Thread history</p>
+        <p class="ask-assistant-page__history-drawer-eyebrow">Chat history</p>
         <h2
           id="ask-assistant-history-title"
           class="ask-assistant-page__history-drawer-title"
@@ -217,7 +212,7 @@
         <p
           class="ask-assistant-page__history-loading text-sm text-(--color-text-placeholder)"
         >
-          Loading conversations...
+          Loading chats...
         </p>
       } @else if (conversationErrorMessage) {
         <div class="ask-assistant-page__history-empty-state">
@@ -275,7 +270,7 @@
                         <span
                           class="ask-assistant-page__history-item-thread text-xs text-(--color-text-placeholder)"
                         >
-                          Thread ID {{ conversation.threadId | slice: 0 : 8 }}…
+                          Chat ID {{ conversation.threadId | slice: 0 : 8 }}…
                         </span>
                       </div>
 
@@ -313,7 +308,7 @@
           <p
             class="ask-assistant-page__history-empty-text text-sm text-(--color-text-caption)"
           >
-            No previous conversations yet.
+            No previous chats yet.
           </p>
         </div>
       }
