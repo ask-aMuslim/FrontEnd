@@ -21,7 +21,9 @@
         focusable="false"
         [attr.width]="connectorCanvasWidth()"
         [attr.height]="connectorCanvasHeight()"
-        [attr.viewBox]="'0 0 ' + connectorCanvasWidth() + ' ' + connectorCanvasHeight()"
+        [attr.viewBox]="
+          '0 0 ' + connectorCanvasWidth() + ' ' + connectorCanvasHeight()
+        "
       >
         @for (connectorPath of connectorPaths(); track connectorPath.id) {
           <path
@@ -31,81 +33,85 @@
         }
       </svg>
 
-      @for (layer of layers(); track $index) {
-        <div class="course-tree__layer">
-          @for (node of layer; track node.id) {
-            <button
-              type="button"
-              class="course-card"
-              [attr.data-course-node-id]="node.id"
-              [class.course-card--available]="node.status === 'available'"
-              [class.course-card--in-progress]="node.status === 'in-progress'"
-              [class.course-card--completed]="node.status === 'completed'"
-              [class.course-card--locked]="node.status === 'locked'"
-              [attr.aria-disabled]="node.status === 'locked'"
-              [attr.tabindex]="node.status === 'locked' ? -1 : 0"
-              (click)="onNodeClick(node)"
-            >
-              @if (node.status === "locked") {
-                <span class="course-card__locked-badge" aria-hidden="true">
-                  <img
-                    class="course-card__locked-icon"
-                    src="/academy/locked.svg"
-                    alt=""
-                  />
-                </span>
-              }
+      @for (groupLayers of groupedLayers(); track $index) {
+        <div class="course-tree__group">
+          @for (layer of groupLayers; track $index) {
+            <div class="course-tree__layer">
+              @for (node of layer; track node.id) {
+                <button
+                  type="button"
+                  class="course-card"
+                  [attr.data-course-node-id]="node.id"
+                  [class.course-card--available]="node.status === 'available'"
+                  [class.course-card--in-progress]="node.status === 'in-progress'"
+                  [class.course-card--completed]="node.status === 'completed'"
+                  [class.course-card--locked]="node.status === 'locked'"
+                  [attr.aria-disabled]="node.status === 'locked'"
+                  [attr.tabindex]="node.status === 'locked' ? -1 : 0"
+                  (click)="onNodeClick(node)"
+                >
+                  @if (node.status === "locked") {
+                    <span class="course-card__locked-badge" aria-hidden="true">
+                      <img
+                        class="course-card__locked-icon"
+                        src="/academy/locked.svg"
+                        alt=""
+                      />
+                    </span>
+                  }
 
-              <h4 class="course-card__title">{{ node.title }}</h4>
+                  <h4 class="course-card__title">{{ node.title }}</h4>
 
-              @if (node.description) {
-                <p class="course-card__description">{{ node.description }}</p>
-              }
+                  @if (node.description) {
+                    <p class="course-card__description">{{ node.description }}</p>
+                  }
 
-              <div class="course-card__meta">
-                @if (node.categoryLabel) {
-                  <span class="course-card__meta-item">{{
-                    node.categoryLabel
-                  }}</span>
-                }
-                @if (node.lessons !== undefined) {
-                  <span class="course-card__meta-item">
-                    <img
-                      class="course-card__meta-icon"
-                      src="/icons/icons-24/lesson.svg"
-                      alt=""
-                      aria-hidden="true"
-                    />
-                    {{ node.lessons }} lessons
-                  </span>
-                }
-                @if (node.duration) {
-                  <span class="course-card__meta-item">
-                    <img
-                      class="course-card__meta-icon"
-                      src="/icons/icons-24/time.svg"
-                      alt=""
-                      aria-hidden="true"
-                    />
-                    {{ node.duration }}
-                  </span>
-                }
-              </div>
-
-              @if (node.status !== "locked") {
-                <div class="course-card__progress">
-                  <div class="course-card__progress-track">
-                    <div
-                      class="course-card__progress-fill"
-                      [style.width.%]="getProgressPercentage(node)"
-                    ></div>
+                  <div class="course-card__meta">
+                    @if (node.categoryLabel) {
+                      <span class="course-card__meta-item">{{
+                        node.categoryLabel
+                      }}</span>
+                    }
+                    @if (node.lessons !== undefined) {
+                      <span class="course-card__meta-item">
+                        <img
+                          class="course-card__meta-icon"
+                          src="/icons/icons-24/lesson.svg"
+                          alt=""
+                          aria-hidden="true"
+                        />
+                        {{ node.lessons }} lessons
+                      </span>
+                    }
+                    @if (node.duration) {
+                      <span class="course-card__meta-item">
+                        <img
+                          class="course-card__meta-icon"
+                          src="/icons/icons-24/time.svg"
+                          alt=""
+                          aria-hidden="true"
+                        />
+                        {{ node.duration }}
+                      </span>
+                    }
                   </div>
-                  <span class="course-card__progress-text"
-                    >{{ getProgressPercentage(node) }}%</span
-                  >
-                </div>
+
+                  @if (node.status !== "locked") {
+                    <div class="course-card__progress">
+                      <div class="course-card__progress-track">
+                        <div
+                          class="course-card__progress-fill"
+                          [style.width.%]="getProgressPercentage(node)"
+                        ></div>
+                      </div>
+                      <span class="course-card__progress-text"
+                        >{{ getProgressPercentage(node) }}%</span
+                      >
+                    </div>
+                  }
+                </button>
               }
-            </button>
+            </div>
           }
         </div>
       }

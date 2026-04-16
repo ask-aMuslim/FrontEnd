@@ -25,7 +25,7 @@ import {
 } from '../../api/facades/progress.facade';
 import { LessonProgressFacade } from '../../api/facades/lesson-progress.facade';
 import { LessonFacade, LessonReadDto } from '../../api/facades/lesson.facade';
-import { CourseFacade, CourseReadDto } from '../../api/facades/course.facade';
+import { CourseFacade, CourseReadDto, RoadmapCourseDto } from '../../api/facades/course.facade';
 import { LevelFacade, LevelReadDto } from '../../api/facades/level.facade';
 import { StudentFacade, StudentProfile } from '../../api/facades/student.facade';
 import { EnrollmentFacade, EnrollmentReadDto } from '../../api/facades/enrollment.facade';
@@ -551,14 +551,24 @@ export class AcademyProgressService {
                     );
                 }
                 const courseRequests = stages.map(stage =>
-                    this.courseFacade.getCoursesByLevel(stage.id).pipe(
-                        map(courses => courses
-                            .filter((course) => {
-                                const isPublished = course['isPublished'];
-                                return isPublished !== false;
-                            })
-                            .map((course) => this.mapCourseDtoToAcademyCourse(course, stage.id, stage.number))
+                    forkJoin({
+                        coursesByLevel: this.courseFacade.getCoursesByLevel(stage.id).pipe(
+                            catchError(() => of([] as CourseReadDto[])),
                         ),
+                        roadmapCourses: this.courseFacade.getRoadmap(stage.id).pipe(
+                            catchError(() => of([] as RoadmapCourseDto[])),
+                        ),
+                    }).pipe(
+                        map(({ coursesByLevel, roadmapCourses }) => {
+                            const mappedCourses = coursesByLevel
+                                .filter((course) => {
+                                    const isPublished = course['isPublished'];
+                                    return isPublished !== false;
+                                })
+                                .map((course) => this.mapCourseDtoToAcademyCourse(course, stage.id, stage.number));
+
+                            return this.mergeRoadmapPrerequisites(mappedCourses, roadmapCourses);
+                        }),
                         catchError(() => of([] as AcademyCourse[]))
                     )
                 );
@@ -580,14 +590,24 @@ export class AcademyProgressService {
      */
     getAcademyCoursesByLevel(levelId: string): Observable<AcademyCourse[]> {
         const stageNumber = this.academyStagesCache.find(s => s.id === levelId)?.number ?? 1;
-        return this.courseFacade.getCoursesByLevel(levelId).pipe(
-            map(courses => courses
-                .filter((course) => {
-                    const isPublished = course['isPublished'];
-                    return isPublished !== false;
-                })
-                .map(c => this.mapCourseDtoToAcademyCourse(c, levelId, stageNumber))
+        return forkJoin({
+            coursesByLevel: this.courseFacade.getCoursesByLevel(levelId).pipe(
+                catchError(() => of([] as CourseReadDto[])),
             ),
+            roadmapCourses: this.courseFacade.getRoadmap(levelId).pipe(
+                catchError(() => of([] as RoadmapCourseDto[])),
+            ),
+        }).pipe(
+            map(({ coursesByLevel, roadmapCourses }) => {
+                const mappedCourses = coursesByLevel
+                    .filter((course) => {
+                        const isPublished = course['isPublished'];
+                        return isPublished !== false;
+                    })
+                    .map((course) => this.mapCourseDtoToAcademyCourse(course, levelId, stageNumber));
+
+                return this.mergeRoadmapPrerequisites(mappedCourses, roadmapCourses);
+            }),
             switchMap((courses) => this.hydrateCoursesWithPublishedLessons(courses)),
             catchError(() => of([]))
         );
@@ -967,17 +987,24 @@ export class AcademyProgressService {
                 ? Math.max(0, apiProgress.totalLessonsCompleted)
                 : 0;
             const isApiCompleted = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
+            const requiresQuizPass = this.courseHasAnyQuiz(course.id);
             const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
             const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
-            const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size + completedStandaloneQuizCount;
-            const completedLessonsCount = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
+            const completedLessonsBeforeStandaloneQuiz = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            const completedLessonsCount = totalCourseItems > 0
+                ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+                : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
             const completionRateFromLessons = totalCourseItems > 0
                 ? this.normalizeProgressPercentage((completedLessonsCount / totalCourseItems) * 100)
                 : 0;
-            const effectiveProgress = isApiCompleted
+            let progressBeforeCompletion = isApiCompleted
                 ? 100
                 : Math.max(normalizedProgress, completionRateFromLessons);
-            const requiresQuizPass = this.courseHasAnyQuiz(course.id);
+
+            if (!isApiCompleted && requiresQuizPass && !quizPassed) {
+                progressBeforeCompletion = completionRateFromLessons;
+            }
             const hasTrackableCourseItems = totalCourseItems > 0;
             const completedByRule = hasTrackableCourseItems
                 && completedLessonsCount >= totalCourseItems
@@ -986,14 +1013,14 @@ export class AcademyProgressService {
 
             if (isCourseCompleted) {
                 status = 'completed';
-            } else if (effectiveProgress > 0 || isEnrolled) {
+            } else if (progressBeforeCompletion > 0 || isEnrolled) {
                 status = 'in-progress';
             }
 
             const progressEntry: CourseProgress = {
                 courseId: course.id,
                 status,
-                progress: isCourseCompleted ? 100 : effectiveProgress,
+                progress: isCourseCompleted ? 100 : progressBeforeCompletion,
                 completedLessons: isCourseCompleted
                     ? Math.max(totalCourseItems, completedLessonsCount)
                     : Math.min(totalCourseItems, completedLessonsCount),
@@ -1116,7 +1143,8 @@ export class AcademyProgressService {
             return null;
         }
 
-        const effectiveTotalLessons = Math.max(sortedLessons.length, Math.max(0, course.lessons));
+        const lessonCountFromFeed = Math.max(sortedLessons.length, Math.max(0, course.lessons));
+        const effectiveTotalLessons = this.resolveCourseItemCount(course.id, lessonCountFromFeed);
         const completedFromProgress = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
         const completedFromLocal = this.resolveLocalCompletedLessonCount(
             course.id,
@@ -1126,7 +1154,10 @@ export class AcademyProgressService {
         const completedStandaloneQuizCount = this.isCourseQuizPassedLocally(course.id)
             ? this.getStandaloneQuizCount(course.id)
             : 0;
-        const completedLessons = Math.max(completedFromProgress, completedFromLocal + completedStandaloneQuizCount);
+        const completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        const completedLessons = effectiveTotalLessons > 0
+            ? Math.min(effectiveTotalLessons, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+            : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
         const preferredLesson = preferredLessonId
             ? sortedLessons.find((lesson) => lesson.id === preferredLessonId)
             : undefined;
@@ -1158,13 +1189,16 @@ export class AcademyProgressService {
         progressRecord: ProgressReadDto | undefined,
         visitSnapshot: RecentLessonVisitSnapshot,
     ): RecentLessonInfo {
-        const effectiveTotalLessons = Math.max(0, course.lessons);
+        const effectiveTotalLessons = this.resolveCourseItemCount(course.id, Math.max(0, course.lessons));
         const completedFromProgress = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
         const completedFromLocal = this.resolveLocalCompletedLessonCount(course.id, [], effectiveTotalLessons);
         const completedStandaloneQuizCount = this.isCourseQuizPassedLocally(course.id)
             ? this.getStandaloneQuizCount(course.id)
             : 0;
-        const completedLessons = Math.max(completedFromProgress, completedFromLocal + completedStandaloneQuizCount);
+        const completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        const completedLessons = effectiveTotalLessons > 0
+            ? Math.min(effectiveTotalLessons, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+            : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
         const courseProgress = this.calculateCourseCompletionProgress(completedLessons, effectiveTotalLessons);
 
         const totalSeconds =
@@ -1573,6 +1607,7 @@ export class AcademyProgressService {
         const title = course.title ?? 'Untitled course';
         const lessons = this.resolveLessonCount(course);
         const category = this.mapCourseCategory(course.category);
+        const prerequisites = this.extractPrerequisiteIds(course).filter((prerequisiteId) => prerequisiteId !== id);
 
         return {
             id,
@@ -1587,11 +1622,107 @@ export class AcademyProgressService {
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
             order: course.order,
-            prerequisites: [
-                ...(course.prerequisites?.map(p => p.id ?? '').filter(id => id !== '') ?? []),
-                ...(course.prerequisiteIds ?? [])
-            ]
+            prerequisites,
         };
+    }
+
+    private mergeRoadmapPrerequisites(
+        courses: AcademyCourse[],
+        roadmapCourses: RoadmapCourseDto[],
+    ): AcademyCourse[] {
+        if (courses.length === 0 || roadmapCourses.length === 0) {
+            return courses;
+        }
+
+        const roadmapPrerequisitesByCourseId = new Map<string, string[]>();
+        for (const roadmapCourse of roadmapCourses) {
+            const roadmapCourseId = typeof roadmapCourse.id === 'string'
+                ? roadmapCourse.id.trim()
+                : '';
+
+            if (!roadmapCourseId) {
+                continue;
+            }
+
+            roadmapPrerequisitesByCourseId.set(
+                roadmapCourseId,
+                this.extractPrerequisiteIds(roadmapCourse),
+            );
+        }
+
+        return courses.map((course) => {
+            const roadmapPrerequisites = roadmapPrerequisitesByCourseId.get(course.id) ?? [];
+            if (roadmapPrerequisites.length === 0) {
+                return course;
+            }
+
+            const mergedPrerequisites = Array.from(
+                new Set([
+                    ...(course.prerequisites ?? []),
+                    ...roadmapPrerequisites,
+                ]),
+            ).filter((prerequisiteId) => prerequisiteId !== course.id);
+
+            return {
+                ...course,
+                prerequisites: mergedPrerequisites,
+            };
+        });
+    }
+
+    private extractPrerequisiteIds(source: Record<string, unknown>): string[] {
+        const prerequisiteIdSet = new Set<string>();
+
+        const pushId = (candidate: unknown): void => {
+            if (typeof candidate !== 'string') {
+                return;
+            }
+
+            const normalizedCandidate = candidate.trim();
+            if (!normalizedCandidate) {
+                return;
+            }
+
+            prerequisiteIdSet.add(normalizedCandidate);
+        };
+
+        const collectFromUnknown = (value: unknown): void => {
+            if (Array.isArray(value)) {
+                for (const entry of value) {
+                    collectFromUnknown(entry);
+                }
+                return;
+            }
+
+            if (typeof value === 'string') {
+                pushId(value);
+                return;
+            }
+
+            if (!value || typeof value !== 'object') {
+                return;
+            }
+
+            const record = value as Record<string, unknown>;
+            pushId(record['id']);
+            pushId(record['courseId']);
+            pushId(record['prerequisiteId']);
+            pushId(record['prerequisiteCourseId']);
+            pushId(record['requiredCourseId']);
+
+            const nestedCourse = record['course'];
+            if (nestedCourse && typeof nestedCourse === 'object') {
+                pushId((nestedCourse as Record<string, unknown>)['id']);
+            }
+        };
+
+        collectFromUnknown(source['prerequisiteIds']);
+        collectFromUnknown(source['prerequisiteCourseIds']);
+        collectFromUnknown(source['prerequisites']);
+        collectFromUnknown(source['prerequisiteCourses']);
+        collectFromUnknown(source['dependencies']);
+
+        return Array.from(prerequisiteIdSet);
     }
 
     private resolveLessonCount(source: Record<string, unknown>): number {
