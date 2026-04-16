@@ -370,7 +370,7 @@
     top: 0;
     max-height: none;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0;
     padding-bottom: 10px;
     overflow-y: visible;
@@ -425,10 +425,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto; // Center the timer
   padding: 40px 24px 24px;
   box-sizing: border-box;
   background-color: var(--color-background-base-surface);
+  margin-bottom: 2rem;
 
   @media (max-width: 1024px) {
     width: 160px;

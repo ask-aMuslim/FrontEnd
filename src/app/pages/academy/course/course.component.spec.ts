@@ -145,4 +145,116 @@ describe('CourseComponent', () => {
             relativeTo: activatedRouteStub as ActivatedRoute,
         });
     });
+
+    it('should show Continue and skip enrollment when the course is already enrolled', () => {
+        component.isLoading = false;
+        component.course = {
+            ...createCourse(
+                [
+                    {
+                        id: 'lesson-1',
+                        title: 'Lesson 1',
+                        duration: '15m',
+                        type: 'video',
+                        isLocked: false,
+                        isCompleted: false,
+                        isCurrent: false,
+                    },
+                ],
+                ['Lesson 1'],
+            ),
+            isEnrolled: true,
+            isEnrollmentCompleted: false,
+        };
+
+        fixture.detectChanges();
+
+        const actionLabel = fixture.nativeElement.querySelector('button.btn-primary span') as HTMLSpanElement | null;
+        expect(actionLabel?.textContent?.trim()).toBe('Continue');
+
+        component.onBeginClick();
+
+        expect(academyProgressServiceSpy.enrollCurrentStudentInCourse).not.toHaveBeenCalled();
+        expect(routerSpy.navigate).toHaveBeenCalledWith(['lesson', 'lesson-1'], {
+            relativeTo: activatedRouteStub as ActivatedRoute,
+        });
+    });
+
+    it('should send enrolled users to the next uncompleted lesson', () => {
+        component.isLoading = false;
+        component.course = {
+            ...createCourse(
+                [
+                    {
+                        id: 'lesson-1',
+                        title: 'Lesson 1',
+                        duration: '15m',
+                        type: 'video',
+                        isLocked: false,
+                        isCompleted: true,
+                        isCurrent: false,
+                    },
+                    {
+                        id: 'lesson-2',
+                        title: 'Lesson 2',
+                        duration: '10m',
+                        type: 'article',
+                        isLocked: false,
+                        isCompleted: false,
+                        isCurrent: false,
+                    },
+                ],
+                ['Lesson 1', 'Lesson 2'],
+            ),
+            isEnrolled: true,
+            isEnrollmentCompleted: false,
+        };
+
+        fixture.detectChanges();
+        component.onBeginClick();
+
+        expect(academyProgressServiceSpy.enrollCurrentStudentInCourse).not.toHaveBeenCalled();
+        expect(routerSpy.navigate).toHaveBeenCalledWith(['lesson', 'lesson-2'], {
+            relativeTo: activatedRouteStub as ActivatedRoute,
+        });
+    });
+
+    it('should open the first lesson by default when course is not enrolled', () => {
+        component.isLoading = false;
+        component.course = createCourse(
+            [
+                {
+                    id: 'lesson-1',
+                    title: 'Lesson 1',
+                    duration: '15m',
+                    type: 'video',
+                    isLocked: false,
+                    isCompleted: false,
+                    isCurrent: false,
+                },
+                {
+                    id: 'lesson-2',
+                    title: 'Lesson 2',
+                    duration: '10m',
+                    type: 'article',
+                    isLocked: false,
+                    isCompleted: false,
+                    isCurrent: false,
+                },
+            ],
+            ['Lesson 1', 'Lesson 2'],
+        );
+
+        fixture.detectChanges();
+
+        const actionLabel = fixture.nativeElement.querySelector('button.btn-primary span') as HTMLSpanElement | null;
+        expect(actionLabel?.textContent?.trim()).toBe('Enroll');
+
+        component.onBeginClick();
+
+        expect(routerSpy.navigate).toHaveBeenCalledWith(['lesson', 'lesson-1'], {
+            relativeTo: activatedRouteStub as ActivatedRoute,
+        });
+        expect(academyProgressServiceSpy.enrollCurrentStudentInCourse).toHaveBeenCalledWith('course-1');
+    });
 });

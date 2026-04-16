@@ -246,11 +246,36 @@
     text-decoration: none;
     font-size: 16px;
     line-height: 1.6;
-    transition: color 0.2s;
+    transition:
+      color 0.2s,
+      transform 0.25s ease;
     font-weight: 400;
+    position: relative;
+    display: inline-block;
+    /* reserve space for underline */
+    padding-bottom: 2px;
 
-    &:hover {
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      height: 2px;
+      width: 0;
+      background: var(--special-primary);
+      border-radius: 2px;
+      transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: width;
+    }
+
+    &:hover,
+    &:focus {
       color: var(--special-primary);
+      transform: translateX(4px);
+
+      &::after {
+        width: 100%;
+      }
     }
   }
 }
@@ -278,16 +303,16 @@
   align-items: center;
   text-decoration: none;
   color: var(--colors-rare-grays-80);
-  transition: color 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.25s ease;
+  will-change: transform;
   height: 26px; /* Consistency line height */
 
-  &:hover {
+  &:hover,
+  &:focus {
     color: var(--special-primary);
-
-    .social-label {
-      text-decoration: underline;
-      text-underline-offset: 4px;
-    }
+    transform: translateX(4px);
   }
 
   .social-icon {
@@ -306,6 +331,26 @@
   .social-label {
     font-size: 16px;
     font-weight: 400;
+    display: inline-block;
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      height: 2px;
+      width: 0;
+      background: var(--special-primary);
+      border-radius: 2px;
+      transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: width;
+    }
+  }
+
+  &:hover .social-label::after,
+  &:focus .social-label::after {
+    width: 100%;
   }
 }
 
@@ -353,7 +398,6 @@
 .app-download {
   display: flex;
   align-items: center;
-  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -366,10 +410,9 @@
 .app-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
   border: none;
   border-radius: 100px;
-  padding: 0 1.5rem;
+  padding: 0 1.5rem 0 0;
   text-decoration: none;
   color: var(--colors-rare-grays-80);
   transition: transform 0.2s ease;
