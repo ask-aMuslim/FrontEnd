@@ -812,13 +812,41 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     get courseInfo(): { stage: number; code: string; title: string; stats: string } {
         const stage = this.currentCourse?.stageId || 0;
         const title = this.currentCourse?.title || '';
-        const currentOrder = this.lessonData?.metadata.order || (this.currentLesson?.order || 0);
+        const currentOrder = this.currentLessonDisplayOrder ?? 0;
         return {
             stage,
             code: '',
             title,
-            stats: `Lesson: ${currentOrder}/${this.courseLessons.length}`
+            stats: `Lesson: ${currentOrder}/${this.totalCourseLessonCount ?? this.courseLessons.length}`
         };
+    }
+
+    get currentLessonDisplayOrder(): number | null {
+        const orderedContentLessons = this.getOrderedContentLessons();
+        if (orderedContentLessons.length === 0) {
+            return null;
+        }
+
+        const currentLessonIndex = orderedContentLessons.findIndex((lesson) => lesson.id === this.lessonId);
+        if (currentLessonIndex >= 0) {
+            return currentLessonIndex + 1;
+        }
+
+        const metadataOrder = this.lessonData?.metadata?.order;
+        if (typeof metadataOrder === 'number' && Number.isFinite(metadataOrder) && metadataOrder > 0) {
+            return metadataOrder;
+        }
+
+        return null;
+    }
+
+    get totalCourseLessonCount(): number | null {
+        const orderedContentLessons = this.getOrderedContentLessons();
+        if (orderedContentLessons.length > 0) {
+            return orderedContentLessons.length;
+        }
+
+        return this.courseLessons.length > 0 ? this.courseLessons.length : null;
     }
 
     get filteredNotes(): LessonNoteItem[] {
@@ -888,12 +916,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     private getLastContentLessonId(): string | null {
-        const nonQuizLessons = this.courseLessons
-            .filter((lesson) => lesson.type !== 'quiz')
-            .sort((a, b) => a.order - b.order);
+        const nonQuizLessons = this.getOrderedContentLessons();
 
         const lastLesson = nonQuizLessons.at(-1);
         return lastLesson?.id ?? null;
+    }
+
+    private getOrderedContentLessons(): Array<AcademyLesson & { progress: LessonProgress }> {
+        return [...this.courseLessons]
+            .filter((lesson) => lesson.type !== 'quiz')
+            .sort((a, b) => a.order - b.order);
     }
 
     private get isLastContentLesson(): boolean {

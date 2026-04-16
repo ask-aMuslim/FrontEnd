@@ -52,6 +52,7 @@ export class AcademySidebarHostComponent {
 
         if (
             this.currentLessonNumber !== null
+            && this.currentLessonNumber > 0
             && this.totalLessons !== null
             && this.totalLessons > 0
         ) {

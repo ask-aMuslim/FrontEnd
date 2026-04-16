@@ -1,46 +1,71 @@
 <header class="site-header">
   <!-- User Card Template (for authenticated users) -->
   <ng-template #userCardTemplate>
-    <div class="user-card" routerLink="/account" (click)="closeNav()">
-      <img
-        [src]="authService.getCurrentUserImageUrl()"
-        (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
-        alt="{{ authService.currentUser()?.name }}"
-        class="user-avatar"
-      />
-      <div class="user-text">
-        <span class="user-name">{{ authService.getCurrentUserName() }}</span>
-        <span class="user-meta">{{ authService.getCurrentUserMeta() }}</span>
+    <div class="user-menu">
+      <div class="user-card" (click)="toggleUserMenu($event)">
+        <img
+          [src]="authService.getCurrentUserImageUrl()"
+          (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
+          alt="{{ authService.currentUser()?.name }}"
+          class="user-avatar"
+        />
+        <div class="user-text">
+          <span class="user-name">{{ authService.getCurrentUserName() }}</span>
+          <span class="user-meta">{{ authService.getCurrentUserMeta() }}</span>
+        </div>
+        <button class="user-alert" type="button">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            class="user-alert__icon"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12.0247 2.91016C8.71473 2.91016 6.02473 5.60016 6.02473 8.91016V11.8002C6.02473 12.4102 5.76473 13.3402 5.45473 13.8602L4.30473 15.7702C3.59473 16.9502 4.08473 18.2602 5.38473 18.7002C9.69473 20.1402 14.3447 20.1402 18.6547 18.7002C19.8647 18.3002 20.3947 16.8702 19.7347 15.7702L18.5847 13.8602C18.2847 13.3402 18.0247 12.4102 18.0247 11.8002V8.91016C18.0247 5.61016 15.3247 2.91016 12.0247 2.91016Z"
+              stroke-width="1.5"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+            />
+            <path
+              d="M13.8746 3.19994C13.5646 3.10994 13.2446 3.03994 12.9146 2.99994C11.9546 2.87994 11.0346 2.94994 10.1746 3.19994C10.4646 2.45994 11.1846 1.93994 12.0246 1.93994C12.8646 1.93994 13.5846 2.45994 13.8746 3.19994Z"
+              stroke-width="1.5"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M15.0247 19.0601C15.0247 20.7101 13.6747 22.0601 12.0247 22.0601C11.2047 22.0601 10.4447 21.7201 9.90466 21.1801C9.36466 20.6401 9.02466 19.8801 9.02466 19.0601"
+              stroke-width="1.5"
+              stroke-miterlimit="10"
+            />
+          </svg>
+        </button>
       </div>
-      <button class="user-alert" type="button">
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          class="user-alert__icon"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M12.0247 2.91016C8.71473 2.91016 6.02473 5.60016 6.02473 8.91016V11.8002C6.02473 12.4102 5.76473 13.3402 5.45473 13.8602L4.30473 15.7702C3.59473 16.9502 4.08473 18.2602 5.38473 18.7002C9.69473 20.1402 14.3447 20.1402 18.6547 18.7002C19.8647 18.3002 20.3947 16.8702 19.7347 15.7702L18.5847 13.8602C18.2847 13.3402 18.0247 12.4102 18.0247 11.8002V8.91016C18.0247 5.61016 15.3247 2.91016 12.0247 2.91016Z"
-            stroke-width="1.5"
-            stroke-miterlimit="10"
-            stroke-linecap="round"
+
+      @if (isUserMenuOpen()) {
+      <div class="user-popup" role="menu">
+        <button class="user-popup__item" type="button" (click)="goToProfile()">
+          <img
+            class="user-popup__icon"
+            src="/icons/icons-24/user-edit.svg"
+            alt=""
+            aria-hidden="true"
           />
-          <path
-            d="M13.8746 3.19994C13.5646 3.10994 13.2446 3.03994 12.9146 2.99994C11.9546 2.87994 11.0346 2.94994 10.1746 3.19994C10.4646 2.45994 11.1846 1.93994 12.0246 1.93994C12.8646 1.93994 13.5846 2.45994 13.8746 3.19994Z"
-            stroke-width="1.5"
-            stroke-miterlimit="10"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+          Profile
+        </button>
+        <button class="user-popup__item" type="button" (click)="logout()">
+          <img
+            class="user-popup__icon"
+            src="/icons/icons-24/logout.svg"
+            alt=""
+            aria-hidden="true"
           />
-          <path
-            d="M15.0247 19.0601C15.0247 20.7101 13.6747 22.0601 12.0247 22.0601C11.2047 22.0601 10.4447 21.7201 9.90466 21.1801C9.36466 20.6401 9.02466 19.8801 9.02466 19.0601"
-            stroke-width="1.5"
-            stroke-miterlimit="10"
-          />
-        </svg>
-      </button>
+          Logout
+        </button>
+      </div>
+      }
     </div>
   </ng-template>
 
@@ -52,7 +77,7 @@
         class="auth-btn auth-btn--login"
         (click)="closeNav()"
       >
-        Log In
+        Login
       </a>
     </div>
   </ng-template>
