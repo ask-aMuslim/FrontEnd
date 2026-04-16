@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
@@ -11,7 +11,7 @@ import { StudentFacade } from '../../api/facades/student.facade';
 import { AuthService } from '../../core/services/auth.service';
 import type { StudentProfile } from '../../api/facades/student.facade';
 import { EventsService } from '../../core/services/events.service';
-import { asRecord, extractArray, getValue, toStringValue } from '../../core/helpers/api-response.helper';
+import { asRecord, extractArray, getValue, toBooleanValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
 import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
@@ -25,6 +25,7 @@ interface UserProfile {
 }
 
 interface UpcomingEvent {
+  id: string;
   title: string;
   date: string;
   time: string;
@@ -57,6 +58,7 @@ export class AccountComponent implements OnInit, OnDestroy {
 
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly academyProgressService = inject(AcademyProgressService);
   private readonly studentFacade = inject(StudentFacade);
   private readonly eventsService = inject(EventsService);
@@ -84,6 +86,8 @@ export class AccountComponent implements OnInit, OnDestroy {
 
   upcomingEvent: UpcomingEvent | null = null;
   isUploadingAvatar = false;
+  isAvatarOptionsOpen = false;
+  isAvatarPreviewOpen = false;
 
   ngOnInit(): void {
     this.loadProfile();
@@ -119,7 +123,12 @@ export class AccountComponent implements OnInit, OnDestroy {
   }
 
   viewEventDetails(): void {
-    this.router.navigate(['/events']);
+    if (!this.upcomingEvent?.id) {
+      void this.router.navigate(['/events']);
+      return;
+    }
+
+    void this.router.navigate(['/events', this.upcomingEvent.id]);
   }
 
   toggleEventRegistration(): void {
@@ -136,6 +145,60 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.avatarFileInput?.nativeElement.click();
   }
 
+  openAvatarOptionsModal(): void {
+    if (this.isUploadingAvatar) {
+      return;
+    }
+
+    this.isAvatarPreviewOpen = false;
+    this.isAvatarOptionsOpen = true;
+  }
+
+  closeAvatarOptionsModal(): void {
+    this.isAvatarOptionsOpen = false;
+  }
+
+  viewAvatarPicture(): void {
+    this.isAvatarOptionsOpen = false;
+    this.isAvatarPreviewOpen = true;
+  }
+
+  closeAvatarPreviewModal(): void {
+    this.isAvatarPreviewOpen = false;
+  }
+
+  startAvatarUpdate(): void {
+    if (this.isUploadingAvatar) {
+      return;
+    }
+
+    this.isAvatarOptionsOpen = false;
+    this.isAvatarPreviewOpen = false;
+    this.openAvatarFilePicker();
+  }
+
+  deleteAvatarPicture(): void {
+    if (this.isUploadingAvatar || !this.userProfile.imageUrl) {
+      return;
+    }
+
+    this.isAvatarOptionsOpen = false;
+    this.isAvatarPreviewOpen = false;
+    this.isUploadingAvatar = true;
+
+    this.studentFacade.updateProfile({ imageUrl: null }).pipe(take(1)).subscribe({
+      next: (profile) => {
+        this.queueAvatarImageUpdate(profile?.imageUrl ?? null);
+      },
+      error: () => {
+        this.finishAvatarOperation();
+      },
+      complete: () => {
+        this.finishAvatarOperation();
+      },
+    });
+  }
+
   onAvatarFileSelected(event: Event): void {
     const target = event.target as HTMLInputElement | null;
     const file = target?.files?.[0];
@@ -148,25 +211,13 @@ export class AccountComponent implements OnInit, OnDestroy {
 
     this.studentFacade.updateProfilePicture(file).pipe(take(1)).subscribe({
       next: (result) => {
-        if (result?.imageUrl) {
-          this.userProfile = {
-            ...this.userProfile,
-            imageUrl: this.normalizeImageUrl(result.imageUrl, true),
-          };
-        }
+        this.queueAvatarImageUpdate(result?.imageUrl ?? null, true);
       },
       error: () => {
-        this.isUploadingAvatar = false;
-        if (target) {
-          target.value = '';
-        }
+        this.finishAvatarOperation(target);
       },
       complete: () => {
-        this.isUploadingAvatar = false;
-
-        if (target) {
-          target.value = '';
-        }
+        this.finishAvatarOperation(target);
       },
     });
   }
@@ -185,7 +236,12 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.studentFacade.me().pipe(takeUntil(this.destroy$)).subscribe({
       next: (profile) => {
         if (profile) {
-          this.updateUserProfile(profile);
+          globalThis.setTimeout(() => {
+            if (!this.destroy$.closed) {
+              this.updateUserProfile(profile);
+              this.cdr.detectChanges();
+            }
+          }, 0);
         }
       },
       error: () => void 0,
@@ -197,7 +253,7 @@ export class AccountComponent implements OnInit, OnDestroy {
    */
   private updateUserProfile(profile: StudentProfile): void {
     const fullName = this.buildDisplayName(profile.firstName, profile.lastName);
-    const nextImageUrl = this.normalizeImageUrl(profile.imageUrl) || this.userProfile.imageUrl;
+    const nextImageUrl = this.normalizeImageUrl(profile.imageUrl);
     const nextReligion =
       this.getReligionLabel(profile.religiousStatus) ??
       this.toNonEmptyString(profile.oldReligion) ??
@@ -212,6 +268,9 @@ export class AccountComponent implements OnInit, OnDestroy {
       gender: nextGender,
       religion: nextReligion,
     };
+
+    this.authService.updateCurrentUserImageUrl(nextImageUrl);
+    this.cdr.detectChanges();
   }
 
   private toNonEmptyString(value: string | null | undefined): string | null {
@@ -250,33 +309,95 @@ export class AccountComponent implements OnInit, OnDestroy {
     return `${normalized}${separator}t=${Date.now()}`;
   }
 
+  private applyAvatarImage(imageUrl?: string | null, appendCacheBuster = false): void {
+    const nextImageUrl = this.normalizeImageUrl(imageUrl, appendCacheBuster);
+
+    this.userProfile = {
+      ...this.userProfile,
+      imageUrl: nextImageUrl,
+    };
+
+    this.authService.updateCurrentUserImageUrl(nextImageUrl);
+    this.cdr.detectChanges();
+  }
+
+  private queueAvatarImageUpdate(imageUrl?: string | null, appendCacheBuster = false): void {
+    globalThis.setTimeout(() => {
+      if (!this.destroy$.closed) {
+        this.applyAvatarImage(imageUrl, appendCacheBuster);
+      }
+    }, 0);
+  }
+
+  private finishAvatarOperation(target?: HTMLInputElement | null): void {
+    globalThis.setTimeout(() => {
+      this.isUploadingAvatar = false;
+
+      if (target) {
+        target.value = '';
+      }
+
+      this.cdr.detectChanges();
+    }, 0);
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscapeKey(): void {
+    if (this.isAvatarPreviewOpen) {
+      this.closeAvatarPreviewModal();
+      return;
+    }
+
+    if (this.isAvatarOptionsOpen) {
+      this.closeAvatarOptionsModal();
+    }
+  }
+
   private loadUpcomingEvent(): void {
+    this.upcomingEvent = null;
+
     this.eventsService.getAll().pipe(takeUntil(this.destroy$)).subscribe({
       next: (response) => {
-        const records = extractArray(response);
-        const firstRecord = records.length > 0 ? asRecord(records[0]) : null;
-        if (!firstRecord) {
-          return;
-        }
+        globalThis.setTimeout(() => {
+          if (this.destroy$.closed) {
+            return;
+          }
 
-        const title = toStringValue(getValue(firstRecord, 'title', 'Title'));
-        const speaker = toStringValue(getValue(firstRecord, 'speakerName', 'SpeakerName'));
-        const startDate = toStringValue(getValue(firstRecord, 'startDateTime', 'StartDateTime'));
-        const speakerImage = toApiMediaUrl(toStringValue(getValue(firstRecord, 'speakerImage', 'SpeakerImage'))) ?? '/images/profile-picture-navbar.png';
-        const speakerRole = toStringValue(getValue(firstRecord, 'speakerRole', 'SpeakerRole')) ?? 'Guest Speaker';
+          const records = extractArray(response)
+            .map((item) => asRecord(item))
+            .filter((record): record is Record<string, unknown> => !!record)
+            .filter((record) => toBooleanValue(getValue(record, 'isPublished', 'IsPublished')));
 
-        // Only create event if we have valid data from API
-        if (title || speaker || startDate) {
-          this.upcomingEvent = {
-            title: title ?? '',
-            speaker: speaker ?? '',
-            date: this.formatDate(startDate) ?? '',
-            time: '', // Not provided by API
-            speakerRole: speakerRole,
-            speakerImage: speakerImage,
-            isRegistered: false, // Default state
-          };
-        }
+          const firstRecord = records.length > 0 ? records[0] : null;
+          if (!firstRecord) {
+            this.upcomingEvent = null;
+            this.cdr.detectChanges();
+            return;
+          }
+
+          const id = toStringValue(getValue(firstRecord, 'id', 'Id'));
+          const title = toStringValue(getValue(firstRecord, 'title', 'Title'));
+          const speaker = toStringValue(getValue(firstRecord, 'speakerName', 'SpeakerName'));
+          const startDate = toStringValue(getValue(firstRecord, 'startDateTime', 'StartDateTime'));
+          const speakerImage = toApiMediaUrl(toStringValue(getValue(firstRecord, 'speakerImage', 'SpeakerImage'))) ?? '/images/profile-picture-navbar.png';
+          const speakerRole = toStringValue(getValue(firstRecord, 'speakerRole', 'SpeakerRole')) ?? 'Guest Speaker';
+
+          // Only create event if we have valid data from API
+          if (id && (title || speaker || startDate)) {
+            this.upcomingEvent = {
+              id,
+              title: title ?? '',
+              speaker: speaker ?? '',
+              date: this.formatDate(startDate) ?? '',
+              time: '', // Not provided by API
+              speakerRole: speakerRole,
+              speakerImage: speakerImage,
+              isRegistered: false, // Default state
+            };
+          }
+
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => void 0,
     });

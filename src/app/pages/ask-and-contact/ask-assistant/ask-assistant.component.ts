@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -17,6 +18,7 @@ import {
   ChatMessage,
 } from './ask-assistant.model';
 import { AskAssistantService } from './ask-assistant.service';
+import { buildChatTitleFromMessages } from './ask-assistant-title.util';
 
 interface AskAssistantConversationSection {
   label: string;
@@ -44,7 +46,6 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('bottomAnchor') bottomAnchor?: ElementRef<HTMLDivElement>;
 
-  historyToggleIcon = '/icons/icons-24/arrow-right.svg';
   closeIcon = '/icons/icons-24/arrow-right.svg';
   newChatIcon = '/icons/icons-24/plus.svg';
   logo = '/ask-a-muslim-logo.png';
@@ -131,8 +132,8 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
           this.scrollToBottom(false);
         },
-        error: () => {
-          this.errorMessage = 'Unable to load this conversation right now.';
+        error: (error: unknown) => {
+          this.errorMessage = this.buildOpenConversationErrorMessage(error);
           this.cdr.markForCheck();
         },
       });
@@ -207,6 +208,16 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     return this.activeThreadId === threadId;
   }
 
+  get activeChatTitle(): string {
+    const selectedConversationTitle = this.activeThreadId
+      ? this.conversations.find((conversation) => conversation.threadId === this.activeThreadId)?.title
+      : null;
+
+    return selectedConversationTitle
+      ?? buildChatTitleFromMessages(this.messages)
+      ?? 'New chat';
+  }
+
   get conversationSections(): AskAssistantConversationSection[] {
     if (this.conversations.length === 0) {
       return [];
@@ -253,7 +264,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: () => {
-          this.conversationErrorMessage = 'Unable to load previous conversations.';
+          this.conversationErrorMessage = 'Unable to load previous chats.';
           this.cdr.markForCheck();
         },
       });
@@ -324,6 +335,56 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     }
 
     this.messages = this.messages.filter((item) => item.id !== messageId);
+  }
+
+  private buildOpenConversationErrorMessage(error: unknown): string {
+    const statusCode = this.readStatusCode(error);
+
+    if (statusCode === 404) {
+      return 'This chat is no longer available.';
+    }
+
+    if (statusCode === 401 || statusCode === 403) {
+      return 'Please sign in again to open this chat.';
+    }
+
+    if (statusCode === 0) {
+      return 'Chat service is currently unreachable. Please try again shortly.';
+    }
+
+    if (statusCode !== null && statusCode >= 500) {
+      return 'Chat service is temporarily unavailable. Please try again shortly.';
+    }
+
+    return 'Unable to load this chat right now.';
+  }
+
+  private readStatusCode(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+      return this.toFiniteStatusCode(error.status);
+    }
+
+    const status = this.readErrorNumericCode(error, 'status');
+    if (status !== null) {
+      return status;
+    }
+
+    return this.readErrorNumericCode(error, 'statusCode');
+  }
+
+  private readErrorNumericCode(error: unknown, key: 'status' | 'statusCode'): number | null {
+    if (!error || typeof error !== 'object' || !(key in error)) {
+      return null;
+    }
+
+    const value = (error as Record<string, unknown>)[key];
+    return typeof value === 'number'
+      ? this.toFiniteStatusCode(value)
+      : null;
+  }
+
+  private toFiniteStatusCode(value: number): number | null {
+    return Number.isFinite(value) ? value : null;
   }
 
   private resetInput(): void {

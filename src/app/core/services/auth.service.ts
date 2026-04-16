@@ -14,6 +14,7 @@ import { Injectable, effect, signal, inject } from '@angular/core';
 import { Observable, map, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
+import { toApiMediaUrl } from '../helpers/media-url.helper';
 
 // New architecture imports
 import { IdentityFacade } from '../../api/facades/identity.facade';
@@ -63,8 +64,16 @@ export class AuthService {
    * Set authenticated user state (for manual state updates)
    * @deprecated Use TokenService.setTokens() instead
    */
-  setAuthenticatedUser(user?: { name: string; meta: string }): void {
-    this._currentUser.set(user ?? null);
+  setAuthenticatedUser(user?: { name: string; meta: string; imageUrl?: string | null }): void {
+    if (!user) {
+      this._currentUser.set(null);
+      return;
+    }
+
+    this._currentUser.set({
+      ...user,
+      imageUrl: this.normalizeImageUrl(user.imageUrl),
+    });
   }
 
   /**
@@ -229,6 +238,23 @@ export class AuthService {
     );
   }
 
+  getCurrentUserImageUrl(): string {
+    return this.normalizeImageUrl(this._currentUser()?.imageUrl) ?? '/images/profile-placeholder.svg';
+  }
+
+  updateCurrentUserImageUrl(imageUrl?: string | null): void {
+    const currentUser = this._currentUser();
+
+    if (!currentUser) {
+      return;
+    }
+
+    this._currentUser.set({
+      ...currentUser,
+      imageUrl: this.normalizeImageUrl(imageUrl),
+    });
+  }
+
   private setupAuthHydrationEffect(): void {
     effect(() => {
       const authenticated = this.tokenService.isAuthenticated();
@@ -295,7 +321,11 @@ export class AuthService {
             'avatarUrl',
           ]);
 
-          return { name: fullName, meta, imageUrl: imageUrl || null };
+          return {
+            name: fullName,
+            meta,
+            imageUrl: this.normalizeImageUrl(imageUrl),
+          };
         }),
         catchError(() => of({ name: fallbackEmail, meta: 'Signed in' })),
       )
@@ -328,5 +358,9 @@ export class AuthService {
     }
 
     return '';
+  }
+
+  private normalizeImageUrl(imageUrl?: string | null): string | null {
+    return toApiMediaUrl(typeof imageUrl === 'string' ? imageUrl : null);
   }
 }

@@ -44,9 +44,9 @@
                       [inlineSVG]="'/icons/icons-16/duration.svg'"
                       class="saved-lessons__duration-icon"
                     ></div>
-                    <span class="saved-lessons__duration-text">{{
-                      lesson.duration
-                    }}</span>
+                    <span class="saved-lessons__duration-text">
+                      {{ lesson.duration }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -89,19 +89,10 @@
                 <div
                   class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"
                 >
-                  <svg
+                  <div
+                    [inlineSVG]="'/icons/icons-24/bookmark.svg'"
                     class="w-6 h-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                    />
-                  </svg>
+                  ></div>
                 </div>
                 <div>
                   <h3
@@ -119,19 +110,10 @@
                 class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50"
               >
                 <span class="text-sm text-gray-500 flex items-center gap-1">
-                  <svg
+                  <div
+                    [inlineSVG]="'/icons/icons-16/duration.svg'"
                     class="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  ></div>
                   {{ course.duration }}
                 </span>
                 <button
@@ -148,19 +130,10 @@
         <div
           class="bg-gray-50 rounded-xl p-8 text-center border border-gray-100"
         >
-          <svg
+          <div
+            [inlineSVG]="'/icons/icons-24/done.svg'"
             class="w-12 h-12 text-gray-400 mx-auto mb-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+          ></div>
           <h3 class="font-bold text-gray-900 mb-1">
             Awesome! You're caught up.
           </h3>
@@ -174,71 +147,28 @@
 
     <div class="notes">
       <div class="notes__header">
-        <h2 class="notes__title">Notes ({{ filteredNotes.length }})</h2>
-      </div>
-
-      <div class="notes__filters">
-        <label class="notes__search">
-          <div
-            [inlineSVG]="'/icons/icons-24/search.svg'"
-            class="notes__search-icon"
-          ></div>
-          <input
-            type="text"
-            [value]="searchQuery"
-            placeholder="Search notes, lessons, courses, levels"
-            (input)="onSearchChange($event.target.value)"
-            class="notes__search-input"
-          />
-        </label>
-        <div class="notes__filter-group">
-          <select
-            class="notes__filter-select"
-            [value]="selectedSortOrder"
-            #sortOrderSelect
-            (change)="onSortOrderChange(sortOrderSelect.value)"
-          >
-            <option value="Latest">Latest</option>
-            <option value="Oldest">Oldest</option>
-          </select>
-
-          <select
-            class="notes__filter-select"
-            [value]="selectedCourseFilter"
-            #courseFilterSelect
-            (change)="onCourseFilterChange(courseFilterSelect.value)"
-          >
-            @for (course of getCourseFilterOptions(); track course) {
-              <option [value]="course">{{ course }}</option>
-            }
-          </select>
-
-          <select
-            class="notes__filter-select"
-            [value]="selectedLessonFilter"
-            #lessonFilterSelect
-            (change)="onLessonFilterChange(lessonFilterSelect.value)"
-          >
-            @for (lesson of getLessonFilterOptions(); track lesson) {
-              <option [value]="lesson">{{ lesson }}</option>
-            }
-          </select>
-
-          <select
-            class="notes__filter-select"
-            [value]="selectedLevelFilter"
-            #levelFilterSelect
-            (change)="onLevelFilterChange(levelFilterSelect.value)"
-          >
-            @for (level of getLevelFilterOptions(); track level) {
-              <option [value]="level">{{ level }}</option>
-            }
-          </select>
+        <div class="notes__header-copy">
+          <h2 class="notes__title">Notes ({{ filteredNotes.length }})</h2>
+          <span class="notes__results-summary">{{ noteResultsSummary }}</span>
         </div>
+
+        <button
+          type="button"
+          class="notes__filter-btn"
+          (click)="openNotesFilterModal()"
+          [attr.aria-expanded]="isNotesFilterModalOpen"
+          aria-controls="notes-filter-modal"
+        >
+          <span class="notes__filter-text">Filters</span>
+          <span class="notes__filter-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
       </div>
 
       <div class="notes__filters-meta">
-        <span class="notes__results-summary">{{ noteResultsSummary }}</span>
         @if (hasActiveNoteFilters) {
           <button
             type="button"
@@ -249,6 +179,114 @@
           </button>
         }
       </div>
+
+      @if (isNotesFilterModalOpen) {
+        <div class="notes__modal-backdrop" (click)="closeNotesFilterModal()">
+          <div
+            id="notes-filter-modal"
+            class="notes__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notes-filter-title"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="notes__modal-header">
+              <div class="notes__modal-heading">
+                <h3 id="notes-filter-title" class="notes__modal-title">
+                  Filter notes
+                </h3>
+                <p class="notes__modal-text">
+                  Search and narrow your notes by course, lesson, level, and
+                  sort order.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="notes__modal-close-btn"
+                aria-label="Close filters"
+                (click)="closeNotesFilterModal()"
+              >
+                <span class="notes__modal-close-icon" aria-hidden="true"
+                  >×</span
+                >
+              </button>
+            </div>
+
+            <div class="notes__filters">
+              <label class="notes__search">
+                <div
+                  [inlineSVG]="'/icons/icons-24/search.svg'"
+                  class="notes__search-icon"
+                ></div>
+                <input
+                  #notesSearchInput
+                  type="text"
+                  [value]="searchQuery"
+                  placeholder="Search notes, lessons, courses, levels"
+                  (input)="onSearchChange(notesSearchInput.value)"
+                  class="notes__search-input"
+                />
+              </label>
+
+              <div class="notes__filter-group">
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedSortOrder"
+                  #sortOrderSelect
+                  (change)="onSortOrderChange(sortOrderSelect.value)"
+                >
+                  <option value="Latest">Latest</option>
+                  <option value="Oldest">Oldest</option>
+                </select>
+
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedCourseFilter"
+                  #courseFilterSelect
+                  (change)="onCourseFilterChange(courseFilterSelect.value)"
+                >
+                  @for (course of getCourseFilterOptions(); track course) {
+                    <option [value]="course">{{ course }}</option>
+                  }
+                </select>
+
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedLessonFilter"
+                  #lessonFilterSelect
+                  (change)="onLessonFilterChange(lessonFilterSelect.value)"
+                >
+                  @for (lesson of getLessonFilterOptions(); track lesson) {
+                    <option [value]="lesson">{{ lesson }}</option>
+                  }
+                </select>
+
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedLevelFilter"
+                  #levelFilterSelect
+                  (change)="onLevelFilterChange(levelFilterSelect.value)"
+                >
+                  @for (level of getLevelFilterOptions(); track level) {
+                    <option [value]="level">{{ level }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="notes__modal-actions">
+              <button
+                type="button"
+                class="notes__modal-done-btn"
+                (click)="closeNotesFilterModal()"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Notes Loading State -->
       @if (isLoadingNotes()) {
@@ -277,11 +315,11 @@
               >
                 <div class="notes__note-meta">
                   <span class="notes__note-label"
-                    >At {{ note.progressTime }}</span
+                    >Taken at {{ note.progressTime }}</span
                   >
-                  <span class="notes__note-created">{{
-                    formatNoteCreatedAt(note)
-                  }}</span>
+                  <span class="notes__note-created">
+                    {{ formatNoteCreatedAt(note) }}
+                  </span>
                 </div>
                 <div class="notes__note-context">
                   <span class="notes__note-context-item"

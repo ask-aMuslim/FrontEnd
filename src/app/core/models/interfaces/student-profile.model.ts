@@ -26,7 +26,7 @@ export interface StudentProfile {
   firstName?: string;
   lastName?: string;
   email?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   bio?: string;
   phoneNumber?: string;
   address?: string;
@@ -65,7 +65,7 @@ export interface CreateStudentProfileRequest {
 export interface UpdateStudentProfileRequest {
   firstName?: string;
   lastName?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   bio?: string;
   religionStatus?: ReligiousStatus;
   religiousStatus?: ReligiousStatus;

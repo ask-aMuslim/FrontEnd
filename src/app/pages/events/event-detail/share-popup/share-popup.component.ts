@@ -1,10 +1,8 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 
-import { InlineSvgDirective } from '../../../../shared/directives/inline-svg.directive';
-
 @Component({
   selector: 'app-share-popup',
-  imports: [InlineSvgDirective],
+  imports: [],
   templateUrl: './share-popup.component.html',
   styleUrls: ['./share-popup.component.scss'],
 })
