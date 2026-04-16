@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ElementRef, viewChild, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, ElementRef, viewChild, AfterViewInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, Subject, forkJoin, of, switchMap, tap, catchError, finalize, map, take } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -75,6 +75,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedLessonFilter = 'All Lessons';
   selectedLevelFilter = 'All Levels';
   selectedSortOrder: 'Latest' | 'Oldest' = 'Latest';
+  isNotesFilterModalOpen = false;
 
   // Loading and error states
   isLoading = signal(false);
@@ -330,6 +331,21 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
 
     el.addEventListener('mouseup', stopDrag);
     el.addEventListener('mouseleave', stopDrag);
+  }
+
+  openNotesFilterModal(): void {
+    this.isNotesFilterModalOpen = true;
+  }
+
+  closeNotesFilterModal(): void {
+    this.isNotesFilterModalOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscapeKey(): void {
+    if (this.isNotesFilterModalOpen) {
+      this.closeNotesFilterModal();
+    }
   }
 
   private refreshExistingNoteLevels(): void {

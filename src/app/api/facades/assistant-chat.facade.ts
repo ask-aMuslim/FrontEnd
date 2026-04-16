@@ -62,7 +62,7 @@ export class AssistantChatFacade {
     const fallbackUrl = `${this.baseUrl}/api/conversations/${encodedUserId}`;
 
     return this
-      .getWithNotFoundFallback(primaryUrl, fallbackUrl)
+      .getWithFallback(primaryUrl, fallbackUrl, (error) => this.isNotFound(error))
       .pipe(map((payload) => this.normalizeThreads(payload)));
   }
 
@@ -72,7 +72,7 @@ export class AssistantChatFacade {
     const fallbackUrl = `${this.baseUrl}/api/Conversations/${encodedThreadId}`;
 
     return this
-      .getWithNotFoundFallback(primaryUrl, fallbackUrl)
+      .getWithFallback(primaryUrl, fallbackUrl, (error) => this.shouldUseLegacyHistoryFallback(error))
       .pipe(map((payload) => this.normalizeHistory(payload)));
   }
 
@@ -134,16 +134,35 @@ export class AssistantChatFacade {
     });
   }
 
-  private getWithNotFoundFallback(primaryUrl: string, fallbackUrl: string): Observable<unknown> {
+  private getWithFallback(
+    primaryUrl: string,
+    fallbackUrl: string,
+    shouldFallback: (error: unknown) => boolean,
+  ): Observable<unknown> {
     return this.http.get<unknown>(primaryUrl, { headers: this.jsonHeaders }).pipe(
       catchError((error: unknown) => {
-        if (this.isNotFound(error)) {
+        if (shouldFallback(error)) {
           return this.http.get<unknown>(fallbackUrl, { headers: this.jsonHeaders });
         }
 
         return throwError(() => error);
       }),
     );
+  }
+
+  private shouldUseLegacyHistoryFallback(error: unknown): boolean {
+    if (!(error instanceof HttpErrorResponse)) {
+      return false;
+    }
+
+    // The legacy /api/Conversations/{id} history route is still required
+    // for some deployments when the newer /api/threads/{id}/history route
+    // responds with non-404 errors (e.g. 405/5xx during rollout drift).
+    if (error.status === 401 || error.status === 403) {
+      return false;
+    }
+
+    return error.status === 0 || error.status >= 400;
   }
 
   private parseStreamBuffer(buffer: string, flushRemainder: boolean): {

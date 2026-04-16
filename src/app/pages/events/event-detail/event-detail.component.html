@@ -1,255 +1,298 @@
-<section class="section-container">
-  <!-- Content Block -->
+<section class="event-detail-page section-container">
   @if (event) {
-    <div class="section-block py-6 mb-5">
-      <!-- Back Button -->
+    <div class="section-block event-detail-page__container">
       <button
+        type="button"
         (click)="goBack()"
-        class="flex gap-2 h-10 px-4 items-center mb-6 rounded-lg hover:bg-(--color-card-surface-primary) transition-all duration-300 group cursor-pointer w-fit"
+        class="event-detail-page__back-button"
       >
         <img
           src="/icons/icons-24/arrow-left.svg"
-          alt="Back"
-          class="transition-transform duration-300 group-hover:-translate-x-1"
+          alt=""
+          class="event-detail-page__back-icon"
         />
-        <span class="text-(--color-text-title) font-medium">Back to Events</span>
+        <span class="event-detail-page__back-label">Back to Events</span>
       </button>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <!-- LEFT CONTENT -->
-        <div class="lg:col-span-2 space-y-4 md:space-y-6">
-          <div
-            class="px-4 sm:px-6 py-4 sm:py-5 shadow-(--shadow-15) rounded-lg space-y-4 md:space-y-6"
-          >
-            <!-- Event Card -->
-            <div class="bg-white rounded-2xl overflow-hidden">
-              <!-- Image -->
-              <div class="relative">
-                <img
-                  [src]="event.imageUrl"
-                  [alt]="event.imageAlt"
-                  class="w-full h-48 sm:h-64 md:h-80 object-cover"
-                />
-                @if (!event.isRecorded) {
-                  <span
-                    class="absolute top-4 left-4 bg-(--color-chips-selected-data-surface) text-(--chips-data-2) text-sm font-medium px-3 py-1 rounded-full animate-pulse"
-                  >
-                    • Live Event
-                  </span>
-                }
-                @if (event.isRecorded) {
-                  <span
-                    class="absolute top-4 left-4 bg-(--color-card-surface-primary) text-(--color-success-base) text-sm font-medium px-3 py-1 rounded-full"
-                  >
-                    Recorded
-                  </span>
-                }
-              </div>
-              <!-- Content -->
-              <div class="py-4 sm:py-6 space-y-3 sm:space-y-4">
-                <h2 class="text-xl sm:text-2xl font-semibold text-(--color-button-primary-normal)">
-                  {{ event.title }}
-                </h2>
-                <p class="text-(--color-text-body) leading-relaxed whitespace-pre-line text-[16px]">
-                  {{ event.fullDescription }}
-                </p>
-                <!-- Tags -->
-                <div class="flex flex-wrap gap-2">
-                  @for (tag of event.tags; track tag) {
-                    <span
-                      class="px-3 py-1 text-sm bg-(--color-card-surface-primary) text-(--color-text-caption) rounded-full"
-                      >{{ tag }}</span
-                    >
-                  }
-                </div>
-                <div class="w-full h-px bg-(--color-card-surface-secondary-2)"></div>
-                <!-- Agenda -->
-                @if (event.agenda && event.agenda.length > 0) {
-                  <div class="pt-4">
-                    <h2 class="text-[20px] font-medium text-lg mb-4">Event Agenda:</h2>
-                    <ul class="space-y-3 text-(--color-text-body) pl-4">
-                      @for (item of event.agenda; track item) {
-                        <li class="flex gap-3">
-                          <div
-                            [inlineSVG]="'/icons/icons-16/point.svg'"
-                            alt="point"
-                            class="[&_path]:stroke-(--color-button-primary-normal) mt-1 shrink-0"
-                          ></div>
-                          <span>{{ item }}</span>
-                        </li>
-                      }
-                    </ul>
-                  </div>
-                }
-                <div class="w-full h-px bg-(--color-card-surface-secondary-2)"></div>
-                <!-- Outcomes -->
-                @if (event.outcomes && event.outcomes.length > 0) {
-                  <div class="pt-4">
-                    <h2 class="text-[20px] font-medium text-lg mb-2">
-                      At the end, you will find the answers of:
-                    </h2>
-                    <ul class="space-y-2 text-(--color-text-body) pl-4 list-disc list-inside">
-                      @for (outcome of event.outcomes; track outcome) {
-                        <li>
-                          {{ outcome }}
-                        </li>
-                      }
-                    </ul>
-                  </div>
-                }
-              </div>
+
+      <div class="event-detail-page__layout">
+        <div class="event-detail-page__main-column">
+          <article class="event-detail-page__event-card">
+            <div class="event-detail-page__media">
+              <img
+                [src]="event.imageUrl"
+                [alt]="event.imageAlt"
+                class="event-detail-page__image"
+              />
+
+              @if (!event.isRecorded) {
+                <span
+                  class="event-detail-page__status-badge event-detail-page__status-badge--live"
+                >
+                  • Live Event
+                </span>
+              }
+
+              @if (event.isRecorded) {
+                <span
+                  class="event-detail-page__status-badge event-detail-page__status-badge--recorded"
+                >
+                  Recorded
+                </span>
+              }
             </div>
-          </div>
-          <!-- Join/Watch Button -->
+
+            <div class="event-detail-page__body">
+              <h2 class="event-detail-page__title">{{ event.title }}</h2>
+              <p class="event-detail-page__description">
+                {{ event.fullDescription }}
+              </p>
+
+              <div class="event-detail-page__tags">
+                @for (tag of event.tags; track tag) {
+                  <span class="event-detail-page__tag">{{ tag }}</span>
+                }
+              </div>
+
+              <div class="event-detail-page__separator"></div>
+
+              @if (event.agenda && event.agenda.length > 0) {
+                <section class="event-detail-page__agenda">
+                  <h3 class="event-detail-page__section-title">Event Agenda</h3>
+                  <ul
+                    class="event-detail-page__list event-detail-page__list--agenda"
+                  >
+                    @for (item of event.agenda; track item) {
+                      <li class="event-detail-page__list-item">
+                        <div
+                          [inlineSVG]="'/icons/icons-16/point.svg'"
+                          aria-hidden="true"
+                          class="event-detail-page__list-icon"
+                        ></div>
+                        <span class="event-detail-page__list-text">{{
+                          item
+                        }}</span>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+
+              <div class="event-detail-page__separator"></div>
+
+              @if (event.outcomes && event.outcomes.length > 0) {
+                <section class="event-detail-page__outcomes">
+                  <h3 class="event-detail-page__section-title">
+                    At the end, you will find the answers of:
+                  </h3>
+                  <ul
+                    class="event-detail-page__list event-detail-page__list--outcomes"
+                  >
+                    @for (outcome of event.outcomes; track outcome) {
+                      <li
+                        class="event-detail-page__list-item event-detail-page__list-item--outcome"
+                      >
+                        <span class="event-detail-page__outcome-text">{{
+                          outcome
+                        }}</span>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+            </div>
+          </article>
+
           @if (!event.isRecorded) {
-            <button (click)="registerForEvent()" class="button w-full group">
-              <span class="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              (click)="registerForEvent()"
+              class="event-detail-page__join-button button"
+            >
+              <span class="event-detail-page__join-button-content">
                 <img
                   src="/icons/icons-24/scholar-talk.svg"
-                  alt="Scholar Talk"
-                  class="invert brightness-0 transition-transform duration-300 group-hover:translate-x-2 group-hover:scale-110"
+                  alt=""
+                  class="event-detail-page__join-button-icon"
                 />
-                Join Live Event
+                <span class="event-detail-page__join-button-label"
+                  >Join Live Event</span
+                >
               </span>
             </button>
           }
-          <!-- Question Box -->
+
           @if (!event.isRecorded) {
-            <div class="bg-(--color-card-surface-primary) rounded-lg p-6 space-y-4">
-              <div class="flex gap-2 items-center">
+            <section class="event-detail-page__question-panel">
+              <div class="event-detail-page__question-header">
                 <div
                   [inlineSVG]="'/icons/icons-24/ask.svg'"
-                  class="[&_path]:stroke-(--color-button-primary-normal)"
+                  aria-hidden="true"
+                  class="event-detail-page__question-icon"
                 ></div>
-                <h2 class="text-[20px] font-medium text-(--color-button-primary-normal)">
+                <h2 class="event-detail-page__question-title">
                   Park your Questions
                 </h2>
               </div>
-              <p class="text-(--color-text-caption) leading-relaxed">
-                Have a specific question? Submit it now and the Sheikh will address it during the
-                Q&A.
+
+              <p class="event-detail-page__question-description">
+                Have a specific question? Submit it now and the Sheikh will
+                address it during the Q&amp;A.
               </p>
-              <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+
+              <div class="event-detail-page__question-form">
                 <input
                   type="text"
                   placeholder="Type your question here ..."
                   [(ngModel)]="questionText"
-                  class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal)"
+                  class="event-detail-page__question-input"
                 />
+
                 <button
+                  type="button"
                   (click)="submitQuestion()"
                   [disabled]="!questionText.trim()"
-                  class="border-2 border-(--color-button-primary-normal) hover:bg-(--color-button-primary-normal) text-(--color-button-primary-normal) hover:text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer px-8 w-full sm:w-40 py-3 sm:py-0 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-xl hover:-translate-y-1"
+                  class="event-detail-page__question-submit button"
                 >
                   Send
                 </button>
               </div>
-            </div>
+            </section>
           }
         </div>
-        <!-- RIGHT SIDEBAR -->
-        <div class="space-y-4 md:space-y-6">
-          <!-- Speaker Info -->
-          <div class="bg-white rounded-lg shadow-(--shadow-15) p-4 sm:p-6 space-y-4 sm:space-y-6">
-            <div class="flex items-center gap-4">
+
+        <aside class="event-detail-page__sidebar">
+          <article class="event-detail-page__speaker-card">
+            <div class="event-detail-page__speaker-header">
               <img
                 [src]="event.speakerImage"
-                alt="Speaker"
-                class="w-12 h-12 rounded-full object-cover speaker-image"
+                alt=""
+                class="event-detail-page__speaker-image"
               />
-              <div>
-                <h4 class="font-semibold">{{ event.speakerName }}</h4>
-                <p class="text-sm text-gray-600">{{ event.speakerRole }}</p>
+              <div class="event-detail-page__speaker-copy">
+                <h4 class="event-detail-page__speaker-name">
+                  {{ event.speakerName }}
+                </h4>
+                <p class="event-detail-page__speaker-role">
+                  {{ event.speakerRole }}
+                </p>
               </div>
             </div>
-            <div class="w-full h-px bg-(--color-card-surface-secondary-2)"></div>
-            <div class="space-y-4">
-              <div class="flex items-start gap-2">
+
+            <div class="event-detail-page__separator"></div>
+
+            <div class="event-detail-page__detail-list">
+              <div class="event-detail-page__detail-item">
                 <div
                   [inlineSVG]="'/icons/icons-24/calendar.svg'"
-                  class="[&_path]:stroke-(--color-button-primary-normal)"
+                  aria-hidden="true"
+                  class="event-detail-page__detail-icon"
                 ></div>
-                <div class="flex flex-col items-start justify-center">
-                  <span class="text-(--color-button-primary-normal) text-[14px]">Date</span>
-                  <span>{{ event.date }}</span>
+                <div class="event-detail-page__detail-copy">
+                  <span class="event-detail-page__detail-label">Date</span>
+                  <span class="event-detail-page__detail-value">{{
+                    event.date
+                  }}</span>
                 </div>
               </div>
-              <div class="flex items-start gap-2">
+
+              <div class="event-detail-page__detail-item">
                 <div
                   [inlineSVG]="'/icons/icons-24/time.svg'"
-                  class="[&_path]:stroke-(--color-button-primary-normal)"
+                  aria-hidden="true"
+                  class="event-detail-page__detail-icon"
                 ></div>
-                <div class="flex flex-col items-start justify-center">
-                  <span class="text-(--color-button-primary-normal) text-[14px]">Time</span>
-                  <span>{{ event.time }}</span>
-                </div>
-              </div>
-              <div
-                [ngClass]="event.isRecorded ? 'flex items-center gap-2' : 'flex items-start gap-2'"
-              >
-                <div
-                  [inlineSVG]="'/icons/icons-24/live.svg'"
-                  class="[&_path]:stroke-(--color-button-primary-normal)"
-                ></div>
-                <div class="flex flex-col items-start justify-center">
-                  <span class="text-(--color-button-primary-normal) text-[14px]">{{
-                    event.isRecorded ? 'Recorded' : 'Live'
+                <div class="event-detail-page__detail-copy">
+                  <span class="event-detail-page__detail-label">Time</span>
+                  <span class="event-detail-page__detail-value">{{
+                    event.time
                   }}</span>
-                  @if (!event.isRecorded) {
-                    <span>The meeting link will be sent to your email</span>
-                  }
                 </div>
               </div>
-              <div class="w-full h-px bg-(--color-card-surface-secondary-2)"></div>
-              <button
-                (click)="openSharePopup()"
-                class="w-full border border-(--color-button-primary-normal) text-(--color-button-primary-normal) py-2 rounded-lg hover:bg-(--color-button-primary-hovering) transition-all duration-300 hover:scale-102 hover:shadow-xl hover:-translate-y-1 group cursor-pointer"
-              >
-                <span
-                  class="flex items-center justify-center gap-2 text-[18px] font-semibold group-hover:text-white"
+
+              @if (event.isRecorded) {
+                <div
+                  class="event-detail-page__detail-item event-detail-page__detail-item--recorded"
                 >
                   <div
-                    [inlineSVG]="'/icons/icons-24/share.svg'"
-                    class="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 [&_path]:stroke-(--color-button-primary-normal) group-hover:[&_path]:stroke-white"
+                    [inlineSVG]="'/icons/icons-24/live.svg'"
+                    aria-hidden="true"
+                    class="event-detail-page__detail-icon"
                   ></div>
-                  Share
-                </span>
-              </button>
+                  <div class="event-detail-page__detail-copy">
+                    <span class="event-detail-page__detail-label"
+                      >Recorded</span
+                    >
+                    <span class="event-detail-page__detail-value"
+                      >Available on demand</span
+                    >
+                  </div>
+                </div>
+              } @else {
+                <div
+                  class="event-detail-page__detail-item event-detail-page__detail-item--live"
+                >
+                  <div
+                    [inlineSVG]="'/icons/icons-24/live.svg'"
+                    aria-hidden="true"
+                    class="event-detail-page__detail-icon"
+                  ></div>
+                  <div class="event-detail-page__detail-copy">
+                    <span class="event-detail-page__detail-label">Live</span>
+                    <span class="event-detail-page__detail-value">
+                      The meeting link will be sent to your email
+                    </span>
+                  </div>
+                </div>
+              }
             </div>
-          </div>
-          <!-- Important Info -->
-          @if (!event.isRecorded) {
-            <div
-              class="bg-(--color-card-surface-secondary) border border-(--color-border-brand-medium) rounded-[14px] p-4 sm:p-6"
+
+            <div class="event-detail-page__separator"></div>
+
+            <button
+              type="button"
+              (click)="openSharePopup()"
+              class="event-detail-page__share-button"
             >
-              <h4 class="font-semibold mb-2 text-(--color-button-primary-normal)">
+              <span class="event-detail-page__share-button-content">
+                <div
+                  [inlineSVG]="'/icons/icons-24/share.svg'"
+                  aria-hidden="true"
+                  class="event-detail-page__share-icon"
+                ></div>
+                <span class="event-detail-page__share-label">Share</span>
+              </span>
+            </button>
+          </article>
+
+          @if (!event.isRecorded) {
+            <section class="event-detail-page__important-card">
+              <h4 class="event-detail-page__important-title">
                 Important Information
               </h4>
-              <ul
-                class="list-disc list-inside text-(--color-button-secondary-normal) text-sm leading-relaxed"
-              >
-                <li>If you are willing to open the camera, please be covered.</li>
+              <ul class="event-detail-page__important-list">
+                <li class="event-detail-page__important-list-item">
+                  If you are willing to open the camera, please be covered.
+                </li>
               </ul>
-            </div>
+            </section>
           }
-        </div>
+        </aside>
       </div>
     </div>
   }
 
-  <!-- Loading State -->
   @if (!event) {
-    <div class="flex items-center justify-center h-screen text-(--color-text-title) text-[20px]">
-      Loading event details...
-    </div>
+    <div class="event-detail-page__loading-state">Loading event details...</div>
   }
 
-  <!-- Profile Popup -->
   @if (showProfilePopup) {
     <app-profile-popup (close)="closeProfilePopup()"></app-profile-popup>
   }
 
-  <!-- Share Popup -->
   @if (showSharePopup) {
-    <app-share-popup (close)="closeSharePopup()" (confirm)="onShareConfirm()"></app-share-popup>
+    <app-share-popup
+      (close)="closeSharePopup()"
+      (confirm)="onShareConfirm()"
+    ></app-share-popup>
   }
 </section>

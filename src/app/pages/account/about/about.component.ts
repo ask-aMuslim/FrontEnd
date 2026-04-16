@@ -129,10 +129,10 @@ export class AboutComponent implements OnInit, OnDestroy {
       .join(' ');
     const name = profileName || this.about.name;
 
-    const religionLabel =
-      profile.religiousStatus !== undefined
-        ? this.getReligionLabel(profile.religiousStatus)
-        : this.about.religion;
+    let religionLabel = this.about.religion;
+    if (profile.religiousStatus !== undefined) {
+      religionLabel = this.getReligionLabel(profile.religiousStatus);
+    }
 
     // Handle languages from partial or inconsistent API responses.
     let languages = profile.languages ?? [];
@@ -191,7 +191,7 @@ export class AboutComponent implements OnInit, OnDestroy {
     };
   }
 
-  private preferNonEmptyString(value: string | undefined, fallback: string): string {
+  private preferNonEmptyString(value: string | null | undefined, fallback: string): string {
     if (typeof value !== 'string') {
       return fallback;
     }
@@ -383,7 +383,7 @@ export class AboutComponent implements OnInit, OnDestroy {
     }
 
     const normalized = countryCode.trim();
-    return /^\+[0-9]{1,4}$/.test(normalized) ? normalized : undefined;
+    return /^\+\d{1,4}$/.test(normalized) ? normalized : undefined;
   }
 
   private normalizePhoneNumber(phoneNumber: string, dialCode?: string): string {

@@ -6,56 +6,74 @@
     class="bg-white rounded-2xl p-8 w-[571px] max-w-md mx-4 shadow-(--shadow-4-green) transform transition-all duration-300 animate-scaleIn relative"
     (click)="$event.stopPropagation()"
   >
-    <!-- Close Button -->
-    <button
-      (click)="closePopup()"
-      class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-all duration-200 cursor-pointer hover:scale-110 hover:rotate-90"
-    >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"
-        ></path>
-      </svg>
-    </button>
-
-    <!-- Icon -->
-    <div class="flex justify-center mb-6">
+    <div class="event-profile-popup" (click)="closePopup()">
       <div
-        class="bg-(--warning)/10 rounded-full p-4 transition-all duration-500 hover:scale-110 hover:shadow-lg cursor-pointer"
+        class="event-profile-popup__dialog"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="event-profile-popup-title"
       >
-        <img src="/icons/icons-24/wait.svg" alt="Wait" class="w-12 h-12 animate-pulse" />
+        <button
+          type="button"
+          (click)="closePopup()"
+          class="event-profile-popup__close-button"
+          aria-label="Close profile prompt"
+        >
+          <svg
+            class="event-profile-popup__close-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+
+        <div class="event-profile-popup__icon-shell">
+          <img
+            src="/icons/icons-24/done.svg"
+            alt=""
+            class="event-profile-popup__icon"
+          />
+        </div>
+
+        <div class="event-profile-popup__divider"></div>
+
+        <div class="event-profile-popup__content">
+          <h3 id="event-profile-popup-title" class="event-profile-popup__title">
+            Complete Your Profile
+          </h3>
+          <p class="event-profile-popup__message">
+            The meeting link will be sent to your email
+          </p>
+        </div>
+
+        <div class="event-profile-popup__actions">
+          <button
+            type="button"
+            (click)="closePopup()"
+            class="event-profile-popup__secondary-button"
+          >
+            Later
+          </button>
+          <button
+            type="button"
+            (click)="goToProfile()"
+            class="event-profile-popup__primary-button"
+          >
+            Go to Profile
+          </button>
+        </div>
       </div>
     </div>
-
-    <div class="w-full h-px bg-(--color-card-surface-secondary-2) my-6 animate-fadeIn"></div>
-
-    <div class="mb-6 transition-all duration-300 hover:scale-105">
-      <h3 class="text-2xl font-semibold text-(--color-button-primary-normal) text-center">
-        Complete Your Profile
-      </h3>
-    </div>
-
-    <p class="text-(--color-text-body) text-center mb-8 leading-relaxed">
-      Just complete your profile data, so you can join the "Events" and interact with the scholars
-      live.
-    </p>
-
-    <div class="flex gap-4">
-      <button
-        (click)="closePopup()"
-        class="flex-1 px-6 py-3 border-2 border-(--color-button-primary-normal) text-(--color-button-primary-normal) rounded-lg hover:bg-(--color-card-surface-primary) transition-all duration-300 hover:scale-110 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-      >
-        Later
-      </button>
-      <button
-        (click)="goToProfile()"
-        class="flex-1 px-6 py-3 bg-(--color-button-primary-normal) text-white rounded-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
-      >
-        Go to Profile
-      </button>
-    </div>
+    Just complete your profile data, so you can join the "Events" and interact
+    with the scholars
   </div>
 </div>

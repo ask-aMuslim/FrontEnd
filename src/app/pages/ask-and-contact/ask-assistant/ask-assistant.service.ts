@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import {
   AssistantChatFacade,
   AssistantChatRequest,
@@ -14,17 +14,20 @@ import {
   AskAssistantMessageSeed,
   AskAssistantStreamUpdate,
 } from './ask-assistant.model';
+import { buildChatTitleFromMessages } from './ask-assistant-title.util';
 
 @Injectable({ providedIn: 'root' })
 export class AskAssistantService {
   private static readonly guestStorageKey = 'aam_ask_assistant_guest_user_id';
   private static readonly guestIdPrefix = 'guest-';
   private static readonly fallbackServerGuestId = 'guest-server';
+  private static readonly fallbackChatTitle = 'New chat';
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly assistantChatFacade = inject(AssistantChatFacade);
   private readonly tokenService = inject(TokenService);
+  private readonly conversationTitleCache = new Map<string, string>();
 
   getResolvedUserId(): string {
     const authenticatedUserId = this.tokenService.userId();
@@ -42,7 +45,13 @@ export class AskAssistantService {
 
   getConversations(userId: string): Observable<AskAssistantConversation[]> {
     return this.assistantChatFacade.listUserThreads(userId).pipe(
-      map((threads) => threads.map((thread) => this.mapConversation(thread))),
+      switchMap((threads) => {
+        if (threads.length === 0) {
+          return of([]);
+        }
+
+        return forkJoin(threads.map((thread) => this.resolveConversation(thread)));
+      }),
     );
   }
 
@@ -68,10 +77,26 @@ export class AskAssistantService {
     );
   }
 
-  private mapConversation(thread: AssistantThreadRecord): AskAssistantConversation {
+  private resolveConversation(thread: AssistantThreadRecord): Observable<AskAssistantConversation> {
+    const cachedTitle = this.conversationTitleCache.get(thread.threadId);
+    if (cachedTitle) {
+      return of(this.mapConversation(thread, cachedTitle));
+    }
+
+    return this.assistantChatFacade.getThreadHistory(thread.threadId).pipe(
+      map((messages) => {
+        const title = this.buildConversationTitleFromHistory(messages);
+        this.conversationTitleCache.set(thread.threadId, title);
+        return this.mapConversation(thread, title);
+      }),
+      catchError(() => of(this.mapConversation(thread, AskAssistantService.fallbackChatTitle))),
+    );
+  }
+
+  private mapConversation(thread: AssistantThreadRecord, title: string): AskAssistantConversation {
     return {
       threadId: thread.threadId,
-      title: this.buildConversationTitle(thread.threadId),
+      title,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
     };
@@ -94,9 +119,12 @@ export class AskAssistantService {
     };
   }
 
-  private buildConversationTitle(threadId: string): string {
-    const shortThreadId = threadId.slice(0, 8);
-    return `Conversation #${shortThreadId}`;
+  private buildConversationTitleFromHistory(messages: AssistantHistoryRecord[]): string {
+    const title = buildChatTitleFromMessages(
+      messages.map((message) => ({ role: message.role, text: message.content })),
+    );
+
+    return title ?? AskAssistantService.fallbackChatTitle;
   }
 
   private getOrCreateGuestUserId(): string {

@@ -14,13 +14,30 @@
       <p>No courses available right now.</p>
     </div>
   } @else {
-    <div class="course-tree">
-      @for (layer of layers(); track $index; let isLast = $last) {
+    <div class="course-tree" #treeCanvas>
+      <svg
+        class="course-tree__connector-canvas"
+        aria-hidden="true"
+        focusable="false"
+        [attr.width]="connectorCanvasWidth()"
+        [attr.height]="connectorCanvasHeight()"
+        [attr.viewBox]="'0 0 ' + connectorCanvasWidth() + ' ' + connectorCanvasHeight()"
+      >
+        @for (connectorPath of connectorPaths(); track connectorPath.id) {
+          <path
+            class="course-tree__connector-path"
+            [attr.d]="connectorPath.d"
+          ></path>
+        }
+      </svg>
+
+      @for (layer of layers(); track $index) {
         <div class="course-tree__layer">
           @for (node of layer; track node.id) {
             <button
               type="button"
               class="course-card"
+              [attr.data-course-node-id]="node.id"
               [class.course-card--available]="node.status === 'available'"
               [class.course-card--in-progress]="node.status === 'in-progress'"
               [class.course-card--completed]="node.status === 'completed'"
@@ -91,10 +108,6 @@
             </button>
           }
         </div>
-
-        @if (!isLast) {
-          <div class="course-tree__layer-connector" aria-hidden="true"></div>
-        }
       }
     </div>
   }
