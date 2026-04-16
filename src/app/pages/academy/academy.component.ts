@@ -27,6 +27,10 @@ interface Course extends TreeCourse {
     category: string;
     categoryLabel: string;
     lessons: number;
+    completedLessonsCount: number;
+    totalLessonsCount: number;
+    completedQuizzesCount: number;
+    totalQuizzesCount: number;
     duration: string;
     progress: number;
     status: CourseStatus;
@@ -62,6 +66,8 @@ interface RecentLesson {
     mediaProgressLabel: string | null;
     completedLessons: number;
     totalLessons: number;
+    completedQuizzes: number;
+    totalQuizzes: number;
 }
 
 @Component({
@@ -190,12 +196,17 @@ export class AcademyComponent implements OnInit, OnDestroy {
     ): RecentLesson {
         const matchedCourse = courses.find((course) => course.id === info.courseId);
         const matchedLesson = courseLessons.find((lesson) => lesson.id === info.lessonId);
-        const lessonsFromCourseFeed = courseLessons.length;
-        const totalLessons = lessonsFromCourseFeed > 0
-            ? lessonsFromCourseFeed
-            : Math.max(0, info.totalLessons, matchedCourse?.lessons ?? 0);
-        const completedLessons = Math.min(totalLessons, Math.max(0, info.completedLessons));
-        const computedProgress = this.calculateCourseCompletionProgress(completedLessons, totalLessons);
+        const lessonsFromCourseFeed = courseLessons.filter((lesson) => lesson.type !== 'quiz').length;
+        const totalLessons = Math.max(0, lessonsFromCourseFeed, matchedCourse?.lessons ?? 0);
+        const totalCourseItems = Math.max(0, info.totalLessons, courseLessons.length, totalLessons);
+        const completedCourseItems = Math.min(totalCourseItems, Math.max(0, info.completedLessons));
+        const completedLessons = Math.min(totalLessons, completedCourseItems);
+        const totalQuizzes = Math.max(0, totalCourseItems - totalLessons);
+        const completedQuizzes = Math.max(
+            0,
+            Math.min(totalQuizzes, completedCourseItems - completedLessons),
+        );
+        const computedProgress = this.calculateCourseCompletionProgress(completedCourseItems, totalCourseItems);
         const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
         let mediaType: 'video' | 'audio' | null = null;
         if (matchedLesson?.type === 'video' || matchedLesson?.type === 'audio') {
@@ -229,6 +240,8 @@ export class AcademyComponent implements OnInit, OnDestroy {
                 : null,
             completedLessons,
             totalLessons,
+            completedQuizzes,
+            totalQuizzes,
         };
     }
 
@@ -299,18 +312,36 @@ export class AcademyComponent implements OnInit, OnDestroy {
             status = progress.status;
         }
 
-        const totalLessons = Math.max(0, progress?.totalLessons ?? course.lessons);
-        const completedLessons = Math.max(0, Math.min(totalLessons, progress?.completedLessons ?? 0));
+        const totalLessonsOnly = Math.max(0, course.lessons);
+        const totalCourseItems = Math.max(0, progress?.totalLessons ?? totalLessonsOnly);
+        const completedCourseItems = Math.max(0, Math.min(totalCourseItems, progress?.completedLessons ?? 0));
+        const totalQuizzes = Math.max(0, totalCourseItems - totalLessonsOnly);
+        const completedLessons = Math.max(0, Math.min(totalLessonsOnly, completedCourseItems));
+        const completedQuizzesByOverflow = Math.max(
+            0,
+            Math.min(totalQuizzes, completedCourseItems - completedLessons),
+        );
+        let completedQuizzes = 0;
+        if (totalQuizzes > 0) {
+            completedQuizzes = progress?.quizPassed
+                ? totalQuizzes
+                : completedQuizzesByOverflow;
+        }
+
         const normalizedProgress = status === 'completed'
             ? 100
-            : this.calculateCourseCompletionProgress(completedLessons, totalLessons);
+            : this.calculateCourseCompletionProgress(completedCourseItems, totalCourseItems);
 
         return {
             id: course.id,
             title: course.title,
             category: course.category,
             categoryLabel: course.categoryLabel,
-            lessons: Math.max(0, course.lessons),
+            lessons: totalLessonsOnly,
+            completedLessonsCount: completedLessons,
+            totalLessonsCount: totalLessonsOnly,
+            completedQuizzesCount: completedQuizzes,
+            totalQuizzesCount: totalQuizzes,
             duration: course.duration,
             progress: normalizedProgress,
             status,
@@ -373,6 +404,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
         } else {
             status = 'Available';
         }
-        return `${course.title}, ${course.lessons} lessons, ${course.duration}, ${status}, ${course.progress}% complete`;
+        return `${course.title}, ${course.completedLessonsCount} out of ${course.totalLessonsCount} lessons, ${course.completedQuizzesCount} out of ${course.totalQuizzesCount} quizzes, ${course.duration}, ${status}, ${course.progress}% complete`;
     }
 }

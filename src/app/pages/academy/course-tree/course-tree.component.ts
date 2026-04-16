@@ -20,6 +20,10 @@ export interface CourseNode {
     description?: string;
     categoryLabel?: string;
     lessons?: number;
+    completedLessonsCount?: number;
+    totalLessonsCount?: number;
+    completedQuizzesCount?: number;
+    totalQuizzesCount?: number;
     duration?: string;
     progress?: number;
     prerequisites?: string[];
@@ -62,40 +66,72 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
     readonly connectorCanvasWidth = signal(0);
     readonly connectorCanvasHeight = signal(0);
 
-    layers = computed(() => {
+    readonly groupedLayers = computed<readonly CourseNode[][][]>(() => {
         const nodeList = this.nodes();
-        const nodeMap = new Map(nodeList.map(n => [n.id, n]));
+        if (nodeList.length === 0) {
+            return [];
+        }
 
-        const depthMap = new Map<string, number>();
-        const getDepth = (id: string, visited: Set<string> = new Set()): number => {
-            if (depthMap.has(id)) return depthMap.get(id)!;
-            if (visited.has(id)) return 0; // prevent cycle
-            visited.add(id);
+        const nodeById = new Map(nodeList.map((node) => [node.id, node]));
+        const nodeOrderById = new Map<string, number>();
+        nodeList.forEach((node, index) => nodeOrderById.set(node.id, index));
 
-            const node = nodeMap.get(id);
-            if (!node || !node.prerequisites || node.prerequisites.length === 0) {
-                depthMap.set(id, 0);
-                return 0;
+        const adjacencyById = new Map<string, Set<string>>();
+        for (const node of nodeList) {
+            adjacencyById.set(node.id, new Set<string>());
+        }
+
+        for (const edge of this.connectorEdges()) {
+            adjacencyById.get(edge.parentId)?.add(edge.childId);
+            adjacencyById.get(edge.childId)?.add(edge.parentId);
+        }
+
+        const visited = new Set<string>();
+        const linkedComponents: CourseNode[][] = [];
+        const standaloneNodes: CourseNode[] = [];
+
+        for (const node of nodeList) {
+            if (visited.has(node.id)) {
+                continue;
             }
 
-            let maxParentDepth = -1;
-            for (const p of node.prerequisites) {
-                maxParentDepth = Math.max(maxParentDepth, getDepth(p, visited));
+            const componentNodes = this.collectComponentNodes(
+                node.id,
+                visited,
+                adjacencyById,
+                nodeById,
+            );
+
+            if (componentNodes.length === 0) {
+                continue;
             }
-            const depth = maxParentDepth + 1;
-            depthMap.set(id, depth);
-            return depth;
-        };
 
-        nodeList.forEach(n => getDepth(n.id));
+            if (this.componentHasEdges(componentNodes, adjacencyById)) {
+                linkedComponents.push(componentNodes);
+                continue;
+            }
 
-        const layersArr: CourseNode[][] = [];
-        nodeList.forEach(n => {
-            const d = depthMap.get(n.id) || 0;
-            if (!layersArr[d]) layersArr[d] = [];
-            layersArr[d].push(n);
-        });
-        return layersArr;
+            standaloneNodes.push(...componentNodes);
+        }
+
+        linkedComponents.sort((leftNodes, rightNodes) =>
+            this.getComponentMinOrder(leftNodes, nodeOrderById)
+            - this.getComponentMinOrder(rightNodes, nodeOrderById),
+        );
+
+        const groupedLayers: CourseNode[][][] = linkedComponents.map((componentNodes) =>
+            this.buildLayersForComponent(componentNodes, nodeOrderById),
+        );
+
+        if (standaloneNodes.length > 0) {
+            standaloneNodes.sort((leftNode, rightNode) =>
+                this.getNodeOrder(leftNode.id, nodeOrderById)
+                - this.getNodeOrder(rightNode.id, nodeOrderById),
+            );
+            groupedLayers.push(this.buildLayersForComponent(standaloneNodes, nodeOrderById));
+        }
+
+        return groupedLayers;
     });
 
     private readonly connectorEdges = computed<ConnectorEdge[]>(() => {
@@ -315,6 +351,153 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
 
     private normalizeLookupKey(value: string): string {
         return value.trim().toLowerCase();
+    }
+
+    private collectComponentNodes(
+        startNodeId: string,
+        visited: Set<string>,
+        adjacencyById: ReadonlyMap<string, ReadonlySet<string>>,
+        nodeById: ReadonlyMap<string, CourseNode>,
+    ): CourseNode[] {
+        const componentNodes: CourseNode[] = [];
+        const stack = [startNodeId];
+
+        while (stack.length > 0) {
+            const currentNodeId = stack.pop();
+            if (!currentNodeId || visited.has(currentNodeId)) {
+                continue;
+            }
+
+            visited.add(currentNodeId);
+            const currentNode = nodeById.get(currentNodeId);
+            if (currentNode) {
+                componentNodes.push(currentNode);
+            }
+
+            const neighbors = adjacencyById.get(currentNodeId);
+            if (!neighbors) {
+                continue;
+            }
+
+            for (const neighborId of neighbors) {
+                if (!visited.has(neighborId)) {
+                    stack.push(neighborId);
+                }
+            }
+        }
+
+        return componentNodes;
+    }
+
+    private componentHasEdges(
+        componentNodes: readonly CourseNode[],
+        adjacencyById: ReadonlyMap<string, ReadonlySet<string>>,
+    ): boolean {
+        for (const node of componentNodes) {
+            const neighbors = adjacencyById.get(node.id);
+            if (neighbors && neighbors.size > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private buildLayersForComponent(
+        componentNodes: readonly CourseNode[],
+        nodeOrderById: ReadonlyMap<string, number>,
+    ): CourseNode[][] {
+        const componentNodeIds = new Set(componentNodes.map((node) => node.id));
+        const parentIdsByChildId = new Map<string, string[]>();
+
+        for (const node of componentNodes) {
+            parentIdsByChildId.set(node.id, []);
+        }
+
+        for (const edge of this.connectorEdges()) {
+            if (!componentNodeIds.has(edge.parentId) || !componentNodeIds.has(edge.childId)) {
+                continue;
+            }
+
+            const parentIds = parentIdsByChildId.get(edge.childId);
+            if (!parentIds) {
+                continue;
+            }
+
+            parentIds.push(edge.parentId);
+        }
+
+        const depthByNodeId = new Map<string, number>();
+        const getDepth = (nodeId: string, path: ReadonlySet<string> = new Set<string>()): number => {
+            const existingDepth = depthByNodeId.get(nodeId);
+            if (typeof existingDepth === 'number') {
+                return existingDepth;
+            }
+
+            if (path.has(nodeId)) {
+                return 0;
+            }
+
+            const nextPath = new Set(path);
+            nextPath.add(nodeId);
+
+            const parentIds = parentIdsByChildId.get(nodeId) ?? [];
+            if (parentIds.length === 0) {
+                depthByNodeId.set(nodeId, 0);
+                return 0;
+            }
+
+            let maxParentDepth = 0;
+            for (const parentId of parentIds) {
+                maxParentDepth = Math.max(maxParentDepth, getDepth(parentId, nextPath));
+            }
+
+            const nodeDepth = maxParentDepth + 1;
+            depthByNodeId.set(nodeId, nodeDepth);
+            return nodeDepth;
+        };
+
+        for (const node of componentNodes) {
+            getDepth(node.id);
+        }
+
+        const layers: CourseNode[][] = [];
+        for (const node of componentNodes) {
+            const depth = depthByNodeId.get(node.id) ?? 0;
+            if (!layers[depth]) {
+                layers[depth] = [];
+            }
+            layers[depth].push(node);
+        }
+
+        for (const layer of layers) {
+            layer.sort((leftNode, rightNode) =>
+                this.getNodeOrder(leftNode.id, nodeOrderById)
+                - this.getNodeOrder(rightNode.id, nodeOrderById),
+            );
+        }
+
+        return layers;
+    }
+
+    private getComponentMinOrder(
+        nodes: readonly CourseNode[],
+        nodeOrderById: ReadonlyMap<string, number>,
+    ): number {
+        let minOrder = Number.POSITIVE_INFINITY;
+        for (const node of nodes) {
+            minOrder = Math.min(minOrder, this.getNodeOrder(node.id, nodeOrderById));
+        }
+
+        return Number.isFinite(minOrder) ? minOrder : Number.MAX_SAFE_INTEGER;
+    }
+
+    private getNodeOrder(
+        nodeId: string,
+        nodeOrderById: ReadonlyMap<string, number>,
+    ): number {
+        const nodeOrder = nodeOrderById.get(nodeId);
+        return typeof nodeOrder === 'number' ? nodeOrder : Number.MAX_SAFE_INTEGER;
     }
 
     private resetConnectorState(): void {

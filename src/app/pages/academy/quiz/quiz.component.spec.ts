@@ -187,4 +187,38 @@ describe('QuizComponent', () => {
         expect(academyProgressServiceSpy.markLessonCompleted).toHaveBeenCalledWith('quiz-1', 'course-1');
         expect(academyProgressServiceSpy.markCourseQuizPassed).toHaveBeenCalledWith('course-1');
     });
+
+    it('keeps success degree true when restored successful result has answered selections', () => {
+        const mixedAnswers = Array.from({ length: 10 }, (_value, index) => ({
+            questionId: `question-${index + 1}`,
+            selectedOptionId: index < 4 ? 'a' : 'b',
+            isCorrect: index < 4,
+            isSkipped: false,
+        }));
+        component.answers.set(mixedAnswers as never[]);
+
+        (component as unknown as {
+            restoredQuizResult: {
+                completed: boolean;
+                score: number;
+                passed: boolean;
+                completionTime: number;
+                timestamp: string;
+                questionCount: number;
+                answers: Array<unknown>;
+            };
+        }).restoredQuizResult = {
+            completed: true,
+            score: 4,
+            passed: true,
+            completionTime: 25,
+            timestamp: new Date().toISOString(),
+            questionCount: 10,
+            answers: [],
+        };
+
+        component.quizState.set('results');
+
+        expect(component['hasSuccessfulDegree']()).toBeTrue();
+    });
 });

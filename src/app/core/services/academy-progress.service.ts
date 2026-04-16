@@ -987,17 +987,24 @@ export class AcademyProgressService {
                 ? Math.max(0, apiProgress.totalLessonsCompleted)
                 : 0;
             const isApiCompleted = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
+            const requiresQuizPass = this.courseHasAnyQuiz(course.id);
             const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
             const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
-            const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size + completedStandaloneQuizCount;
-            const completedLessonsCount = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
+            const completedLessonsBeforeStandaloneQuiz = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            const completedLessonsCount = totalCourseItems > 0
+                ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+                : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
             const completionRateFromLessons = totalCourseItems > 0
                 ? this.normalizeProgressPercentage((completedLessonsCount / totalCourseItems) * 100)
                 : 0;
-            const effectiveProgress = isApiCompleted
+            let progressBeforeCompletion = isApiCompleted
                 ? 100
                 : Math.max(normalizedProgress, completionRateFromLessons);
-            const requiresQuizPass = this.courseHasAnyQuiz(course.id);
+
+            if (!isApiCompleted && requiresQuizPass && !quizPassed) {
+                progressBeforeCompletion = completionRateFromLessons;
+            }
             const hasTrackableCourseItems = totalCourseItems > 0;
             const completedByRule = hasTrackableCourseItems
                 && completedLessonsCount >= totalCourseItems
@@ -1006,14 +1013,14 @@ export class AcademyProgressService {
 
             if (isCourseCompleted) {
                 status = 'completed';
-            } else if (effectiveProgress > 0 || isEnrolled) {
+            } else if (progressBeforeCompletion > 0 || isEnrolled) {
                 status = 'in-progress';
             }
 
             const progressEntry: CourseProgress = {
                 courseId: course.id,
                 status,
-                progress: isCourseCompleted ? 100 : effectiveProgress,
+                progress: isCourseCompleted ? 100 : progressBeforeCompletion,
                 completedLessons: isCourseCompleted
                     ? Math.max(totalCourseItems, completedLessonsCount)
                     : Math.min(totalCourseItems, completedLessonsCount),
@@ -1136,7 +1143,8 @@ export class AcademyProgressService {
             return null;
         }
 
-        const effectiveTotalLessons = Math.max(sortedLessons.length, Math.max(0, course.lessons));
+        const lessonCountFromFeed = Math.max(sortedLessons.length, Math.max(0, course.lessons));
+        const effectiveTotalLessons = this.resolveCourseItemCount(course.id, lessonCountFromFeed);
         const completedFromProgress = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
         const completedFromLocal = this.resolveLocalCompletedLessonCount(
             course.id,
@@ -1146,7 +1154,10 @@ export class AcademyProgressService {
         const completedStandaloneQuizCount = this.isCourseQuizPassedLocally(course.id)
             ? this.getStandaloneQuizCount(course.id)
             : 0;
-        const completedLessons = Math.max(completedFromProgress, completedFromLocal + completedStandaloneQuizCount);
+        const completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        const completedLessons = effectiveTotalLessons > 0
+            ? Math.min(effectiveTotalLessons, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+            : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
         const preferredLesson = preferredLessonId
             ? sortedLessons.find((lesson) => lesson.id === preferredLessonId)
             : undefined;
@@ -1178,13 +1189,16 @@ export class AcademyProgressService {
         progressRecord: ProgressReadDto | undefined,
         visitSnapshot: RecentLessonVisitSnapshot,
     ): RecentLessonInfo {
-        const effectiveTotalLessons = Math.max(0, course.lessons);
+        const effectiveTotalLessons = this.resolveCourseItemCount(course.id, Math.max(0, course.lessons));
         const completedFromProgress = this.resolveCompletedLessonCount(progressRecord, effectiveTotalLessons);
         const completedFromLocal = this.resolveLocalCompletedLessonCount(course.id, [], effectiveTotalLessons);
         const completedStandaloneQuizCount = this.isCourseQuizPassedLocally(course.id)
             ? this.getStandaloneQuizCount(course.id)
             : 0;
-        const completedLessons = Math.max(completedFromProgress, completedFromLocal + completedStandaloneQuizCount);
+        const completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        const completedLessons = effectiveTotalLessons > 0
+            ? Math.min(effectiveTotalLessons, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+            : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
         const courseProgress = this.calculateCourseCompletionProgress(completedLessons, effectiveTotalLessons);
 
         const totalSeconds =
