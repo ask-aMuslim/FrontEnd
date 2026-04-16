@@ -3,16 +3,16 @@
 import { buildChatTitleFromMessages, buildChatTitleFromText } from './ask-assistant-title.util';
 
 describe('ask-assistant-title util', () => {
-    it('builds a title from the first four words and appends ellipsis', () => {
+    it('returns the full normalized text without truncation', () => {
         const title = buildChatTitleFromText('How do I perform tahajjud prayer correctly?');
 
-        expect(title).toBe('How do I perform...');
+        expect(title).toBe('How do I perform tahajjud prayer correctly?');
     });
 
-    it('normalizes extra whitespace before generating title', () => {
+    it('normalizes extra whitespace before returning title', () => {
         const title = buildChatTitleFromText('   What   is   the   ruling   on   zakat   ');
 
-        expect(title).toBe('What is the ruling...');
+        expect(title).toBe('What is the ruling on zakat');
     });
 
     it('prefers the first user message when deriving from a message list', () => {
@@ -22,7 +22,7 @@ describe('ask-assistant-title util', () => {
             { role: 'assistant', text: 'Sure, here they are...' },
         ]);
 
-        expect(title).toBe('Can you explain the...');
+        expect(title).toBe('Can you explain the five pillars clearly?');
     });
 
     it('falls back to the first non-empty message when no user message exists', () => {
@@ -31,7 +31,7 @@ describe('ask-assistant-title util', () => {
             { role: 'assistant', text: 'Welcome to Ask A Muslim' },
         ]);
 
-        expect(title).toBe('Welcome to Ask A...');
+        expect(title).toBe('Welcome to Ask A Muslim');
     });
 
     it('returns null when there is no usable message content', () => {

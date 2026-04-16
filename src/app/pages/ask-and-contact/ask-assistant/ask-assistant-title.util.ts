@@ -1,20 +1,16 @@
-const CHAT_TITLE_WORD_LIMIT = 4;
-const CHAT_TITLE_ELLIPSIS = '...';
-
 interface MessageWithTitleText {
     role: string;
     text: string;
 }
 
+/**
+ * Returns the full normalized text of the message so that CSS
+ * `text-overflow: ellipsis` can handle visual truncation at the
+ * container's actual width — no JS word-limit applied.
+ */
 export function buildChatTitleFromText(text: string | null | undefined): string | null {
     const normalizedText = (text ?? '').replaceAll(/\s+/g, ' ').trim();
-    if (!normalizedText) {
-        return null;
-    }
-
-    const words = normalizedText.split(' ');
-    const titleWords = words.slice(0, CHAT_TITLE_WORD_LIMIT).join(' ');
-    return `${titleWords}${CHAT_TITLE_ELLIPSIS}`;
+    return normalizedText || null;
 }
 
 export function buildChatTitleFromMessages<TMessage extends MessageWithTitleText>(

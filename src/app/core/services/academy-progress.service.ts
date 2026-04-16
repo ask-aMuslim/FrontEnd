@@ -1004,7 +1004,10 @@ export class AcademyProgressService {
             const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
             const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
             const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
-            const completedLessonsBeforeStandaloneQuiz = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            let completedLessonsBeforeStandaloneQuiz = Math.max(apiCompletedLessons, locallyCompletedLessons);
+            if (requiresQuizPass && quizPassed) {
+                completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, totalCourseItems - completedStandaloneQuizCount);
+            }
             const completedLessonsCount = totalCourseItems > 0
                 ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
                 : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
@@ -1167,7 +1170,10 @@ export class AcademyProgressService {
         const completedStandaloneQuizCount = this.isCourseQuizPassedLocally(course.id)
             ? this.getStandaloneQuizCount(course.id)
             : 0;
-        const completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        let completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        if (this.courseHasAnyQuiz(course.id) && this.isCourseQuizPassedLocally(course.id)) {
+            completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, effectiveTotalLessons - completedStandaloneQuizCount);
+        }
         const completedLessons = effectiveTotalLessons > 0
             ? Math.min(effectiveTotalLessons, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
             : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
@@ -1208,7 +1214,10 @@ export class AcademyProgressService {
         const completedStandaloneQuizCount = this.isCourseQuizPassedLocally(course.id)
             ? this.getStandaloneQuizCount(course.id)
             : 0;
-        const completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        let completedLessonsBeforeStandaloneQuiz = Math.max(completedFromProgress, completedFromLocal);
+        if (this.courseHasAnyQuiz(course.id) && this.isCourseQuizPassedLocally(course.id)) {
+            completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, effectiveTotalLessons - completedStandaloneQuizCount);
+        }
         const completedLessons = effectiveTotalLessons > 0
             ? Math.min(effectiveTotalLessons, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
             : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;

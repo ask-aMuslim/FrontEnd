@@ -167,3 +167,7 @@ img.aam-late-image.aam-late-image--loaded {
   width: 100% !important;
   padding: 2px 0px !important;
 }
+
+.google-btn-wrapper #container-div {
+  width: 100% !important;
+}
