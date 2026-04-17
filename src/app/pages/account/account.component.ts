@@ -11,7 +11,7 @@ import { StudentFacade } from '../../api/facades/student.facade';
 import { AuthService } from '../../core/services/auth.service';
 import type { StudentProfile } from '../../api/facades/student.facade';
 import { EventsService } from '../../core/services/events.service';
-import { asRecord, extractArray, getValue, toBooleanValue, toStringValue } from '../../core/helpers/api-response.helper';
+import { asRecord, getValue, toBooleanValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
 import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
@@ -151,6 +151,14 @@ export class AccountComponent implements OnInit, OnDestroy {
     }
 
     void this.router.navigate(['/events', this.upcomingEvent.id]);
+  }
+
+  handleRegisterNowClick(): void {
+    if (!this.upcomingEvent || this.upcomingEvent.isRegistered) {
+      return;
+    }
+
+    this.viewEventDetails();
   }
 
   toggleEventRegistration(): void {
@@ -379,31 +387,30 @@ export class AccountComponent implements OnInit, OnDestroy {
   private loadUpcomingEvent(): void {
     this.upcomingEvent = null;
 
-    this.eventsService.getAll().pipe(takeUntil(this.destroy$)).subscribe({
+    this.eventsService.getNext().pipe(takeUntil(this.destroy$)).subscribe({
       next: (response) => {
         globalThis.setTimeout(() => {
           if (this.destroy$.closed) {
             return;
           }
 
-          const records = extractArray(response)
-            .map((item) => asRecord(item))
-            .filter((record): record is Record<string, unknown> => !!record)
-            .filter((record) => toBooleanValue(getValue(record, 'isPublished', 'IsPublished')));
+          const responseRecord = asRecord(response);
+          const dataRecord = asRecord(getValue(responseRecord, 'data', 'Data'));
 
-          const firstRecord = records.length > 0 ? records[0] : null;
-          if (!firstRecord) {
+          if (!dataRecord || !toBooleanValue(getValue(dataRecord, 'isPublished', 'IsPublished'))) {
             this.upcomingEvent = null;
             this.cdr.detectChanges();
             return;
           }
 
-          const id = toStringValue(getValue(firstRecord, 'id', 'Id'));
-          const title = toStringValue(getValue(firstRecord, 'title', 'Title'));
-          const speaker = toStringValue(getValue(firstRecord, 'speakerName', 'SpeakerName'));
-          const startDate = toStringValue(getValue(firstRecord, 'startDateTime', 'StartDateTime'));
-          const speakerImage = toApiMediaUrl(toStringValue(getValue(firstRecord, 'speakerImage', 'SpeakerImage'))) ?? '/images/profile-picture-navbar.png';
-          const speakerRole = toStringValue(getValue(firstRecord, 'speakerRole', 'SpeakerRole')) ?? 'Guest Speaker';
+          const id = toStringValue(getValue(dataRecord, 'id', 'Id'));
+          const title = toStringValue(getValue(dataRecord, 'title', 'Title'));
+          const speaker = toStringValue(getValue(dataRecord, 'speakerName', 'SpeakerName'));
+          const startDate = toStringValue(getValue(dataRecord, 'startDateTime', 'StartDateTime'));
+          const speakerImage =
+            toApiMediaUrl(toStringValue(getValue(dataRecord, 'imageUrl', 'ImageUrl'))) ??
+            '/images/profile-picture-navbar.png';
+          const isRegistered = toBooleanValue(getValue(dataRecord, 'isRegistered', 'IsRegistered'));
 
           // Only create event if we have valid data from API
           if (id && (title || speaker || startDate)) {
@@ -412,11 +419,13 @@ export class AccountComponent implements OnInit, OnDestroy {
               title: title ?? '',
               speaker: speaker ?? '',
               date: this.formatDate(startDate) ?? '',
-              time: '', // Not provided by API
-              speakerRole: speakerRole,
+              time: this.formatTime(startDate) ?? '',
+              speakerRole: 'Guest Speaker',
               speakerImage: speakerImage,
-              isRegistered: false, // Default state
+              isRegistered,
             };
+          } else {
+            this.upcomingEvent = null;
           }
 
           this.cdr.detectChanges();
@@ -447,6 +456,23 @@ export class AccountComponent implements OnInit, OnDestroy {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
+    });
+  }
+
+  private formatTime(dateInput: string | null): string | null {
+    if (!dateInput) {
+      return null;
+    }
+
+    const parsed = new Date(dateInput);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
     });
   }
 }

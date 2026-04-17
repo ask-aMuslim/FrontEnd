@@ -14,6 +14,10 @@ export class EventsService {
     return this.api.get<unknown>(url);
   }
 
+  getNext(): Observable<unknown> {
+    return this.api.get<unknown>(`${EventsService.EVENTS_PATH}/next`);
+  }
+
   create(payload: unknown): Observable<unknown> {
     return this.api.post<unknown>(EventsService.EVENTS_PATH, payload);
   }

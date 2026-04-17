@@ -924,8 +924,9 @@
 }
 
 .upcoming-event-card__status-text {
-  font-size: 0.875rem;
+  // font-size: 0.875rem;
   color: var(--color-button-primary-normal);
+  cursor: pointer;
 }
 
 // ─── Mosque Finder Widget ───
