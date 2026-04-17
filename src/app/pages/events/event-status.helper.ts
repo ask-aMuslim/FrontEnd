@@ -75,7 +75,7 @@ function getBadgeText(
 
   if (context === 'card') {
     if (variant === 'live') {
-      return 'Live';
+      return '◉ Live Now';
     }
 
     if (variant === 'finished') {
@@ -86,7 +86,7 @@ function getBadgeText(
   }
 
   if (variant === 'live') {
-    return '• Live Event';
+    return '◉ Live Now';
   }
 
   if (variant === 'finished') {
