@@ -9,6 +9,7 @@ import {
   extractArray,
   getValue,
   toBooleanValue,
+  toNumberValue,
   toStringArray,
   toStringValue,
 } from '../../core/helpers/api-response.helper';
@@ -24,10 +25,14 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 export class EventsComponent implements OnInit {
   private static readonly fallbackImage = '/images/events-image-placeholder.jpg';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
+  private static readonly defaultPageSize = 3;
+  private static readonly minimumTotalPages = 1;
   private static readonly idOffset = 1;
 
   currentPage = 1;
-  itemsPerPage = 6;
+  itemsPerPage = EventsComponent.defaultPageSize;
+  totalPages = EventsComponent.minimumTotalPages;
+  hasNextPage = false;
   pages: number[] = [];
 
   eventCards: EventCard[] = [];
@@ -42,20 +47,21 @@ export class EventsComponent implements OnInit {
   }
 
   private updatePages(): void {
-    const totalPages = Math.ceil(this.eventCards.length / this.itemsPerPage);
-    this.pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    this.pages = Array.from({ length: this.totalPages }, (_value, index) => index + 1);
   }
 
   prevPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.loadEvents();
       this.scrollToTopOfSection();
     }
   }
 
   nextPage(): void {
-    if (this.currentPage < this.pages.length) {
+    if (!this.isLastPage) {
       this.currentPage++;
+      this.loadEvents();
       this.scrollToTopOfSection();
     }
   }
@@ -63,6 +69,7 @@ export class EventsComponent implements OnInit {
   goToPage(page: number): void {
     if (page >= 1 && page <= this.pages.length) {
       this.currentPage = page;
+      this.loadEvents();
       this.scrollToTopOfSection();
     }
   }
@@ -76,17 +83,19 @@ export class EventsComponent implements OnInit {
   }
 
   get isLastPage(): boolean {
-    return this.currentPage === this.pages.length;
+    if (this.hasNextPage) {
+      return false;
+    }
+
+    return this.currentPage >= this.totalPages;
   }
 
   get showPagination(): boolean {
-    return this.pages.length > 1;
+    return this.currentPage > 1 || this.totalPages > 1 || this.hasNextPage;
   }
 
   get paginatedEventCards(): EventCard[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    return this.eventCards.slice(startIndex, endIndex);
+    return this.eventCards;
   }
 
   get featuredEvent(): EventCard | null {
@@ -118,18 +127,79 @@ export class EventsComponent implements OnInit {
   }
 
   private loadEvents(): void {
-    this.eventsService.getAll().subscribe({
+    this.eventsService.getAll({
+      pageNumber: this.currentPage,
+      pageSize: this.itemsPerPage,
+    }).subscribe({
       next: (response) => {
-        this.eventCards = this.mapEvents(response);
+        const mappedEvents = this.mapEvents(response);
+        this.eventCards = mappedEvents;
+        const paginationMeta = this.extractPaginationMeta(response, mappedEvents.length);
+        this.hasNextPage = paginationMeta.hasNextPage;
+        this.totalPages = paginationMeta.totalPages;
+        if (this.currentPage > this.totalPages) {
+          this.currentPage = this.totalPages;
+        }
         this.updatePages();
         this.cdr.detectChanges();
       },
       error: () => {
         this.eventCards = [];
+        this.totalPages = EventsComponent.minimumTotalPages;
+        this.hasNextPage = false;
         this.updatePages();
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private extractPaginationMeta(
+    response: unknown,
+    fallbackCount: number,
+  ): { totalPages: number; hasNextPage: boolean } {
+    const root = asRecord(response);
+    const nested = asRecord(getValue(root, 'data', 'Data', 'result', 'Result'));
+
+    const totalPages =
+      toNumberValue(getValue(nested, 'totalPages', 'TotalPages', 'pageCount', 'PageCount')) ??
+      toNumberValue(getValue(root, 'totalPages', 'TotalPages', 'pageCount', 'PageCount'));
+
+    if (totalPages && totalPages > 0) {
+      const normalizedTotalPages = Math.max(
+        EventsComponent.minimumTotalPages,
+        Math.ceil(totalPages),
+      );
+      return {
+        totalPages: normalizedTotalPages,
+        hasNextPage: this.currentPage < normalizedTotalPages,
+      };
+    }
+
+    const totalCount =
+      toNumberValue(getValue(nested, 'totalCount', 'TotalCount', 'itemCount', 'ItemCount', 'count', 'Count')) ??
+      toNumberValue(getValue(root, 'totalCount', 'TotalCount', 'itemCount', 'ItemCount', 'count', 'Count')) ??
+      fallbackCount;
+
+    const hasNextPageFromApi =
+      toBooleanValue(getValue(nested, 'hasNextPage', 'HasNextPage')) ||
+      toBooleanValue(getValue(root, 'hasNextPage', 'HasNextPage'));
+
+    if (totalCount > fallbackCount || hasNextPageFromApi) {
+      const normalizedTotalPages = Math.max(
+        EventsComponent.minimumTotalPages,
+        Math.ceil(totalCount / this.itemsPerPage),
+        this.currentPage + (hasNextPageFromApi ? 1 : 0),
+      );
+      return {
+        totalPages: normalizedTotalPages,
+        hasNextPage: hasNextPageFromApi || this.currentPage < normalizedTotalPages,
+      };
+    }
+
+    return {
+      totalPages: Math.max(EventsComponent.minimumTotalPages, this.currentPage),
+      hasNextPage: hasNextPageFromApi,
+    };
   }
 
   private mapEvents(response: unknown): EventCard[] {

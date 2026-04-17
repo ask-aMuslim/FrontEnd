@@ -38,8 +38,8 @@ export class EventsService {
     if (!params) return '';
     const parts: string[] = [];
     if (params.isPublished !== undefined) parts.push(`IsPublished=${params.isPublished}`);
-    if (params.pageNumber !== undefined) parts.push(`pageNumber=${params.pageNumber}`);
-    if (params.pageSize !== undefined) parts.push(`pageSize=${params.pageSize}`);
+    if (params.pageNumber !== undefined) parts.push(`PageNumber=${params.pageNumber}`);
+    if (params.pageSize !== undefined) parts.push(`PageSize=${params.pageSize}`);
     return parts.join('&');
   }
 }
