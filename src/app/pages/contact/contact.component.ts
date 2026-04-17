@@ -92,6 +92,8 @@ export class ContactComponent implements OnInit {
             .join(' ');
     });
 
+    private readonly scrollService = inject(ScrollService);
+
     ngOnInit(): void {
         this.prefillContactDetails();
         this.selectedTopic.set(this.contactForm.controls.topic.value);
@@ -157,7 +159,7 @@ export class ContactComponent implements OnInit {
                     message: '',
                 });
 
-                this.scrollToTop();
+                this.scrollService.scrollToTop('smooth');
             },
             error: (error: unknown) => {
                 this.isSubmitting.set(false);
@@ -297,9 +299,5 @@ export class ContactComponent implements OnInit {
         return '';
     }
 
-    private scrollToTop(): void {
-        if (globalThis.window !== undefined) {
-            globalThis.window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }
+
 }

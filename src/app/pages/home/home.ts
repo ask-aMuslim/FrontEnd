@@ -10,7 +10,9 @@ import {
   OnInit,
   PLATFORM_ID,
   ViewChild,
+  afterNextRender,
 } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -224,6 +226,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly qasService = inject(QasService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private bubblesAutoscrollEnabled = false;
 
@@ -275,7 +278,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.detectChanges();
 
             // Re-setup bubbles animation if needed for the new elements
-            globalThis.setTimeout(() => {
+            setTimeout(() => {
               if (this.heroBubbles.length > 0) {
                 this.syncBubblesAnimation(true);
               }
@@ -430,10 +433,11 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    void import('gsap');
-
-    // Setup seamless bubble scrolling animation
-    this.syncBubblesAnimation(true);
+    afterNextRender(() => {
+      void import('gsap');
+      // Setup seamless bubble scrolling animation
+      this.syncBubblesAnimation(true);
+    });
   }
 
   /**
@@ -441,12 +445,13 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
    * Only runs on tablet and below screens (768px and below)
    */
   private setupBubblesAnimation(): void {
-    if (!this.isBrowser) {
+    const window = this.document.defaultView;
+    if (!this.isBrowser || !window) {
       return;
     }
 
     // Only animate on tablets and below (max-width: 1199px)
-    if (globalThis.innerWidth > 1199) {
+    if (window.innerWidth > 1199) {
       return;
     }
 
@@ -479,7 +484,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       track.style.transform = `translateX(${currentTranslate}px)`;
       track.style.transition = 'none'; // Disable transition for frame-by-frame animation
 
-      globalThis.requestAnimationFrame(animate);
+      window.requestAnimationFrame(animate);
     };
 
     // Start the animation
@@ -497,11 +502,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private syncBubblesAnimation(forceRestart = false): void {
-    if (!this.isBrowser) {
-      return;
-    }
-
-    const shouldAutoscroll = globalThis.innerWidth <= 1199;
+    const window = this.document.defaultView;
+    const shouldAutoscroll = window ? window.innerWidth <= 1199 : false;
 
     if (!forceRestart && shouldAutoscroll === this.bubblesAutoscrollEnabled) {
       return;
@@ -549,7 +551,9 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 
     // Calculate scroll amount: bubble width + gap
     const bubbleWidth = firstBubble.offsetWidth;
-    const computedStyle = globalThis.getComputedStyle(container);
+    const window = this.document.defaultView;
+    if (!window) return;
+    const computedStyle = window.getComputedStyle(container);
     const gap = Number.parseFloat(computedStyle.gap) || 0;
     const scrollAmount = bubbleWidth + gap;
 
