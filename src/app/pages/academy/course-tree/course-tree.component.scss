@@ -106,6 +106,7 @@
   width: 100%;
   display: flex;
   flex-wrap: nowrap;
+  margin-top: 3rem;
   justify-content: center;
   align-items: stretch;
   gap: calc(var(--spacing-md) + 20px) var(--course-tree-column-gap);
