@@ -85,56 +85,75 @@ export class AssistantChatFacade {
     const endpoint = `${this.baseUrl}/api/chat?stream=true`;
 
     return new Observable<AssistantStreamRecord>((subscriber) => {
-      let processedLength = 0;
+      let isUnsubscribed = false;
+      const abortController = new AbortController();
+
       let pendingLine = '';
 
-      const emitFromFullText = (fullText: string, flushRemainder: boolean): void => {
-        if (!flushRemainder && fullText.length <= processedLength) {
-          return;
-        }
-
-        const deltaText = flushRemainder
-          ? pendingLine
-          : fullText.slice(processedLength);
-
-        if (!flushRemainder) {
-          processedLength = fullText.length;
-        }
-
-        const buffer = flushRemainder ? deltaText : `${pendingLine}${deltaText}`;
-        const parsed = this.parseStreamBuffer(buffer, flushRemainder);
+      const emitFromChunk = (chunkStr: string): void => {
+        const buffer = `${pendingLine}${chunkStr}`;
+        const parsed = this.parseStreamBuffer(buffer, false);
         pendingLine = parsed.remainder;
 
         for (const event of parsed.events) {
+          console.log('[FACADE EMIT FROM CHUNK]', event);
           subscriber.next(event);
         }
       };
 
-      const requestSubscription = this.http.request('POST', endpoint, {
-        body,
-        headers: this.streamHeaders,
-        context: this.streamContext,
-        observe: 'events',
-        reportProgress: true,
-        responseType: 'text',
-      }).subscribe({
-        next: (event: HttpEvent<string>) => {
-          if (event.type === HttpEventType.DownloadProgress) {
-            emitFromFullText(event.partialText ?? '', false);
-            return;
+      globalThis.fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/x-ndjson, text/event-stream, application/json',
+          'Content-Type': 'application/json',
+          'X-stream': 'true',
+        },
+        body: JSON.stringify(body),
+        signal: abortController.signal,
+      })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Stream HTTP Error: ${response.status}`);
+        }
+        
+        if (!response.body) {
+          throw new Error('Stream response body is empty');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+
+        while (!isUnsubscribed) {
+          const { done, value } = await reader.read();
+          if (done) {
+            // Process the final remainder
+            if (pendingLine.trim()) {
+              const parsed = this.parseStreamBuffer(pendingLine, true);
+              for (const event of parsed.events) {
+                console.log('[FACADE REMAINDER CHUNK]', event);
+                subscriber.next(event);
+              }
+            }
+            break;
           }
 
-          if (event.type === HttpEventType.Response) {
-            emitFromFullText(event.body ?? '', false);
-            emitFromFullText('', true);
-            subscriber.complete();
-          }
-        },
-        error: (error: unknown) => subscriber.error(error),
+          const chunkStr = decoder.decode(value, { stream: true });
+          emitFromChunk(chunkStr);
+        }
+
+        if (!isUnsubscribed) {
+          subscriber.complete();
+        }
+      })
+      .catch((error) => {
+        if (!isUnsubscribed && error.name !== 'AbortError') {
+          subscriber.error(error);
+        }
       });
 
       return () => {
-        requestSubscription.unsubscribe();
+        isUnsubscribed = true;
+        abortController.abort();
       };
     });
   }
@@ -174,7 +193,16 @@ export class AssistantChatFacade {
     events: AssistantStreamRecord[];
     remainder: string;
   } {
-    const normalizedBuffer = buffer.replaceAll('\r\n', '\n');
+    // SECURITY: The backend incorrectly serializes the SSE boundaries as literal slash-n 
+    // strings ("\\n") instead of genuine newline characters. We must surgically unescape 
+    // the boundaries without corrupting inner JSON payloads which legally contain "\\n".
+    const normalizedBuffer = buffer
+      .replace(/\\n\\nevent:/g, '\n\nevent:')
+      .replace(/\\nevent:/g, '\nevent:')
+      .replace(/\\ndata:/g, '\ndata:')
+      .replace(/\\n\\n$/g, '\n\n')
+      .replaceAll('\r\n', '\n');
+
     const lines = normalizedBuffer.split('\n');
     const lineCount = lines.length;
 
@@ -259,12 +287,14 @@ export class AssistantChatFacade {
       ? errors.join('\n')
       : (firstError ?? '');
 
-    return [{
+    const parsedRecord = {
       kind,
       text: kind === 'error' && errorText ? errorText : text,
       threadId,
       statusCode,
-    }];
+    };
+    console.log('[DEBUG STREAM PAYLOAD]:', parsedRecord);
+    return [parsedRecord];
   }
 
   private normalizeThreads(payload: unknown): AssistantThreadRecord[] {

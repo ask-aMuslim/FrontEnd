@@ -24,8 +24,8 @@ export class GlobalLoadingService {
   private readonly showDelay = 150; // delay before showing loader
   private readonly minVisible = 250; // minimum time loader stays visible
 
-  private showTimer: ReturnType<typeof setTimeout> | null = null;
-  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private showTimer: any = null;
+  private hideTimer: any = null;
   private visibleSince = 0;
 
   start(): void {
@@ -42,12 +42,12 @@ export class GlobalLoadingService {
 
     // Cancel pending hides
     if (this.hideTimer) {
-      globalThis.clearTimeout(this.hideTimer);
+      clearTimeout(this.hideTimer);
       this.hideTimer = null;
     }
 
     // Start show timer if not already scheduled
-    this.showTimer ??= globalThis.setTimeout(() => {
+    this.showTimer ??= setTimeout(() => {
       this.showTimer = null;
       this.visible.set(true);
       this.visibleSince = Date.now();
@@ -71,7 +71,7 @@ export class GlobalLoadingService {
 
     // Cancel pending show if present
     if (this.showTimer) {
-      globalThis.clearTimeout(this.showTimer);
+      clearTimeout(this.showTimer);
       this.showTimer = null;
     }
 
@@ -84,9 +84,10 @@ export class GlobalLoadingService {
     const remaining = Math.max(0, this.minVisible - elapsed);
 
     // Ensure minimum visible duration
-    this.hideTimer = globalThis.setTimeout(() => {
+    this.hideTimer = setTimeout(() => {
       this.hideTimer = null;
       this.visible.set(false);
     }, remaining);
   }
 }
+

@@ -143,6 +143,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   }
 
   submitQuestion(event?: Event): void {
+    console.log('[AskAssistantComponent] submitQuestion execution started!!!!');
     event?.preventDefault();
 
     const question = this.inputValue.trim();
@@ -172,28 +173,14 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {
-          this.isResponding.set(false);
-          this.loadConversations();
-          // After stream ends, reload the thread messages from server to guarantee display
-          // This covers cases where signal-based reactive updates don't re-render in zoneless mode
-          if (this.activeThreadId) {
-            const threadId = this.activeThreadId;
-            globalThis.setTimeout(() => {
-              this.askAssistantService
-                .getThreadMessages(threadId)
-                .pipe(takeUntil(this.destroy$))
-                .subscribe({
-                  next: (serverMessages) => {
-                    this.messageId = serverMessages.length;
-                    this.messages.set(serverMessages.map((m, i) => ({ id: i + 1, role: m.role, text: m.text, createdAt: m.createdAt })));
-                  },
-                  error: () => { /* keep locally built messages on error */ },
-                });
-            }, 300);
-          }
-          if (this.isBrowser) {
-            this.askInput?.nativeElement.focus({ preventScroll: true });
-          }
+          this.ngZone.run(() => {
+            this.isResponding.set(false);
+            setTimeout(() => this.cdr.detectChanges(), 0);
+            this.loadConversations();
+            if (this.isBrowser) {
+              this.askInput?.nativeElement.focus({ preventScroll: true });
+            }
+          });
         }),
       )
       .subscribe({
@@ -204,13 +191,14 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           }
 
           if (eventUpdate.kind === 'delta' && eventUpdate.text) {
+            console.log('[Component Stream Next] Chunk:', eventUpdate.text);
             if (!assistantMessageCreated) {
-              // First token — create the bubble now
               this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: eventUpdate.text, createdAt: Date.now() }]);
               assistantMessageCreated = true;
             } else {
               this.patchMessageText(assistantMessageId, (existingText) => `${existingText}${eventUpdate.text}`);
             }
+            console.log('[Component Stream Next] Array length:', this.messages().length);
           }
 
           if (eventUpdate.kind === 'error') {
@@ -219,14 +207,12 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
               this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: errorText, createdAt: Date.now() }]);
               assistantMessageCreated = true;
             } else {
-              this.patchMessageText(assistantMessageId, (existingText) => {
-                return existingText ? `${existingText}\n${errorText}` : errorText;
-              });
+              this.patchMessageText(assistantMessageId, (existingText) => existingText ? `${existingText}\n${errorText}` : errorText);
             }
           }
 
+          setTimeout(() => this.cdr.detectChanges(), 0);
           this.scrollToBottom(false);
-          this.appRef.tick();
         },
         error: () => {
           if (!assistantMessageCreated) {
@@ -234,7 +220,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           } else {
             this.patchMessageText(assistantMessageId, () => AskAssistantComponent.fallbackAssistantError);
           }
-          this.appRef.tick();
+          setTimeout(() => this.cdr.detectChanges(), 0);
         },
       });
   }
@@ -462,8 +448,8 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Ensure the view reflects latest messages before measuring/scrolling
-    this.appRef.tick();
+    // We don't forcefully sync appRef here to avoid recursive tick errors.
+    // The caller is expected to handle change detection.
     globalThis.setTimeout(() => {
       const behavior = smooth ? ('smooth' as ScrollBehavior) : ('auto' as ScrollBehavior);
       const anchor = this.bottomAnchor?.nativeElement;
