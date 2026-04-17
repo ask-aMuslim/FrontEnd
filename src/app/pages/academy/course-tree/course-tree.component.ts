@@ -10,7 +10,7 @@ import {
   signal,
   PLATFORM_ID,
   afterNextRender,
-  afterRender,
+  afterEveryRender,
 } from '@angular/core';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 
@@ -71,7 +71,7 @@ export class CourseTreeComponent {
       this.computeConnectorPaths();
     });
 
-    afterRender(() => {
+    afterEveryRender(() => {
       this.computeConnectorPaths();
     });
   }
