@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, HostListener, inject, PLATFORM_ID, ElementRef, viewChild } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { FormsModule } from '@angular/forms';
@@ -594,7 +594,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         const titleText = this.lessonContent.title || 'Lesson Content';
         const contentHtml = this.buildLessonHtmlForPdf();
         const richTextStyles = this.getPdfRichTextStyles();
-        let exportContainer: HTMLDivElement | null = null;
+        let exportContainer: HTMLDivElement | undefined;
 
         try {
             const jsPDF = (await import('jspdf')).jsPDF;

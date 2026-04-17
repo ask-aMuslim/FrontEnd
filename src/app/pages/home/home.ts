@@ -1,4 +1,4 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -12,7 +12,7 @@ import {
   ViewChild,
   afterNextRender,
 } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';

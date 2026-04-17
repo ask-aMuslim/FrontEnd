@@ -263,7 +263,7 @@ export class CourseTreeComponent {
   }
 
   private getRenderableTreeContainer(): HTMLElement | null {
-    if (!this.hasDom || this.loading() || !!this.error() || this.nodes().length === 0) {
+    if (!this.isBrowser || this.loading() || !!this.error() || this.nodes().length === 0) {
       return null;
     }
 
@@ -619,7 +619,7 @@ export class CourseTreeComponent {
   }
 
   private centerTreeScrollbarIfNeeded(): void {
-    if (!this.hasDom) {
+    if (!this.isBrowser) {
       return;
     }
 

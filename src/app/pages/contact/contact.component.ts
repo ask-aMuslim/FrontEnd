@@ -9,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { InquiryRequestsService } from '../../core/services/inquiry-requests.service';
 import { TokenService } from '../../core/auth/token.service';
 import { Language, MeetingInquiryTopic } from '../../core/models/interfaces/enums.model';
+import { ScrollService } from '../../core/services/scroll.service';
 
 interface TopicOption {
     value: MeetingInquiryTopic;
