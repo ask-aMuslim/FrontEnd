@@ -93,7 +93,7 @@
   justify-content: center;
   transition: all 0.3s;
 
-  &--recorded {
+  &--finished {
     border: 1px solid var(--color-success-base);
     background: var(--color-card-surface-primary);
 
@@ -106,11 +106,44 @@
   &--live {
     border: 1px solid var(--color-button-secondary-normal);
     background: var(--color-chips-selected-data-surface);
+    animation: event-card-live-badge-zoom 1.6s ease-in-out infinite;
+    transform-origin: center;
 
     &:hover {
+      animation-play-state: paused;
       background: var(--color-button-secondary-hovering);
       transform: scale(1.02);
     }
+  }
+
+  &--upcoming {
+    border: 1px solid var(--color-button-primary-normal);
+    background: #eff6ff;
+
+    &:hover {
+      background: var(--color-button-primary-normal);
+      transform: scale(1.02);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-card__badge--live {
+    animation: none;
+  }
+}
+
+@keyframes event-card-live-badge-zoom {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
 
@@ -121,10 +154,10 @@
   font-weight: 500;
   transition: color 0.3s;
 
-  &--recorded {
+  &--finished {
     color: var(--color-success-base);
 
-    .event-card__badge--recorded:hover & {
+    .event-card__badge--finished:hover & {
       color: white;
     }
   }
@@ -133,6 +166,14 @@
     color: var(--color-button-secondary-normal);
 
     .event-card__badge--live:hover & {
+      color: white;
+    }
+  }
+
+  &--upcoming {
+    color: var(--color-button-primary-normal);
+
+    .event-card__badge--upcoming:hover & {
       color: white;
     }
   }

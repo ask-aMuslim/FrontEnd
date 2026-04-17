@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../event.service';
+import { EventStatus } from '../event-status.enum';
+import { getEventStatusBadgeState } from '../event-status.helper';
 import { ProfilePopupComponent } from './profile-popup/profile-popup.component';
 import { SharePopupComponent } from './share-popup/share-popup.component';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
@@ -22,6 +24,7 @@ export interface EventDetail {
   time: string;
   location: string;
   tags: string[];
+  status?: EventStatus;
   isRecorded: boolean;
   isPublished?: boolean;
   registrationDeadline?: string;
@@ -49,6 +52,38 @@ export class EventDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly eventService = inject(EventService);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  get statusVariant(): 'upcoming' | 'live' | 'finished' {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).variant;
+  }
+
+  get isFinished(): boolean {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).isFinished;
+  }
+
+  get isLive(): boolean {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).isLive;
+  }
+
+  get statusBadgeText(): string {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).text;
+  }
 
   ngOnInit(): void {
     this.eventId = this.route.snapshot.paramMap.get('id');

@@ -1,11 +1,23 @@
 import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
+import {
+  SelectDropdownComponent,
+  SelectOption,
+} from '../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { EventsService } from '../../core/services/events.service';
 import type { EventCard } from './event-card/event-card.component';
+import { EventStatus } from './event-status.enum';
+import {
+  getEventStatusBadgeState,
+  parseEventStatusValue,
+  resolveEventStatusVariant,
+} from './event-status.helper';
 import {
   asRecord,
+  extractRecord,
   extractArray,
   getValue,
   toBooleanValue,
@@ -18,24 +30,36 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 @Component({
   selector: 'app-events',
-  imports: [EventCardComponent, InlineSvgDirective],
+  standalone: true,
+  imports: [EventCardComponent, InlineSvgDirective, FormsModule, SelectDropdownComponent],
   templateUrl: './events.component.html',
   styleUrls: ['./events.component.scss'],
 })
 export class EventsComponent implements OnInit {
   private static readonly fallbackImage = '/images/events-image-placeholder.jpg';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
-  private static readonly defaultPageSize = 3;
+  private static readonly defaultPageSize = 9;
   private static readonly minimumTotalPages = 1;
   private static readonly idOffset = 1;
+
+  protected readonly EventStatus = EventStatus;
+  protected readonly statusOptions: SelectOption<EventStatus | null>[] = [
+    { value: null, label: 'All statuses' },
+    { value: EventStatus.Upcoming, label: 'Upcoming' },
+    { value: EventStatus.Live, label: 'Live' },
+    { value: EventStatus.Finished, label: 'Finished' },
+  ];
 
   currentPage = 1;
   itemsPerPage = EventsComponent.defaultPageSize;
   totalPages = EventsComponent.minimumTotalPages;
   hasNextPage = false;
+  searchTerm = '';
+  selectedEventStatus: EventStatus | null = null;
   pages: number[] = [];
 
   eventCards: EventCard[] = [];
+  featuredEventFromNext: EventCard | null = null;
 
   private readonly eventsService = inject(EventsService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -43,7 +67,22 @@ export class EventsComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   ngOnInit(): void {
+    this.loadFeaturedEvent();
     this.loadEvents();
+  }
+
+  private loadFeaturedEvent(): void {
+    this.eventsService.getNext().subscribe({
+      next: (response) => {
+        const record = extractRecord(response);
+        this.featuredEventFromNext = record ? this.mapEvent(record, 0) : null;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.featuredEventFromNext = null;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   private updatePages(): void {
@@ -74,6 +113,30 @@ export class EventsComponent implements OnInit {
     }
   }
 
+  applySearch(): void {
+    this.currentPage = 1;
+    this.loadEvents();
+  }
+
+  clearSearch(): void {
+    if (!this.searchTerm.trim()) {
+      return;
+    }
+
+    this.searchTerm = '';
+    this.applySearch();
+  }
+
+  onStatusChange(): void {
+    this.currentPage = 1;
+    this.loadEvents();
+  }
+
+  onStatusSelect(status: EventStatus | null): void {
+    this.selectedEventStatus = status;
+    this.onStatusChange();
+  }
+
   trackByIndex(index: number): number {
     return index;
   }
@@ -99,7 +162,35 @@ export class EventsComponent implements OnInit {
   }
 
   get featuredEvent(): EventCard | null {
+    if (this.featuredEventFromNext) {
+      return this.featuredEventFromNext;
+    }
+
     return this.eventCards.length > 0 ? this.eventCards[0] : null;
+  }
+
+  get featuredEventBadgeText(): string {
+    return getEventStatusBadgeState(
+      'hero',
+      this.featuredEvent?.status,
+      this.featuredEvent?.isRecorded === true,
+    ).text;
+  }
+
+  get featuredEventBadgeVariant(): 'upcoming' | 'live' | 'finished' {
+    return getEventStatusBadgeState(
+      'hero',
+      this.featuredEvent?.status,
+      this.featuredEvent?.isRecorded === true,
+    ).variant;
+  }
+
+  get isFeaturedEventLive(): boolean {
+    return getEventStatusBadgeState(
+      'hero',
+      this.featuredEvent?.status,
+      this.featuredEvent?.isRecorded === true,
+    ).isLive;
   }
 
   get featuredEventDay(): string {
@@ -127,9 +218,12 @@ export class EventsComponent implements OnInit {
   }
 
   private loadEvents(): void {
+    const trimmedSearch = this.searchTerm.trim();
     this.eventsService.getAll({
       pageNumber: this.currentPage,
       pageSize: this.itemsPerPage,
+      eventStatus: this.selectedEventStatus ?? undefined,
+      searchTerm: trimmedSearch.length > 0 ? trimmedSearch : undefined,
     }).subscribe({
       next: (response) => {
         const mappedEvents = this.mapEvents(response);
@@ -235,7 +329,12 @@ export class EventsComponent implements OnInit {
     const date = formatEventDateDisplay(startDateValue);
     const timeRange = formatEventTimeRangeDisplay(startDateValue, endDateValue);
     const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
-    const isRecorded = toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded'));
+    const status = parseEventStatusValue(getValue(record, 'status', 'Status'));
+    const isRecorded =
+      resolveEventStatusVariant(
+        status,
+        toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
+      ) === 'finished';
     const isPublished = toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
 
     return {
@@ -250,6 +349,7 @@ export class EventsComponent implements OnInit {
       date,
       timeRange,
       tags,
+      status,
       isRecorded,
       isPublished,
     };
