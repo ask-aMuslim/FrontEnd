@@ -1,126 +1,126 @@
 import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    Output,
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 export type AcademySidebarLink = string | Array<string | number>;
 
 export interface AcademySidebarLessonItem {
-    id: string;
-    quizLessonId?: string;
-    title: string;
-    duration: string;
-    type?: string;
-    isCompleted?: boolean;
-    isCurrent?: boolean;
-    isLastCourseLesson?: boolean;
-    isLocked?: boolean;
-    isPending?: boolean;
-    hasNotification?: boolean;
+  id: string;
+  quizLessonId?: string;
+  title: string;
+  duration: string;
+  type?: string;
+  isCompleted?: boolean;
+  isCurrent?: boolean;
+  isLastCourseLesson?: boolean;
+  isLocked?: boolean;
+  isPending?: boolean;
+  hasNotification?: boolean;
 }
 
 @Component({
-    selector: 'app-academy-course-sidebar',
-    standalone: true,
-    imports: [RouterLink],
-    templateUrl: './academy-course-sidebar.component.html',
-    styleUrls: ['./academy-course-sidebar.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+  selector: 'app-academy-course-sidebar',
+  standalone: true,
+  imports: [RouterLink],
+  templateUrl: './academy-course-sidebar.component.html',
+  styleUrls: ['./academy-course-sidebar.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AcademyCourseSidebarComponent {
-    @Input() ariaLabel = 'Course lessons';
-    @Input({ required: true }) stageLabel = '';
-    @Input({ required: true }) title = '';
-    @Input() stats: readonly string[] = [];
-    @Input() lessons: readonly AcademySidebarLessonItem[] = [];
+  @Input() ariaLabel = 'Course lessons';
+  @Input({ required: true }) stageLabel = '';
+  @Input({ required: true }) title = '';
+  @Input() stats: readonly string[] = [];
+  @Input() lessons: readonly AcademySidebarLessonItem[] = [];
 
-    @Input() showReadyDividerBeforeQuiz = false;
-    @Input() highlightReadyDividerBeforeQuiz = false;
-    @Input() allowLessonSelection = true;
-    @Input() disableLockedLessonClick = true;
-    @Input() scrollThreshold = 6;
+  @Input() showReadyDividerBeforeQuiz = false;
+  @Input() highlightReadyDividerBeforeQuiz = false;
+  @Input() allowLessonSelection = true;
+  @Input() disableLockedLessonClick = true;
+  @Input() scrollThreshold = 6;
 
-    @Input() overviewLink: AcademySidebarLink | null = null;
-    @Input() overviewLinkLabel = 'Overview page';
+  @Input() overviewLink: AcademySidebarLink | null = null;
+  @Input() overviewLinkLabel = 'Overview page';
 
-    @Output() lessonSelect = new EventEmitter<AcademySidebarLessonItem>();
+  @Output() lessonSelect = new EventEmitter<AcademySidebarLessonItem>();
 
-    get shouldEnableScroll(): boolean {
-        return this.lessons.length > this.scrollThreshold;
+  get shouldEnableScroll(): boolean {
+    return this.lessons.length > this.scrollThreshold;
+  }
+
+  trackByLessonId(_index: number, lesson: AcademySidebarLessonItem): string {
+    return lesson.id;
+  }
+
+  isLessonDisabled(lesson: AcademySidebarLessonItem): boolean {
+    if (!this.allowLessonSelection) {
+      return true;
     }
 
-    trackByLessonId(_index: number, lesson: AcademySidebarLessonItem): string {
-        return lesson.id;
+    const isLocked = lesson.isLocked || lesson.isPending;
+    return !!isLocked && this.disableLockedLessonClick;
+  }
+
+  onLessonClick(lesson: AcademySidebarLessonItem): void {
+    if (this.isLessonDisabled(lesson)) {
+      return;
     }
 
-    isLessonDisabled(lesson: AcademySidebarLessonItem): boolean {
-        if (!this.allowLessonSelection) {
-            return true;
-        }
+    this.lessonSelect.emit(lesson);
+  }
 
-        const isLocked = lesson.isLocked || lesson.isPending;
-        return !!isLocked && this.disableLockedLessonClick;
+  shouldShowDuration(lesson: AcademySidebarLessonItem): boolean {
+    if (lesson.type === 'quiz') {
+      return false;
     }
 
-    onLessonClick(lesson: AcademySidebarLessonItem): void {
-        if (this.isLessonDisabled(lesson)) {
-            return;
-        }
+    return lesson.duration.trim().length > 0;
+  }
 
-        this.lessonSelect.emit(lesson);
+  getLessonIconPath(lesson: AcademySidebarLessonItem): string {
+    if (lesson.isCompleted) {
+      return '/academy-assets/checked.svg';
     }
 
-    shouldShowDuration(lesson: AcademySidebarLessonItem): boolean {
-        if (lesson.type === 'quiz') {
-            return false;
-        }
+    switch (lesson.type) {
+      case 'article':
+        return '/academy-assets/article-lesson.svg';
+      case 'audio':
+        return '/academy-assets/audio-lesson.svg';
+      case 'document':
+        return '/academy-assets/document-lesson.svg';
+      case 'quiz':
+        return '/academy-assets/quiz.svg';
+      case 'video':
+        return '/academy-assets/video-lesson.svg';
+      default:
+        return '/academy-assets/video-lesson.svg';
+    }
+  }
 
-        return lesson.duration.trim().length > 0;
+  getLessonIconAlt(lesson: AcademySidebarLessonItem): string {
+    if (lesson.isCompleted) {
+      return 'Completed lesson';
     }
 
-    getLessonIconPath(lesson: AcademySidebarLessonItem): string {
-        if (lesson.isCompleted) {
-            return '/academy/checked.svg';
-        }
-
-        switch (lesson.type) {
-            case 'article':
-                return '/academy/article-lesson.svg';
-            case 'audio':
-                return '/academy/audio-lesson.svg';
-            case 'document':
-                return '/academy/document-lesson.svg';
-            case 'quiz':
-                return '/academy/quiz.svg';
-            case 'video':
-                return '/academy/video-lesson.svg';
-            default:
-                return '/academy/video-lesson.svg';
-        }
+    switch (lesson.type) {
+      case 'article':
+        return 'Article lesson';
+      case 'audio':
+        return 'Audio lesson';
+      case 'document':
+        return 'Document lesson';
+      case 'quiz':
+        return 'Quiz';
+      case 'video':
+        return 'Video lesson';
+      default:
+        return 'Lesson';
     }
-
-    getLessonIconAlt(lesson: AcademySidebarLessonItem): string {
-        if (lesson.isCompleted) {
-            return 'Completed lesson';
-        }
-
-        switch (lesson.type) {
-            case 'article':
-                return 'Article lesson';
-            case 'audio':
-                return 'Audio lesson';
-            case 'document':
-                return 'Document lesson';
-            case 'quiz':
-                return 'Quiz';
-            case 'video':
-                return 'Video lesson';
-            default:
-                return 'Lesson';
-        }
-    }
+  }
 }
