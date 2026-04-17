@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, HostListener, inject, PLATFORM_ID, ElementRef, viewChild } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { FormsModule } from '@angular/forms';
@@ -132,10 +132,11 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
+    private readonly document = inject(DOCUMENT);
     private readonly tokenService = inject(TokenService);
     private readonly flushProgressOnUnload = () => this.flushVideoProgress();
     private youtubePlayer: YouTubePlayer | null = null;
-    private youtubeProgressIntervalId: ReturnType<typeof globalThis.setInterval> | null = null;
+    private youtubeProgressIntervalId: any = null;
     private hasSyncedCompletion = false;
     private pendingSeekSeconds: number | null = null;
 
@@ -568,20 +569,21 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     onShare(): void {
-        if (!this.isBrowser || !this.lessonContent) {
+        const window = this.document.defaultView;
+        if (!this.isBrowser || !this.lessonContent || !window) {
             return;
         }
 
-        if (globalThis.navigator.share) {
-            globalThis.navigator.share({
+        if (window.navigator.share) {
+            window.navigator.share({
                 title: this.lessonContent.title,
                 text: this.lessonContent.description,
-                url: globalThis.location.href
+                url: window.location.href
             }).catch(() => void 0);
             return;
         }
 
-        globalThis.navigator.clipboard?.writeText(globalThis.location.href).then(() => void 0);
+        window.navigator.clipboard?.writeText(window.location.href).then(() => void 0);
     }
 
     async onDownload(): Promise<void> {
@@ -592,14 +594,14 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         const titleText = this.lessonContent.title || 'Lesson Content';
         const contentHtml = this.buildLessonHtmlForPdf();
         const richTextStyles = this.getPdfRichTextStyles();
-        let exportContainer: HTMLDivElement | null = null;
+        let exportContainer: HTMLDivElement | undefined;
 
         try {
             const jsPDF = (await import('jspdf')).jsPDF;
             const html2canvas = (await import('html2canvas')).default;
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-            exportContainer = globalThis.document.createElement('div');
+            exportContainer = this.document.createElement('div');
             exportContainer.style.position = 'fixed';
             exportContainer.style.left = '-10000px';
             exportContainer.style.top = '0';
@@ -618,7 +620,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                             </div>
                         `;
 
-            globalThis.document.body.appendChild(exportContainer);
+            this.document.body.appendChild(exportContainer);
             const imageReport = await this.inlineContainerImages(exportContainer);
             await this.waitForImages(exportContainer);
 
@@ -1029,8 +1031,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return;
         }
 
-        globalThis.setTimeout(() => {
-            const hostElement = globalThis.document.getElementById(this.youtubePlayerHostElementId);
+        setTimeout(() => {
+            const hostElement = this.document.getElementById(this.youtubePlayerHostElementId);
             if (!(hostElement instanceof HTMLElement)) {
                 return;
             }
@@ -1047,7 +1049,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.applyPendingPlaybackSeek();
                     this.startYouTubeProgressTracking();
 
-                    globalThis.addEventListener('beforeunload', this.flushProgressOnUnload);
+                    this.document.defaultView?.addEventListener('beforeunload', this.flushProgressOnUnload);
                     this.cdr.detectChanges();
                 })
                 .catch(() => {
@@ -1079,7 +1081,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.stopYouTubeProgressTracking();
         this.updateVideoProgressLabel();
 
-        this.youtubeProgressIntervalId = globalThis.setInterval(() => {
+        this.youtubeProgressIntervalId = setInterval(() => {
             this.updateVideoProgressLabel();
             this.trackVideoProgress();
         }, 1000);
@@ -1087,7 +1089,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
     private stopYouTubeProgressTracking(): void {
         if (this.youtubeProgressIntervalId) {
-            globalThis.clearInterval(this.youtubeProgressIntervalId);
+            clearInterval(this.youtubeProgressIntervalId);
             this.youtubeProgressIntervalId = null;
         }
     }
@@ -1440,7 +1442,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const htmlVideo = globalThis.document.querySelector('video.video-player');
+        const htmlVideo = this.document.querySelector('video.video-player');
         if (htmlVideo instanceof HTMLVideoElement) {
             this.syncNativeVideoProgress(htmlVideo, true, false);
         }
@@ -1543,7 +1545,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             }
 
             if (this.isBrowser) {
-                const htmlVideo = globalThis.document.querySelector('video.video-player');
+                const htmlVideo = this.document.querySelector('video.video-player');
                 if (htmlVideo instanceof HTMLVideoElement && Number.isFinite(htmlVideo.currentTime)) {
                     return Math.max(0, Math.floor(htmlVideo.currentTime));
                 }
@@ -1553,7 +1555,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         if (this.isAudioContent && this.isBrowser) {
-            const audioElement = globalThis.document.querySelector('.audio-player');
+            const audioElement = this.document.querySelector('.audio-player');
             if (audioElement instanceof HTMLAudioElement && Number.isFinite(audioElement.currentTime)) {
                 return Math.max(0, Math.floor(audioElement.currentTime));
             }
@@ -1572,7 +1574,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
 
         if (this.isAudioContent && this.isBrowser) {
-            const audioElement = globalThis.document.querySelector('.audio-player');
+            const audioElement = this.document.querySelector('.audio-player');
             if (audioElement instanceof HTMLAudioElement) {
                 audioElement.currentTime = safeTarget;
                 this.syncAudioProgress(audioElement, false, false);
@@ -1586,7 +1588,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return false;
         }
 
-        const htmlVideo = globalThis.document.querySelector('video.video-player');
+        const htmlVideo = this.document.querySelector('video.video-player');
         if (htmlVideo instanceof HTMLVideoElement) {
             htmlVideo.currentTime = safeTarget;
             this.syncNativeVideoProgress(htmlVideo, false, false);

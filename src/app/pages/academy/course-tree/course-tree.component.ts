@@ -1,6 +1,4 @@
 import {
-  AfterViewChecked,
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -10,8 +8,11 @@ import {
   input,
   output,
   signal,
+  PLATFORM_ID,
+  afterNextRender,
+  afterEveryRender,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 export interface CourseNode {
   id: string;
@@ -57,11 +58,24 @@ interface EdgeGeometry {
   templateUrl: './course-tree.component.html',
   styleUrls: ['./course-tree.component.scss']
 })
-export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
+export class CourseTreeComponent {
 
   private readonly hostElement = inject(ElementRef<HTMLElement>);
-  private readonly hasDom = globalThis.document !== undefined;
+  private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private lastCenteredScrollLayoutKey = '';
+
+  constructor() {
+    afterNextRender(() => {
+      this.computeConnectorPaths();
+    });
+
+    afterEveryRender(() => {
+      this.computeConnectorPaths();
+    });
+  }
+
 
   // Inputs from Academy Component
   nodes = input.required<CourseNode[]>();
@@ -195,18 +209,13 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
     return node.prerequisiteIds ?? node.prerequisites ?? [];
   }
 
-  ngAfterViewInit(): void {
-    this.computeConnectorPaths();
-  }
-
-  ngAfterViewChecked(): void {
-    this.computeConnectorPaths();
-  }
-
   @HostListener('window:resize')
   onWindowResize(): void {
-    this.computeConnectorPaths();
+    if (this.isBrowser) {
+      this.computeConnectorPaths();
+    }
   }
+
 
   retry() {
     this.retryAction.emit();
@@ -254,7 +263,7 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
   }
 
   private getRenderableTreeContainer(): HTMLElement | null {
-    if (!this.hasDom || this.loading() || !!this.error() || this.nodes().length === 0) {
+    if (!this.isBrowser || this.loading() || !!this.error() || this.nodes().length === 0) {
       return null;
     }
 
@@ -610,7 +619,7 @@ export class CourseTreeComponent implements AfterViewInit, AfterViewChecked {
   }
 
   private centerTreeScrollbarIfNeeded(): void {
-    if (!this.hasDom) {
+    if (!this.isBrowser) {
       return;
     }
 

@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 export interface YouTubePlayer {
     getCurrentTime(): number;
@@ -66,12 +67,21 @@ export class YouTubePlayerService {
     private static readonly scriptId = 'aam-youtube-iframe-api';
     private static apiReadyPromise: Promise<void> | null = null;
 
+    private readonly document = inject(DOCUMENT);
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
+
     loadApi(): Promise<void> {
-        if (globalThis.window === undefined || globalThis.document === undefined) {
+        if (!this.isBrowser) {
             return Promise.reject(new Error('YouTube API can only be loaded in the browser.'));
         }
 
-        if (globalThis.window.YT?.Player) {
+        const window = this.document.defaultView;
+        if (!window) {
+            return Promise.reject(new Error('Window object is unavailable.'));
+        }
+
+        if (window.YT?.Player) {
             return Promise.resolve();
         }
 
@@ -80,14 +90,14 @@ export class YouTubePlayerService {
         }
 
         YouTubePlayerService.apiReadyPromise = new Promise<void>((resolve, reject) => {
-            const existingScript = globalThis.document.getElementById(YouTubePlayerService.scriptId);
-            if (existingScript && globalThis.window.YT?.Player) {
+            const existingScript = this.document.getElementById(YouTubePlayerService.scriptId);
+            if (existingScript && window.YT?.Player) {
                 resolve();
                 return;
             }
 
             const finalizeReady = () => {
-                if (globalThis.window.YT?.Player) {
+                if (window.YT?.Player) {
                     resolve();
                     return;
                 }
@@ -95,8 +105,8 @@ export class YouTubePlayerService {
                 reject(new Error('YouTube API loaded but player constructor is unavailable.'));
             };
 
-            const previousReadyHandler = globalThis.window.onYouTubeIframeAPIReady;
-            globalThis.window.onYouTubeIframeAPIReady = () => {
+            const previousReadyHandler = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = () => {
                 previousReadyHandler?.();
                 finalizeReady();
             };
@@ -109,13 +119,13 @@ export class YouTubePlayerService {
                 return;
             }
 
-            const script = globalThis.document.createElement('script');
+            const script = this.document.createElement('script');
             script.id = YouTubePlayerService.scriptId;
             script.src = 'https://www.youtube.com/iframe_api';
             script.async = true;
             script.defer = true;
             script.addEventListener('error', () => reject(new Error('Failed to load YouTube API script.')), { once: true });
-            globalThis.document.body.appendChild(script);
+            this.document.body.appendChild(script);
         });
 
         return YouTubePlayerService.apiReadyPromise;
@@ -128,7 +138,8 @@ export class YouTubePlayerService {
     ): Promise<YouTubePlayer> {
         await this.loadApi();
 
-        const playerFactory = globalThis.window.YT?.Player;
+        const window = this.document.defaultView;
+        const playerFactory = window?.YT?.Player;
         if (!playerFactory) {
             throw new Error('YouTube player constructor is unavailable.');
         }
@@ -142,7 +153,7 @@ export class YouTubePlayerService {
                     rel: 0,
                     modestbranding: 1,
                     playsinline: 1,
-                    origin: globalThis.location.origin,
+                    origin: window.location.origin,
                 },
                 events: {
                     onReady: (event) => {
@@ -182,3 +193,4 @@ export class YouTubePlayerService {
         }
     }
 }
+
