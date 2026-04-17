@@ -438,21 +438,31 @@
                   >
                     View Details
                   </button>
-                  <div
-                    class="upcoming-event-card__status upcoming-event-card__status--hidden"
-                  >
-                    <div
-                      [inlineSVG]="'/icons/icons-24/done.svg'"
-                      class="upcoming-event-card__status-icon"
-                    ></div>
-                    <span class="upcoming-event-card__status-text">
-                      {{
-                        upcomingEvent.isRegistered
-                          ? "Registered"
-                          : "Not Registered"
-                      }}
-                    </span>
-                  </div>
+                  @if (upcomingEvent.isRegistered) {
+                    <div class="upcoming-event-card__status">
+                      <div
+                        [inlineSVG]="'/icons/icons-24/done.svg'"
+                        class="upcoming-event-card__status-icon"
+                      ></div>
+                      <span class="upcoming-event-card__status-text">
+                        Registered
+                      </span>
+                    </div>
+                  } @else {
+                    <button
+                      type="button"
+                      class="upcoming-event-card__status"
+                      (click)="handleRegisterNowClick()"
+                    >
+                      <span class="upcoming-event-card__status-text">
+                        Register now
+                      </span>
+                      <div
+                        [inlineSVG]="'/icons/icons-16/arrow-right.svg'"
+                        class="upcoming-event-card__status-icon"
+                      ></div>
+                    </button>
+                  }
                 </div>
               </div>
             }

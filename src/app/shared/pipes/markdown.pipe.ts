@@ -1,6 +1,6 @@
-import { Pipe, PipeTransform, SecurityContext, inject } from '@angular/core';
+import { Pipe, PipeTransform, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { marked, Renderer } from 'marked';
+import { marked, Renderer, Tokens } from 'marked';
 import DOMPurify from 'dompurify';
 
 /**
@@ -29,7 +29,7 @@ export class MarkdownPipe implements PipeTransform {
     const renderer = new Renderer();
 
     const originalLink = renderer.link.bind(renderer);
-    renderer.link = (token) => {
+    renderer.link = (token: Tokens.Link): string => {
       const html = originalLink(token);
       // Ensure external links open in a new tab
       if (token.href && !token.href.startsWith('#')) {
