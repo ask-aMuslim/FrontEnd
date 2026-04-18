@@ -128,6 +128,8 @@ export class EventService {
       maxAttendees: toNumberValue(getValue(record, 'maxAttendees', 'MaxAttendees')) ?? undefined,
       currentAttendees:
         toNumberValue(getValue(record, 'currentAttendees', 'CurrentAttendees')) ?? undefined,
+      meetingLink:
+        toStringValue(getValue(record, 'meetingLink', 'MeetingLink', 'liveLink', 'LiveLink')) ?? null,
       agenda: toStringArray(getValue(record, 'agenda', 'Agenda')),
       outcomes: toStringArray(getValue(record, 'outcomes', 'Outcomes')),
     };

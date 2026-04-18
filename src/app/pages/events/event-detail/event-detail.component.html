@@ -117,6 +117,7 @@
             <button
               type="button"
               (click)="registerForEvent()"
+              [disabled]="isRegistered"
               class="event-detail-page__join-button button"
             >
               <span class="event-detail-page__join-button-content">
@@ -125,11 +126,22 @@
                   alt=""
                   class="event-detail-page__join-button-icon"
                 />
-                <span class="event-detail-page__join-button-label"
-                  >Join Live Event</span
-                >
+                <span class="event-detail-page__join-button-label">{{
+                  registrationButtonLabel
+                }}</span>
               </span>
             </button>
+
+            @if (isLive) {
+              <button
+                type="button"
+                (click)="joinLiveEvent()"
+                [disabled]="!isRegistered"
+                class="event-detail-page__join-now-button button"
+              >
+                Join event now
+              </button>
+            }
           }
 
           @if (!isFinished) {
@@ -150,6 +162,17 @@
                 address it during the Q&amp;A.
               </p>
 
+              @if (existingQuestionText) {
+                <div class="event-detail-page__question-existing">
+                  <span class="event-detail-page__question-existing-label"
+                    >Your saved question</span
+                  >
+                  <p class="event-detail-page__question-existing-text">
+                    {{ existingQuestionText }}
+                  </p>
+                </div>
+              }
+
               <div class="event-detail-page__question-form">
                 <input
                   type="text"
@@ -161,7 +184,7 @@
                 <button
                   type="button"
                   (click)="submitQuestion()"
-                  [disabled]="!questionText.trim()"
+                  [disabled]="!isRegistered || !questionText.trim()"
                   class="event-detail-page__question-submit button"
                 >
                   Send

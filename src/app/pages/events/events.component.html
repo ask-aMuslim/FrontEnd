@@ -77,7 +77,11 @@
 
         <div class="events-hero__actions">
           <div class="events-hero__actions-inner">
-            <button class="events-hero__register-btn">
+            <button
+              type="button"
+              class="events-hero__register-btn"
+              (click)="goToFeaturedEvent()"
+            >
               <span class="events-hero__register-text">Register Now</span>
               <div class="events-hero__register-icon">
                 <svg
@@ -97,7 +101,11 @@
                 </svg>
               </div>
             </button>
-            <button class="events-hero__share-btn">
+            <button
+              type="button"
+              class="events-hero__share-btn"
+              (click)="goToFeaturedEvent()"
+            >
               <img
                 src="/icons/icons-24/share.svg"
                 alt="Share Icon"

@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
@@ -64,6 +65,7 @@ export class EventsComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   ngOnInit(): void {
@@ -215,6 +217,15 @@ export class EventsComponent implements OnInit {
     }
 
     return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(parsed);
+  }
+
+  goToFeaturedEvent(): void {
+    const featuredEventId = this.featuredEvent?.id;
+    if (!featuredEventId) {
+      return;
+    }
+
+    void this.router.navigate(['/events', featuredEventId]);
   }
 
   private loadEvents(): void {
