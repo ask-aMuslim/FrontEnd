@@ -24,21 +24,32 @@
                 class="event-detail-page__image"
               />
 
-              @if (!event.isRecorded) {
+              <span
+                class="event-detail-page__status-badge"
+                [class.event-detail-page__status-badge--upcoming]="
+                  statusVariant === 'upcoming'
+                "
+                [class.event-detail-page__status-badge--live]="
+                  statusVariant === 'live'
+                "
+                [class.event-detail-page__status-badge--finished]="
+                  statusVariant === 'finished'
+                "
+              >
                 <span
-                  class="event-detail-page__status-badge event-detail-page__status-badge--live"
+                  class="event-detail-page__status-badge-text"
+                  [class.event-detail-page__status-badge-text--upcoming]="
+                    statusVariant === 'upcoming'
+                  "
+                  [class.event-detail-page__status-badge-text--live]="
+                    statusVariant === 'live'
+                  "
+                  [class.event-detail-page__status-badge-text--finished]="
+                    statusVariant === 'finished'
+                  "
+                  >{{ statusBadgeText }}</span
                 >
-                  • Live Event
-                </span>
-              }
-
-              @if (event.isRecorded) {
-                <span
-                  class="event-detail-page__status-badge event-detail-page__status-badge--recorded"
-                >
-                  Recorded
-                </span>
-              }
+              </span>
             </div>
 
             <div class="event-detail-page__body">
@@ -102,10 +113,11 @@
             </div>
           </article>
 
-          @if (!event.isRecorded) {
+          @if (!isFinished) {
             <button
               type="button"
               (click)="registerForEvent()"
+              [disabled]="isRegistered"
               class="event-detail-page__join-button button"
             >
               <span class="event-detail-page__join-button-content">
@@ -114,14 +126,25 @@
                   alt=""
                   class="event-detail-page__join-button-icon"
                 />
-                <span class="event-detail-page__join-button-label"
-                  >Join Live Event</span
-                >
+                <span class="event-detail-page__join-button-label">{{
+                  registrationButtonLabel
+                }}</span>
               </span>
             </button>
+
+            @if (isLive) {
+              <button
+                type="button"
+                (click)="joinLiveEvent()"
+                [disabled]="!isRegistered"
+                class="event-detail-page__join-now-button button"
+              >
+                Join event now
+              </button>
+            }
           }
 
-          @if (!event.isRecorded) {
+          @if (!isFinished) {
             <section class="event-detail-page__question-panel">
               <div class="event-detail-page__question-header">
                 <div
@@ -139,6 +162,17 @@
                 address it during the Q&amp;A.
               </p>
 
+              @if (existingQuestionText) {
+                <div class="event-detail-page__question-existing">
+                  <span class="event-detail-page__question-existing-label"
+                    >Your saved question</span
+                  >
+                  <p class="event-detail-page__question-existing-text">
+                    {{ existingQuestionText }}
+                  </p>
+                </div>
+              }
+
               <div class="event-detail-page__question-form">
                 <input
                   type="text"
@@ -150,7 +184,7 @@
                 <button
                   type="button"
                   (click)="submitQuestion()"
-                  [disabled]="!questionText.trim()"
+                  [disabled]="!isRegistered || !questionText.trim()"
                   class="event-detail-page__question-submit button"
                 >
                   Send
@@ -209,9 +243,9 @@
                 </div>
               </div>
 
-              @if (event.isRecorded) {
+              @if (isFinished) {
                 <div
-                  class="event-detail-page__detail-item event-detail-page__detail-item--recorded"
+                  class="event-detail-page__detail-item event-detail-page__detail-item--finished"
                 >
                   <div
                     [inlineSVG]="'/icons/icons-24/live.svg'"
@@ -220,14 +254,14 @@
                   ></div>
                   <div class="event-detail-page__detail-copy">
                     <span class="event-detail-page__detail-label"
-                      >Recorded</span
+                      >Finished</span
                     >
                     <span class="event-detail-page__detail-value"
                       >Available on demand</span
                     >
                   </div>
                 </div>
-              } @else {
+              } @else if (isLive) {
                 <div
                   class="event-detail-page__detail-item event-detail-page__detail-item--live"
                 >
@@ -240,6 +274,24 @@
                     <span class="event-detail-page__detail-label">Live</span>
                     <span class="event-detail-page__detail-value">
                       The meeting link will be sent to your email
+                    </span>
+                  </div>
+                </div>
+              } @else {
+                <div
+                  class="event-detail-page__detail-item event-detail-page__detail-item--upcoming"
+                >
+                  <div
+                    [inlineSVG]="'/icons/icons-24/live.svg'"
+                    aria-hidden="true"
+                    class="event-detail-page__detail-icon"
+                  ></div>
+                  <div class="event-detail-page__detail-copy">
+                    <span class="event-detail-page__detail-label"
+                      >Upcoming</span
+                    >
+                    <span class="event-detail-page__detail-value">
+                      Event starts soon
                     </span>
                   </div>
                 </div>
@@ -264,7 +316,7 @@
             </button>
           </article>
 
-          @if (!event.isRecorded) {
+          @if (!isFinished) {
             <section class="event-detail-page__important-card">
               <h4 class="event-detail-page__important-title">
                 Important Information

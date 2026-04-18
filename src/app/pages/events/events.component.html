@@ -5,8 +5,31 @@
       <div class="events-hero__content">
         <div class="events-hero__meta">
           <div class="events-hero__badges">
-            <div class="events-hero__badge">
-              <span class="events-hero__badge-text">Upcoming Event</span>
+            <div
+              class="events-hero__badge"
+              [class.events-hero__badge--upcoming]="
+                featuredEventBadgeVariant === 'upcoming'
+              "
+              [class.events-hero__badge--live]="
+                featuredEventBadgeVariant === 'live'
+              "
+              [class.events-hero__badge--finished]="
+                featuredEventBadgeVariant === 'finished'
+              "
+            >
+              <span
+                class="events-hero__badge-text"
+                [class.events-hero__badge-text--upcoming]="
+                  featuredEventBadgeVariant === 'upcoming'
+                "
+                [class.events-hero__badge-text--live]="
+                  featuredEventBadgeVariant === 'live'
+                "
+                [class.events-hero__badge-text--finished]="
+                  featuredEventBadgeVariant === 'finished'
+                "
+                >{{ featuredEventBadgeText }}</span
+              >
             </div>
             <div class="events-hero__dot">&bull;</div>
             <div class="events-hero__open-label">
@@ -54,7 +77,11 @@
 
         <div class="events-hero__actions">
           <div class="events-hero__actions-inner">
-            <button class="events-hero__register-btn">
+            <button
+              type="button"
+              class="events-hero__register-btn"
+              (click)="goToFeaturedEvent()"
+            >
               <span class="events-hero__register-text">Register Now</span>
               <div class="events-hero__register-icon">
                 <svg
@@ -74,7 +101,11 @@
                 </svg>
               </div>
             </button>
-            <button class="events-hero__share-btn">
+            <button
+              type="button"
+              class="events-hero__share-btn"
+              (click)="goToFeaturedEvent()"
+            >
               <img
                 src="/icons/icons-24/share.svg"
                 alt="Share Icon"
@@ -113,12 +144,37 @@
               type="text"
               placeholder="Search for events .."
               class="events-search__input"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="applySearch()"
             />
+
+            @if (searchTerm.trim().length > 0) {
+              <button
+                type="button"
+                class="events-search__clear-btn"
+                (click)="clearSearch()"
+                aria-label="Clear search"
+              >
+                <span class="events-search__clear-icon">&times;</span>
+              </button>
+            }
           </div>
 
-          <button type="button" class="events-search__btn">
+          <button
+            type="button"
+            class="events-search__btn"
+            (click)="applySearch()"
+          >
             <span class="events-search__btn-text">Search</span>
           </button>
+          <div class="events-search__status-wrapper">
+            <app-select-dropdown
+              [options]="statusOptions"
+              [value]="selectedEventStatus"
+              [placeholder]="'All statuses'"
+              (select)="onStatusSelect($event)"
+            ></app-select-dropdown>
+          </div>
         </div>
 
         @if (paginatedEventCards.length > 0) {
