@@ -13,6 +13,7 @@ import {
 } from '../../core/helpers/api-response.helper';
 import { formatEventDateDisplay, formatEventTimeRangeDisplay } from '../../core/helpers/event-display.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
+import { parseEventStatusValue, resolveEventStatusVariant } from './event-status.helper';
 
 @Injectable({
   providedIn: 'root',
@@ -50,7 +51,12 @@ export class EventService {
       time: '',
       location: '',
       tags: this.selectedEvent.tags,
-      isRecorded: this.selectedEvent.isRecorded === true,
+      status: this.selectedEvent.status,
+      isRecorded:
+        resolveEventStatusVariant(
+          this.selectedEvent.status,
+          this.selectedEvent.isRecorded === true,
+        ) === 'finished',
       isPublished: this.selectedEvent.isPublished,
       agenda: [],
       outcomes: [],
@@ -80,6 +86,7 @@ export class EventService {
       getValue(record, 'startDateTime', 'StartDateTime', 'date', 'Date', 'startDate', 'StartDate', 'eventDate', 'EventDate'),
     );
     const endDateValue = toStringValue(getValue(record, 'endDateTime', 'EndDateTime'));
+    const status = parseEventStatusValue(getValue(record, 'status', 'Status'));
 
     return {
       id: toStringValue(getValue(record, 'id', 'Id')) ?? 'event',
@@ -108,7 +115,12 @@ export class EventService {
         formatEventTimeRangeDisplay(startDateValue, endDateValue),
       location: toStringValue(getValue(record, 'location', 'Location')) ?? '',
       tags,
-      isRecorded: toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
+      status,
+      isRecorded:
+        resolveEventStatusVariant(
+          status,
+          toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
+        ) === 'finished',
       isPublished: true,
       registrationDeadline: toStringValue(
         getValue(record, 'registrationDeadline', 'RegistrationDeadline'),
@@ -116,6 +128,8 @@ export class EventService {
       maxAttendees: toNumberValue(getValue(record, 'maxAttendees', 'MaxAttendees')) ?? undefined,
       currentAttendees:
         toNumberValue(getValue(record, 'currentAttendees', 'CurrentAttendees')) ?? undefined,
+      meetingLink:
+        toStringValue(getValue(record, 'meetingLink', 'MeetingLink', 'liveLink', 'LiveLink')) ?? null,
       agenda: toStringArray(getValue(record, 'agenda', 'Agenda')),
       outcomes: toStringArray(getValue(record, 'outcomes', 'Outcomes')),
     };

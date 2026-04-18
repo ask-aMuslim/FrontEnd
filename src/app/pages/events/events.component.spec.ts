@@ -13,7 +13,7 @@ describe('EventsComponent', () => {
   let eventsServiceSpy: jasmine.SpyObj<EventsService>;
 
   beforeEach(async () => {
-    eventsServiceSpy = jasmine.createSpyObj<EventsService>('EventsService', ['getAll']);
+    eventsServiceSpy = jasmine.createSpyObj<EventsService>('EventsService', ['getAll', 'getNext']);
     eventsServiceSpy.getAll.and.returnValue(
       of([
         {
@@ -102,6 +102,7 @@ describe('EventsComponent', () => {
         },
       ]),
     );
+    eventsServiceSpy.getNext.and.returnValue(of(null));
 
     await TestBed.configureTestingModule({
       imports: [EventsComponent],
