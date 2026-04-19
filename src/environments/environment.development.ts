@@ -1,7 +1,7 @@
 export const environment = {
     production: false,
     apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
-    askAssistantApiBaseUrl: 'http://127.0.0.1:8000',
+    askAssistantApiBaseUrl: 'https://respondents-southampton-connected-under.trycloudflare.com',
     authWithCredentials: false,
     youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
     BearerToken: '',
