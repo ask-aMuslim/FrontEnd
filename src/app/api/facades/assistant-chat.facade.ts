@@ -89,6 +89,11 @@ export class AssistantChatFacade {
       const abortController = new AbortController();
 
       let pendingLine = '';
+      // Track the accumulated streamed text so we can detect and skip the
+      // final "summary" chunk that some backends emit (it contains the full
+      // response as a single `message`/`response` field, duplicating what
+      // was already delivered token-by-token as `delta` events).
+      let accumulatedText = '';
 
       const emitFromChunk = (chunkStr: string): void => {
         const buffer = `${pendingLine}${chunkStr}`;
@@ -96,6 +101,19 @@ export class AssistantChatFacade {
         pendingLine = parsed.remainder;
 
         for (const event of parsed.events) {
+          if (event.kind === 'delta' && event.text) {
+            // Deduplicate: skip if text looks like the accumulated summary
+            const isSummary = event.text.length > 200 &&
+              accumulatedText.length > 50 &&
+              event.text.replace(/\s/g, '').includes(
+                accumulatedText.replace(/\s/g, '').slice(0, 80)
+              );
+            if (isSummary) {
+              console.log('[FACADE SKIP SUMMARY DUPLICATE]', event.text.length, 'chars');
+              continue;
+            }
+            accumulatedText += event.text;
+          }
           console.log('[FACADE EMIT FROM CHUNK]', event);
           subscriber.next(event);
         }
@@ -250,6 +268,7 @@ export class AssistantChatFacade {
   private parseStreamPayload(payload: string): AssistantStreamRecord[] {
     const parsed = this.tryParseJson(payload);
     if (!parsed) {
+      // Plain-text delta — preserve whitespace exactly as received
       return [{
         kind: 'delta',
         text: payload,
@@ -259,19 +278,34 @@ export class AssistantChatFacade {
     }
 
     const parsedData = this.asRecord(parsed['data']);
-    const threadId = this.readString(parsed, ['threadId', 'thread_id'])
-      ?? (parsedData ? this.readString(parsedData, ['threadId', 'thread_id']) : null);
+    const threadId = this.readStringMeta(parsed, ['threadId', 'thread_id'])
+      ?? (parsedData ? this.readStringMeta(parsedData, ['threadId', 'thread_id']) : null);
     const statusCode = this.readNumber(parsed, ['statusCode', 'status', 'code'])
       ?? (parsedData ? this.readNumber(parsedData, ['statusCode', 'status', 'code']) : null);
-    const text = this.readString(parsed, ['message', 'content', 'response', 'delta'])
-      ?? (parsedData ? this.readString(parsedData, ['response', 'message', 'content', 'delta']) : null)
+
+    // Read delta text — do NOT trim so leading spaces between tokens are preserved.
+    // The backend sends {kind:'delta', text:' token'} — 'text' is the primary key.
+    // Also check 'delta', 'token', 'chunk' as fallbacks for other backends.
+    const deltaText = this.readStringRaw(parsed, ['text', 'delta', 'token', 'chunk'])
+      ?? (parsedData ? this.readStringRaw(parsedData, ['text', 'delta', 'token', 'chunk']) : null);
+
+    // 'message', 'content', 'response' are summary fields sent once at the end.
+    // They contain the FULL accumulated answer and must be ignored as deltas
+    // to prevent duplication. We only use them to extract metadata (threadId).
+    const summaryText = this.readStringRaw(parsed, ['message', 'content', 'response'])
+      ?? (parsedData ? this.readStringRaw(parsedData, ['response', 'message', 'content']) : null)
       ?? '';
+
+    // Use deltaText if present. If deltaText IS the text field but it's a very long
+    // summary (> 150 chars) and we already have accumulated content, it is a duplicate.
+    // The de-duplication in emitFromChunk handles this case in the outer loop.
+    const text = deltaText ?? (summaryText.length <= 150 ? summaryText : '');
 
     const parsedErrors = parsed['errors'];
     const errors = Array.isArray(parsedErrors)
       ? parsedErrors.map((entry) => `${entry ?? ''}`.trim()).filter((entry) => entry.length > 0)
       : [];
-    const firstError = this.readString(parsed, ['error', 'detail']);
+    const firstError = this.readStringMeta(parsed, ['error', 'detail']);
 
     const isError = (statusCode !== null && statusCode >= 400)
       || errors.length > 0
@@ -405,7 +439,11 @@ export class AssistantChatFacade {
       : null;
   }
 
-  private readString(record: Record<string, unknown>, keys: readonly string[]): string | null {
+  /**
+   * Read a metadata string field — trims whitespace.
+   * Use for IDs, error messages, role strings, etc. (NOT for content/delta tokens).
+   */
+  private readStringMeta(record: Record<string, unknown>, keys: readonly string[]): string | null {
     for (const key of keys) {
       const candidate = record[key];
       if (typeof candidate === 'string' && candidate.trim().length > 0) {
@@ -414,6 +452,27 @@ export class AssistantChatFacade {
     }
 
     return null;
+  }
+
+  /**
+   * Read a content/delta string field — preserves whitespace exactly.
+   * Use for streaming tokens and message text where leading spaces matter.
+   */
+  private readStringRaw(record: Record<string, unknown>, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const candidate = record[key];
+      // Allow strings that are non-empty even if only whitespace (spaces between tokens)
+      if (typeof candidate === 'string' && candidate.length > 0) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  /** @deprecated Use readStringMeta or readStringRaw instead */
+  private readString(record: Record<string, unknown>, keys: readonly string[]): string | null {
+    return this.readStringMeta(record, keys);
   }
 
   private readNumber(record: Record<string, unknown>, keys: readonly string[]): number | null {
