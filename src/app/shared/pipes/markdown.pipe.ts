@@ -11,6 +11,7 @@ import DOMPurify from 'dompurify';
  *   lists, blockquotes, code blocks, inline code, tables, images, links)
  * - All output is sanitized with DOMPurify before being trusted
  * - External links are forced to open in a new tab with rel="noopener"
+ * - Unescapes literal \n sequences that arrive from streaming backends
  */
 @Pipe({
   name: 'markdown',
@@ -24,6 +25,16 @@ export class MarkdownPipe implements PipeTransform {
     if (!value?.trim()) {
       return '';
     }
+
+    // The streaming backend sometimes sends literal backslash-n sequences
+    // (e.g. "\\n") instead of real newline characters. `marked` requires
+    // genuine newlines to recognise heading (#), list (-/*) and blank-line
+    // paragraph boundaries. We unescape them here so the parser works
+    // regardless of how the backend serialised the text.
+    const normalised = value
+      .replace(/\\r\\n/g, '\n')   // Windows-style literal \r\n first
+      .replace(/\\n/g, '\n')      // Unix-style literal \n
+      .replace(/\\t/g, '\t');     // Literal \t for code indentation
 
     // Configure a custom renderer so external links open safely
     const renderer = new Renderer();
@@ -39,7 +50,7 @@ export class MarkdownPipe implements PipeTransform {
     };
 
     // Synchronous parse with GFM tables & breaks enabled
-    const rawHtml = marked.parse(value, {
+    const rawHtml = marked.parse(normalised, {
       renderer,
       breaks: true,   // convert single newlines to <br>
       gfm: true,      // GitHub-Flavored Markdown (tables, strikethrough …)

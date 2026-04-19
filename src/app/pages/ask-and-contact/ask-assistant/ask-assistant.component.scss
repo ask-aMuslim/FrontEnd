@@ -240,7 +240,14 @@
 }
 
 /* ─── Markdown Rendered Content ─────────────────────────────────────────── */
-.ask-assistant-page__message-markdown {
+/*
+ * IMPORTANT: We use ::ng-deep here because Angular's view encapsulation adds
+ * [_ngcontent-xxx] attributes to every CSS selector produced from component SCSS.
+ * HTML injected via [innerHTML] does NOT receive those attributes, so scoped
+ * selectors would never match. ::ng-deep makes these rules target the raw
+ * DOM elements inside the markdown container, which is exactly what we need.
+ */
+:host ::ng-deep .ask-assistant-page__message-markdown {
   display: block;
   font-size: inherit;
   line-height: 1.7;
@@ -290,6 +297,7 @@
   li {
     margin: 0.3em 0;
     line-height: 1.6;
+    display: list-item;
   }
 
   li > p {
