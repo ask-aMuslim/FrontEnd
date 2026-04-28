@@ -232,6 +232,12 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private bubblesAutoscrollEnabled = false;
 
+  // Drag-scroll state
+  private isDragging = false;
+  private dragStartX = 0;
+  private dragScrollLeft = 0;
+  private dragResumeTimer: ReturnType<typeof setTimeout> | null = null;
+
   protected get eventsCtaLabel(): string {
     return this.authService.isAuthenticated() ? 'See All Events' : 'Join for Free';
   }
@@ -440,6 +446,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
         void import('gsap');
         // Setup seamless bubble scrolling animation
         this.syncBubblesAnimation(true);
+        // Setup drag-to-scroll on tablet/mobile
+        this.setupBubblesDrag();
       },
       { injector: this.injector },
     );
@@ -533,6 +541,74 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       track.style.transform = '';
       track.style.transition = '';
     }
+  }
+
+  /**
+   * Wire up pointer/touch drag-to-scroll on the bubbles container.
+   * Works on tablets and below (≤1199px). The auto-scroll animation
+   * is paused during the drag and resumes 1.5 s after release.
+   */
+  private setupBubblesDrag(): void {
+    const container = this.bubblesContainer?.nativeElement;
+    if (!container || !this.isBrowser) return;
+
+    const win = this.document.defaultView;
+    if (!win) return;
+
+    // Only wire up when in tablet/mobile range
+    if (win.innerWidth > 1199) return;
+
+    const onPointerDown = (e: PointerEvent): void => {
+      if (win.innerWidth > 1199) return;
+      this.isDragging = true;
+      this.dragStartX = e.clientX;
+      this.dragScrollLeft = container.scrollLeft;
+      container.classList.add('is-dragging');
+      container.setPointerCapture(e.pointerId);
+
+      // Pause the auto-scroll animation
+      if (this.dragResumeTimer !== null) {
+        clearTimeout(this.dragResumeTimer);
+        this.dragResumeTimer = null;
+      }
+      this.stopBubblesAnimation();
+    };
+
+    const onPointerMove = (e: PointerEvent): void => {
+      if (!this.isDragging) return;
+      e.preventDefault();
+      const dx = e.clientX - this.dragStartX;
+      container.scrollLeft = this.dragScrollLeft - dx;
+    };
+
+    const onPointerUp = (): void => {
+      if (!this.isDragging) return;
+      this.isDragging = false;
+      container.classList.remove('is-dragging');
+
+      // Resume auto-animation after a short pause so the transition feels natural
+      this.dragResumeTimer = setTimeout(() => {
+        this.dragResumeTimer = null;
+        this.syncBubblesAnimation(true);
+      }, 1500);
+    };
+
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('pointermove', onPointerMove, { passive: false });
+    container.addEventListener('pointerup', onPointerUp);
+    container.addEventListener('pointercancel', onPointerUp);
+
+    // Register cleanup
+    this.cleanupFns.push(() => {
+      container.removeEventListener('pointerdown', onPointerDown);
+      container.removeEventListener('pointermove', onPointerMove);
+      container.removeEventListener('pointerup', onPointerUp);
+      container.removeEventListener('pointercancel', onPointerUp);
+      if (this.dragResumeTimer !== null) {
+        clearTimeout(this.dragResumeTimer);
+        this.dragResumeTimer = null;
+      }
+    });
   }
 
   ngOnDestroy(): void {

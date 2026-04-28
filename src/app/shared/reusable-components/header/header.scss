@@ -385,7 +385,9 @@
   .header-right .user-card {
     display: none;
   }
-
+  .header-right .user-popup{
+    display: none;
+  }
   .header-right .auth-buttons {
     display: none;
   }
@@ -396,6 +398,11 @@
     padding-top: 1.25rem;
     padding-bottom: 1.25rem;
     border-top: 1px solid rgba(17, 17, 17, 0.08);
+  }
+
+  .mobile-user-card .user-popup{
+    bottom: calc(100% + 0.5rem);
+    top:unset;
   }
 
   .mobile-user-card .user-card {
