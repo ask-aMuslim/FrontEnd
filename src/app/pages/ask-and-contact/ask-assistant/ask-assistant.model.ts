@@ -27,4 +27,5 @@ export interface AskAssistantStreamUpdate {
   text: string;
   threadId: string | null;
   statusCode: number | null;
+  title?: string | null;
 }

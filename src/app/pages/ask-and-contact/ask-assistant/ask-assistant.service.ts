@@ -55,6 +55,13 @@ export class AskAssistantService {
     );
   }
 
+  getConversation(threadId: string): Observable<AskAssistantConversation> {
+    return this.assistantChatFacade.getThread(threadId).pipe(
+      map((thread) => this.mapConversation(thread, thread.title ?? AskAssistantService.fallbackChatTitle)),
+      catchError(() => of(this.mapConversation({ threadId, createdAt: Date.now(), updatedAt: Date.now() }, AskAssistantService.fallbackChatTitle)))
+    );
+  }
+
   getThreadMessages(threadId: string): Observable<AskAssistantMessageSeed[]> {
     return this.assistantChatFacade.getThreadHistory(threadId).pipe(
       map((messages) => messages.map((message) => this.mapHistoryMessage(message))),
@@ -116,6 +123,7 @@ export class AskAssistantService {
       text: event.text,
       threadId: event.threadId,
       statusCode: event.statusCode,
+      title: event.title,
     };
   }
 

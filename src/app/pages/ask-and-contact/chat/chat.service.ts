@@ -37,6 +37,7 @@ export class ChatService {
     readonly isStreaming: WritableSignal<boolean> = signal(false);
     readonly error: WritableSignal<string | null> = signal(null);
     readonly activeThreadId: WritableSignal<string | null> = signal(null);
+    readonly activeThreadTitle: WritableSignal<string | null> = signal(null);
 
     private abortController: AbortController | null = null;
 
@@ -97,6 +98,9 @@ export class ChatService {
     private initializeStreamState(controller: AbortController, threadId: string | null): void {
         this.abortController = controller;
         this.activeThreadId.set(threadId);
+        if (!threadId) {
+            this.activeThreadTitle.set(null);
+        }
         this.streamedResponse.set('');
         this.error.set(null);
         this.isStreaming.set(true);
@@ -215,6 +219,12 @@ export class ChatService {
             ?? this.readNestedString(payloadRecord, 'data', ['threadId', 'thread_id']);
         if (resolvedThreadId) {
             this.activeThreadId.set(resolvedThreadId);
+        }
+
+        const resolvedThreadTitle = this.readString(payloadRecord, ['threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name'])
+            ?? this.readNestedString(payloadRecord, 'data', ['threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name']);
+        if (resolvedThreadTitle) {
+            this.activeThreadTitle.set(resolvedThreadTitle);
         }
 
         const delta = this.resolveDeltaToken(payloadRecord);

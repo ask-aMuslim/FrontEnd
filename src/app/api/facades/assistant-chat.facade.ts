@@ -19,6 +19,7 @@ export interface AssistantChatRequest {
 
 export interface AssistantThreadRecord {
   threadId: string;
+  title?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -38,6 +39,7 @@ export interface AssistantStreamRecord {
   text: string;
   threadId: string | null;
   statusCode: number | null;
+  title?: string | null;
 }
 
 interface ChatStreamBody {
@@ -68,6 +70,32 @@ export class AssistantChatFacade {
     return this
       .getWithFallback(primaryUrl, fallbackUrl, (error) => this.isNotFound(error))
       .pipe(map((payload) => this.normalizeThreads(payload)));
+  }
+
+  getThread(threadId: string): Observable<AssistantThreadRecord> {
+    const encodedThreadId = encodeURIComponent(threadId);
+    const primaryUrl = `${this.baseUrl}/api/threads/${encodedThreadId}`;
+    const fallbackUrl = `${this.baseUrl}/api/Conversations/${encodedThreadId}`;
+
+    return this
+      .getWithFallback(primaryUrl, fallbackUrl, (error) => this.shouldUseLegacyHistoryFallback(error))
+      .pipe(map((payload) => {
+        const records = this.normalizeThreads({ data: [payload] });
+        if (records.length === 0) {
+          const fallback = this.asRecord(payload);
+          const threadId = fallback ? this.readStringMeta(fallback, ['thread_id', 'threadId', 'id']) : null;
+          if (threadId) {
+            return {
+              threadId,
+              createdAt: this.toTimestamp(fallback?.['created_at'] ?? fallback?.['createdAt']),
+              updatedAt: this.toTimestamp(fallback?.['updated_at'] ?? fallback?.['updatedAt']),
+              title: this.readStringRaw(fallback!, ['threadname', 'title', 'name']) ?? undefined,
+            };
+          }
+          throw new Error('Thread not found in response payload');
+        }
+        return records[0];
+      }));
   }
 
   getThreadHistory(threadId: string): Observable<AssistantHistoryRecord[]> {
@@ -129,45 +157,45 @@ export class AssistantChatFacade {
         body: JSON.stringify(body),
         signal: abortController.signal,
       })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Stream HTTP Error: ${response.status}`);
-        }
-        
-        if (!response.body) {
-          throw new Error('Stream response body is empty');
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-
-        while (!isUnsubscribed) {
-          const { done, value } = await reader.read();
-          if (done) {
-            // Process the final remainder
-            if (pendingLine.trim()) {
-              const parsed = this.parseStreamBuffer(pendingLine, true);
-              for (const event of parsed.events) {
-                console.log('[FACADE REMAINDER CHUNK]', event);
-                subscriber.next(event);
-              }
-            }
-            break;
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`Stream HTTP Error: ${response.status}`);
           }
 
-          const chunkStr = decoder.decode(value, { stream: true });
-          emitFromChunk(chunkStr);
-        }
+          if (!response.body) {
+            throw new Error('Stream response body is empty');
+          }
 
-        if (!isUnsubscribed) {
-          subscriber.complete();
-        }
-      })
-      .catch((error) => {
-        if (!isUnsubscribed && error.name !== 'AbortError') {
-          subscriber.error(error);
-        }
-      });
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+
+          while (!isUnsubscribed) {
+            const { done, value } = await reader.read();
+            if (done) {
+              // Process the final remainder
+              if (pendingLine.trim()) {
+                const parsed = this.parseStreamBuffer(pendingLine, true);
+                for (const event of parsed.events) {
+                  console.log('[FACADE REMAINDER CHUNK]', event);
+                  subscriber.next(event);
+                }
+              }
+              break;
+            }
+
+            const chunkStr = decoder.decode(value, { stream: true });
+            emitFromChunk(chunkStr);
+          }
+
+          if (!isUnsubscribed) {
+            subscriber.complete();
+          }
+        })
+        .catch((error) => {
+          if (!isUnsubscribed && error.name !== 'AbortError') {
+            subscriber.error(error);
+          }
+        });
 
       return () => {
         isUnsubscribed = true;
@@ -282,6 +310,8 @@ export class AssistantChatFacade {
       ?? (parsedData ? this.readStringMeta(parsedData, ['threadId', 'thread_id']) : null);
     const statusCode = this.readNumber(parsed, ['statusCode', 'status', 'code'])
       ?? (parsedData ? this.readNumber(parsedData, ['statusCode', 'status', 'code']) : null);
+    const title = this.readStringRaw(parsed, ['threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name'])
+      ?? (parsedData ? this.readStringRaw(parsedData, ['threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name']) : null);
 
     // Read delta text — do NOT trim so leading spaces between tokens are preserved.
     // The backend sends {kind:'delta', text:' token'} — 'text' is the primary key.
@@ -321,11 +351,12 @@ export class AssistantChatFacade {
       ? errors.join('\n')
       : (firstError ?? '');
 
-    const parsedRecord = {
+    const parsedRecord: AssistantStreamRecord = {
       kind,
       text: kind === 'error' && errorText ? errorText : text,
       threadId,
       statusCode,
+      title,
     };
     console.log('[DEBUG STREAM PAYLOAD]:', parsedRecord);
     return [parsedRecord];
@@ -345,9 +376,11 @@ export class AssistantChatFacade {
 
         const createdAt = this.toTimestamp(entry['created_at'] ?? entry['createdAt']);
         const updatedAt = this.toTimestamp(entry['updated_at'] ?? entry['updatedAt'] ?? entry['created_at'] ?? entry['createdAt']);
+        const title = this.readStringRaw(entry, ['threadname', 'title', 'name']) ?? undefined;
 
         return {
           threadId,
+          title,
           createdAt,
           updatedAt,
         } as AssistantThreadRecord;

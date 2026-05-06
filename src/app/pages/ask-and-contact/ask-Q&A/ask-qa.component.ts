@@ -158,7 +158,8 @@ export class QuestionAndAnswerTopicsComponent implements OnInit {
     }
 
     const normalizedQuery = query.toLowerCase();
-    this.searchResults = this.questions.filter((question) =>
+    const sourceQuestions = this.selectedCategory === 0 ? this.questions : this.allFilteredQuestions;
+    this.searchResults = sourceQuestions.filter((question) =>
       this.matchesQuery(question, normalizedQuery),
     );
     this.hasSearched = true;
@@ -253,7 +254,7 @@ export class QuestionAndAnswerTopicsComponent implements OnInit {
       if (this.loadedTagId === selectedTagId && this.allFilteredQuestions.length > 0) {
         this.questions = this.getTagPaginatedQuestions();
         this.cdr.markForCheck();
-        if (this.searchQuery && !this.hasSearched) {
+        if (this.searchQuery) {
           this.onSearch();
         }
         return;
@@ -278,7 +279,7 @@ export class QuestionAndAnswerTopicsComponent implements OnInit {
 
         this.cdr.markForCheck();
 
-        if (this.searchQuery && !this.hasSearched) {
+        if (this.searchQuery) {
           this.onSearch();
         }
       },
@@ -337,7 +338,7 @@ export class QuestionAndAnswerTopicsComponent implements OnInit {
       this.questions = this.getTagPaginatedQuestions();
       this.cdr.markForCheck();
 
-      if (this.searchQuery && !this.hasSearched) {
+      if (this.searchQuery) {
         this.onSearch();
       }
     });
