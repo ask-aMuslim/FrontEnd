@@ -143,7 +143,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   }
 
   submitQuestion(event?: Event): void {
-    console.log('[AskAssistantComponent] submitQuestion execution started!!!!');
+    globalThis.console.log('[AskAssistantComponent] submitQuestion execution started!!!!');
     event?.preventDefault();
 
     const question = this.inputValue.trim();
@@ -163,6 +163,9 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     const assistantMessageId = ++this.messageId;
     let assistantMessageCreated = false;
 
+    const isNewThread = !this.activeThreadId;
+    const tempTitle = question.slice(0, 47);
+
     this.isResponding.set(true);
     this.askAssistantService
       .streamAnswer({
@@ -175,8 +178,12 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         finalize(() => {
           this.ngZone.run(() => {
             this.isResponding.set(false);
-            setTimeout(() => this.cdr.detectChanges(), 0);
-            this.loadConversations();
+
+            if (this.activeThreadId) {
+              this.bumpActiveConversation();
+            }
+
+            globalThis.setTimeout(() => this.cdr.detectChanges(), 0);
             if (this.isBrowser) {
               this.askInput?.nativeElement.focus({ preventScroll: true });
             }
@@ -188,39 +195,61 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           if (eventUpdate.threadId) {
             this.activeThreadId = eventUpdate.threadId;
             this.saveActiveThreadToStorage(eventUpdate.threadId);
+
+            const existingConvIndex = this.conversations.findIndex((c) => c.threadId === eventUpdate.threadId);
+            
+            if (existingConvIndex >= 0) {
+              const currentConv = this.conversations[existingConvIndex];
+              if (eventUpdate.title && currentConv.title !== eventUpdate.title) {
+                currentConv.title = eventUpdate.title;
+                this.conversations = [...this.conversations];
+                this.cdr.markForCheck();
+              }
+            } else if (isNewThread) {
+              this.conversations = [
+                {
+                  threadId: eventUpdate.threadId,
+                  title: eventUpdate.title || tempTitle,
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                },
+                ...this.conversations
+              ];
+              this.cdr.markForCheck();
+            }
           }
 
           if (eventUpdate.kind === 'delta' && eventUpdate.text) {
-            console.log('[Component Stream Next] Chunk:', eventUpdate.text);
-            if (!assistantMessageCreated) {
+            globalThis.console.log('[Component Stream Next] Chunk:', eventUpdate.text);
+            if (assistantMessageCreated) {
+              this.patchMessageText(assistantMessageId, (existingText) => `${existingText}${eventUpdate.text}`);
+            } else {
               this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: eventUpdate.text, createdAt: Date.now() }]);
               assistantMessageCreated = true;
-            } else {
-              this.patchMessageText(assistantMessageId, (existingText) => `${existingText}${eventUpdate.text}`);
             }
-            console.log('[Component Stream Next] Array length:', this.messages().length);
+            globalThis.console.log('[Component Stream Next] Array length:', this.messages().length);
           }
 
           if (eventUpdate.kind === 'error') {
             const errorText = eventUpdate.text || AskAssistantComponent.fallbackAssistantError;
-            if (!assistantMessageCreated) {
+            if (assistantMessageCreated) {
+              this.patchMessageText(assistantMessageId, (existingText) => existingText ? `${existingText}\n${errorText}` : errorText);
+            } else {
               this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: errorText, createdAt: Date.now() }]);
               assistantMessageCreated = true;
-            } else {
-              this.patchMessageText(assistantMessageId, (existingText) => existingText ? `${existingText}\n${errorText}` : errorText);
             }
           }
 
-          setTimeout(() => this.cdr.detectChanges(), 0);
+          globalThis.setTimeout(() => this.cdr.detectChanges(), 0);
           this.scrollToBottom(false);
         },
         error: () => {
-          if (!assistantMessageCreated) {
-            this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: AskAssistantComponent.fallbackAssistantError, createdAt: Date.now() }]);
-          } else {
+          if (assistantMessageCreated) {
             this.patchMessageText(assistantMessageId, () => AskAssistantComponent.fallbackAssistantError);
+          } else {
+            this.messages.update((current) => [...current, { id: assistantMessageId, role: 'assistant', text: AskAssistantComponent.fallbackAssistantError, createdAt: Date.now() }]);
           }
-          setTimeout(() => this.cdr.detectChanges(), 0);
+          globalThis.setTimeout(() => this.cdr.detectChanges(), 0);
         },
       });
   }
@@ -265,6 +294,26 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   trackByMessage = (_: number, message: ChatMessage): number => message.id;
   trackByConversation = (_: number, conversation: AskAssistantConversation): string => conversation.threadId;
   trackByConversationSection = (_: number, section: AskAssistantConversationSection): string => section.label;
+
+  private bumpActiveConversation(): void {
+    if (!this.activeThreadId) {
+      return;
+    }
+
+    const index = this.conversations.findIndex((c) => c.threadId === this.activeThreadId);
+    if (index >= 0) {
+      const conv = this.conversations[index];
+      if (conv) {
+        conv.updatedAt = Date.now();
+        this.conversations.splice(index, 1);
+        this.conversations.unshift(conv);
+        this.conversations = [...this.conversations];
+        this.cdr.markForCheck();
+      }
+    }
+  }
+
+
 
   private loadConversations(): void {
     this.isLoadingConversations = true;

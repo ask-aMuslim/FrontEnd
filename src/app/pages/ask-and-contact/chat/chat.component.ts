@@ -62,6 +62,7 @@ import { ChatService } from './chat.service';
 
       <p>Streaming: {{ isStreaming() ? 'yes' : 'no' }}</p>
       <p>Thread: {{ activeThreadId() ?? 'n/a' }}</p>
+      <p>Title: {{ activeThreadTitle() ?? 'n/a' }}</p>
 
       @if (error(); as streamError) {
         <p>{{ streamError }}</p>
@@ -83,6 +84,7 @@ export class ChatComponent implements OnDestroy {
     readonly isStreaming = this.chatService.isStreaming;
     readonly error = this.chatService.error;
     readonly activeThreadId = this.chatService.activeThreadId;
+    readonly activeThreadTitle = this.chatService.activeThreadTitle;
 
     readonly canStartStream = computed(() => {
         return !this.isStreaming() && this.question().trim().length > 0;

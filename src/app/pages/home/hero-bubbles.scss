@@ -97,6 +97,24 @@ $large-screen-adjustments: (
   scrollbar-width: none;
 }
 
+// ── Tablet & below: make the slider horizontally draggable ────────────────
+@media (max-width: 1199px) {
+  .suggestion-bubbles {
+    overflow-x: auto;
+    cursor: grab;
+
+    &.is-dragging {
+      cursor: grabbing;
+      user-select: none;
+    }
+  }
+
+  .suggestion-bubbles-track {
+    width: max-content;
+    flex-wrap: nowrap;
+  }
+}
+
 .suggestion-bubbles-track {
   display: flex;
   gap: 0.75rem;
