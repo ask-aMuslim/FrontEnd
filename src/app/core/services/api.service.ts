@@ -64,6 +64,15 @@ export class ApiService {
       .pipe(retry(1), catchError(this.handleError));
   }
 
+  postFormData<T>(url: string, body: FormData, options?: ApiRequestOptions): Observable<T> {
+    // Don't set Content-Type header for FormData; let browser handle multipart/form-data
+    return this.http
+      .post<T>(this.resolveUrl(url), body, {
+        context: options?.context,
+      })
+      .pipe(retry(1), catchError(this.handleError));
+  }
+
   private resolveUrl(url: string): string {
     if (/^https?:\/\//i.test(url)) {
       return url;

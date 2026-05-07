@@ -235,6 +235,25 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'forms',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/forms/forms.component').then((m) => m.FormsComponent),
+            title: 'Forms',
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./pages/forms/form-detail/form-detail.component').then(
+                (m) => m.FormDetailComponent,
+              ),
+            title: 'Form Details',
+          },
+        ],
+      },
+      {
         path: 'contact',
         loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
         title: 'Contact Us',

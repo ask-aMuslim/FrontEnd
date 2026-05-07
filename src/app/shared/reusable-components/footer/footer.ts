@@ -84,6 +84,7 @@ export class Footer {
       links: [
         { label: 'Topics', href: '/question-and-answer/topics', external: false },
         { label: 'Meet Scholar', href: '/question-and-answer/meet-scholar', external: false },
+        { label: 'Forms', href: '/forms', external: false },
         { label: 'Contact', href: '/contact', external: false },
       ],
     },
