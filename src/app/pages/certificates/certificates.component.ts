@@ -80,49 +80,38 @@ class Particle {
           <div class="title-divider"></div>
         </header>
 
-        <!-- Coverflow Carousel -->
-        <div class="carousel-wrapper" data-aos="zoom-in" data-aos-delay="200">
-          <button class="carousel-nav prev" (click)="prevCard()" [disabled]="activeIndex === 0">
-            <img src="/icons/icons-24/arrow-left.svg" alt="Previous" class="nav-icon">
-          </button>
-          
-          <div class="carousel-container">
-            <div *ngFor="let cert of certificates; let i = index" 
-                 class="carousel-card" 
-                 [ngStyle]="getCardStyle(i)"
-                 (click)="setActiveCard(i)">
-              
-              <div class="card-inner">
-                <div class="card-image-wrapper">
-                  <img [src]="cert.webpUrl" [alt]="cert.name" class="cert-image" loading="lazy">
-                  <div class="image-overlay" *ngIf="i === activeIndex">
-                     <button (click)="viewDetails(cert.id); $event.stopPropagation()" class="view-btn">
-                       <img src="/icons/icons-24/expand.svg" alt="" class="btn-icon"> View Full Details
-                     </button>
-                  </div>
+        <!-- Duo Showcase Layout -->
+        <div class="duo-showcase">
+          <div *ngFor="let cert of certificates; let i = index" 
+               class="cert-card-duo" 
+               [attr.data-aos]="i === 0 ? 'fade-right' : 'fade-left'"
+               [attr.data-aos-delay]="200 + (i * 150)"
+               (click)="viewDetails(cert.id)">
+            
+            <div class="card-glow"></div>
+            
+            <div class="card-inner">
+              <div class="card-image-wrapper">
+                <img [src]="cert.webpUrl" [alt]="cert.name" class="cert-image" loading="lazy">
+                <div class="image-overlay">
+                   <div class="view-btn">
+                     <img src="/icons/icons-24/expand.svg" alt="" class="btn-icon"> 
+                     <span>View Full Details</span>
+                   </div>
                 </div>
-                <div class="card-info">
+              </div>
+              <div class="card-info">
+                <div class="info-top">
+                  <span class="cert-badge">Honorary Achievement</span>
                   <h3 class="cert-title">{{ cert.title }}</h3>
-                  <h4 class="recipient-name">{{ cert.name }}</h4>
-                  <p class="cert-desc">{{ cert.description }}</p>
                 </div>
+                <h4 class="recipient-name">{{ cert.name }}</h4>
+                <p class="cert-desc">{{ cert.description }}</p>
               </div>
             </div>
           </div>
+        </div>
 
-          <button class="carousel-nav next" (click)="nextCard()" [disabled]="activeIndex === certificates.length - 1">
-            <img src="/icons/icons-24/arrow-right.svg" alt="Next" class="nav-icon">
-          </button>
-        </div>
-        
-        <!-- Carousel Indicators -->
-        <div class="carousel-indicators">
-          <button *ngFor="let cert of certificates; let i = index" 
-                  class="indicator-dot" 
-                  [class.active]="i === activeIndex"
-                  (click)="setActiveCard(i)">
-          </button>
-        </div>
       </section>
 
     </div>
@@ -130,7 +119,7 @@ class Particle {
   styles: [`
     :host {
       display: block;
-      background: #000;
+      background: #010d05;
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
@@ -209,7 +198,7 @@ class Particle {
 
     /* Main Content */
     .certificates-content {
-      max-width: 1400px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 80px 24px;
       position: relative;
@@ -217,241 +206,199 @@ class Particle {
 
     .page-header {
       text-align: center;
-      margin-bottom: 60px;
+      margin-bottom: 80px;
     }
 
     .section-title {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: 800;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 900;
       color: #ffffff;
       margin-bottom: 12px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      letter-spacing: -1px;
     }
 
     .section-subtitle {
       font-size: 1.2rem;
       color: #adb5bd;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
     .title-divider {
-      width: 80px;
+      width: 100px;
       height: 4px;
-      background: #ecc140;
-      margin: 24px auto;
+      background: linear-gradient(90deg, transparent, #ecc140, transparent);
+      margin: 32px auto;
       border-radius: 2px;
-      box-shadow: 0 0 10px rgba(236,193,64,0.5);
     }
 
-    /* Carousel */
-    .carousel-wrapper {
+    /* Duo Showcase Layout */
+    .duo-showcase {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 60px;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 992px) {
+      .duo-showcase {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        gap: 80px;
+      }
+    }
+
+    .cert-card-duo {
       position: relative;
-      width: 100%;
-      height: 600px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .carousel-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: #ecc140;
-      font-size: 1.5rem;
       cursor: pointer;
-      z-index: 100;
-      backdrop-filter: blur(5px);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
 
-    .carousel-nav:hover:not([disabled]) {
-      background: rgba(236,193,64,0.2);
-      border-color: #ecc140;
-      transform: translateY(-50%) scale(1.1);
-    }
-
-    .carousel-nav[disabled] {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
-    .carousel-nav.prev { left: 0; }
-    .carousel-nav.next { right: 0; }
-
-    .carousel-container {
-      position: relative;
-      width: 100%;
-      max-width: 500px;
-      height: 100%;
-      perspective: 1200px;
-      transform-style: preserve-3d;
-    }
-
-    .carousel-card {
+    .card-glow {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
-      cursor: pointer;
+      inset: -20px;
+      background: radial-gradient(circle at center, rgba(236, 193, 64, 0.15), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: -1;
+      border-radius: 40px;
+    }
+
+    .cert-card-duo:hover .card-glow {
+      opacity: 1;
+    }
+
+    .cert-card-duo:hover {
+      transform: translateY(-15px) scale(1.02);
     }
 
     .card-inner {
       background: #ffffff;
-      border: 2px solid rgba(236,193,64, 0.3);
-      border-radius: 20px;
+      border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
       height: 100%;
       display: flex;
       flex-direction: column;
-    }
-
-    .carousel-card[style*="opacity: 1"]:hover .card-inner {
-      border-color: #ecc140;
-      box-shadow: 0 0 30px rgba(236,193,64,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     .card-image-wrapper {
       position: relative;
-      height: 60%;
+      height: 350px;
+      background: #fcfcfc;
       overflow: hidden;
-      background: #ffffff;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
     }
 
     .cert-image {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      padding: 16px;
+      padding: 30px;
+      transition: transform 0.8s ease;
+    }
+
+    .cert-card-duo:hover .cert-image {
+      transform: scale(1.05);
     }
 
     .image-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(21, 107, 64, 0.8);
+      background: rgba(21, 107, 64, 0.9);
       display: flex;
       align-items: center;
       justify-content: center;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: all 0.4s ease;
+      backdrop-filter: blur(4px);
     }
 
-    .carousel-card:hover .image-overlay {
+    .cert-card-duo:hover .image-overlay {
       opacity: 1;
     }
 
     .view-btn {
-      padding: 12px 24px;
+      padding: 14px 28px;
       background: #ecc140;
       color: #010d05;
-      font-weight: 700;
-      border: none;
-      border-radius: 30px;
-      cursor: pointer;
+      font-weight: 800;
+      border-radius: 40px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      transform: translateY(20px);
-      transition: all 0.3s ease;
-      font-size: 1rem;
+      gap: 12px;
+      transform: translateY(30px);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      font-size: 1.1rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
 
-    .btn-icon {
-      width: 20px;
-      height: 20px;
-      filter: invert(5%) sepia(20%) saturate(1000%) hue-rotate(120deg) brightness(10%); /* Near black */
-    }
-
-    .nav-icon {
-      width: 24px;
-      height: 24px;
-      filter: invert(84%) sepia(35%) saturate(743%) hue-rotate(338deg) brightness(97%) contrast(92%); /* Gold #ecc140 */
-    }
-
-    .view-btn:hover {
-      background: #cda736;
-      transform: translateY(0) scale(1.05);
-    }
-
-    .carousel-card:hover .view-btn {
+    .cert-card-duo:hover .view-btn {
       transform: translateY(0);
     }
 
+    .btn-icon {
+      width: 24px;
+      height: 24px;
+      filter: invert(5%) sepia(20%) saturate(1000%) hue-rotate(120deg) brightness(10%);
+    }
+
     .card-info {
-      padding: 24px;
+      padding: 32px;
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: #fff;
+      background: linear-gradient(180deg, #ffffff 0%, #f9f9f9 100%);
+    }
+
+    .info-top {
+      margin-bottom: 20px;
+    }
+
+    .cert-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(21, 107, 64, 0.1);
+      color: #156b40;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
     }
 
     .cert-title {
-      font-size: 0.9rem;
+      font-size: 1.1rem;
+      color: #ecc140;
+      font-weight: 800;
+      margin: 0;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #156b40;
-      font-weight: 700;
-      margin-bottom: 12px;
+      letter-spacing: 1px;
     }
 
     .recipient-name {
-      font-size: 1.6rem;
-      font-weight: 800;
+      font-size: 2.2rem;
+      font-weight: 900;
       color: #010d05;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
     }
 
     .cert-desc {
-      color: #343a40;
-      line-height: 1.5;
-      font-size: 1rem;
-      flex: 1;
-    }
-
-    .carousel-indicators {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 40px;
-    }
-
-    .indicator-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .indicator-dot.active {
-      background: #ecc140;
-      transform: scale(1.3);
-      box-shadow: 0 0 10px rgba(236,193,64,0.5);
-    }
-
-    @media (max-width: 768px) {
-      .carousel-container { max-width: 300px; height: 450px; }
-      .carousel-wrapper { height: 450px; }
+      color: #4a4a4a;
+      line-height: 1.6;
+      font-size: 1.1rem;
+      margin: 0;
     }
   `]
 })
 export class CertificatesComponent implements OnInit, AfterViewInit {
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
-  
+
   @ViewChild('splash') splash?: ElementRef;
   @ViewChild('medal') medal?: ElementRef;
   @ViewChild('splashTitle') splashTitle?: ElementRef;
@@ -459,8 +406,7 @@ export class CertificatesComponent implements OnInit, AfterViewInit {
   @ViewChild('ambientCanvas') ambientCanvas?: ElementRef<HTMLCanvasElement>;
 
   showSplash = true;
-  activeIndex = 0;
-  
+
   private particles: Particle[] = [];
   private animationFrameId?: number;
   private mouseX = -1000;
@@ -472,9 +418,10 @@ export class CertificatesComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       AOS.init({
-        duration: 800,
+        duration: 1000,
         once: true,
-        offset: 50
+        offset: 100,
+        easing: 'ease-out-back'
       });
     }
   }
@@ -550,46 +497,6 @@ export class CertificatesComponent implements OnInit, AfterViewInit {
           this.showSplash = false;
         }
       });
-  }
-
-  getCardStyle(index: number) {
-    if (!isPlatformBrowser(this.platformId)) return {};
-    
-    const diff = index - this.activeIndex;
-    const absDiff = Math.abs(diff);
-    
-    const spread = window.innerWidth < 768 ? 80 : 200;
-    const translateX = diff * spread;
-    
-    const scale = 1 - (absDiff * 0.15);
-    const rotateY = diff === 0 ? 0 : (diff > 0 ? -25 : 25);
-    const zIndex = 100 - absDiff;
-    
-    // Explicitly guarantee 100% opacity for the active center card
-    const opacity = diff === 0 ? 1 : (absDiff > 2 ? 0 : 1 - (absDiff * 0.3));
-
-    return {
-      'transform': `translateX(${translateX}px) scale(${scale}) rotateY(${rotateY}deg)`,
-      'z-index': zIndex,
-      'opacity': opacity,
-      'pointer-events': diff === 0 ? 'auto' : 'none'
-    };
-  }
-
-  nextCard() {
-    if (this.activeIndex < this.certificates.length - 1) {
-      this.activeIndex++;
-    }
-  }
-
-  prevCard() {
-    if (this.activeIndex > 0) {
-      this.activeIndex--;
-    }
-  }
-
-  setActiveCard(index: number) {
-    this.activeIndex = index;
   }
 
   viewDetails(certId: string) {
