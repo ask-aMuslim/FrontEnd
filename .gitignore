@@ -27,4 +27,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+#Certificates
+certficates
+
 .builder/config/data.json

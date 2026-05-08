@@ -27,7 +27,6 @@ export class AskAssistantService {
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly assistantChatFacade = inject(AssistantChatFacade);
   private readonly tokenService = inject(TokenService);
-  private readonly conversationTitleCache = new Map<string, string>();
 
   getResolvedUserId(): string {
     const authenticatedUserId = this.tokenService.userId();
@@ -45,13 +44,7 @@ export class AskAssistantService {
 
   getConversations(userId: string): Observable<AskAssistantConversation[]> {
     return this.assistantChatFacade.listUserThreads(userId).pipe(
-      switchMap((threads) => {
-        if (threads.length === 0) {
-          return of([]);
-        }
-
-        return forkJoin(threads.map((thread) => this.resolveConversation(thread)));
-      }),
+      map((threads) => threads.map((thread) => this.mapConversation(thread, thread.title ?? AskAssistantService.fallbackChatTitle)))
     );
   }
 
@@ -84,22 +77,6 @@ export class AskAssistantService {
     );
   }
 
-  private resolveConversation(thread: AssistantThreadRecord): Observable<AskAssistantConversation> {
-    const cachedTitle = this.conversationTitleCache.get(thread.threadId);
-    if (cachedTitle) {
-      return of(this.mapConversation(thread, cachedTitle));
-    }
-
-    return this.assistantChatFacade.getThreadHistory(thread.threadId).pipe(
-      map((messages) => {
-        const title = this.buildConversationTitleFromHistory(messages);
-        this.conversationTitleCache.set(thread.threadId, title);
-        return this.mapConversation(thread, title);
-      }),
-      catchError(() => of(this.mapConversation(thread, AskAssistantService.fallbackChatTitle))),
-    );
-  }
-
   private mapConversation(thread: AssistantThreadRecord, title: string): AskAssistantConversation {
     return {
       threadId: thread.threadId,
@@ -125,14 +102,6 @@ export class AskAssistantService {
       statusCode: event.statusCode,
       title: event.title,
     };
-  }
-
-  private buildConversationTitleFromHistory(messages: AssistantHistoryRecord[]): string {
-    const title = buildChatTitleFromMessages(
-      messages.map((message) => ({ role: message.role, text: message.content })),
-    );
-
-    return title ?? AskAssistantService.fallbackChatTitle;
   }
 
   private getOrCreateGuestUserId(): string {

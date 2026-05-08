@@ -3,29 +3,24 @@ const request = require('http');
 const req = request.request({
   hostname: 'localhost',
   port: 8000,
-  path: '/api/chat?stream=true',
-  method: 'POST',
+  path: '/api/users/aa6310336@gmail.com/threads',
+  method: 'GET',
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'text/event-stream'
+    'Accept': 'application/json'
   }
 }, (res) => {
   console.log(`STATUS: ${res.statusCode}`);
   res.setEncoding('utf8');
+  let body = '';
   res.on('data', (chunk) => {
-    console.log(`BODY: ${chunk}`);
+    body += chunk;
   });
   res.on('end', () => {
-    console.log('No more data in response.');
+    console.log(`BODY: ${body}`);
   });
 });
 
 req.on('error', (e) => {
   console.error(`problem with request: ${e.message}`);
 });
-
-req.write(JSON.stringify({
-  userId: "aa6310336@gmail.com",
-  question: "Hello, what is Islam?"
-}));
 req.end();
