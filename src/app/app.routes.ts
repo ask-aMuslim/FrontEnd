@@ -104,6 +104,16 @@ export const routes: Routes = [
     children: [
       { path: 'home', component: Home, title: 'Home' },
       {
+        path: 'certificates',
+        loadComponent: () => import('./pages/certificates/certificates.component').then(m => m.CertificatesComponent),
+        title: 'Certificates of Achievement',
+      },
+      {
+        path: 'certificates/:id',
+        loadComponent: () => import('./pages/certificates/certificate-detail/certificate-detail.component').then(m => m.CertificateDetailComponent),
+        title: 'Certificate Details',
+      },
+      {
         path: 'about',
         loadComponent: () => import('./pages/about/about-page.component').then(m => m.AboutPageComponent),
         title: 'About',
