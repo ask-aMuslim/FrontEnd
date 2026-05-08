@@ -12,7 +12,8 @@ export type FormFieldType =
   | 'Checkbox'
   | 'Radio'
   | 'Select'
-  | 'File';
+  | 'File'
+  | 'PhoneNumber';
 
 export interface FormFieldOptionDto {
   id: string;

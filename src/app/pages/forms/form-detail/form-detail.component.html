@@ -220,6 +220,77 @@
                               isFieldInvalid(field)
                             "
                           />
+                        } @else if (field.type === "PhoneNumber") {
+                          <div class="form-field__phone-group">
+                            @if (
+                              field.countryCodeControlName &&
+                              field.countryCodeOptions
+                            ) {
+                              <div class="form-field__country-code-wrapper">
+                                <label
+                                  [attr.for]="field.countryCodeControlName"
+                                  class="form-field__country-code-label"
+                                >
+                                  Country Code
+                                </label>
+                                <app-select-dropdown
+                                  [id]="field.countryCodeControlName"
+                                  [options]="field.countryCodeOptions"
+                                  [value]="
+                                    activeForm.get(field.countryCodeControlName)
+                                      ?.value ?? '+1'
+                                  "
+                                  [placeholder]="'Select country'"
+                                  [attr.aria-label]="'Select country code'"
+                                  [error]="
+                                    !!(
+                                      activeForm.get(
+                                        field.countryCodeControlName
+                                      )?.invalid &&
+                                      (activeForm.get(
+                                        field.countryCodeControlName
+                                      )?.dirty ||
+                                        activeForm.get(
+                                          field.countryCodeControlName
+                                        )?.touched)
+                                    )
+                                  "
+                                  (select)="
+                                    onCountryCodeSelected(field, $event)
+                                  "
+                                ></app-select-dropdown>
+                              </div>
+                            }
+                            <div class="form-field__phone-input-wrapper">
+                              <input
+                                [id]="field.controlName"
+                                type="tel"
+                                [formControlName]="field.controlName"
+                                [placeholder]="field.placeholder"
+                                [attr.inputmode]="'tel'"
+                                [attr.autocomplete]="'tel'"
+                                [attr.aria-label]="'Phone number'"
+                                [attr.aria-invalid]="
+                                  isFieldInvalid(field) ||
+                                  !!phoneFieldValidation()[field.id]
+                                "
+                                [attr.aria-describedby]="
+                                  isFieldInvalid(field) ||
+                                  !!phoneFieldValidation()[field.id]
+                                    ? field.controlName + '-error'
+                                    : null
+                                "
+                                [class.form-field__input--error]="
+                                  isFieldInvalid(field) ||
+                                  !!phoneFieldValidation()[field.id]
+                                "
+                                class="form-field__phone-input"
+                                (input)="onPhoneNumberInput(field, $event)"
+                                (blur)="onPhoneNumberBlur(field)"
+                                (paste)="onPhonePaste(field, $event)"
+                              />
+                            </div>
+                          </div>
                         } @else {
                           <input
                             [id]="field.controlName"
@@ -232,7 +303,19 @@
                           />
                         }
 
-                        @if (isFieldInvalid(field)) {
+                        @if (field.type === "PhoneNumber") {
+                          @if (
+                            phoneFieldValidation()[field.id];
+                            as phoneError
+                          ) {
+                            <p
+                              class="form-field__error"
+                              [attr.id]="field.controlName + '-error'"
+                            >
+                              {{ phoneError }}
+                            </p>
+                          }
+                        } @else if (isFieldInvalid(field)) {
                           <p class="form-field__error">
                             {{ getFieldError(field) }}
                           </p>
