@@ -240,7 +240,17 @@
   border-radius: 16px;
   background: var(--form-surface);
   border: 1px solid var(--form-border);
+  position: relative;
+  z-index: 0;
   animation: form-field-rise 0.45s ease-out both;
+
+  &:focus-within {
+    z-index: 20;
+  }
+}
+
+.form-field:has(.custom-select.open) ~ .form-field {
+  pointer-events: none;
 }
 
 .form-field:nth-child(2) {
