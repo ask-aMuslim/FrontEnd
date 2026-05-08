@@ -195,9 +195,12 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
           if (eventUpdate.threadId) {
             this.activeThreadId = eventUpdate.threadId;
             this.saveActiveThreadToStorage(eventUpdate.threadId);
+          }
 
-            const existingConvIndex = this.conversations.findIndex((c) => c.threadId === eventUpdate.threadId);
-            
+          const targetThreadId = eventUpdate.threadId || this.activeThreadId;
+          if (targetThreadId) {
+            const existingConvIndex = this.conversations.findIndex((c) => c.threadId === targetThreadId);
+
             if (existingConvIndex >= 0) {
               const currentConv = this.conversations[existingConvIndex];
               if (eventUpdate.title && currentConv.title !== eventUpdate.title) {
@@ -205,7 +208,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
                 this.conversations = [...this.conversations];
                 this.cdr.markForCheck();
               }
-            } else if (isNewThread) {
+            } else if (isNewThread && eventUpdate.threadId) {
               this.conversations = [
                 {
                   threadId: eventUpdate.threadId,
@@ -312,6 +315,8 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       }
     }
   }
+
+
 
 
 

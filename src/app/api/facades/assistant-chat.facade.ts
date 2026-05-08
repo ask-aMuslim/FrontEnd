@@ -310,8 +310,8 @@ export class AssistantChatFacade {
       ?? (parsedData ? this.readStringMeta(parsedData, ['threadId', 'thread_id']) : null);
     const statusCode = this.readNumber(parsed, ['statusCode', 'status', 'code'])
       ?? (parsedData ? this.readNumber(parsedData, ['statusCode', 'status', 'code']) : null);
-    const title = this.readStringRaw(parsed, ['threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name'])
-      ?? (parsedData ? this.readStringRaw(parsedData, ['threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name']) : null);
+    const title = this.readStringRaw(parsed, ['threadname', 'threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name'])
+      ?? (parsedData ? this.readStringRaw(parsedData, ['threadname', 'threadTitle', 'thread_title', 'title', 'threadName', 'thread_name', 'name']) : null);
 
     // Read delta text — do NOT trim so leading spaces between tokens are preserved.
     // The backend sends {kind:'delta', text:' token'} — 'text' is the primary key.
