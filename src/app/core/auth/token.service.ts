@@ -265,7 +265,9 @@ export class TokenService {
     if (!this.isBrowser) return;
 
     try {
-      globalThis.sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+      // Clear ALL session storage to prevent data leakage between users
+      // This includes auth session, assistant threads, and flow drafts
+      globalThis.sessionStorage.clear();
     } catch {
       // Storage clear failed silently
     }

@@ -104,7 +104,7 @@ export class AuthService {
       finalize(() => {
         this.tokenService.clearTokens();
         this.studentFacade.clearCache();
-        void this.router.navigate(['/login']);
+        void this.router.navigate(['/']);
       }),
       map(() => void 0),
     );
