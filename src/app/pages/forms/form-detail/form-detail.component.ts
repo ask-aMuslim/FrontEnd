@@ -21,6 +21,15 @@ import {
   SelectDropdownComponent,
   type SelectOption,
 } from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
+import { getUniqueCountryCodesList, searchCountryCodes, getIsoCountryCodeByCallingCode } from './country-codes';
+import {
+  validatePhoneNumber,
+  formatPhoneNumberAsYouType,
+  sanitizePhoneNumberInput,
+  getPhoneNumberPlaceholder,
+  getPhoneErrorMessage,
+  extractE164,
+} from './phone-number.formatter';
 
 interface FormFieldOptionView extends FormFieldOptionDto {
   inputId: string;
@@ -37,9 +46,16 @@ interface FormFieldView {
   isRequired: boolean;
   controlName: string;
   placeholder: string;
-  inputType: 'text' | 'email' | 'number' | 'date' | 'file';
+  inputType: 'text' | 'email' | 'number' | 'date' | 'file' | 'tel';
   options: FormFieldOptionView[];
   selectOptions: SelectOption<string>[];
+  countryCodeControlName?: string;
+  countryCodeOptions?: SelectOption<string>[];
+  // Phone number specific
+  phoneFormattedValue?: string;
+  phoneE164Value?: string;
+  phoneValidationError?: string;
+  phoneSearchQuery?: string;
 }
 
 @Component({
@@ -66,6 +82,7 @@ export class FormDetailComponent implements OnInit {
     6: 'Radio',
     7: 'Select',
     8: 'File',
+    9: 'PhoneNumber',
   };
 
   private readonly formsFacade = inject(FormsFacade);
@@ -73,6 +90,12 @@ export class FormDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+
+  private readonly countryCodes = signal(getUniqueCountryCodesList());
+
+  readonly phoneFieldValidation = signal<Record<string, string | null>>({});
+  readonly phoneFieldFormatted = signal<Record<string, string>>({});
+  readonly phoneCountrySearch = signal<Record<string, string>>({});
 
   readonly isLoading = signal(false);
   readonly loadError = signal<string | null>(null);
@@ -257,6 +280,182 @@ export class FormDetailComponent implements OnInit {
     control.updateValueAndValidity();
   }
 
+  onCountryCodeSelected(field: FormFieldView, value: string): void {
+    if (!field.countryCodeControlName) {
+      return;
+    }
+
+    const control = this.formGroup()?.get(field.countryCodeControlName) as FormControl | null;
+    if (!control) {
+      return;
+    }
+
+    control.setValue(value);
+    control.markAsDirty();
+    control.markAsTouched();
+    control.updateValueAndValidity();
+
+    // Re-validate phone number with new country code
+    const phoneControl = this.formGroup()?.get(field.controlName) as FormControl | null;
+    if (phoneControl && phoneControl.value) {
+      // Trigger input validation with the current value and new country code
+      this.onPhoneNumberInput(field, phoneControl.value);
+    }
+  }
+
+  onPhoneNumberInput(field: FormFieldView, event: Event | string): void {
+    const group = this.formGroup();
+    if (!group || !field.countryCodeControlName) {
+      return;
+    }
+
+    const input = typeof event === 'string' ? event : (event.target as HTMLInputElement)?.value || '';
+    const callingCode = group.get(field.countryCodeControlName)?.value ?? '+1';
+    // Get ISO country code (e.g., "US") from calling code (e.g., "+1")
+    const isoCountryCode = getIsoCountryCodeByCallingCode(callingCode) ?? 'US';
+
+    // Sanitize input
+    const sanitized = sanitizePhoneNumberInput(input);
+
+    // Format as-you-type
+    const formatted = formatPhoneNumberAsYouType(sanitized, isoCountryCode);
+
+    // Update formatted display
+    this.phoneFieldFormatted.update((state) => ({
+      ...state,
+      [field.id]: formatted,
+    }));
+
+    // Validate
+    const validation = validatePhoneNumber(sanitized, isoCountryCode);
+
+    // Update validation state
+    this.phoneFieldValidation.update((state) => ({
+      ...state,
+      [field.id]: validation.isValid ? null : getPhoneErrorMessage(validation.error ?? null),
+    }));
+
+    // Update FormControl value with sanitized input
+    const phoneControl = group.get(field.controlName) as FormControl | null;
+    if (phoneControl) {
+      phoneControl.setValue(sanitized, { emitEvent: false });
+
+      // Set control errors based on validation
+      if (sanitized.length > 0) {
+        // Only validate if user has entered something
+        if (!validation.isValid) {
+          phoneControl.setErrors({
+            [validation.error === 'TOO_SHORT'
+              ? 'phoneNumberTooShort'
+              : validation.error === 'TOO_LONG'
+                ? 'phoneNumberTooLong'
+                : 'phoneNumberInvalid']: true,
+          });
+        } else {
+          phoneControl.setErrors(null);
+        }
+      } else {
+        // Empty input - check if required
+        if (field.isRequired) {
+          phoneControl.setErrors({ required: true });
+        } else {
+          phoneControl.setErrors(null);
+        }
+      }
+
+      if (typeof event !== 'string') {
+        // Also update the input's display value with formatted version
+        (event.target as HTMLInputElement).value = formatted;
+      }
+    }
+  }
+
+  onPhoneNumberBlur(field: FormFieldView): void {
+    const group = this.formGroup();
+    if (!group || !field.countryCodeControlName) {
+      return;
+    }
+
+    const phoneControl = group.get(field.controlName) as FormControl | null;
+    if (!phoneControl) {
+      return;
+    }
+
+    const callingCode = group.get(field.countryCodeControlName)?.value ?? '+1';
+    // Get ISO country code (e.g., "US") from calling code (e.g., "+1")
+    const isoCountryCode = getIsoCountryCodeByCallingCode(callingCode) ?? 'US';
+    const value = phoneControl.value || '';
+
+    // Validate once more on blur
+    const validation = validatePhoneNumber(value, isoCountryCode);
+
+    this.phoneFieldValidation.update((state) => ({
+      ...state,
+      [field.id]: validation.isValid ? null : getPhoneErrorMessage(validation.error ?? null),
+    }));
+
+    // Set control errors
+    if (value.length > 0) {
+      if (!validation.isValid) {
+        phoneControl.setErrors({
+          [validation.error === 'TOO_SHORT'
+            ? 'phoneNumberTooShort'
+            : validation.error === 'TOO_LONG'
+              ? 'phoneNumberTooLong'
+              : 'phoneNumberInvalid']: true,
+        });
+      } else {
+        phoneControl.setErrors(null);
+      }
+    }
+
+    phoneControl.markAsTouched();
+  }
+
+  onPhonePaste(field: FormFieldView, event: ClipboardEvent): void {
+    event.preventDefault();
+
+    const group = this.formGroup();
+    if (!group || !field.countryCodeControlName) {
+      return;
+    }
+
+    const pastedText = event.clipboardData?.getData('text') || '';
+    const sanitized = sanitizePhoneNumberInput(pastedText);
+
+    const phoneControl = group.get(field.controlName) as FormControl | null;
+    if (phoneControl) {
+      // Set the sanitized value and trigger input processing
+      phoneControl.setValue(sanitized);
+      phoneControl.markAsDirty();
+
+      // Update the input display and validation
+      this.onPhoneNumberInput(field, sanitized);
+    }
+  }
+
+  filterCountriesBySearch(
+    field: FormFieldView,
+    query: string,
+  ): SelectOption<string>[] {
+    const allCountries = field.countryCodeOptions || [];
+
+    this.phoneCountrySearch.update((state) => ({
+      ...state,
+      [field.id]: query,
+    }));
+
+    if (!query.trim()) {
+      return allCountries;
+    }
+
+    return searchCountryCodes(query, this.countryCodes())
+      .map((country) => ({
+        value: country.code,
+        label: country.label,
+      }));
+  }
+
   private loadForm(id: string): void {
     this.isLoading.set(true);
     this.loadError.set(null);
@@ -297,6 +496,15 @@ export class FormDetailComponent implements OnInit {
         this.getValidators(field),
       );
       group.addControl(field.id, control);
+
+      // Add country code control for PhoneNumber fields
+      if (this.normalizeFieldType(field.type) === 'PhoneNumber') {
+        const countryCodeControl = new FormControl(
+          '+1',
+          field.isRequired ? Validators.required : [],
+        );
+        group.addControl(`${field.id}_countryCode`, countryCodeControl);
+      }
     });
 
     return group;
@@ -355,7 +563,7 @@ export class FormDetailComponent implements OnInit {
       inputId: `${field.id}-${option.id}`,
     }));
 
-    return {
+    const view: FormFieldView = {
       id: field.id,
       label: field.label,
       type: normalizedType,
@@ -370,6 +578,20 @@ export class FormDetailComponent implements OnInit {
         label: option.label,
       })),
     };
+
+    // Add country code options for PhoneNumber fields
+    if (normalizedType === 'PhoneNumber') {
+      const defaultCountryCode = 'US';
+      view.countryCodeControlName = `${field.id}_countryCode`;
+      view.countryCodeOptions = this.countryCodes().map((country) => ({
+        value: country.code,
+        label: country.label,
+      }));
+      // Set phone placeholder based on default country
+      view.placeholder = getPhoneNumberPlaceholder(defaultCountryCode);
+    }
+
+    return view;
   }
 
   private resolveInputType(type: FormFieldType): 'text' | 'email' | 'number' | 'date' | 'file' {
@@ -407,6 +629,8 @@ export class FormDetailComponent implements OnInit {
         return 'Select';
       case 'File':
         return 'File';
+      case 'PhoneNumber':
+        return 'Phone';
       default:
         return 'Text';
     }
@@ -489,6 +713,15 @@ export class FormDetailComponent implements OnInit {
         files.push(value);
         // Store filename in answers for backend to replace with URL
         answers[field.controlName] = value.name;
+      } else if (field.type === 'PhoneNumber' && field.countryCodeControlName) {
+        // Extract and submit E.164 formatted number
+        const callingCode = group.get(field.countryCodeControlName)?.value ?? '+1';
+        // Get the ISO country code (e.g., "US") from the calling code (e.g., "+1")
+        const isoCountryCode = getIsoCountryCodeByCallingCode(callingCode) ?? 'US';
+        const phoneInput = value ? String(value).trim() : '';
+
+        const e164 = extractE164(phoneInput, isoCountryCode);
+        answers[field.controlName] = e164 || null;
       } else {
         answers[field.controlName] = value ?? null;
       }
