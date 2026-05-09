@@ -152,20 +152,37 @@
           <span class="notes__results-summary">{{ noteResultsSummary }}</span>
         </div>
 
-        <button
-          type="button"
-          class="notes__filter-btn"
-          (click)="openNotesFilterModal()"
-          [attr.aria-expanded]="isNotesFilterModalOpen"
-          aria-controls="notes-filter-modal"
-        >
-          <span class="notes__filter-text">Filters</span>
-          <span class="notes__filter-icon" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </button>
+        <div class="notes__header-actions">
+          <label class="notes__search">
+            <div
+              [inlineSVG]="'/icons/icons-24/search.svg'"
+              class="notes__search-icon"
+            ></div>
+            <input
+              #notesSearchInput
+              type="text"
+              [value]="searchQuery"
+              placeholder="Search notes, lessons, courses, levels"
+              (input)="onSearchChange(notesSearchInput.value)"
+              class="notes__search-input"
+            />
+          </label>
+
+          <button
+            type="button"
+            class="notes__filter-btn"
+            (click)="openNotesFilterModal()"
+            [attr.aria-expanded]="isNotesFilterModalOpen"
+            aria-controls="notes-filter-modal"
+          >
+            <span class="notes__filter-text">Filters</span>
+            <span class="notes__filter-icon" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        </div>
       </div>
 
       <div class="notes__filters-meta">
@@ -196,8 +213,7 @@
                   Filter notes
                 </h3>
                 <p class="notes__modal-text">
-                  Search and narrow your notes by course, lesson, level, and
-                  sort order.
+                  Narrow your notes by course, lesson, level, and sort order.
                 </p>
               </div>
 
@@ -214,21 +230,6 @@
             </div>
 
             <div class="notes__filters">
-              <label class="notes__search">
-                <div
-                  [inlineSVG]="'/icons/icons-24/search.svg'"
-                  class="notes__search-icon"
-                ></div>
-                <input
-                  #notesSearchInput
-                  type="text"
-                  [value]="searchQuery"
-                  placeholder="Search notes, lessons, courses, levels"
-                  (input)="onSearchChange(notesSearchInput.value)"
-                  class="notes__search-input"
-                />
-              </label>
-
               <div class="notes__filter-group">
                 <select
                   class="notes__filter-select"

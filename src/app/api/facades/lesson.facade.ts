@@ -87,6 +87,10 @@ export class LessonFacade {
         return extractData(this.api.get<unknown>(`/api/StudentNotes/by-lesson/${lessonId}`), []).pipe(map(asArray<LessonNote>));
     }
 
+    getNotesByStudent(studentId: string): Observable<LessonNote[]> {
+        return extractData(this.api.get<unknown>(`/api/StudentNotes/by-student/${studentId}`), []).pipe(map(asArray<LessonNote>));
+    }
+
     addNote(lessonId: string, studentId: string, text: string, timestamp: number): Observable<LessonNote | null> {
         return extractData(this.api.post<unknown>('/api/StudentNotes', {
             lessonId,
