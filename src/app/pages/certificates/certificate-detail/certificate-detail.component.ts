@@ -235,6 +235,10 @@ import html2canvas from 'html2canvas';
       box-shadow: 0 8px 20px rgba(21, 107, 64, 0.2);
     }
 
+    .download-btn:hover .btn-icon {
+      filter: invert(100%);
+    }
+
     .pdf-btn {
       background: #ecc140;
       color: #010d05;

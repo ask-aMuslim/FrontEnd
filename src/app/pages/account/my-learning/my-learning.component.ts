@@ -162,6 +162,10 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!profile?.id) {
           return of([]);
         }
+        
+        // Load all notes for this student in parallel with enrollments
+        this.loadAllNotes(profile.id);
+        
         return this.enrollmentFacade.getEnrolledCoursesByStudent(profile.id);
       }),
       switchMap((enrollments: EnrollmentReadDto[]) => {
@@ -191,9 +195,9 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
         // Extract unique course names for filter dropdown
         const courseNames = validCourses.map((item) => item.course.title).filter((name): name is string => !!name);
         this.coursesSignal.set(Array.from(new Set(courseNames)));
-
-        // Load notes for all lessons
-        this.loadNotesForLessons(validCourses);
+        
+        // Refresh notes mapping once we have course/lesson data
+        this.refreshNotesMapping(validCourses);
       }),
       catchError(() => of([] as CourseWithLessons[])),
       finalize(() => this.isLoading.set(false)),
@@ -235,67 +239,76 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
     this.savedLessonsSignal.set(Array.from(savedLessonsById.values()));
   }
 
-  private loadNotesForLessons(coursesWithLessons: CourseWithLessons[]): void {
+  private loadAllNotes(studentId: string): void {
     this.isLoadingNotes.set(true);
     this.notesError.set(null);
 
-    const lessonNoteRequests = coursesWithLessons.flatMap((item) =>
-      item.lessons.map((lesson) =>
-        this.lessonFacade.getNotes(lesson.id || '').pipe(
-          map((notes): LessonWithNotes => ({
-            lesson,
-            notes,
-            course: item.course,
-          })),
-          catchError(() => of({ lesson, notes: [], course: item.course } as LessonWithNotes))
-        )
-      )
-    );
-
-    if (lessonNoteRequests.length === 0) {
-      this.allNotesSignal.set([]);
-      this.filteredNotes = [];
-      this.isLoadingNotes.set(false);
-      return;
-    }
-
-    forkJoin(lessonNoteRequests)
+    this.lessonFacade.getNotesByStudent(studentId)
       .pipe(
-        tap((lessonWithNotesArray) => {
-          const allNotes: Note[] = [];
-
-          lessonWithNotesArray.forEach((item) => {
-            item.notes.forEach((note) => {
-              const progressSeconds = this.resolveProgressSeconds(note);
-              const levelId = this.resolveLevelId(item.course);
-              const rawBody = (note.content ?? note.text ?? '').trim();
-              allNotes.push({
-                id: note.id,
-                lessonId: item.lesson.id || '',
-                courseId: item.course.id || '',
-                levelId,
-                level: this.resolveLevelTitle(item.course, levelId),
-                course: item.course.title || 'Unknown Course',
-                lesson: item.lesson.title || 'Untitled Lesson',
-                progressTime: this.formatProgressTime(progressSeconds),
-                progressSeconds,
-                body: rawBody.length > 0 ? rawBody : 'No note content',
-                createdAt: this.toIsoDate(note.createdAt),
-              });
-            });
+        tap((notes) => {
+          // Temporarily store notes without full metadata
+          // We will enrich them once loadStudentData finishes fetching courses/lessons
+          const mappedNotes: Note[] = notes.map(note => {
+            const progressSeconds = this.resolveProgressSeconds(note);
+            const rawBody = (note.content ?? note.text ?? '').trim();
+            
+            return {
+              id: note.id,
+              lessonId: note.lessonId || '',
+              courseId: '', // Will be filled later
+              levelId: '', // Will be filled later
+              level: 'Unknown Level',
+              course: 'Unknown Course',
+              lesson: 'Untitled Lesson',
+              progressTime: this.formatProgressTime(progressSeconds),
+              progressSeconds,
+              body: rawBody.length > 0 ? rawBody : 'No note content',
+              createdAt: this.toIsoDate(note.createdAt),
+            };
           });
 
-          this.allNotesSignal.set(allNotes);
+          this.allNotesSignal.set(mappedNotes);
           this.updateFilteredNotes();
         }),
         catchError(() => {
           this.notesError.set('Failed to load your notes.');
-          return of(null);
+          return of([]);
         }),
         finalize(() => this.isLoadingNotes.set(false)),
         takeUntil(this.destroy$)
       )
       .subscribe();
+  }
+
+  private refreshNotesMapping(coursesWithLessons: CourseWithLessons[]): void {
+    const notes = this.allNotesSignal();
+    if (notes.length === 0) return;
+
+    // Create lookup maps for faster enrichment
+    const lessonMap = new Map<string, { lesson: LessonReadDto; course: CourseReadDto }>();
+    coursesWithLessons.forEach(cwl => {
+      cwl.lessons.forEach(l => {
+        if (l.id) lessonMap.set(l.id, { lesson: l, course: cwl.course });
+      });
+    });
+
+    const enrichedNotes = notes.map(note => {
+      const metadata = lessonMap.get(note.lessonId);
+      if (!metadata) return note;
+
+      const levelId = this.resolveLevelId(metadata.course);
+      return {
+        ...note,
+        courseId: metadata.course.id || '',
+        levelId,
+        level: this.resolveLevelTitle(metadata.course, levelId),
+        course: metadata.course.title || 'Unknown Course',
+        lesson: metadata.lesson.title || 'Untitled Lesson',
+      };
+    });
+
+    this.allNotesSignal.set(enrichedNotes);
+    this.updateFilteredNotes();
   }
 
   private formatDuration(): string {
