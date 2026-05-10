@@ -12,12 +12,8 @@ export enum EventStatus {
   Cancelled = 4,
 }
 
-export enum EnrollmentStatus {
-  Active = 1,
-  Completed = 2,
-  Cancelled = 3,
-  Paused = 4,
-}
+import { EnrollmentStatus } from '../../../api/models/enrollment-status';
+export { EnrollmentStatus };
 
 export enum Language {
   English = 1,

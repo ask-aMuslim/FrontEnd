@@ -7,8 +7,8 @@ import { EnrollmentStatus } from './enrollment-status';
  * Each possible value of `EnrollmentStatus`
  */
 export const ENROLLMENT_STATUS: EnrollmentStatus[] = [
-  1,
-  2,
-  3,
-  4
+  EnrollmentStatus.Active,
+  EnrollmentStatus.Completed,
+  EnrollmentStatus.Cancelled,
+  EnrollmentStatus.Paused
 ];

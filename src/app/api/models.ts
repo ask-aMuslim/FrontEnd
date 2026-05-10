@@ -28,7 +28,7 @@ export type { CreateStudentNoteCommand } from './models/create-student-note-comm
 export type { CreateStudentProfileCommand } from './models/create-student-profile-command';
 export type { CreateStudentQuestionCommand } from './models/create-student-question-command';
 export type { CreateTagCommand } from './models/create-tag-command';
-export type { EnrollmentStatus } from './models/enrollment-status';
+export { EnrollmentStatus } from './models/enrollment-status';
 export type { EventStatus } from './models/event-status';
 export type { ForgotPasswordCommand } from './models/forgot-password-command';
 export type { Language } from './models/language';

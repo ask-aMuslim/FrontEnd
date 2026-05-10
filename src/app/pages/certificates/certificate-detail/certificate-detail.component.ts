@@ -286,6 +286,54 @@ import html2canvas from 'html2canvas';
       height: auto;
       display: block;
     }
+
+    @media (max-width: 768px) {
+      :host {
+        padding: 24px 16px;
+      }
+      .cert-name {
+        font-size: 2.2rem;
+      }
+      .cert-title {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+      }
+      .cert-desc {
+        font-size: 1rem;
+      }
+      .image-wrapper {
+        padding: 16px;
+      }
+      .actions-panel {
+        padding: 24px;
+      }
+      .download-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .cert-name {
+        font-size: 1.8rem;
+      }
+      .cert-title {
+        font-size: 1rem;
+      }
+      .cert-desc {
+        font-size: 0.95rem;
+      }
+      .download-grid {
+        grid-template-columns: 1fr;
+      }
+      .linkedin-btn {
+        min-width: unset;
+        width: 100%;
+      }
+      .image-wrapper {
+        padding: 12px;
+      }
+    }
   `]
 })
 export class CertificateDetailComponent implements OnInit {

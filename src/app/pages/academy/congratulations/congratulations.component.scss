@@ -2,6 +2,8 @@
 
 .course-congrats {
   width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .course-congrats__main {
@@ -42,6 +44,9 @@
   font-weight: 700;
   line-height: 48px;
   color: #010d05;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .course-congrats__description {
