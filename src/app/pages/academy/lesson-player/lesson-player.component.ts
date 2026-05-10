@@ -4,8 +4,8 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, combineLatest } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, combineLatest, of } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
 import { LessonContentService, LessonNoteItem } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { VideoProgressService } from '../../../core/services/video-progress.service';
@@ -226,10 +226,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             this.academyProgressService.getAcademyCourseById(this.courseId),
             this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
             this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
+            this.lessonContentService.getLesson(this.lessonId),
+            this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([])))
         ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: ([course, lessonsWithProgress, quizzes]) => {
+                next: ([course, lessonsWithProgress, quizzes, lessonData, notes]) => {
                     const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
                     const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
                     const scopedQuizzes = quizzes.filter((quiz) => {
@@ -266,20 +268,33 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                         }
                     }));
                     this.currentLesson = this.stripProgress(currentLesson);
-                    this.captureRecentLessonSnapshot();
                     this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
                     this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
                     this.isIntroLesson = this.currentLesson.type === 'intro';
 
+                    // Process lesson data
+                    const enrichedContent = this.applyResolvedVideoDuration(lessonData.content);
+                    this.lessonData = lessonData;
+                    this.lessonContent = enrichedContent;
+                    this.nextLesson = lessonData.nextLesson;
+                    this.previousLesson = lessonData.previousLesson;
+                    this.hasSyncedCompletion = this.videoProgressService.isLessonCompleted(this.lessonId);
+                    this.initializeYouTubeIntegration();
+                    this.applyPendingPlaybackSeek();
+
+                    // Process lesson notes
+                    this.previousNotes = notes;
+
+                    this.captureRecentLessonSnapshot();
+
+                    this.isLoading = false;
+                    this.isContentLoading = false;
                     this.cdr.detectChanges();
 
                     this.academyProgressService.updateLessonProgress({
                         lessonId: this.lessonId,
                         courseId: this.courseId,
                     }).pipe(takeUntil(this.destroy$)).subscribe();
-
-                    this.loadLessonContent();
-                    this.loadLessonNotes();
                 },
                 error: () => {
                     this.error = 'Unable to load this lesson right now. Please try again.';
@@ -287,51 +302,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.isContentLoading = false;
                     this.cdr.detectChanges();
                 }
-            });
-    }
-
-    private loadLessonContent(): void {
-        this.lessonContentService
-            .getLesson(this.lessonId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (data: LessonData) => {
-                    const enrichedContent = this.applyResolvedVideoDuration(data.content);
-                    this.lessonData = data;
-                    this.lessonContent = enrichedContent;
-                    this.nextLesson = data.nextLesson;
-                    this.previousLesson = data.previousLesson;
-                    this.error = null;
-                    this.hasSyncedCompletion = this.videoProgressService.isLessonCompleted(this.lessonId);
-                    this.isLoading = false;
-                    this.isContentLoading = false;
-                    this.cdr.detectChanges();
-                    this.initializeYouTubeIntegration();
-                    this.captureRecentLessonSnapshot();
-                    this.applyPendingPlaybackSeek();
-                },
-                error: () => {
-                    this.error = 'Unable to load lesson content right now. Please try again.';
-                    this.isLoading = false;
-                    this.isContentLoading = false;
-                    this.cdr.detectChanges();
-                }
-            });
-    }
-
-    private loadLessonNotes(): void {
-        this.lessonContentService
-            .getLessonNotes(this.lessonId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (notes) => {
-                    this.previousNotes = notes;
-                    this.cdr.detectChanges();
-                },
-                error: () => {
-                    this.previousNotes = [];
-                    this.cdr.detectChanges();
-                },
             });
     }
 

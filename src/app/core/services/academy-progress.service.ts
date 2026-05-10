@@ -109,7 +109,16 @@ export class AcademyProgressService {
     private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     private readonly progressSubject = new BehaviorSubject<StudentProgress | null>(null);
-    readonly progress$ = this.progressSubject.asObservable();
+    private isProgressInitialized = false;
+
+    get progress$(): Observable<StudentProgress | null> {
+        if (!this.isProgressInitialized && this.isBrowser) {
+            this.isProgressInitialized = true;
+            this.initializeProgress();
+        }
+        return this.progressSubject.asObservable();
+    }
+
     private readonly isRefreshingProgressSubject = new BehaviorSubject<boolean>(false);
     readonly isRefreshingProgress$ = this.isRefreshingProgressSubject.asObservable();
     private academyCoursesCache: AcademyCourse[] = [];
@@ -123,9 +132,7 @@ export class AcademyProgressService {
     private readonly mediaDurationSecondsCache = new Map<string, number>();
     private readonly mediaDurationRequestCache = new Map<string, Observable<number>>();
 
-    constructor() {
-        this.initializeProgress();
-    }
+    constructor() {}
 
     private initializeProgress(): void {
         this.getStudentProgress().subscribe({
@@ -365,6 +372,51 @@ export class AcademyProgressService {
             filter((p): p is StudentProgress => p !== null),
             map((progress) => progress.courseProgress.find((c) => c.courseId === courseId))
         );
+    }
+
+    /**
+     * Fetch progress for a single course directly without triggering global student progress state.
+     */
+    getTargetedCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
+        return this.progressFacade.getCourseProgress(courseId).pipe(
+            map(summary => {
+                if (!summary) return undefined;
+                return {
+                    courseId: courseId,
+                    status: summary.isCompleted ? 'completed' : (summary.progressPercentage && summary.progressPercentage > 0 ? 'in-progress' : 'locked'),
+                    progress: summary.progressPercentage ?? 0,
+                    completedLessons: summary.completedLessonsCount ?? 0,
+                    totalLessons: summary.totalLessonsCount ?? 0,
+                    quizPassed: summary.isCompleted ?? false,
+                } as CourseProgress;
+            }),
+            catchError(() => of(undefined))
+        );
+    }
+
+    /**
+     * Fetch targeted details for prerequisite courses (title and completion status)
+     * without triggering global course or progress fetching.
+     */
+    getTargetedPrerequisiteDetails(courseIds: string[]): Observable<{ id: string, title: string, isCompleted: boolean }[]> {
+        if (!courseIds || courseIds.length === 0) {
+            return of([]);
+        }
+
+        const requests = courseIds.map(id =>
+            forkJoin({
+                course: this.courseFacade.getCourseById(id).pipe(catchError(() => of(null))),
+                progress: this.getTargetedCourseProgress(id)
+            }).pipe(
+                map(({ course, progress }) => ({
+                    id,
+                    title: course?.title || 'Unknown Course',
+                    isCompleted: progress?.status === 'completed'
+                }))
+            )
+        );
+
+        return forkJoin(requests);
     }
 
     getCurrentStudentCourseEnrollment(courseId: string): Observable<CourseEnrollmentState> {
@@ -2604,10 +2656,13 @@ export class AcademyProgressService {
 
     private invalidateProgressCache(): void {
         this.studentProgressRequest$ = null;
-        this.isRefreshingProgressSubject.next(true);
-        this.getStudentProgress(true).pipe(
-            take(1),
-            finalize(() => this.isRefreshingProgressSubject.next(false))
-        ).subscribe();
+        
+        if (this.isProgressInitialized) {
+            this.isRefreshingProgressSubject.next(true);
+            this.getStudentProgress(true).pipe(
+                take(1),
+                finalize(() => this.isRefreshingProgressSubject.next(false))
+            ).subscribe();
+        }
     }
 }
