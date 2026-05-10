@@ -1,21 +1,18 @@
 import { Routes } from '@angular/router';
-import { NotFound } from './pages/not-found/not-found';
-import { Home } from './pages/home/home';
+import { NotFoundComponent } from './pages/not-found/not-found.component';
+import { HomeComponent } from './pages/home/home.component';
 import { authGuard, guestGuard } from './core/guards';
 import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
 import { LoginComponent } from './core/auth/login/login.component';
 import { RegisterComponent } from './core/auth/register/register.component';
 import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.component';
-import { AskAndContactComponent } from './pages/ask-and-contact/ask-and-contact.component';
-import { MuslimTubeComponent } from './pages/muslim-tube/muslim-tube.component';
-import { VideoDetailComponent } from './pages/muslim-tube/video-detail/video-detail.component';
+import { QuestionAndAnswerComponent } from './pages/question-and-answer/question-and-answer.component';
 import { AcademyComponent } from './pages/academy/academy.component';
 import { CourseComponent } from './pages/academy/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
 import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
 import { AccountComponent } from './pages/account/account.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
-import { LessonOverviewComponent } from './pages/academy/lesson-overview/lesson-overview.component';
 import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
 import { QuizComponent } from './pages/academy/quiz/quiz.component';
 import { CongratulationsComponent } from './pages/academy/congratulations/congratulations.component';
@@ -26,15 +23,15 @@ const createQuestionAndAnswerRoutes = (): Routes => [
   {
     path: 'topics',
     loadComponent: () =>
-      import('./pages/ask-and-contact/ask-Q&A/ask-qa.component').then(
-        (m) => m.QuestionAndAnswerTopicsComponent,
+      import('./pages/question-and-answer/ask-Q&A/ask-qa.component').then(
+        (m) => m.AskQaComponent,
       ),
     title: 'Ask Questions',
   },
   {
     path: 'topics/question',
     loadComponent: () =>
-      import('./pages/ask-and-contact/ask-Q&A/question/question.component').then(
+      import('./pages/question-and-answer/ask-Q&A/question/question.component').then(
         (m) => m.QuestionComponent,
       ),
     title: 'Question',
@@ -42,7 +39,7 @@ const createQuestionAndAnswerRoutes = (): Routes => [
   {
     path: 'ask-assistant',
     loadComponent: () =>
-      import('./pages/ask-and-contact/ask-assistant/ask-assistant.component').then(
+      import('./pages/question-and-answer/ask-assistant/ask-assistant.component').then(
         (m) => m.AskAssistantComponent,
       ),
     title: 'Ask Assistant',
@@ -50,7 +47,7 @@ const createQuestionAndAnswerRoutes = (): Routes => [
   {
     path: 'meet-scholar',
     loadComponent: () =>
-      import('./pages/ask-and-contact/meet-scholar/meet-scholar.component').then(
+      import('./pages/question-and-answer/meet-scholar/meet-scholar.component').then(
         (m) => m.MeetScholarComponent,
       ),
     title: 'Meet Scholar',
@@ -59,26 +56,11 @@ const createQuestionAndAnswerRoutes = (): Routes => [
     path: 'meet-scholar/success',
     loadComponent: () =>
       import(
-        './pages/ask-and-contact/meet-scholar/success/meet-scholar-success.component'
+        './pages/question-and-answer/meet-scholar/success/meet-scholar-success.component'
       ).then((m) => m.MeetScholarSuccessComponent),
     title: 'Meeting Request Submitted',
   },
-  {
-    path: 'send-inquiry/success',
-    loadComponent: () =>
-      import(
-        './pages/ask-and-contact/send-inquiry/success/send-inquiry-success.component'
-      ).then((m) => m.SendInquirySuccessComponent),
-    title: 'Inquiry Sent',
-  },
-  {
-    path: 'send-inquiry',
-    loadComponent: () =>
-      import('./pages/ask-and-contact/send-inquiry/send-inquiry.component').then(
-        (m) => m.SendInquiryComponent,
-      ),
-    title: 'Send Inquiry',
-  },
+
 ];
 
 export const routes: Routes = [
@@ -102,7 +84,7 @@ export const routes: Routes = [
     path: '',
     component: AppLayoutComponent,
     children: [
-      { path: 'home', component: Home, title: 'Home' },
+      { path: 'home', component: HomeComponent, title: 'Home' },
       {
         path: 'certificates',
         loadComponent: () => import('./pages/certificates/certificates.component').then(m => m.CertificatesComponent),
@@ -115,90 +97,25 @@ export const routes: Routes = [
       },
       {
         path: 'about',
-        loadComponent: () => import('./pages/about/about-page.component').then(m => m.AboutPageComponent),
+        loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent),
         title: 'About',
       },
       {
         path: 'resources',
         loadComponent: () =>
-          import('./pages/resources/resources-page.component').then(
-            (m) => m.ResourcesPageComponent,
+          import('./pages/resources/resources.component').then(
+            (m) => m.ResourcesComponent,
           ),
         title: 'Resources',
       },
       {
         path: 'question-and-answer',
-        component: AskAndContactComponent,
+        component: QuestionAndAnswerComponent,
         title: 'Question & Answer',
         children: createQuestionAndAnswerRoutes(),
       },
-      {
-        path: 'ask-and-contact',
-        component: AskAndContactComponent,
-        title: 'Ask & Contact',
-        children: createQuestionAndAnswerRoutes(),
-      },
-      {
-        path: 'muslim-tube',
-        component: MuslimTubeComponent,
-        title: 'Muslim Tube',
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'channels' },
-          {
-            path: 'channels',
-            loadComponent: () =>
-              import('./pages/muslim-tube/channels/channels.component').then(
-                (m) => m.ChannelsComponent,
-              ),
-            title: 'Channels',
-          },
-          {
-            path: 'channel/:id',
-            loadComponent: () =>
-              import('./pages/muslim-tube/channel-detail/channel-detail.component').then(
-                (m) => m.ChannelDetailComponent,
-              ),
-            title: 'Channel Detail',
-          },
-          {
-            path: 'videos',
-            loadComponent: () =>
-              import('./pages/muslim-tube/videos/videos.component').then((m) => m.VideosComponent),
-            title: 'Videos',
-          },
-          {
-            path: 'video/:id',
-            component: VideoDetailComponent,
-            title: 'Video',
-          },
-          {
-            path: 'shorts',
-            loadComponent: () =>
-              import('./pages/muslim-tube/shorts/shorts.component').then((m) => m.ShortsComponent),
-            title: 'Shorts',
-          },
-          {
-            path: 'saved',
-            loadComponent: () =>
-              import('./pages/muslim-tube/saved/saved.component').then((m) => m.SavedComponent),
-            title: 'Saved',
-          },
-          {
-            path: 'history',
-            loadComponent: () =>
-              import('./pages/muslim-tube/history/history.component').then(
-                (m) => m.HistoryComponent,
-              ),
-            title: 'History',
-          },
-          {
-            path: 'liked',
-            loadComponent: () =>
-              import('./pages/muslim-tube/liked/liked.component').then((m) => m.LikedComponent),
-            title: 'Liked',
-          },
-        ],
-      },
+
+
       {
         path: 'academy',
         canActivate: [authGuard],
@@ -228,12 +145,6 @@ export const routes: Routes = [
             component: CongratulationsComponent,
             canActivate: [authGuard],
             title: 'Congratulations',
-          },
-          {
-            path: 'lesson/:id',
-            component: LessonOverviewComponent,
-            canActivate: [authGuard],
-            title: 'Lesson Overview'
           },
         ],
       },
@@ -273,5 +184,5 @@ export const routes: Routes = [
   },
 
   // Not Found route
-  { path: '**', component: NotFound, title: 'Page Not Found' },
+  { path: '**', component: NotFoundComponent, title: 'Page Not Found' },
 ];
