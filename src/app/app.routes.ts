@@ -11,7 +11,7 @@ import { AcademyComponent } from './pages/academy/academy.component';
 import { CourseComponent } from './pages/academy/course/course.component';
 import { EventsComponent } from './pages/events/events.component';
 import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
-import { AccountComponent } from './pages/account/account.component';
+import { ProfileComponent } from './pages/profile/profile.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
 import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
 import { QuizComponent } from './pages/academy/quiz/quiz.component';
@@ -19,7 +19,6 @@ import { CongratulationsComponent } from './pages/academy/congratulations/congra
 
 const createQuestionAndAnswerRoutes = (): Routes => [
   { path: '', pathMatch: 'full', redirectTo: 'topics' },
-  { path: 'ask-qa', pathMatch: 'full', redirectTo: 'topics' },
   {
     path: 'topics',
     loadComponent: () =>
@@ -179,7 +178,7 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
         title: 'Contact Us',
       },
-      { path: 'account', component: AccountComponent, title: 'Account', canActivate: [authGuard] },
+      { path: 'profile', component: ProfileComponent, title: 'Profile', canActivate: [authGuard] },
     ],
   },
 

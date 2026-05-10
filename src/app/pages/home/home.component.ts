@@ -243,7 +243,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected get eventsCtaLink(): string {
-    return this.authService.isAuthenticated() ? '/events' : '/account';
+    return this.authService.isAuthenticated() ? '/events' : '/profile';
   }
 
   ngOnInit(): void {

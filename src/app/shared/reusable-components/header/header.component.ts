@@ -66,7 +66,7 @@ export class HeaderComponent {
 
   protected goToProfile(): void {
     this.closeNav();
-    void this.router.navigate(['/account']);
+    void this.router.navigate(['/profile']);
   }
 
   protected logout(): void {

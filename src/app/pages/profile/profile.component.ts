@@ -44,17 +44,17 @@ interface Verse {
 }
 
 @Component({
-  selector: 'app-account',
+  selector: 'app-profile',
   imports: [
     InlineSvgDirective,
     MyLearningComponent,
     AboutComponent,
     MyInquiriesComponent,
   ],
-  templateUrl: './account.component.html',
-  styleUrls: ['./account.component.scss'],
+  templateUrl: './profile.component.html',
+  styleUrls: ['./profile.component.scss'],
 })
-export class AccountComponent implements OnInit, OnDestroy {
+export class ProfileComponent implements OnInit, OnDestroy {
   @ViewChild('avatarFileInput') avatarFileInput?: ElementRef<HTMLInputElement>;
 
   private readonly router = inject(Router);

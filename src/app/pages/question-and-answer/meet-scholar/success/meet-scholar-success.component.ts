@@ -46,8 +46,8 @@ export class MeetScholarSuccessComponent {
     this.confirmationEmail = state.confirmationEmail ?? this.confirmationEmail;
   }
 
-  goToAccount(): void {
-    this.router.navigate(['/account']);
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
   }
 
   goToAskAndContact(): void {
