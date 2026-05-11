@@ -114,3 +114,25 @@
   color: var(--color-button-primary-normal);
   background-color: var(--color-card-surface-secondary);
 }
+
+.ask-ai-btn {
+  height: 2.75rem;
+  padding: 0 1.25rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: var(--color-button-primary-normal);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.ask-ai-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.ask-ai-btn:active {
+  transform: translateY(0);
+}

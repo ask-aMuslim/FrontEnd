@@ -132,6 +132,7 @@
       [query]="searchQuery"
       [results]="searchResults"
       (clearSearch)="clearSearch()"
+      (askAI)="onAskAI($event)"
     />
   } @else {
     <ng-container>

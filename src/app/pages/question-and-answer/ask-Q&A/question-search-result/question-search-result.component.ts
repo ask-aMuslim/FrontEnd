@@ -14,6 +14,7 @@ export class QuestionSearchResultComponent {
   @Input() query = '';
   @Input() results: QuestionCard[] = [];
   @Output() clearSearch = new EventEmitter<void>();
+  @Output() askAI = new EventEmitter<string>();
 
   get hasResults(): boolean {
     return (this.results?.length ?? 0) > 0;
@@ -21,6 +22,10 @@ export class QuestionSearchResultComponent {
 
   onClear(): void {
     this.clearSearch.emit();
+  }
+
+  onAskAI(): void {
+    this.askAI.emit(this.query);
   }
 
   trackByQuestionId(_index: number, question: QuestionCard): string {

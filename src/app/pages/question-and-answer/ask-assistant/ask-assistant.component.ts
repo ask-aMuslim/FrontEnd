@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ApplicationRef, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, OnInit, PLATFORM_ID, ViewChild, WritableSignal, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, finalize, takeUntil } from 'rxjs';
 import {
   AskAssistantConversation,
@@ -58,6 +59,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
   private readonly appRef = inject(ApplicationRef);
+  private readonly route = inject(ActivatedRoute);
 
   ngOnInit(): void {
     this.userId = this.askAssistantService.getResolvedUserId();
@@ -68,6 +70,13 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     this.loadConversations();
     if (savedThreadId) {
       this.openConversation(savedThreadId);
+    }
+
+    const initialQuery = this.route.snapshot.queryParamMap.get('q');
+    if (initialQuery && initialQuery.trim().length > 0) {
+      this.inputValue = initialQuery;
+      // Small delay to ensure component is ready
+      globalThis.setTimeout(() => this.submitQuestion(), 100);
     }
   }
 

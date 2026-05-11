@@ -158,8 +158,8 @@ export class AskQaComponent implements OnInit {
     }
 
     const normalizedQuery = query.toLowerCase();
-    const sourceQuestions = this.selectedCategory === 0 ? this.questions : this.allFilteredQuestions;
-    this.searchResults = sourceQuestions.filter((question) =>
+    // Always use allFilteredQuestions which now contains the full dataset for the active category (Tag or All)
+    this.searchResults = this.allFilteredQuestions.filter((question) =>
       this.matchesQuery(question, normalizedQuery),
     );
     this.hasSearched = true;
@@ -169,6 +169,12 @@ export class AskQaComponent implements OnInit {
     this.searchQuery = '';
     this.searchResults = [];
     this.hasSearched = false;
+  }
+
+  onAskAI(query: string): void {
+    void this.router.navigate(['/question-and-answer/ask-assistant'], {
+      queryParams: { q: query },
+    });
   }
 
   selectCategory(index: number): void {
@@ -250,47 +256,29 @@ export class AskQaComponent implements OnInit {
 
   private loadQuestions(): void {
     const selectedTagId = this.selectedCategoryTagId;
-    if (selectedTagId && this.selectedCategoryName) {
-      if (this.loadedTagId === selectedTagId && this.allFilteredQuestions.length > 0) {
-        this.questions = this.getTagPaginatedQuestions();
-        this.cdr.markForCheck();
-        if (this.searchQuery) {
-          this.onSearch();
-        }
-        return;
-      }
+    const categoryKey = this.selectedCategory === 0 ? 'all' : selectedTagId;
 
-      this.loadAllTagQuestions(selectedTagId);
+    if (categoryKey && this.loadedTagId === categoryKey && this.allFilteredQuestions.length > 0) {
+      this.questions = this.getTagPaginatedQuestions();
+      this.cdr.markForCheck();
+      if (this.searchQuery) {
+        this.onSearch();
+      }
       return;
     }
 
-    this.loadedTagId = null;
-    this.allFilteredQuestions = [];
-    const pageNumber = this.currentPage;
-    const pageSize = this.itemsPerPage;
-    this.qasService.getAll({ pageNumber, pageSize }).subscribe({
-      next: (response: unknown) => {
-        const mapped = this.mapQuestions(response);
-        this.questions = mapped;
-
-        const { totalPages, totalCount } = this.extractPagination(response, mapped.length);
-        this.totalPages = totalPages;
-        this.totalCount = totalCount;
-
-        this.cdr.markForCheck();
-
-        if (this.searchQuery) {
-          this.onSearch();
-        }
-      },
-      error: () => this.cdr.markForCheck(),
-    });
+    this.loadAllCategoryQuestions(selectedTagId);
   }
 
-  private loadAllTagQuestions(tagId: string): void {
+  private loadAllCategoryQuestions(tagId: string | null): void {
+    this.allFilteredQuestions = [];
     const pageSize = AskQaComponent.tagFetchPageSize;
+    const params: any = { pageNumber: 1, pageSize };
+    if (tagId) {
+      params.tagIds = tagId;
+    }
 
-    this.qasService.getAll({ pageNumber: 1, pageSize, tagIds: tagId }).pipe(
+    this.qasService.getAll(params).pipe(
       switchMap((firstResponse) => {
         const firstPageQuestions = this.mapQuestions(firstResponse);
         const pagination = this.extractPagination(firstResponse, firstPageQuestions.length);
@@ -304,9 +292,13 @@ export class AskQaComponent implements OnInit {
 
         const remainingPageRequests: Observable<QuestionCard[]>[] = Array.from(
           { length: totalPages - 1 },
-          (_item, index) => this.qasService
-            .getAll({ pageNumber: index + 2, pageSize, tagIds: tagId })
-            .pipe(map((response) => this.mapQuestions(response))),
+          (_item, index) => {
+            const p: any = { pageNumber: index + 2, pageSize };
+            if (tagId) p.tagIds = tagId;
+            return this.qasService
+              .getAll(p)
+              .pipe(map((response) => this.mapQuestions(response)));
+          }
         );
 
         return forkJoin(remainingPageRequests).pipe(
@@ -323,7 +315,7 @@ export class AskQaComponent implements OnInit {
       }),
       catchError(() => of({ allQuestions: [] })),
     ).subscribe(({ allQuestions }) => {
-      this.loadedTagId = tagId;
+      this.loadedTagId = tagId || 'all';
       this.allFilteredQuestions = allQuestions;
       this.totalCount = allQuestions.length;
       this.totalPages = Math.max(

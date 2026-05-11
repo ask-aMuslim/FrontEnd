@@ -12,15 +12,16 @@ import {
   PLATFORM_ID,
   ViewChild,
   afterNextRender,
+  NgZone,
 } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { EventsService } from '../../core/services/events.service';
+// import { EventsService } from '../../core/services/events.service';
 import { AuthService } from '../../core/services/auth.service';
 import { QasService } from '../../core/services/qas.service';
-import { EventCardComponent, type EventCard as SharedEventCard } from '../events/event-card/event-card.component';
+// import { EventCardComponent, type EventCard as SharedEventCard } from '../events/event-card/event-card.component';
 import { HeroSearchInputComponent } from '../../shared/reusable-components/hero-search-input/hero-search-input.component';
 import {
   asRecord,
@@ -30,7 +31,7 @@ import {
   toStringValue,
   toStringArray,
 } from '../../core/helpers/api-response.helper';
-import { formatEventDateDisplay } from '../../core/helpers/event-display.helper';
+// import { formatEventDateDisplay } from '../../core/helpers/event-display.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 interface HeroStat {
@@ -62,7 +63,7 @@ interface ServeAudienceCard {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, EventCardComponent, HeroSearchInputComponent],
+  imports: [CommonModule, RouterModule, FormsModule, /* EventCardComponent, */ HeroSearchInputComponent],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
@@ -168,12 +169,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     },
   ];
 
+  /*
   protected eventCards: SharedEventCard[] = [];
   protected currentEventPage = 1;
   protected readonly eventsPerPage = 4;
   protected totalEventPages = 1;
   protected arrowRightIcon = '/icons/icons-24/arrow-right.svg';
   protected arrowLeftIcon = '/icons/icons-24/arrow-left.svg';
+  */
 
   protected readonly imanPillars: PillarItem[] = [
     { number: '1', label: 'Belief in', name: 'Allah' },
@@ -222,13 +225,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private cleanupFns: (() => void)[] = [];
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
-  private readonly eventsService = inject(EventsService);
+  // private readonly eventsService = inject(EventsService);
   protected readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly qasService = inject(QasService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
+  private readonly ngZone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private bubblesAutoscrollEnabled = false;
 
@@ -238,6 +242,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private dragScrollLeft = 0;
   private dragResumeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /*
   protected get eventsCtaLabel(): string {
     return this.authService.isAuthenticated() ? 'See All Events' : 'Join for Free';
   }
@@ -245,10 +250,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   protected get eventsCtaLink(): string {
     return this.authService.isAuthenticated() ? '/events' : '/profile';
   }
+  */
 
   ngOnInit(): void {
     if (this.isBrowser) {
-      this.loadEventsSection();
+      // this.loadEventsSection();
       this.loadHeroBubbles();
     }
   }
@@ -258,19 +264,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.qasService.getAll({ pageNumber: 1, pageSize: 50, tags: 'Hero Page Questions' }).subscribe({
+    const heroTag = 'Hero Page Questions';
+
+    this.qasService.getAll({ pageNumber: 1, pageSize: 100 }).subscribe({
       next: (response) => {
         const records = extractArray(response);
         if (records.length > 0) {
-          const fetchedBubbles = records
+          const allMatchingQuestions = records
             .map(item => asRecord(item))
             .filter(record => {
-              // Fallback client-side filter in case backend ignores the tags parameter
-              const categories = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
-              return categories.length === 0 || categories.some(c =>
-                c.toLowerCase().includes('hero') ||
-                c.toLowerCase().includes('misconception')
-              );
+              // Ensure the record actually has the required tag
+              const tags = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
+              return tags.some(t => t.trim() === heroTag);
             })
             .map(record => {
               const translations = extractArray(getValue(record, 'translations', 'Translations'));
@@ -280,6 +285,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
               ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
             })
             .filter(val => val.trim().length > 0);
+
+          const fetchedBubbles = allMatchingQuestions.slice(0, 8); // Take only the first 8 questions
 
           if (fetchedBubbles.length > 0) {
             this.heroBubbles = fetchedBubbles;
@@ -341,6 +348,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     void this.router.navigate(['/question-and-answer/topics'], { queryParams: { question: q } });
   }
 
+  /*
   private loadEventsSection(): void {
     const pageNumber = this.currentEventPage;
     const pageSize = this.eventsPerPage;
@@ -435,6 +443,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const record = asRecord(item);
     return toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
   }
+  */
 
   ngAfterViewInit(): void {
     if (!this.isBrowser) {
@@ -471,37 +480,50 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const track = this.bubblesTrack?.nativeElement;
     if (!track) return;
 
-    // Get the width of one bubble set
     const bubbles = track.querySelectorAll('.suggestion-bubble');
     if (bubbles.length === 0) return;
 
-    // Calculate total width of all bubbles + gaps
-    const trackWidth = track.scrollWidth;
-
-
-    // Create continuous animation using requestAnimationFrame for smooth scrolling
     let currentTranslate = 0;
     let isAnimating = true;
 
-    const animate = (): void => {
-      if (!isAnimating) return;
+    // We run the animation outside of Angular's zone to prevent unnecessary change detection cycles.
+    this.ngZone.runOutsideAngular(() => {
+      const animate = (): void => {
+        if (!isAnimating) return;
 
-      // Move by a small amount each frame for smooth animation
-      currentTranslate -= 0.5;
+        // Move by a small amount each frame for smooth animation (adjustable speed)
+        currentTranslate -= 0.6;
 
-      // When we've scrolled one full width, reset to 0 for seamless looping
-      if (currentTranslate <= -trackWidth) {
-        currentTranslate = 0;
-      }
+        const firstBubble = track.firstElementChild as HTMLElement;
+        if (firstBubble) {
+          // Get current gap from styles to handle responsive changes
+          const computedStyle = window.getComputedStyle(track);
+          const gap = Number.parseFloat(computedStyle.gap) || 0;
+          
+          // Width of the bubble including the following gap
+          const itemFullWidth = firstBubble.offsetWidth + gap;
 
-      track.style.transform = `translateX(${currentTranslate}px)`;
-      track.style.transition = 'none'; // Disable transition for frame-by-frame animation
+          // Once the first item has completely scrolled out of view to the left...
+          if (currentTranslate <= -itemFullWidth) {
+            // 1. Physically move the DOM element to the end of the track
+            track.appendChild(firstBubble);
+            
+            // 2. Adjust the translation backwards by exactly that item's width.
+            // This prevents the visual "jump" that occurs when the DOM structure changes.
+            currentTranslate += itemFullWidth;
+          }
+        }
 
+        // Apply transform for sub-pixel smooth hardware-accelerated movement
+        track.style.transform = `translateX(${currentTranslate}px)`;
+        track.style.transition = 'none';
+
+        window.requestAnimationFrame(animate);
+      };
+
+      // Start the loop
       window.requestAnimationFrame(animate);
-    };
-
-    // Start the animation
-    animate();
+    });
 
     // Cleanup function
     this.cleanupFns.push(() => {

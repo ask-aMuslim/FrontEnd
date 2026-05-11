@@ -217,7 +217,7 @@
       </div>
     </div>
   </section>
-
+  <!--
   <section class="events-section" style="display: none">
     <div class="section-block">
       <div class="section-shell section-shell--raised">
@@ -229,47 +229,48 @@
           </p>
         </div>
 
-        @if (eventCards.length > 0) {
+        if (eventCards.length > 0) {
         <div class="events-grid">
-          @for (event of eventCards; track event.id) {
-          <app-event-card data-aos="fade-up" [event]="event"></app-event-card>
+          for (event of eventCards; track event.id) {
+          <app-event-card data-aos="fade-up" event="event"></app-event-card>
           }
         </div>
 
-        @if (showEventPagination()) {
+        if (showEventPagination()) {
         <div class="events-pagination">
           <button
             class="pagination-button"
-            [disabled]="currentEventPage === 1"
-            (click)="prevEventPage()"
-            [attr.aria-label]="'Previous page'"
+            disabled="currentEventPage === 1"
+            click="prevEventPage()"
+            attr.aria-label="'Previous page'"
           >
-            <img [src]="arrowLeftIcon" alt="Previous" />
+            <img src="arrowLeftIcon" alt="Previous" />
           </button>
           <span class="pagination-info">
-            Page {{ currentEventPage }} of {{ totalEventPages }}
+            Page currentEventPage of totalEventPages
           </span>
           <button
             class="pagination-button"
-            [disabled]="currentEventPage === totalEventPages"
-            (click)="nextEventPage()"
-            [attr.aria-label]="'Next page'"
+            disabled="currentEventPage === totalEventPages"
+            click="nextEventPage()"
+            attr.aria-label="'Next page'"
           >
-            <img [src]="arrowRightIcon" alt="Next" />
+            <img src="arrowRightIcon" alt="Next" />
           </button>
         </div>
-        } } @else {
+        } } else {
         <p class="events-empty-message">No events are available right now.</p>
         }
 
         <div class="section-cta">
-          <a class="button" [routerLink]="eventsCtaLink"
-            >{{ eventsCtaLabel }}</a
+          <a class="button" routerLink="eventsCtaLink"
+            >eventsCtaLabel</a
           >
         </div>
       </div>
     </div>
   </section>
+  -->
 
   <section class="islam-section">
     <div class="section-block section-block--wide">
