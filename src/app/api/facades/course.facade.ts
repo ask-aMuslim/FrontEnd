@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, shareReplay, finalize } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 
@@ -46,32 +46,74 @@ export type CourseUpdatePayload = Record<string, unknown>;
 
 @Injectable({ providedIn: 'root' })
 export class CourseFacade {
+    private readonly activeRequests = new Map<string, Observable<any>>();
+
     constructor(private readonly api: ApiService) { }
 
     getAllCourses(): Observable<CourseReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Courses'), []).pipe(map(asArray<CourseReadDto>));
+        const cacheKey = 'allCourses';
+        if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
+
+        const request$ = extractData(this.api.get<unknown>('/api/Courses'), []).pipe(
+            map(asArray<CourseReadDto>),
+            finalize(() => this.activeRequests.delete(cacheKey)),
+            shareReplay(1)
+        );
+
+        this.activeRequests.set(cacheKey, request$);
+        return request$;
     }
 
     getCoursesByLevel(levelId: string): Observable<CourseReadDto[]> {
-        return extractData(
+        const cacheKey = `level_${levelId}`;
+        if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
+
+        const request$ = extractData(
             this.api.get<unknown>('/api/Courses', { LevelId: levelId, IsPublished: 'true' }),
             []
-        ).pipe(map(asArray<CourseReadDto>));
+        ).pipe(
+            map(asArray<CourseReadDto>),
+            finalize(() => this.activeRequests.delete(cacheKey)),
+            shareReplay(1)
+        );
+
+        this.activeRequests.set(cacheKey, request$);
+        return request$;
     }
 
     getRoadmap(levelId: string, studentId?: string): Observable<RoadmapCourseDto[]> {
+        const cacheKey = `roadmap_${levelId}_${studentId || ''}`;
+        if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
+
         const params: Record<string, string> = {};
         if (studentId) {
             params['studentId'] = studentId;
         }
-        return extractData(
+
+        const request$ = extractData(
             this.api.get<unknown>(`/api/Courses/roadmap/${levelId}`, params),
             []
-        ).pipe(map(asArray<RoadmapCourseDto>));
+        ).pipe(
+            map(asArray<RoadmapCourseDto>),
+            finalize(() => this.activeRequests.delete(cacheKey)),
+            shareReplay(1)
+        );
+
+        this.activeRequests.set(cacheKey, request$);
+        return request$;
     }
 
     getCourseById(id: string): Observable<CourseReadByIdDto | null> {
-        return extractData(this.api.get<unknown>(`/api/Courses/${id}`), null);
+        const cacheKey = `courseById_${id}`;
+        if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
+
+        const request$ = extractData(this.api.get<unknown>(`/api/Courses/${id}`), null).pipe(
+            finalize(() => this.activeRequests.delete(cacheKey)),
+            shareReplay(1)
+        );
+
+        this.activeRequests.set(cacheKey, request$);
+        return request$;
     }
 
     createCourse(payload: CourseCreatePayload): Observable<CourseReadByIdDto | null> {

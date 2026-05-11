@@ -1,6 +1,6 @@
 <!-- Quiz Component -->
 <section>
-  <div class="section-block section-block--wide">
+ 
     <div class="quiz-container">
       @switch (quizState()) {
         <!-- Intro State -->
@@ -8,7 +8,7 @@
           <app-academy-page-shell
             variant="quiz"
             [bannerImageUrl]="bannerImageUrl"
-            bannerAlt="Quiz background"
+            [bannerAlt]="bannerAlt"
             [breadcrumbs]="breadcrumbs"
             [currentBreadcrumb]="currentBreadcrumb"
           >
@@ -82,7 +82,7 @@
             sidebarPosition="left"
             [isSidebarCollapsed]="isSidebarCollapsed()"
             [bannerImageUrl]="bannerImageUrl"
-            bannerAlt="Quiz background"
+            [bannerAlt]="bannerAlt"
             [breadcrumbs]="breadcrumbs"
             [currentBreadcrumb]="currentBreadcrumb"
           >
@@ -334,7 +334,7 @@
           <app-academy-page-shell
             variant="quiz"
             [bannerImageUrl]="bannerImageUrl"
-            bannerAlt="Quiz background"
+            [bannerAlt]="bannerAlt"
             [breadcrumbs]="breadcrumbs"
             [currentBreadcrumb]="currentBreadcrumb"
           >
@@ -562,7 +562,7 @@
           <app-academy-page-shell
             variant="quiz"
             [bannerImageUrl]="bannerImageUrl"
-            bannerAlt="Quiz background"
+            [bannerAlt]="bannerAlt"
             [breadcrumbs]="breadcrumbs"
             [currentBreadcrumb]="currentBreadcrumb"
           >
@@ -749,5 +749,5 @@
         }
       }
     </div>
-  </div>
+
 </section>

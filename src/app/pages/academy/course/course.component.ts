@@ -194,7 +194,7 @@ export class CourseComponent implements OnInit, OnDestroy {
                 const prerequisites = courseData.prerequisites ?? [];
                 return combineLatest([
                     of(courseData),
-                    this.academyProgressService.getCourseProgress(this.courseId).pipe(catchError(() => of(undefined))),
+                    this.academyProgressService.getTargetedCourseProgress(this.courseId).pipe(catchError(() => of(undefined))),
                     this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(catchError(() => of([]))),
                     this.academyProgressService.getAcademyStages().pipe(catchError(() => of([]))),
                     this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId).pipe(catchError(() => of(undefined))),
@@ -255,8 +255,14 @@ export class CourseComponent implements OnInit, OnDestroy {
         quizzes: QuizReadDto[],
         prerequisitesList: { id: string, title: string, isCompleted: boolean }[],
     ): CourseDetails {
+        const matchedStage =
+            stages.find((stage) => stage.id === courseData.levelId)
+            ?? stages.find((stage) => stage.number === courseData.stageId);
+
+        const stageNumber = matchedStage?.number ?? courseData.stageId ?? 1;
+
         const isLocked = this.isUserAuthenticated
-            ? courseProgress?.status === 'locked'
+            ? courseProgress?.status === 'locked' && stageNumber > 1
             : false;
 
         const unmetPrerequisites = prerequisitesList.filter(p => !p.isCompleted);
@@ -285,11 +291,6 @@ export class CourseComponent implements OnInit, OnDestroy {
             '0m',
         );
 
-        const matchedStage =
-            stages.find((stage) => stage.id === courseData.levelId)
-            ?? stages.find((stage) => stage.number === courseData.stageId);
-
-        const stageNumber = matchedStage?.number ?? courseData.stageId ?? 1;
         let stageLabel = `Stage ${stageNumber}`;
         if (matchedStage) {
             stageLabel = `Stage ${matchedStage.number}: ${matchedStage.title}`;

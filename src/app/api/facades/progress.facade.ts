@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpContext } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, shareReplay, finalize } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 import { SKIP_LOADING } from '../../core/http/context-tokens';
@@ -40,6 +40,7 @@ export interface ProgressReadDto {
 @Injectable({ providedIn: 'root' })
 export class ProgressFacade {
     private readonly skipLoadingContext = new HttpContext().set(SKIP_LOADING, true);
+    private readonly activeRequests = new Map<string, Observable<any>>();
 
     constructor(private readonly _api: ApiService) { }
 
@@ -70,7 +71,10 @@ export class ProgressFacade {
     }
 
     getCourseProgress(courseId: string): Observable<CourseProgressSummaryDto | null> {
-        return extractData(
+        const cacheKey = `courseProgress_${courseId}`;
+        if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
+
+        const request$ = extractData(
             this._api.get<unknown>(`/api/Progress/course/${courseId}`, undefined, {
                 context: this.skipLoadingContext,
             }),
@@ -88,7 +92,12 @@ export class ProgressFacade {
                     catchError(() => of(null)),
                 )
             ),
+            finalize(() => this.activeRequests.delete(cacheKey)),
+            shareReplay(1)
         );
+
+        this.activeRequests.set(cacheKey, request$);
+        return request$;
     }
 
     private normalizeCourseProgressSummary(payload: unknown): CourseProgressSummaryDto | null {
@@ -130,18 +139,32 @@ export class ProgressFacade {
     }
 
     private readNumber(value: unknown): number | undefined {
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-            return undefined;
+        if (typeof value === 'number') {
+            return Number.isFinite(value) ? value : undefined;
         }
 
-        return value;
+        if (typeof value === 'string') {
+            const parsed = Number.parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : undefined;
+        }
+
+        return undefined;
     }
 
     private readBoolean(value: unknown): boolean | undefined {
-        if (typeof value !== 'boolean') {
-            return undefined;
+        if (typeof value === 'boolean') {
+            return value;
         }
 
-        return value;
+        if (typeof value === 'number') {
+            return value > 0;
+        }
+
+        if (typeof value === 'string') {
+            const lower = value.toLowerCase().trim();
+            return lower === 'true' || lower === '1' || lower === 'yes';
+        }
+
+        return undefined;
     }
 }

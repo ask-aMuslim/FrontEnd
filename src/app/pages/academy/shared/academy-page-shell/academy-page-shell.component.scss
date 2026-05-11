@@ -148,20 +148,11 @@
 
 .academy-page-shell.variant-quiz {
   .academy-page-banner {
-    height: 160px;
-    z-index: -9;
-
-    @media (min-width: 768px) {
-      height: 200px;
-    }
-
-    @media (min-width: 1024px) {
-      height: 256px;
-    }
+    height: 256px;
   }
 
   .academy-banner-image {
-    opacity: 0.3;
+    // Standard opacity for banners
   }
 
   .academy-page-body {

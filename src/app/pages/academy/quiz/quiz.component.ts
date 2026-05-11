@@ -12,7 +12,7 @@ import { OptionsService } from '../../../core/services/options.service';
 import { QuizAttemptsService } from '../../../core/services/quiz-attempts.service';
 import { QuizAnswerDto } from '../../../api/models/quiz-answer-dto';
 import { ACADEMY_COURSES, ACADEMY_LESSONS } from '../../../core/services/academy-data';
-import { AcademyLesson, LessonProgress } from '../../../core/models/interfaces/academy-progress.model';
+import { AcademyCourse, AcademyLesson, LessonProgress } from '../../../core/models/interfaces/academy-progress.model';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
@@ -90,9 +90,18 @@ export class QuizComponent implements OnInit, OnDestroy {
     // Route params
     courseId = '';
     lessonId = '';
+    currentCourse: AcademyCourse | undefined;
 
-    readonly bannerImageUrl = '/backgrounds/course-background.png';
+    get bannerImageUrl(): string {
+        return this.currentCourse?.thumbnailUrl || '/backgrounds/course-background.png';
+    }
+
+    get bannerAlt(): string {
+        return 'Quiz background';
+    }
+
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
+
         { label: 'Academy', link: ['/academy'] },
     ];
 
@@ -359,6 +368,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         const course = this.academyProgressService.getCourseById(this.courseId)
             ?? ACADEMY_COURSES.find((item) => item.id === this.courseId);
         if (course) {
+            this.currentCourse = course;
             this.courseInfo.set({
                 stage: course.stageId,
                 title: course.title,
@@ -726,17 +736,9 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     goToPreviousLesson(): void {
-        const quizLessonId = this.courseQuizLessonId || this.lessonId || this.courseId;
-        const previousLesson = this.academyProgressService.getPreviousLesson(this.courseId, quizLessonId);
-
-        if (previousLesson?.id) {
-            void this.router.navigate(['/academy/course', this.courseId, 'lesson', previousLesson.id]);
-            return;
-        }
-
-        const staticPreviousLessonId = this.getStaticPreviousLessonId();
-        if (staticPreviousLessonId) {
-            void this.router.navigate(['/academy/course', this.courseId, 'lesson', staticPreviousLessonId]);
+        const lastLessonId = this.resolveLastPublishedLessonIdBeforeCurrentQuiz();
+        if (lastLessonId) {
+            void this.router.navigate(['/academy/course', this.courseId, 'lesson', lastLessonId]);
             return;
         }
 

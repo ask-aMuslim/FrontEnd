@@ -12,7 +12,6 @@
 // ==================== CONTAINER ====================
 .quiz-container {
   min-height: 100vh;
-  background-color: #ffffff;
   width: 100%;
   overflow-x: hidden; // Prevent horizontal overflow
   box-sizing: border-box; // Include padding in width calculation
@@ -23,10 +22,8 @@
   width: 100%;
   padding: 2rem;
   margin-left: 5px;
-  background-color: #ffffff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 0px 5px rgba(0, 0, 0, 0.15);
 
   @media (min-width: 1024px) {
     max-width: 888px; // Exact Figma
