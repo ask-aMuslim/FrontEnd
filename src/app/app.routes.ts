@@ -9,6 +9,7 @@ import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.compone
 import { QuestionAndAnswerComponent } from './pages/question-and-answer/question-and-answer.component';
 import { AcademyComponent } from './pages/academy/academy.component';
 import { CourseComponent } from './pages/academy/course/course.component';
+import { academyResolver } from './pages/academy/academy.resolver';
 import { EventsComponent } from './pages/events/events.component';
 import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
 import { ProfileComponent } from './pages/profile/profile.component';
@@ -119,7 +120,7 @@ export const routes: Routes = [
         path: 'academy',
         canActivate: [authGuard],
         children: [
-          { path: '', component: AcademyComponent, title: 'Academy' },
+          { path: '', component: AcademyComponent, title: 'Academy', resolve: { academyData: academyResolver } },
           { path: 'course/:id', component: CourseComponent, title: 'Course' },
           {
             path: 'course/:courseId/lesson/:lessonId',

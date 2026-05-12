@@ -27,10 +27,10 @@ export const serverRoutes: ServerRoute[] = [
   {
     path: 'events/:id',
     renderMode: RenderMode.Server,
-  },  // Academy main page - use server-side rendering
+  },  // Academy main page - client-side rendering with resolver
   {
     path: 'academy',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },  // Routes that rely on client-only behavior or long-running calls - avoid prerender timeouts
   {
     path: 'events',
