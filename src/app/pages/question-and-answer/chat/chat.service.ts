@@ -1,7 +1,18 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 
-const CHAT_API_BASE_URL = environment.askAssistantApiBaseUrl.replaceAll(/\/+$/g, '');
+function resolveAssistantBaseUrls(primaryUrl: string, fallbackUrl: string): string[] {
+    const urls = [primaryUrl, fallbackUrl]
+        .map((value) => value.trim().replaceAll(/\/+$/g, ''))
+        .filter((value) => value.length > 0);
+
+    return [...new Set(urls)];
+}
+
+const CHAT_API_BASE_URLS = resolveAssistantBaseUrls(
+    environment.askAssistantApiBaseUrl,
+    environment.askAssistantApiBaseUrlFallback,
+);
 
 type JsonRecord = Record<string, unknown>;
 
@@ -119,26 +130,45 @@ export class ChatService {
         request: NormalizedChatRequest,
         signal: AbortSignal,
     ): Promise<Response> {
-        const endpoint = `${CHAT_API_BASE_URL}/api/chat?stream=true`;
-        const response = await globalThis.fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                Accept: 'text/event-stream, application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(request),
-            signal,
-        });
+        let lastError: unknown = null;
 
-        if (!response.ok) {
-            throw new Error(`Chat stream request failed (${response.status} ${response.statusText}).`);
+        for (const baseUrl of CHAT_API_BASE_URLS) {
+            const endpoint = `${baseUrl}/api/chat?stream=true`;
+
+            try {
+                const response = await globalThis.fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'text/event-stream, application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(request),
+                    signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Chat stream request failed (${response.status} ${response.statusText}).`);
+                }
+
+                if (!response.body) {
+                    throw new Error('The server response did not include a readable stream.');
+                }
+
+                return response;
+            } catch (error: unknown) {
+                if (this.isAbortError(error)) {
+                    throw error;
+                }
+
+                lastError = error;
+            }
         }
 
-        if (!response.body) {
-            throw new Error('The server response did not include a readable stream.');
+        if (lastError instanceof Error) {
+            throw lastError;
         }
 
-        return response;
+        throw new Error('Unable to connect to the assistant stream.');
     }
 
     private async consumeStreamResponse(response: Response): Promise<boolean> {
