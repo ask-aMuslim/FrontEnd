@@ -172,25 +172,42 @@ class Particle {
     .splash-content {
       text-align: center;
       z-index: 10;
+      width: 100%;
+      max-width: 90vw;
+      padding: 0 15px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .medal-icon {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       color: #ecc140;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .medal-icon svg {
+      width: clamp(80px, 20vw, 120px);
+      height: auto;
     }
 
     .splash-title {
-      font-size: clamp(3rem, 8vw, 5rem);
+      font-size: clamp(1.2rem, 7vw, 4rem);
       font-weight: 900;
       color: #ecc140;
       margin: 0;
       text-transform: uppercase;
-      letter-spacing: 4px;
+      letter-spacing: 2px;
       text-shadow: 0 0 20px rgba(236, 193, 64, 0.4);
+
+      line-height: 1.2;
     }
 
     .splash-subtitle {
-      font-size: clamp(1rem, 3vw, 1.5rem);
+      font-size: clamp(0.875rem, 3vw, 1.5rem);
       color: #ffffff;
       opacity: 0.8;
       margin-top: 16px;
@@ -392,6 +409,64 @@ class Particle {
       line-height: 1.6;
       font-size: 1.1rem;
       margin: 0;
+    }
+
+    @media (max-width: 768px) {
+      .certificates-content {
+        padding: 60px 20px;
+      }
+      .page-header {
+        margin-bottom: 50px;
+      }
+      .duo-showcase {
+        gap: 50px;
+      }
+      .card-image-wrapper {
+        height: 300px;
+        padding: 20px;
+      }
+      .card-info {
+        padding: 24px;
+      }
+      .recipient-name {
+        font-size: 1.8rem;
+      }
+      .view-btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .certificates-content {
+        padding: 40px 16px;
+      }
+      .page-header {
+        margin-bottom: 40px;
+      }
+      .duo-showcase {
+        gap: 40px;
+      }
+      .card-image-wrapper {
+        height: 250px;
+        padding: 16px;
+      }
+      .card-info {
+        padding: 20px;
+      }
+      .recipient-name {
+        font-size: 1.5rem;
+      }
+      .cert-title {
+        font-size: 1rem;
+      }
+      .cert-desc {
+        font-size: 0.95rem;
+      }
+      .view-btn {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+      }
     }
   `]
 })

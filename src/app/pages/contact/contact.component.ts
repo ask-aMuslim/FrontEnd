@@ -187,7 +187,7 @@ export class ContactComponent implements OnInit {
     }
 
     goToProfile(): void {
-        this.router.navigate(['/account']);
+        this.router.navigate(['/profile']);
     }
 
     isFieldInvalid(field: 'name' | 'email' | 'topic' | 'message'): boolean {

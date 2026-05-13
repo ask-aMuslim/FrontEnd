@@ -109,7 +109,16 @@ export class AcademyProgressService {
     private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     private readonly progressSubject = new BehaviorSubject<StudentProgress | null>(null);
-    readonly progress$ = this.progressSubject.asObservable();
+    private isProgressInitialized = false;
+
+    get progress$(): Observable<StudentProgress | null> {
+        if (!this.isProgressInitialized && this.isBrowser) {
+            this.isProgressInitialized = true;
+            this.initializeProgress();
+        }
+        return this.progressSubject.asObservable();
+    }
+
     private readonly isRefreshingProgressSubject = new BehaviorSubject<boolean>(false);
     readonly isRefreshingProgress$ = this.isRefreshingProgressSubject.asObservable();
     private academyCoursesCache: AcademyCourse[] = [];
@@ -123,9 +132,7 @@ export class AcademyProgressService {
     private readonly mediaDurationSecondsCache = new Map<string, number>();
     private readonly mediaDurationRequestCache = new Map<string, Observable<number>>();
 
-    constructor() {
-        this.initializeProgress();
-    }
+    constructor() {}
 
     private initializeProgress(): void {
         this.getStudentProgress().subscribe({
@@ -365,6 +372,54 @@ export class AcademyProgressService {
             filter((p): p is StudentProgress => p !== null),
             map((progress) => progress.courseProgress.find((c) => c.courseId === courseId))
         );
+    }
+
+    /**
+     * Fetch progress for a single course directly without triggering global student progress state.
+     */
+    getTargetedCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
+        return this.progressFacade.getCourseProgress(courseId).pipe(
+            map(summary => {
+                if (!summary) return undefined;
+                
+                const isCompleted = !!(summary.isCompleted || (summary.progressPercentage && summary.progressPercentage >= 100));
+                
+                return {
+                    courseId: courseId,
+                    status: isCompleted ? 'completed' : (summary.progressPercentage && summary.progressPercentage > 0 ? 'in-progress' : 'available'),
+                    progress: summary.progressPercentage ?? 0,
+                    completedLessons: summary.completedLessonsCount ?? 0,
+                    totalLessons: summary.totalLessonsCount ?? 0,
+                    quizPassed: isCompleted,
+                } as CourseProgress;
+            }),
+            catchError(() => of(undefined))
+        );
+    }
+
+    /**
+     * Fetch targeted details for prerequisite courses (title and completion status)
+     * without triggering global course or progress fetching.
+     */
+    getTargetedPrerequisiteDetails(courseIds: string[]): Observable<{ id: string, title: string, isCompleted: boolean }[]> {
+        if (!courseIds || courseIds.length === 0) {
+            return of([]);
+        }
+
+        const requests = courseIds.map(id =>
+            forkJoin({
+                course: this.courseFacade.getCourseById(id).pipe(catchError(() => of(null))),
+                progress: this.getTargetedCourseProgress(id)
+            }).pipe(
+                map(({ course, progress }) => ({
+                    id,
+                    title: course?.title || 'Unknown Course',
+                    isCompleted: progress?.status === 'completed'
+                }))
+            )
+        );
+
+        return forkJoin(requests);
     }
 
     getCurrentStudentCourseEnrollment(courseId: string): Observable<CourseEnrollmentState> {
@@ -682,13 +737,19 @@ export class AcademyProgressService {
         );
     }
 
+    private readonly activeLessonsRequests = new Map<string, Observable<AcademyLesson[]>>();
+
     getAcademyLessons(courseId: string, forceRefresh = false): Observable<AcademyLesson[]> {
         const cachedLessons = this.lessonsCache.get(courseId);
         if (!forceRefresh && cachedLessons && cachedLessons.length > 0) {
             return of(cachedLessons);
         }
 
-        return this.lessonFacade.getCourseLessons(courseId).pipe(
+        if (!forceRefresh && this.activeLessonsRequests.has(courseId)) {
+            return this.activeLessonsRequests.get(courseId)!;
+        }
+
+        const request$ = this.lessonFacade.getCourseLessons(courseId).pipe(
             map(lessons => lessons
                 .filter((lesson) => lesson.isPublished !== false)
                 .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))
@@ -698,8 +759,13 @@ export class AcademyProgressService {
                 this.lessonsCache.set(courseId, lessons);
                 this.updateCachedCourseDuration(courseId, lessons);
             }),
-            catchError(() => of([]))
+            catchError(() => of([])),
+            finalize(() => this.activeLessonsRequests.delete(courseId)),
+            shareReplay(1)
         );
+
+        this.activeLessonsRequests.set(courseId, request$);
+        return request$;
     }
 
     calculateCourseVideoDuration(
@@ -960,94 +1026,133 @@ export class AcademyProgressService {
         progressRecords: ProgressReadDto[],
     ): StudentProgress {
         const sortedStageIds = Array.from(new Set(courses.map(course => course.stageId))).sort((a, b) => a - b);
-        const unlockedStageIds = new Set<number>(sortedStageIds);
         const progressRecordByCourseId = this.normalizeProgressRecords(progressRecords);
-
         const courseProgressById = new Map<string, CourseProgress>();
-        const sortedCourses = [...courses].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        
+        // Group courses by stage for sequential processing
+        const coursesByStage = new Map<number, AcademyCourse[]>();
+        courses.forEach(c => {
+            const list = coursesByStage.get(c.stageId) || [];
+            list.push(c);
+            coursesByStage.set(c.stageId, list);
+        });
 
-        const courseProgress = sortedCourses.map((course) => {
-            const enrollment = enrollmentRecordsByCourseId.get(String(course.id));
-            const enrollmentStatus = this.parseEnrollmentStatus(enrollment?.status);
-            const isEnrolled = this.isEnrollmentConsideredEnrolled(enrollment?.status);
-            const isEnrollmentCompleted = enrollmentStatus === EnrollmentStatus.Completed;
-            const prerequisites = (course.prerequisites ?? []).filter((prereqId) => prereqId !== course.id);
-            const hasUnfinishedPrerequisites = prerequisites.some((prereqId) => {
-                const prereqProgress = courseProgressById.get(prereqId);
-                return prereqProgress?.status !== 'completed';
+        const unlockedStageIds = new Set<number>();
+        if (sortedStageIds.length > 0) {
+            unlockedStageIds.add(sortedStageIds[0]); // Stage 1 is always unlocked
+        }
+
+        const allCourseProgress: CourseProgress[] = [];
+        let isCurrentStageUnlocked = true;
+
+        sortedStageIds.forEach((stageId, stageIndex) => {
+            const stageCourses = (coursesByStage.get(stageId) || [])
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            
+            let allStageCoursesCompleted = true;
+
+            stageCourses.forEach((course) => {
+                const enrollment = enrollmentRecordsByCourseId.get(String(course.id));
+                const enrollmentStatus = this.parseEnrollmentStatus(enrollment?.status);
+                const isEnrolled = this.isEnrollmentConsideredEnrolled(enrollment?.status);
+                const isEnrollmentCompleted = enrollmentStatus === EnrollmentStatus.Completed;
+                
+                const prerequisites = (course.prerequisites ?? []).filter((prereqId) => prereqId !== course.id);
+                const hasUnfinishedPrerequisites = prerequisites.some((prereqId) => {
+                    const prereqProgress = courseProgressById.get(prereqId);
+                    return prereqProgress?.status !== 'completed';
+                });
+
+                // A course is locked if its stage is locked OR it has unmet prerequisites
+                // EXCEPT: The first course in an unlocked stage with no prerequisites should be available.
+                const isStageLocked = !unlockedStageIds.has(stageId);
+                let status: CourseStatus = isStageLocked || hasUnfinishedPrerequisites ? 'locked' : 'available';
+
+                if (isEnrolled && !isStageLocked && !hasUnfinishedPrerequisites) {
+                    status = 'in-progress';
+                }
+
+                if (isEnrollmentCompleted) {
+                    status = 'completed';
+                }
+
+                const apiProgress = progressRecordByCourseId.get(course.id);
+                const normalizedProgress = apiProgress
+                    ? this.normalizeProgressPercentage(apiProgress.lessonCompletionRate ?? apiProgress.progress ?? 0)
+                    : 0;
+                
+                const totalCourseItems = this.resolveCourseItemCount(course.id, course.lessons);
+                const apiCompletedLessons = apiProgress && typeof apiProgress.totalLessonsCompleted === 'number'
+                    ? Math.max(0, apiProgress.totalLessonsCompleted)
+                    : 0;
+                
+                const isApiCompleted = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
+                const requiresQuizPass = this.courseHasAnyQuiz(course.id);
+                const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
+                
+                const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
+                const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
+                
+                let completedLessonsBeforeStandaloneQuiz = Math.max(apiCompletedLessons, locallyCompletedLessons);
+                if (requiresQuizPass && quizPassed) {
+                    completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, totalCourseItems - completedStandaloneQuizCount);
+                }
+                
+                const completedLessonsCount = totalCourseItems > 0
+                    ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
+                    : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
+                
+                const completionRateFromLessons = totalCourseItems > 0
+                    ? this.normalizeProgressPercentage((completedLessonsCount / totalCourseItems) * 100)
+                    : 0;
+                
+                let progressBeforeCompletion = isApiCompleted
+                    ? 100
+                    : Math.max(normalizedProgress, completionRateFromLessons);
+
+                if (!isApiCompleted && requiresQuizPass && !quizPassed) {
+                    progressBeforeCompletion = completionRateFromLessons;
+                }
+
+                const hasTrackableCourseItems = totalCourseItems > 0;
+                const completedByRule = hasTrackableCourseItems
+                    && completedLessonsCount >= totalCourseItems
+                    && (!requiresQuizPass || quizPassed);
+                
+                const isCourseCompleted = isApiCompleted || completedByRule || isEnrollmentCompleted;
+
+                if (isCourseCompleted) {
+                    status = 'completed';
+                } else if (!isStageLocked && !hasUnfinishedPrerequisites && (progressBeforeCompletion > 0 || isEnrolled)) {
+                    status = 'in-progress';
+                }
+
+                const progressEntry: CourseProgress = {
+                    courseId: course.id,
+                    status,
+                    progress: isCourseCompleted ? 100 : progressBeforeCompletion,
+                    completedLessons: isCourseCompleted
+                        ? Math.max(totalCourseItems, completedLessonsCount)
+                        : Math.min(totalCourseItems, completedLessonsCount),
+                    totalLessons: totalCourseItems,
+                    quizPassed,
+                };
+
+                courseProgressById.set(course.id, progressEntry);
+                allCourseProgress.push(progressEntry);
+
+                if (!isCourseCompleted) {
+                    allStageCoursesCompleted = false;
+                }
             });
 
-            let status: CourseStatus = 'locked';
-
-            if (!hasUnfinishedPrerequisites) {
-                status = 'available';
+            // If all courses in the current stage are completed, unlock the next stage
+            if (allStageCoursesCompleted && stageIndex < sortedStageIds.length - 1) {
+                unlockedStageIds.add(sortedStageIds[stageIndex + 1]);
             }
-
-            if (isEnrolled) {
-                status = 'in-progress';
-            }
-
-            if (isEnrollmentCompleted) {
-                status = 'completed';
-            }
-
-            const apiProgress = progressRecordByCourseId.get(course.id);
-            const normalizedProgress = apiProgress
-                ? this.normalizeProgressPercentage(apiProgress.lessonCompletionRate ?? apiProgress.progress ?? 0)
-                : 0;
-            const totalCourseItems = this.resolveCourseItemCount(course.id, course.lessons);
-            const apiCompletedLessons = apiProgress && typeof apiProgress.totalLessonsCompleted === 'number'
-                ? Math.max(0, apiProgress.totalLessonsCompleted)
-                : 0;
-            const isApiCompleted = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
-            const requiresQuizPass = this.courseHasAnyQuiz(course.id);
-            const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
-            const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
-            const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
-            let completedLessonsBeforeStandaloneQuiz = Math.max(apiCompletedLessons, locallyCompletedLessons);
-            if (requiresQuizPass && quizPassed) {
-                completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, totalCourseItems - completedStandaloneQuizCount);
-            }
-            const completedLessonsCount = totalCourseItems > 0
-                ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
-                : completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount;
-            const completionRateFromLessons = totalCourseItems > 0
-                ? this.normalizeProgressPercentage((completedLessonsCount / totalCourseItems) * 100)
-                : 0;
-            let progressBeforeCompletion = isApiCompleted
-                ? 100
-                : Math.max(normalizedProgress, completionRateFromLessons);
-
-            if (!isApiCompleted && requiresQuizPass && !quizPassed) {
-                progressBeforeCompletion = completionRateFromLessons;
-            }
-            const hasTrackableCourseItems = totalCourseItems > 0;
-            const completedByRule = hasTrackableCourseItems
-                && completedLessonsCount >= totalCourseItems
-                && (!requiresQuizPass || quizPassed);
-            const isCourseCompleted = isApiCompleted || completedByRule || isEnrollmentCompleted;
-
-            if (isCourseCompleted) {
-                status = 'completed';
-            } else if (progressBeforeCompletion > 0 || isEnrolled) {
-                status = 'in-progress';
-            }
-
-            const progressEntry: CourseProgress = {
-                courseId: course.id,
-                status,
-                progress: isCourseCompleted ? 100 : progressBeforeCompletion,
-                completedLessons: isCourseCompleted
-                    ? Math.max(totalCourseItems, completedLessonsCount)
-                    : Math.min(totalCourseItems, completedLessonsCount),
-                totalLessons: totalCourseItems,
-                quizPassed,
-            };
-
-            courseProgressById.set(course.id, progressEntry);
-
-            return progressEntry;
         });
+
+        const courseProgress = allCourseProgress;
 
         const stageProgress: StageProgress[] = sortedStageIds.map((stageId) => {
             const stageCourses = courseProgress.filter(course => {
@@ -2491,25 +2596,10 @@ export class AcademyProgressService {
     }
 
     private getCurrentStudentId(): Observable<string | undefined> {
-        return this.studentFacade.getMyProfileFromApi().pipe(
-            switchMap((profile) => {
-                const resolvedStudentId = this.resolveStudentId(profile);
-                if (resolvedStudentId) {
-                    return of(resolvedStudentId);
-                }
-
-                return this.studentFacade.me().pipe(
-                    map((fallbackProfile) => this.resolveStudentId(fallbackProfile)),
-                    take(1),
-                    catchError(() => of(undefined)),
-                );
-            }),
-            catchError(() =>
-                this.studentFacade.me().pipe(
-                    map((profile) => this.resolveStudentId(profile)),
-                    take(1),
-                )
-            ),
+        return this.studentFacade.me().pipe(
+            map((profile) => this.resolveStudentId(profile)),
+            take(1),
+            catchError(() => of(undefined))
         );
     }
 
@@ -2604,10 +2694,13 @@ export class AcademyProgressService {
 
     private invalidateProgressCache(): void {
         this.studentProgressRequest$ = null;
-        this.isRefreshingProgressSubject.next(true);
-        this.getStudentProgress(true).pipe(
-            take(1),
-            finalize(() => this.isRefreshingProgressSubject.next(false))
-        ).subscribe();
+        
+        if (this.isProgressInitialized) {
+            this.isRefreshingProgressSubject.next(true);
+            this.getStudentProgress(true).pipe(
+                take(1),
+                finalize(() => this.isRefreshingProgressSubject.next(false))
+            ).subscribe();
+        }
     }
 }

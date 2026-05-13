@@ -2,12 +2,10 @@ import {
   HttpClient,
   HttpContext,
   HttpErrorResponse,
-  HttpEvent,
-  HttpEventType,
   HttpHeaders,
 } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, Subscriber, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SKIP_LOADING } from '../../core/http/context-tokens';
 
@@ -48,9 +46,25 @@ interface ChatStreamBody {
   threadId: string | null;
 }
 
+interface AssistantStreamState {
+  pendingLine: string;
+  accumulatedText: string;
+}
+
+function resolveAssistantBaseUrls(primaryUrl: string, fallbackUrl: string): string[] {
+  const urls = [primaryUrl, fallbackUrl]
+    .map((value) => value.trim().replaceAll(/\/+$/g, ''))
+    .filter((value) => value.length > 0);
+
+  return [...new Set(urls)];
+}
+
 @Injectable({ providedIn: 'root' })
 export class AssistantChatFacade {
-  private readonly baseUrl = environment.askAssistantApiBaseUrl.replaceAll(/\/+$/g, '');
+  private readonly assistantBaseUrls = resolveAssistantBaseUrls(
+    environment.askAssistantApiBaseUrl,
+    environment.askAssistantApiBaseUrlFallback,
+  );
   private readonly jsonHeaders = new HttpHeaders({ Accept: 'application/json' });
   private readonly jsonContext = new HttpContext().set(SKIP_LOADING, true);
   private readonly streamHeaders = new HttpHeaders({
@@ -64,21 +78,21 @@ export class AssistantChatFacade {
 
   listUserThreads(userId: string): Observable<AssistantThreadRecord[]> {
     const encodedUserId = encodeURIComponent(userId);
-    const primaryUrl = `${this.baseUrl}/api/users/${encodedUserId}/threads`;
-    const fallbackUrl = `${this.baseUrl}/api/conversations/${encodedUserId}`;
+    const primaryUrls = this.buildAssistantUrlCandidates(`/api/users/${encodedUserId}/threads`);
+    const fallbackUrls = this.buildAssistantUrlCandidates(`/api/conversations/${encodedUserId}`);
 
     return this
-      .getWithFallback(primaryUrl, fallbackUrl, (error) => this.isNotFound(error))
+      .getWithFallback(primaryUrls, fallbackUrls, (error) => this.isNotFound(error))
       .pipe(map((payload) => this.normalizeThreads(payload)));
   }
 
   getThread(threadId: string): Observable<AssistantThreadRecord> {
     const encodedThreadId = encodeURIComponent(threadId);
-    const primaryUrl = `${this.baseUrl}/api/threads/${encodedThreadId}`;
-    const fallbackUrl = `${this.baseUrl}/api/Conversations/${encodedThreadId}`;
+    const primaryUrls = this.buildAssistantUrlCandidates(`/api/threads/${encodedThreadId}`);
+    const fallbackUrls = this.buildAssistantUrlCandidates(`/api/Conversations/${encodedThreadId}`);
 
     return this
-      .getWithFallback(primaryUrl, fallbackUrl, (error) => this.shouldUseLegacyHistoryFallback(error))
+      .getWithFallback(primaryUrls, fallbackUrls, (error) => this.shouldUseLegacyHistoryFallback(error))
       .pipe(map((payload) => {
         const records = this.normalizeThreads({ data: [payload] });
         if (records.length === 0) {
@@ -100,124 +114,213 @@ export class AssistantChatFacade {
 
   getThreadHistory(threadId: string): Observable<AssistantHistoryRecord[]> {
     const encodedThreadId = encodeURIComponent(threadId);
-    const primaryUrl = `${this.baseUrl}/api/threads/${encodedThreadId}/history`;
-    const fallbackUrl = `${this.baseUrl}/api/Conversations/${encodedThreadId}`;
+    const primaryUrls = this.buildAssistantUrlCandidates(`/api/threads/${encodedThreadId}/history`);
+    const fallbackUrls = this.buildAssistantUrlCandidates(`/api/Conversations/${encodedThreadId}`);
 
     return this
-      .getWithFallback(primaryUrl, fallbackUrl, (error) => this.shouldUseLegacyHistoryFallback(error))
+      .getWithFallback(primaryUrls, fallbackUrls, (error) => this.shouldUseLegacyHistoryFallback(error))
       .pipe(map((payload) => this.normalizeHistory(payload)));
   }
 
   streamChat(request: AssistantChatRequest): Observable<AssistantStreamRecord> {
     const body = this.buildStreamBody(request);
-    const endpoint = `${this.baseUrl}/api/chat?stream=true`;
+    const endpoints = this.buildAssistantUrlCandidates('/api/chat?stream=true');
 
     return new Observable<AssistantStreamRecord>((subscriber) => {
-      let isUnsubscribed = false;
       const abortController = new AbortController();
-
-      let pendingLine = '';
-      // Track the accumulated streamed text so we can detect and skip the
-      // final "summary" chunk that some backends emit (it contains the full
-      // response as a single `message`/`response` field, duplicating what
-      // was already delivered token-by-token as `delta` events).
-      let accumulatedText = '';
-
-      const emitFromChunk = (chunkStr: string): void => {
-        const buffer = `${pendingLine}${chunkStr}`;
-        const parsed = this.parseStreamBuffer(buffer, false);
-        pendingLine = parsed.remainder;
-
-        for (const event of parsed.events) {
-          if (event.kind === 'delta' && event.text) {
-            // Deduplicate: skip if text looks like the accumulated summary
-            const isSummary = event.text.length > 200 &&
-              accumulatedText.length > 50 &&
-              event.text.replace(/\s/g, '').includes(
-                accumulatedText.replace(/\s/g, '').slice(0, 80)
-              );
-            if (isSummary) {
-              console.log('[FACADE SKIP SUMMARY DUPLICATE]', event.text.length, 'chars');
-              continue;
-            }
-            accumulatedText += event.text;
-          }
-          console.log('[FACADE EMIT FROM CHUNK]', event);
-          subscriber.next(event);
-        }
+      const streamState: AssistantStreamState = {
+        pendingLine: '',
+        accumulatedText: '',
       };
 
-      globalThis.fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/x-ndjson, text/event-stream, application/json',
-          'Content-Type': 'application/json',
-          'X-stream': 'true',
-        },
-        body: JSON.stringify(body),
-        signal: abortController.signal,
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            throw new Error(`Stream HTTP Error: ${response.status}`);
-          }
-
-          if (!response.body) {
-            throw new Error('Stream response body is empty');
-          }
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder('utf-8');
-
-          while (!isUnsubscribed) {
-            const { done, value } = await reader.read();
-            if (done) {
-              // Process the final remainder
-              if (pendingLine.trim()) {
-                const parsed = this.parseStreamBuffer(pendingLine, true);
-                for (const event of parsed.events) {
-                  console.log('[FACADE REMAINDER CHUNK]', event);
-                  subscriber.next(event);
-                }
-              }
-              break;
-            }
-
-            const chunkStr = decoder.decode(value, { stream: true });
-            emitFromChunk(chunkStr);
-          }
-
-          if (!isUnsubscribed) {
-            subscriber.complete();
-          }
-        })
-        .catch((error) => {
-          if (!isUnsubscribed && error.name !== 'AbortError') {
+      void this.runAssistantStream(endpoints, body, abortController, streamState, subscriber)
+        .catch((error: unknown) => {
+          if (!this.isAbortError(error)) {
             subscriber.error(error);
           }
         });
 
       return () => {
-        isUnsubscribed = true;
         abortController.abort();
       };
     });
   }
 
+  private buildAssistantUrlCandidates(path: string): string[] {
+    return this.assistantBaseUrls.map((baseUrl) => `${baseUrl}${path}`);
+  }
+
   private getWithFallback(
-    primaryUrl: string,
-    fallbackUrl: string,
+    primaryUrls: readonly string[],
+    fallbackUrls: readonly string[],
     shouldFallback: (error: unknown) => boolean,
   ): Observable<unknown> {
-    return this.http.get<unknown>(primaryUrl, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
+    return this.tryGetFromCandidates(primaryUrls).pipe(
       catchError((error: unknown) => {
-        if (shouldFallback(error)) {
-          return this.http.get<unknown>(fallbackUrl, { headers: this.jsonHeaders, context: this.jsonContext });
+        if (!shouldFallback(error)) {
+          return throwError(() => error);
         }
 
-        return throwError(() => error);
+        return this.tryGetFromCandidates(fallbackUrls);
       }),
     );
+  }
+
+  private tryGetFromCandidates(urls: readonly string[]): Observable<unknown> {
+    const [url, ...rest] = urls;
+    if (!url) {
+      return throwError(() => new Error('No assistant API URL candidates are available.'));
+    }
+
+    return this.http.get<unknown>(url, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
+      catchError((error: unknown) => {
+        if (rest.length === 0) {
+          return throwError(() => error);
+        }
+
+        return this.tryGetFromCandidates(rest);
+      }),
+    );
+  }
+
+  private async runAssistantStream(
+    candidateEndpoints: readonly string[],
+    body: ChatStreamBody,
+    abortController: AbortController,
+    streamState: AssistantStreamState,
+    subscriber: Subscriber<AssistantStreamRecord>,
+  ): Promise<void> {
+    let lastError: unknown = null;
+
+    for (const endpoint of candidateEndpoints) {
+      try {
+        await this.processAssistantStreamEndpoint(endpoint, body, abortController, streamState, subscriber);
+        subscriber.complete();
+        return;
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          return;
+        }
+
+        lastError = error;
+        streamState.pendingLine = '';
+        streamState.accumulatedText = '';
+      }
+    }
+
+    throw lastError ?? new Error('Unable to connect to the assistant stream.');
+  }
+
+  private async processAssistantStreamEndpoint(
+    endpoint: string,
+    body: ChatStreamBody,
+    abortController: AbortController,
+    streamState: AssistantStreamState,
+    subscriber: Subscriber<AssistantStreamRecord>,
+  ): Promise<void> {
+    const response = await globalThis.fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/x-ndjson, text/event-stream, application/json',
+        'Content-Type': 'application/json',
+        'X-stream': 'true',
+      },
+      body: JSON.stringify(body),
+      signal: abortController.signal,
+    });
+
+    this.assertStreamResponse(response);
+    await this.consumeAssistantStreamResponse(response, streamState, subscriber, abortController.signal);
+  }
+
+  private assertStreamResponse(response: Response): void {
+    if (!response.ok) {
+      throw new Error(`Stream HTTP Error: ${response.status}`);
+    }
+
+    if (!response.body) {
+      throw new Error('Stream response body is empty');
+    }
+  }
+
+  private async consumeAssistantStreamResponse(
+    response: Response,
+    streamState: AssistantStreamState,
+    subscriber: Subscriber<AssistantStreamRecord>,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Stream response body is empty');
+    }
+
+    const decoder = new TextDecoder('utf-8');
+
+    try {
+      while (!signal.aborted) {
+        const { done, value } = await reader.read();
+        if (done) {
+          this.flushAssistantStreamRemainder(streamState, subscriber);
+          return;
+        }
+
+        const chunkStr = decoder.decode(value, { stream: true });
+        this.emitAssistantStreamChunk(chunkStr, streamState, subscriber);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  private emitAssistantStreamChunk(
+    chunkStr: string,
+    streamState: AssistantStreamState,
+    subscriber: Subscriber<AssistantStreamRecord>,
+  ): void {
+    const buffer = `${streamState.pendingLine}${chunkStr}`;
+    const parsed = this.parseStreamBuffer(buffer, false);
+    streamState.pendingLine = parsed.remainder;
+
+    for (const event of parsed.events) {
+      if (event.kind === 'delta' && event.text) {
+        if (this.isSummaryDuplicate(event.text, streamState.accumulatedText)) {
+          console.log('[FACADE SKIP SUMMARY DUPLICATE]', event.text.length, 'chars');
+          continue;
+        }
+
+        streamState.accumulatedText += event.text;
+      }
+
+      console.log('[FACADE EMIT FROM CHUNK]', event);
+      subscriber.next(event);
+    }
+  }
+
+  private flushAssistantStreamRemainder(
+    streamState: AssistantStreamState,
+    subscriber: Subscriber<AssistantStreamRecord>,
+  ): void {
+    if (!streamState.pendingLine.trim()) {
+      return;
+    }
+
+    const parsed = this.parseStreamBuffer(streamState.pendingLine, true);
+    for (const event of parsed.events) {
+      console.log('[FACADE REMAINDER CHUNK]', event);
+      subscriber.next(event);
+    }
+  }
+
+  private isSummaryDuplicate(text: string, accumulatedText: string): boolean {
+    return text.length > 200
+      && accumulatedText.length > 50
+      && text.replace(/\s/g, '').includes(
+        accumulatedText.replace(/\s/g, '').slice(0, 80),
+      );
+  }
+
+  private isAbortError(error: unknown): boolean {
+    return error instanceof Error && error.name === 'AbortError';
   }
 
   private shouldUseLegacyHistoryFallback(error: unknown): boolean {
@@ -243,10 +346,10 @@ export class AssistantChatFacade {
     // strings ("\\n") instead of genuine newline characters. We must surgically unescape 
     // the boundaries without corrupting inner JSON payloads which legally contain "\\n".
     const normalizedBuffer = buffer
-      .replace(/\\n\\nevent:/g, '\n\nevent:')
-      .replace(/\\nevent:/g, '\nevent:')
-      .replace(/\\ndata:/g, '\ndata:')
-      .replace(/\\n\\n$/g, '\n\n')
+      .replaceAll(String.raw`\n\nevent:`, String.raw`\n\nevent:`)
+      .replaceAll(String.raw`\nevent:`, String.raw`\nevent:`)
+      .replaceAll(String.raw`\ndata:`, String.raw`\ndata:`)
+      .replaceAll(String.raw`\n\n`, String.raw`\n\n`)
       .replaceAll('\r\n', '\n');
 
     const lines = normalizedBuffer.split('\n');
@@ -365,52 +468,57 @@ export class AssistantChatFacade {
   private normalizeThreads(payload: unknown): AssistantThreadRecord[] {
     const threadCandidates = this.extractArray(payload, ['threads', 'conversations', 'items', 'data', 'results']);
 
-    return threadCandidates
-      .map((entry) => this.asRecord(entry))
-      .filter((entry): entry is Record<string, unknown> => entry !== null)
-      .map((entry) => {
-        const threadId = this.readString(entry, ['thread_id', 'threadId', 'id']);
-        if (!threadId) {
-          return null;
-        }
+    return threadCandidates.reduce<AssistantThreadRecord[]>((records, entry) => {
+      const record = this.asRecord(entry);
+      if (!record) {
+        return records;
+      }
 
-        const createdAt = this.toTimestamp(entry['created_at'] ?? entry['createdAt']);
-        const updatedAt = this.toTimestamp(entry['updated_at'] ?? entry['updatedAt'] ?? entry['created_at'] ?? entry['createdAt']);
-        const title = this.readStringRaw(entry, ['threadname', 'title', 'name']) ?? undefined;
+      const threadId = this.readStringMeta(record, ['thread_id', 'threadId', 'id']);
+      if (!threadId) {
+        return records;
+      }
 
-        return {
-          threadId,
-          title,
-          createdAt,
-          updatedAt,
-        } as AssistantThreadRecord;
-      })
-      .filter((entry): entry is AssistantThreadRecord => entry !== null)
-      .sort((left, right) => right.updatedAt - left.updatedAt);
+      const createdAt = this.toTimestamp(record['created_at'] ?? record['createdAt']);
+      const updatedAt = this.toTimestamp(record['updated_at'] ?? record['updatedAt'] ?? record['created_at'] ?? record['createdAt']);
+      const title = this.readStringRaw(record, ['threadname', 'title', 'name']) ?? undefined;
+
+      records.push({
+        threadId,
+        title,
+        createdAt,
+        updatedAt,
+      });
+
+      return records;
+    }, []).sort((left, right) => right.updatedAt - left.updatedAt);
   }
 
   private normalizeHistory(payload: unknown): AssistantHistoryRecord[] {
     const messageCandidates = this.extractArray(payload, ['messages', 'history', 'items', 'data', 'results']);
 
-    return messageCandidates
-      .map((entry) => this.asRecord(entry))
-      .filter((entry): entry is Record<string, unknown> => entry !== null)
-      .map((entry) => {
-        const content = this.readString(entry, ['content', 'text', 'message']) ?? '';
-        if (!content) {
-          return null;
-        }
+    return messageCandidates.reduce<AssistantHistoryRecord[]>((records, entry) => {
+      const record = this.asRecord(entry);
+      if (!record) {
+        return records;
+      }
 
-        const rawRole = this.readString(entry, ['role', 'sender']) ?? 'assistant';
-        const role = rawRole.toLowerCase() === 'user' ? 'user' : 'assistant';
+      const content = this.readStringRaw(record, ['content', 'text', 'message']) ?? '';
+      if (!content) {
+        return records;
+      }
 
-        return {
-          role,
-          content,
-          createdAt: this.toTimestamp(entry['created_at'] ?? entry['createdAt']),
-        } as AssistantHistoryRecord;
-      })
-      .filter((entry): entry is AssistantHistoryRecord => entry !== null);
+      const rawRole = this.readStringMeta(record, ['role', 'sender']) ?? 'assistant';
+      const role = rawRole.toLowerCase() === 'user' ? 'user' : 'assistant';
+
+      records.push({
+        role,
+        content,
+        createdAt: this.toTimestamp(record['created_at'] ?? record['createdAt']),
+      });
+
+      return records;
+    }, []);
   }
 
   private extractArray(payload: unknown, preferredKeys: readonly string[]): unknown[] {
@@ -501,11 +609,6 @@ export class AssistantChatFacade {
     }
 
     return null;
-  }
-
-  /** @deprecated Use readStringMeta or readStringRaw instead */
-  private readString(record: Record<string, unknown>, keys: readonly string[]): string | null {
-    return this.readStringMeta(record, keys);
   }
 
   private readNumber(record: Record<string, unknown>, keys: readonly string[]): number | null {

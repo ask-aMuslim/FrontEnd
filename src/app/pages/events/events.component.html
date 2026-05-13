@@ -1,127 +1,129 @@
 <section class="section-container">
   <div class="section-block py-6 md:py-10">
     <!-- Featured Event Hero -->
-    <div class="events-hero" data-aos="fade-up">
-      <div class="events-hero__content">
-        <div class="events-hero__meta">
-          <div class="events-hero__badges">
-            <div
-              class="events-hero__badge"
-              [class.events-hero__badge--upcoming]="
-                featuredEventBadgeVariant === 'upcoming'
-              "
-              [class.events-hero__badge--live]="
-                featuredEventBadgeVariant === 'live'
-              "
-              [class.events-hero__badge--finished]="
-                featuredEventBadgeVariant === 'finished'
-              "
-            >
-              <span
-                class="events-hero__badge-text"
-                [class.events-hero__badge-text--upcoming]="
+    @if (featuredEvent) {
+      <div class="events-hero" data-aos="fade-up">
+        <div class="events-hero__content">
+          <div class="events-hero__meta">
+            <div class="events-hero__badges">
+              <div
+                class="events-hero__badge"
+                [class.events-hero__badge--upcoming]="
                   featuredEventBadgeVariant === 'upcoming'
                 "
-                [class.events-hero__badge-text--live]="
+                [class.events-hero__badge--live]="
                   featuredEventBadgeVariant === 'live'
                 "
-                [class.events-hero__badge-text--finished]="
+                [class.events-hero__badge--finished]="
                   featuredEventBadgeVariant === 'finished'
                 "
-                >{{ featuredEventBadgeText }}</span
               >
-            </div>
-            <div class="events-hero__dot">&bull;</div>
-            <div class="events-hero__open-label">
-              <span class="events-hero__open-text">Free &amp; Open to All</span>
-            </div>
-          </div>
-
-          <span class="events-hero__title">
-            {{ featuredEvent?.title || "—" }}
-          </span>
-        </div>
-
-        <div class="events-hero__details">
-          <div class="events-hero__detail-item">
-            <img
-              src="/icons/icons-16/calendar.svg"
-              alt="Calendar Icon"
-              class="events-hero__detail-icon"
-            />
-            <span class="events-hero__detail-text">{{
-              featuredEvent?.date || "—"
-            }}</span>
-          </div>
-
-          <div class="events-hero__detail-item">
-            <img
-              src="/icons/icons-16/clock.svg"
-              alt="Clock Icon"
-              class="events-hero__detail-icon"
-            />
-            <span class="events-hero__detail-text">{{
-              featuredEvent?.timeRange || "—"
-            }}</span>
-          </div>
-
-          <div class="events-hero__detail-item">
-            <img
-              src="/icons/icons-16/live.svg"
-              alt="Live Session Icon"
-              class="events-hero__detail-icon"
-            />
-            <span class="events-hero__detail-text">Live Session</span>
-          </div>
-        </div>
-
-        <div class="events-hero__actions">
-          <div class="events-hero__actions-inner">
-            <button
-              type="button"
-              class="events-hero__register-btn"
-              (click)="goToFeaturedEvent()"
-            >
-              <span class="events-hero__register-text">Register Now</span>
-              <div class="events-hero__register-icon">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                <span
+                  class="events-hero__badge-text"
+                  [class.events-hero__badge-text--upcoming]="
+                    featuredEventBadgeVariant === 'upcoming'
+                  "
+                  [class.events-hero__badge-text--live]="
+                    featuredEventBadgeVariant === 'live'
+                  "
+                  [class.events-hero__badge-text--finished]="
+                    featuredEventBadgeVariant === 'finished'
+                  "
+                  >{{ featuredEventBadgeText }}</span
                 >
-                  <path
-                    d="M8 20L16 12L8 4"
-                    stroke="var(--color-button-primary-normal)"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
               </div>
-            </button>
-            <button
-              type="button"
-              class="events-hero__share-btn"
-              (click)="goToFeaturedEvent()"
-            >
+              <div class="events-hero__dot">&bull;</div>
+              <div class="events-hero__open-label">
+                <span class="events-hero__open-text">Free &amp; Open to All</span>
+              </div>
+            </div>
+
+            <span class="events-hero__title">
+              {{ featuredEvent.title || "—" }}
+            </span>
+          </div>
+
+          <div class="events-hero__details">
+            <div class="events-hero__detail-item">
               <img
-                src="/icons/icons-24/share.svg"
-                alt="Share Icon"
-                class="events-hero__share-icon"
+                src="/icons/icons-16/calendar.svg"
+                alt="Calendar Icon"
+                class="events-hero__detail-icon"
               />
-              <span class="events-hero__share-text">Share</span>
-            </button>
+              <span class="events-hero__detail-text">{{
+                featuredEvent.date || "—"
+              }}</span>
+            </div>
+
+            <div class="events-hero__detail-item">
+              <img
+                src="/icons/icons-16/clock.svg"
+                alt="Clock Icon"
+                class="events-hero__detail-icon"
+              />
+              <span class="events-hero__detail-text">{{
+                featuredEvent.timeRange || "—"
+              }}</span>
+            </div>
+
+            <div class="events-hero__detail-item">
+              <img
+                src="/icons/icons-16/live.svg"
+                alt="Live Session Icon"
+                class="events-hero__detail-icon"
+              />
+              <span class="events-hero__detail-text">Live Session</span>
+            </div>
+          </div>
+
+          <div class="events-hero__actions">
+            <div class="events-hero__actions-inner">
+              <button
+                type="button"
+                class="events-hero__register-btn"
+                (click)="goToFeaturedEvent()"
+              >
+                <span class="events-hero__register-text">Register Now</span>
+                <div class="events-hero__register-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M8 20L16 12L8 4"
+                      stroke="var(--color-button-primary-normal)"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              </button>
+              <button
+                type="button"
+                class="events-hero__share-btn"
+                (click)="goToFeaturedEvent()"
+              >
+                <img
+                  src="/icons/icons-24/share.svg"
+                  alt="Share Icon"
+                  class="events-hero__share-icon"
+                />
+                <span class="events-hero__share-text">Share</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="events-hero__date-box">
-        <h1 class="events-hero__date-day">{{ featuredEventDay }}</h1>
-        <h2 class="events-hero__date-month">{{ featuredEventMonth }}</h2>
+        <div class="events-hero__date-box">
+          <h1 class="events-hero__date-day">{{ featuredEventDay }}</h1>
+          <h2 class="events-hero__date-month">{{ featuredEventMonth }}</h2>
+        </div>
       </div>
-    </div>
+    }
 
     <!-- Recorded Events Section -->
     <div

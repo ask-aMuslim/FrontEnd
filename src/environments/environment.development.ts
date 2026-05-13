@@ -2,6 +2,7 @@ export const environment = {
     production: false,
     apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
     askAssistantApiBaseUrl: 'https://ethernet-myspace-conclusions-practical.trycloudflare.com',
+    askAssistantApiBaseUrlFallback: 'http://localhost:8000',
     authWithCredentials: false,
     youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
     BearerToken: '',

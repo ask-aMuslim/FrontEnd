@@ -1,8 +1,8 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, combineLatest } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, combineLatest, of } from 'rxjs';
+import { takeUntil, switchMap, catchError } from 'rxjs/operators';
 import {
     AcademyProgressService,
     CourseEnrollmentState,
@@ -188,56 +188,59 @@ export class CourseComponent implements OnInit, OnDestroy {
         this.error = null;
         this.isLoading = true;
 
-        combineLatest([
-            this.academyProgressService.getAcademyCourseById(this.courseId),
-            this.academyProgressService.getCourseProgress(this.courseId),
-            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
-            this.academyProgressService.getAcademyCourses(),
-            this.academyProgressService.getAcademyStages(),
-            this.academyProgressService.getStudentProgress(),
-            this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId),
-            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
-        ])
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: ([
+        this.academyProgressService.getAcademyCourseById(this.courseId).pipe(
+            takeUntil(this.destroy$),
+            switchMap(courseData => {
+                const prerequisites = courseData.prerequisites ?? [];
+                return combineLatest([
+                    of(courseData),
+                    this.academyProgressService.getTargetedCourseProgress(this.courseId).pipe(catchError(() => of(undefined))),
+                    this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(catchError(() => of([]))),
+                    this.academyProgressService.getAcademyStages().pipe(catchError(() => of([]))),
+                    this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId).pipe(catchError(() => of(undefined))),
+                    this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }).pipe(catchError(() => of([]))),
+                    this.academyProgressService.getTargetedPrerequisiteDetails(prerequisites).pipe(catchError(() => of([])))
+                ]);
+            })
+        ).subscribe({
+            next: ([
+                courseData,
+                courseProgress,
+                lessonsWithProgress,
+                stages,
+                enrollmentState,
+                quizzes,
+                prerequisitesList
+            ]) => {
+                // If course didn't load properly, fallback
+                if (!courseData || courseData.id !== this.courseId) {
+                    this.error = 'This course is unavailable right now.';
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
+                    return;
+                }
+
+                const safeEnrollmentState = enrollmentState || { enrollmentId: null, status: null, isEnrolled: false, isCompleted: false };
+
+                this.course = this.buildCourseDetails(
                     courseData,
                     courseProgress,
                     lessonsWithProgress,
-                    allCourses,
                     stages,
-                    studentProgress,
-                    enrollmentState,
+                    safeEnrollmentState,
                     quizzes,
-                ]) => {
-                    const isPublishedCourse = allCourses.some((course) => course.id === courseData.id);
-                    if (!isPublishedCourse) {
-                        this.error = 'This course is unavailable right now.';
-                        this.isLoading = false;
-                        this.cdr.detectChanges();
-                        return;
-                    }
-
-                    this.course = this.buildCourseDetails(
-                        courseData,
-                        courseProgress,
-                        lessonsWithProgress,
-                        allCourses,
-                        stages,
-                        studentProgress.courseProgress,
-                        enrollmentState,
-                        quizzes,
-                    );
-                    this.error = null;
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                },
-                error: () => {
-                    this.error = 'Unable to load this course right now. Please try again.';
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                },
-            });
+                    prerequisitesList
+                );
+                this.error = null;
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.error = 'Unable to load this course right now. Please try again.';
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
     }
 
     /**
@@ -247,47 +250,27 @@ export class CourseComponent implements OnInit, OnDestroy {
         courseData: AcademyCourse,
         courseProgress: CourseProgress | undefined,
         lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[],
-        allCourses: AcademyCourse[],
         stages: AcademyStageApi[],
-        allCourseProgress: CourseProgress[],
         enrollmentState: CourseEnrollmentState,
         quizzes: QuizReadDto[],
+        prerequisitesList: { id: string, title: string, isCompleted: boolean }[],
     ): CourseDetails {
+        const matchedStage =
+            stages.find((stage) => stage.id === courseData.levelId)
+            ?? stages.find((stage) => stage.number === courseData.stageId);
+
+        const stageNumber = matchedStage?.number ?? courseData.stageId ?? 1;
+
         const isLocked = this.isUserAuthenticated
-            ? courseProgress?.status === 'locked'
+            ? courseProgress?.status === 'locked' && stageNumber > 1
             : false;
 
-        // Calculate unmet prerequisites - enrich with data from allCourses if API response is thin
-        const fullCourseFromList = allCourses.find(c => c.id === courseData.id);
-        const effectivePrereqIds = (courseData.prerequisites && courseData.prerequisites.length > 0)
-            ? courseData.prerequisites
-            : (fullCourseFromList?.prerequisites ?? []);
-
-        const unmetPrerequisiteIds = effectivePrereqIds.filter(prereqId => {
-            if (prereqId === courseData.id) return false;
-            const progress = allCourseProgress.find(cp => cp.courseId === prereqId);
-            return progress?.status !== 'completed';
-        });
-
-        const unmetPrerequisiteNames = unmetPrerequisiteIds
-            .map(id => allCourses.find(c => c.id === id)?.title)
-            .filter((name): name is string => !!name);
-
+        const unmetPrerequisites = prerequisitesList.filter(p => !p.isCompleted);
+        const unmetPrerequisiteNames = unmetPrerequisites.map(p => p.title);
         const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+
         const isEnrolled = this.isUserAuthenticated && enrollmentState.isEnrolled;
         const isEnrollmentCompleted = this.isUserAuthenticated && enrollmentState.isCompleted;
-
-        const prerequisitesList = effectivePrereqIds
-            .filter(prereqId => prereqId !== courseData.id)
-            .map(id => {
-                const title = allCourses.find(c => c.id === id)?.title || 'Unknown Course';
-                const progress = allCourseProgress.find(cp => cp.courseId === id);
-                return {
-                    id,
-                    title,
-                    isCompleted: progress?.status === 'completed'
-                };
-            });
 
         const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
         const scopedQuizzes = quizzes.filter((quiz) => {
@@ -308,13 +291,6 @@ export class CourseComponent implements OnInit, OnDestroy {
             '0m',
         );
 
-        const resolvedStageNumber = fullCourseFromList?.stageId ?? courseData.stageId;
-        const resolvedLevelId = fullCourseFromList?.levelId ?? courseData.levelId;
-        const matchedStage =
-            stages.find((stage) => stage.id === resolvedLevelId)
-            ?? stages.find((stage) => stage.number === resolvedStageNumber);
-
-        const stageNumber = matchedStage?.number ?? resolvedStageNumber ?? 1;
         let stageLabel = `Stage ${stageNumber}`;
         if (matchedStage) {
             stageLabel = `Stage ${matchedStage.number}: ${matchedStage.title}`;

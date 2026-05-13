@@ -1,1 +1,1 @@
-export { ContainerSection } from './container-section';
+export { ContainerSectionComponent } from './container-section.component';

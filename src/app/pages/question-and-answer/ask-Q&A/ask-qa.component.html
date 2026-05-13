@@ -1,0 +1,177 @@
+<div
+  id="qa-list-section"
+  class="topics-page flex w-full flex-1 flex-col justify-center gap-8 lg:gap-10"
+>
+  <div class="topics-page__header flex flex-col items-start gap-6 w-full">
+    <div
+      class="topics-page__search-row flex flex-col md:flex-row items-start md:items-center gap-4 w-full"
+    >
+      <div
+        class="topics-page__search-field flex w-full h-16 sm:h-14 min-w-0 flex-1 items-center gap-2 rounded-lg border-[1.5px] border-(--color-text-placeholder) bg-white px-4 sm:px-6"
+      >
+        <img
+          src="/icons/icons-24/search.svg"
+          alt="search icon"
+          class="topics-page__search-icon h-5 w-5 object-contain"
+        />
+        <input
+          type="text"
+          id="topics-search"
+          name="topicsSearch"
+          placeholder="Write your question here .."
+          class="topics-page__search-input min-w-0 flex-1 border-none text-base leading-[160%] focus:ring-0"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+        />
+        @if (searchQuery) {
+          <button
+            type="button"
+            class="topics-page__clear-search flex items-center justify-center p-1.5 hover:bg-gray-100 rounded-full cursor-pointer transition-colors shrink-0"
+            (click)="clearSearch()"
+            aria-label="Clear search"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              class="topics-page__clear-icon text-(--color-text-placeholder) hover:text-(--color-text-body) transition-colors"
+            >
+              <path
+                d="M18 6L6 18M6 6L18 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="topics-page__search-button button flex h-16 sm:h-14 w-full items-center justify-center rounded-lg px-8 md:w-auto"
+        (click)="onSearch()"
+      >
+        <span class="topics-page__search-button-label text-lg font-semibold text-white">Search</span>
+      </button>
+    </div>
+
+    @if (
+      showQuestionPreviewSection && searchPreviewQuestion;
+      as previewQuestion
+    ) {
+      <section
+        class="topics-page__search-preview qa-search-preview w-full"
+        aria-label="Question search preview"
+      >
+        <div class="topics-page__search-preview-tags qa-search-preview__tags" aria-label="Question tags">
+          @for (
+            tag of getPreviewTags(previewQuestion);
+            track tag;
+            let isLast = $last
+          ) {
+            <span class="topics-page__search-preview-tag qa-search-preview__tag">{{ tag }}</span>
+            @if (!isLast) {
+              <span class="topics-page__search-preview-tag-separator qa-search-preview__tag-separator" aria-hidden="true"
+                >•</span
+              >
+            }
+          }
+        </div>
+        <h3 class="topics-page__search-preview-title qa-search-preview__title">{{ previewQuestion.title }}</h3>
+        <p class="topics-page__search-preview-answer qa-search-preview__answer">{{ searchPreviewAnswerText }}</p>
+        <button
+          type="button"
+          class="topics-page__search-preview-action learn-more flex h-8 items-center gap-2 rounded-lg group cursor-pointer"
+          (click)="openSearchPreviewQuestion(previewQuestion)"
+        >
+          <span class="topics-page__search-preview-action-label text-lg font-semibold">Learn more</span>
+          <span
+            class="topics-page__search-preview-action-icon learn-more-icon h-6 w-6"
+            role="img"
+            aria-label="Learn more"
+            style="
+              -webkit-mask-image: url(&quot;/icons/icons-24/arrow-right.svg&quot;);
+              mask-image: url(&quot;/icons/icons-24/arrow-right.svg&quot;);
+            "
+          ></span>
+        </button>
+      </section>
+      <div class="topics-page__search-preview-separator qa-search-preview__separator" aria-hidden="true"></div>
+    }
+
+    <div
+      class="topics-page__category-scroll category-scroll flex w-full flex-nowrap items-center gap-2 overflow-x-auto"
+    >
+      @for (category of categories; track $index; let i = $index) {
+        <button
+          #categoryButton
+          (click)="selectCategory(i)"
+          [ngClass]="
+            selectedCategory === i ? 'secondary-button' : 'text-text-body'
+          "
+          [class.category-button--all]="i === 0"
+          [class.category-button--general]="isGeneralCategory(i)"
+          class="topics-page__category-button category-button flex shrink-0 items-center gap-3 rounded-lg border-b-3 border-transparent px-4 py-3 transition-colors capitalize cursor-pointer"
+        >
+          <span class="topics-page__category-button-label text-base font-medium">{{ category }}</span>
+        </button>
+
+        @if (i === 0) {
+          <div class="topics-page__category-separator category-separator" aria-hidden="true"></div>
+        }
+      }
+    </div>
+  </div>
+
+  @if (isShowingResults) {
+    <app-question-search-result
+      class="topics-page__search-results w-full"
+      [query]="searchQuery"
+      [results]="searchResults"
+      (clearSearch)="clearSearch()"
+      (askAI)="onAskAI($event)"
+    />
+  } @else {
+    <ng-container>
+      @if (showEmptyCategoryHint) {
+        <div
+          class="topics-page__empty-category-hint flex w-full items-center justify-center rounded-lg border border-(--color-card-surface-secondary-2) bg-(--color-card-surface-primary) p-6"
+        >
+          <p class="topics-page__empty-category-message text-center text-base text-(--color-text-caption)">
+            No questions were found for “{{ selectedCategoryName }}”. Try
+            another category.
+          </p>
+        </div>
+      } @else {
+        <div class="topics-page__question-list flex flex-col items-start gap-6 w-full">
+          @for (
+            question of paginatedFilteredQuestions;
+            track trackByQuestionId($index, question);
+            let isLast = $last
+          ) {
+            <app-qa-card class="topics-page__question-item" [question]="question" />
+            @if (!isLast) {
+              <div class="topics-page__question-divider qa-question-separator" aria-hidden="true"></div>
+            }
+          }
+        </div>
+      }
+
+      @if (showPagination) {
+        <app-pagination
+          class="topics-page__pagination"
+          [pages]="pages"
+          [currentPage]="currentPage"
+          [arrowLeftIcon]="arrowLeftIcon"
+          [arrowRightIcon]="arrowRightIcon"
+          (prevPage)="prevPage()"
+          (nextPage)="nextPage()"
+          (goToPage)="goToPage($event)"
+        ></app-pagination>
+      }
+    </ng-container>
+  }
+</div>
