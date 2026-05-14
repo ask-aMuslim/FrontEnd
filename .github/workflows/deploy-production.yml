@@ -16,7 +16,7 @@ jobs:
       
       - name: Setup SSH Key
         env:
-          SSH_KEY: ${{ secrets.askamuslim_website_deploy_key }}
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
