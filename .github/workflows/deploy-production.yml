@@ -40,7 +40,7 @@ jobs:
             git fetch origin
             git reset --hard origin/production
 
-            cd /srv/docker
+            cd ~/app/web/FrontEnd
 
             echo "🔨 Building Web..."
             docker compose build web
