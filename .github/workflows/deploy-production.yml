@@ -9,46 +9,48 @@ jobs:
   deploy:
     name: Deploy to Production Server
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup SSH Key
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/github_website
-          chmod 600 ~/.ssh/github_website
+
+          # Write private key correctly
+          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Add server to known hosts
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-        
+
       - name: Deploy to Server via SSH
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+
             echo "🚀 Starting web deployment..."
-            
-            # Navigate to Web directory
+
             cd /srv/docker/web/FrontEnd
-            
-            # Pull latest changes
+
             echo "📥 Pulling latest code from production branch..."
             git fetch origin
             git reset --hard origin/production
-            
-            # Navigate to docker directory
+
             cd /srv/docker
-            
-            # Rebuild and restart Web container
+
             echo "🔨 Rebuilding Web Docker image..."
             docker compose build web
-            
+
             echo "♻️ Restarting Web container..."
             docker compose up -d web
-            
-            # Wait for health check
+
             echo "⏳ Waiting for Web to become healthy..."
-            for i in {1..30}; do
+            for i in $(seq 1 30); do
               if docker compose ps web | grep -q "healthy"; then
                 echo "✅ Web is healthy and running!"
                 break
@@ -56,18 +58,17 @@ jobs:
               echo "Waiting... ($i/30)"
               sleep 2
             done
-            
-            # Show final status
+
             echo "📊 Deployment Status:"
             docker compose ps web
-            
+
             echo "✨ Deployment completed successfully!"
           EOF
-            
+
       - name: Notify Deployment Status
         if: always()
         run: |
-          if [ ${{ job.status }} == 'success' ]; then
+          if [ "${{ job.status }}" == "success" ]; then
             echo "✅ Deployment succeeded!"
           else
             echo "❌ Deployment failed!"
