@@ -20,7 +20,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
 
-          # Write private key correctly
+          # Write private key safely
           echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
@@ -35,12 +35,14 @@ jobs:
 
             echo "🚀 Starting web deployment..."
 
+            # Go to frontend repo
             cd /srv/docker/web/FrontEnd
 
             echo "📥 Pulling latest code from production branch..."
             git fetch origin
             git reset --hard origin/production
 
+            # Go to docker directory
             cd /srv/docker
 
             echo "🔨 Rebuilding Web Docker image..."
