@@ -34,13 +34,12 @@ jobs:
 
             echo "🚀 Starting web deployment..."
 
-            cd /srv/docker/web/FrontEnd
+            # Go to correct project directory
+            cd ~/app/web/FrontEnd || exit 1
 
             echo "📥 Pulling latest code..."
             git fetch origin
             git reset --hard origin/production
-
-            cd ~/app/web/FrontEnd
 
             echo "🔨 Building Web..."
             docker compose build web
