@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
+  apiBaseUrl: 'https://api.askamuslim.com',
   askAssistantApiBaseUrl: 'https://ethernet-myspace-conclusions-practical.trycloudflare.com',
   askAssistantApiBaseUrlFallback: 'http://localhost:8000',
   authWithCredentials: false,
