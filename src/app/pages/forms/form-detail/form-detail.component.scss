@@ -60,6 +60,9 @@
 
 .form-detail__back {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: none;
   background: transparent;
   color: var(--form-accent);
