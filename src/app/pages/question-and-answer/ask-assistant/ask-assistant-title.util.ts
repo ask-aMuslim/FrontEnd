@@ -10,7 +10,7 @@ interface MessageWithTitleText {
  */
 export function buildChatTitleFromText(text: string | null | undefined): string | null {
     const normalizedText = (text ?? '').replaceAll(/\s+/g, ' ').trim();
-    return normalizedText || null;
+    return normalizedText.replaceAll(/\bis\b/g, 'Is') || null;
 }
 
 export function buildChatTitleFromMessages<TMessage extends MessageWithTitleText>(

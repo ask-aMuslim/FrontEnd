@@ -18,7 +18,7 @@ export class SavedAnswersComponent {
     {
       id: '1',
       course: 'Course A',
-      question: 'What is Islam?',
+      question: 'What Is Islam?',
       answer:
         'Islam is a monotheistic religion that teaches the oneness of God (Allah) and follows the teachings of Prophet Muhammad.',
     },
@@ -32,13 +32,13 @@ export class SavedAnswersComponent {
     {
       id: '3',
       course: 'Course A',
-      question: 'What is Halal?',
+      question: 'What Is Halal?',
       answer: 'Halal refers to things that are permissible according to Islamic law.',
     },
     {
       id: '4',
       course: 'Course B',
-      question: 'What is Quranic recitation?',
+      question: 'What Is Quranic recitation?',
       answer:
         'Tajweed is the proper way of reciting the Quran with correct pronunciation and intonation.',
     },

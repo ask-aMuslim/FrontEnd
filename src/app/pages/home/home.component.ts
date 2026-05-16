@@ -79,13 +79,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   protected heroBubbles: string[] = [
-    'Who is Allah?',
-    'What is Islam?',
+    'Who Is Allah?',
+    'What Is Islam?',
     'Is Islam peaceful?',
-    'What is Shahada?',
+    'What Is Shahada?',
     'How to start praying?',
     'Why do Muslims fast?',
-    'What is Zakat?',
+    'What Is Zakat?',
     'How to perform Hajj?',
   ];
 
@@ -119,6 +119,17 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     },
     {
       icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M31.9998 18.6704V55.9929" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.00696 47.9953C7.29992 47.9953 6.62184 47.7144 6.12189 47.2144C5.62193 46.7145 5.34106 46.0364 5.34106 45.3294V10.6727C5.34106 9.96569 5.62193 9.28761 6.12189 8.78766C6.62184 8.28771 7.29992 8.00684 8.00696 8.00684H21.3364C24.1646 8.00684 26.8769 9.13032 28.8767 11.1301C30.8765 13.1299 32 15.8423 32 18.6704C32 15.8423 33.1235 13.1299 35.1233 11.1301C37.1231 9.13032 39.8354 8.00684 42.6636 8.00684H55.9931C56.7001 8.00684 57.3782 8.28771 57.8782 8.78766C58.3781 9.28761 58.659 9.96569 58.659 10.6727V45.3294C58.659 46.0364 58.3781 46.7145 57.8782 47.2144C57.3782 47.7144 56.7001 47.9953 55.9931 47.9953H39.9977C37.8766 47.9953 35.8423 48.8379 34.3425 50.3377C32.8426 51.8376 32 53.8718 32 55.9929C32 53.8718 31.1574 51.8376 29.6576 50.3377C28.1577 48.8379 26.1235 47.9953 24.0023 47.9953H8.00696Z" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
+      title: 'Articles & Resources',
+      description:
+        'Categorized articles, blogs, research-based content, and real stories.',
+      cta: 'Read',
+      href: '/resources',
+    },
+    {
+      icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M21.3369 5.34131V16.0049" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M42.665 5.34131V16.0049" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M50.6616 10.6729H13.3391C10.3944 10.6729 8.00732 13.06 8.00732 16.0046V53.3272C8.00732 56.2718 10.3944 58.659 13.3391 58.659H50.6616C53.6063 58.659 55.9934 56.2718 55.9934 53.3272V16.0046C55.9934 13.06 53.6063 10.6729 50.6616 10.6729Z" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -130,17 +141,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         'Online & offline sessions with archive access. Join live or watch recordings anytime.',
       cta: 'Join',
       href: '/events',
-    },
-    {
-      icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M31.9998 18.6704V55.9929" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M8.00696 47.9953C7.29992 47.9953 6.62184 47.7144 6.12189 47.2144C5.62193 46.7145 5.34106 46.0364 5.34106 45.3294V10.6727C5.34106 9.96569 5.62193 9.28761 6.12189 8.78766C6.62184 8.28771 7.29992 8.00684 8.00696 8.00684H21.3364C24.1646 8.00684 26.8769 9.13032 28.8767 11.1301C30.8765 13.1299 32 15.8423 32 18.6704C32 15.8423 33.1235 13.1299 35.1233 11.1301C37.1231 9.13032 39.8354 8.00684 42.6636 8.00684H55.9931C56.7001 8.00684 57.3782 8.28771 57.8782 8.78766C58.3781 9.28761 58.659 9.96569 58.659 10.6727V45.3294C58.659 46.0364 58.3781 46.7145 57.8782 47.2144C57.3782 47.7144 56.7001 47.9953 55.9931 47.9953H39.9977C37.8766 47.9953 35.8423 48.8379 34.3425 50.3377C32.8426 51.8376 32 53.8718 32 55.9929C32 53.8718 31.1574 51.8376 29.6576 50.3377C28.1577 48.8379 26.1235 47.9953 24.0023 47.9953H8.00696Z" stroke="var(--color-button-primary-normal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`,
-      title: 'Articles & Resources',
-      description:
-        'Categorized articles, blogs, research-based content, and real stories.',
-      cta: 'Read',
-      href: '/resources',
     },
     {
       icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -178,7 +178,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   protected arrowLeftIcon = '/icons/icons-24/arrow-left.svg';
   */
 
-  protected readonly imanPillars: PillarItem[] = [
+  protected readonly faithPillars: PillarItem[] = [
     { number: '1', label: 'Belief in', name: 'Allah' },
     { number: '2', label: 'Belief in', name: 'Angels' },
     { number: '3', label: 'Belief in', name: 'Books' },
@@ -196,7 +196,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   protected readonly pillarQuestionRoute = '/question-and-answer/topics/question';
-  protected readonly imanPillarTag = '6 Pillars of Faith';
+  protected readonly faithPillarTag = '6 Pillars of Faith';
   protected readonly islamPillarTag = '5 Pillars of Islam';
 
   protected readonly serveAudienceCards: readonly ServeAudienceCard[] = [

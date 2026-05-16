@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
-  "input": "https://aam-api.ask-a-muslim.com/api/specification.json",
+  "input": "https://api.askamuslim.com/api/specification.json",
   "output": "src/app/api",
   "ignoreUnusedModels": false,
   "modelIndex": true,

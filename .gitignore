@@ -1,36 +1,53 @@
-# Angular specific
+# --- Angular & Build ---
 /dist/
 /out-tsc/
-/tmp/
 /coverage/
 /e2e/test-output/
 /.angular/
-.angular/
-
-# Node modules and dependency files
-/node_modules/
-/package-lock.json
-/yarn.lock
-
-# Environment files
-/.env
-/ .env.*.local
-/src/app/environments/environment.development.ts
-
-
-# Angular CLI and build artefacts
-/.angular-cli.json
 /.ng/
+/.angular-cli.json
 
-# TypeScript cache
+# --- Dependencies ---
+/node_modules/
+# package-lock.json and yarn.lock should usually be tracked for applications
+# /package-lock.json
+# /yarn.lock
+
+# --- Environment & Secrets ---
+.env
+.env.*
+!.env.example
+/src/app/environments/environment.development.ts
+certificates/
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- TypeScript & Logs ---
 *.tsbuildinfo
-
-# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/tmp/
 
-#Certificates
-certficates
-
+# --- Project Specific ---
 .builder/config/data.json
+
+# --- Impeccable & Agents ---
+PRODUCT.md
+DESIGN.md
+shape.md
+craft.md
+.agents/skills/impeccable/
+skills-lock.json

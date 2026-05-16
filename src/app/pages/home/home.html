@@ -51,7 +51,7 @@
             <app-hero-search-input
               [inputId]="'home-search'"
               [value]="searchQuery"
-              [placeholder]="'ask to understand ..'"
+              [placeholder]="'Ask to understand'"
               [ariaLabel]="'Search answered questions'"
               (valueChange)="searchQuery = $event"
               (submitted)="onSearch()"
@@ -163,7 +163,7 @@
           <h2
             class="eyebrow section-title-with-accent section-title-with-accent--word-only"
           >
-            What is <span class="section-title-highlight">Ask A Muslim</span>
+            What Is <span class="section-title-highlight">Ask A Muslim</span>
           </h2>
           <p>
             A trusted platform designed to answer questions, guide Muslims and
@@ -280,7 +280,7 @@
           <h2
             class="section-title-with-accent section-title-with-accent--word-only"
           >
-            What is <span class="section-title-highlight">Islam</span>
+            What Is <span class="section-title-highlight">Islam</span>
           </h2>
           <p>
             Islam is a monotheistic Abrahamic religion that teaches that there
@@ -291,13 +291,13 @@
 
         <!-- Container for both pillars sections forming semi-circle -->
         <div class="pillars-container" data-aos="fade-up">
-          <!-- 6 Pillars of Iman (Hexagons) - Top Arc -->
-          <div class="iman-arc">
+          <!-- 6 Pillars of Faith (Hexagons) - Top Arc -->
+          <div class="faith-arc">
             <!-- Hexagon 1: Allah (bottom left) -->
             <a
-              class="pillar-card pillar-iman-1"
+              class="pillar-card pillar-faith-1"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('c43faa16-99bd-473f-49ed-08de9b548af0', imanPillarTag)"
+              [queryParams]="getQuestionQueryParams('c43faa16-99bd-473f-49ed-08de9b548af0', faithPillarTag)"
             >
               <div class="hexagon">
                 <svg
@@ -394,9 +394,9 @@
 
             <!-- Hexagon 2: Angels (middle left) -->
             <a
-              class="pillar-card pillar-iman-2"
+              class="pillar-card pillar-faith-2"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('97e3c02d-1d8e-45d2-49ee-08de9b548af0', imanPillarTag)"
+              [queryParams]="getQuestionQueryParams('97e3c02d-1d8e-45d2-49ee-08de9b548af0', faithPillarTag)"
             >
               <div class="hexagon">
                 <svg
@@ -493,9 +493,9 @@
 
             <!-- Hexagon 3: Books (top middle-left) -->
             <a
-              class="pillar-card pillar-iman-3"
+              class="pillar-card pillar-faith-3"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('0ca6305d-00d4-4a1a-49ef-08de9b548af0', imanPillarTag)"
+              [queryParams]="getQuestionQueryParams('0ca6305d-00d4-4a1a-49ef-08de9b548af0', faithPillarTag)"
             >
               <div class="hexagon">
                 <svg
@@ -592,9 +592,9 @@
 
             <!-- Hexagon 4: Messengers (top middle-right) -->
             <a
-              class="pillar-card pillar-iman-4"
+              class="pillar-card pillar-faith-4"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('613446e9-39c7-41cc-49f0-08de9b548af0', imanPillarTag)"
+              [queryParams]="getQuestionQueryParams('613446e9-39c7-41cc-49f0-08de9b548af0', faithPillarTag)"
             >
               <div class="hexagon">
                 <svg
@@ -691,9 +691,9 @@
 
             <!-- Hexagon 5: Judgement Day (middle right) -->
             <a
-              class="pillar-card pillar-iman-5"
+              class="pillar-card pillar-faith-5"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('21d8011f-d717-4ade-49f1-08de9b548af0', imanPillarTag)"
+              [queryParams]="getQuestionQueryParams('21d8011f-d717-4ade-49f1-08de9b548af0', faithPillarTag)"
             >
               <div class="hexagon">
                 <svg
@@ -790,9 +790,9 @@
 
             <!-- Hexagon 6: Divine Decree (bottom right) -->
             <a
-              class="pillar-card pillar-iman-6"
+              class="pillar-card pillar-faith-6"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('13159eec-ca70-4071-49f2-08de9b548af0', imanPillarTag)"
+              [queryParams]="getQuestionQueryParams('13159eec-ca70-4071-49f2-08de9b548af0', faithPillarTag)"
             >
               <div class="hexagon">
                 <svg
@@ -888,13 +888,13 @@
             </a>
 
             <!-- Title in center -->
-            <div class="pillars-label iman-label">The 6 pillars of Iman</div>
+            <div class="pillars-label faith-label">The 6 Pillars of Faith</div>
           </div>
 
           <!-- 5 Pillars of Islam (Pentagons) - Bottom Arc -->
           <div class="islam-arc">
             <!-- Title at top -->
-            <div class="pillars-label islam-label">The 5 pillars of Islam</div>
+            <div class="pillars-label islam-label">The 5 Pillars of Islam</div>
 
             <!-- Pentagon 1: Shahada (far left, lowest) -->
             <a
@@ -1408,7 +1408,7 @@
             id="what-is-quran-title"
             class="section-title-with-accent section-title-with-accent--word-only"
           >
-            What is <span class="section-title-highlight">The Quran</span>
+            What Is <span class="section-title-highlight">The Quran</span>
           </h2>
         </div>
 
@@ -1426,7 +1426,7 @@
             <p>
               As the only scripture that has been preserved in its original
               form, the Quran is the
-              <strong>literal word of God</strong> transmitted through the Angel
+               literal<strong> Word of God</strong> transmitted through the Angel
               Gabriel to Prophet Muhammad, the final messenger of God.
             </p>
             <p>
@@ -1469,8 +1469,8 @@
     <div class="section-block section-block--wide">
       <div class="home-serve__shell" data-aos="fade-up">
         <h2 id="home-serve-title" class="home-serve__title">
-          Find the
-          <span class="section-title-highlight">Right Message for You</span>
+          How Can We Best
+          <span class="section-title-highlight">Serve You?</span>
         </h2>
 
         <div class="home-serve__grid">

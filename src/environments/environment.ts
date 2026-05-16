@@ -1,8 +1,8 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://aam-api.ask-a-muslim.com',
-  askAssistantApiBaseUrl: 'https://ethernet-myspace-conclusions-practical.trycloudflare.com',
-  askAssistantApiBaseUrlFallback: 'http://localhost:8000',
+  apiBaseUrl: 'https://api.askamuslim.com',
+  askAssistantApiBaseUrl: 'https://source-advantage-compare-roll.trycloudflare.com',
+  askAssistantApiBaseUrlFallback: 'http://127.0.0.1:8000',
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
   googleClientId: '859661315178-6fi4qmdnmgsuqhdjpdp9kdioi58g9uds.apps.googleusercontent.com',

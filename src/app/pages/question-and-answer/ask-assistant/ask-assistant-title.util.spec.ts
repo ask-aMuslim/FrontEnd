@@ -12,12 +12,12 @@ describe('ask-assistant-title util', () => {
     it('normalizes extra whitespace before returning title', () => {
         const title = buildChatTitleFromText('   What   is   the   ruling   on   zakat   ');
 
-        expect(title).toBe('What is the ruling on zakat');
+        expect(title).toBe('What Is the ruling on zakat');
     });
 
     it('prefers the first user message when deriving from a message list', () => {
         const title = buildChatTitleFromMessages([
-            { role: 'assistant', text: 'Assalamualaikum! How can I help?' },
+            { role: 'assistant', text: 'Assalamu Alaykum! How can I help?' },
             { role: 'user', text: 'Can you explain the five pillars clearly?' },
             { role: 'assistant', text: 'Sure, here they are...' },
         ]);

@@ -4,7 +4,7 @@
       <label
         for="meet-scholar-name"
         class="meet-scholar-request-step__label block text-sm md:text-[16px] font-medium text-(--color-text-body) mb-2"
-        >Your name</label
+        >Name</label
       >
       <input
         id="meet-scholar-name"
@@ -78,7 +78,7 @@
       name="message"
       [formControl]="$any(form().get('message'))"
       rows="6"
-      placeholder="Write your message here.."
+      placeholder="Write your message"
       class="meet-scholar-request-step__textarea w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base resize-none focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal) focus:border-transparent"
       [class.border-red-500]="
         form().get('message')?.invalid && form().get('message')?.touched
