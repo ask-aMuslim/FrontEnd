@@ -44,6 +44,7 @@ interface FormFieldView {
   type: FormFieldType;
   typeLabel: string;
   isRequired: boolean;
+  isMultiSelect: boolean;
   controlName: string;
   placeholder: string;
   inputType: 'text' | 'email' | 'number' | 'date' | 'file' | 'tel';
@@ -250,10 +251,31 @@ export class FormDetailComponent implements OnInit {
       return;
     }
 
-    control.setValue(value);
+    if (field.isMultiSelect) {
+      const current = Array.isArray(control.value) ? control.value : [];
+      const next = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+      control.setValue(next);
+    } else {
+      control.setValue(value);
+    }
     control.markAsDirty();
     control.markAsTouched();
     control.updateValueAndValidity();
+  }
+
+  isSelectOptionSelected(field: FormFieldView, value: string): boolean {
+    const control = this.formGroup()?.get(field.controlName) as FormControl | null;
+    if (!control) {
+      return false;
+    }
+
+    if (field.isMultiSelect) {
+      return Array.isArray(control.value) && control.value.includes(value);
+    }
+
+    return control.value === value;
   }
 
   onFileSelected(field: FormFieldView, event: Event): void {
@@ -512,18 +534,22 @@ export class FormDetailComponent implements OnInit {
 
   private buildResetValues(fields: FormFieldView[]): Record<string, unknown> {
     return fields.reduce<Record<string, unknown>>((acc, field) => {
-      acc[field.controlName] = this.getResetValue(field.type);
+      acc[field.controlName] = this.getResetValue(field);
       return acc;
     }, {});
   }
 
-  private getInitialValue(field: FormFieldDto): string | number | boolean | null {
+  private getInitialValue(
+    field: FormFieldDto,
+  ): string | number | boolean | string[] | null {
     const normalizedType = this.normalizeFieldType(field.type);
+    const isMultiSelect = this.isMultiSelectField(field, normalizedType);
 
     switch (normalizedType) {
       case 'Checkbox':
         return false;
       case 'Select':
+        return isMultiSelect ? [] : null;
       case 'Radio':
       case 'Number':
       case 'File':
@@ -558,6 +584,7 @@ export class FormDetailComponent implements OnInit {
 
   private mapFieldView(field: FormFieldDto): FormFieldView {
     const normalizedType = this.normalizeFieldType(field.type);
+    const isMultiSelect = this.isMultiSelectField(field, normalizedType);
     const normalizedOptions = this.sortOptions(field).map((option) => ({
       ...option,
       inputId: `${field.id}-${option.id}`,
@@ -569,6 +596,7 @@ export class FormDetailComponent implements OnInit {
       type: normalizedType,
       typeLabel: this.resolveTypeLabel(normalizedType),
       isRequired: field.isRequired,
+      isMultiSelect,
       controlName: field.id,
       placeholder: this.resolvePlaceholder(field),
       inputType: this.resolveInputType(normalizedType),
@@ -694,6 +722,26 @@ export class FormDetailComponent implements OnInit {
     return value;
   }
 
+  private isMultiSelectField(
+    field: { type: FormFieldType | number; isMultiSelect?: boolean },
+    normalizedType?: FormFieldType,
+  ): boolean {
+    const resolvedType = normalizedType ?? this.normalizeFieldType(field.type);
+    return resolvedType === 'Select' && !!field.isMultiSelect;
+  }
+
+  private normalizeMultiSelectValue(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item));
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      return [value];
+    }
+
+    return [];
+  }
+
   private buildFormDataPayload(): FormData {
     const formData = new FormData();
     const group = this.formGroup();
@@ -722,6 +770,8 @@ export class FormDetailComponent implements OnInit {
 
         const e164 = extractE164(phoneInput, isoCountryCode);
         answers[field.controlName] = e164 || null;
+      } else if (field.type === 'Select' && field.isMultiSelect) {
+        answers[field.controlName] = this.normalizeMultiSelectValue(value);
       } else {
         answers[field.controlName] = value ?? null;
       }
@@ -746,13 +796,22 @@ export class FormDetailComponent implements OnInit {
 
     return this.fields().reduce<Record<string, unknown>>((acc, field) => {
       const value = group.get(field.controlName)?.value;
-      acc[field.controlName] = value ?? null;
+      acc[field.controlName] = field.isMultiSelect
+        ? this.normalizeMultiSelectValue(value)
+        : value ?? null;
       return acc;
     }, {});
   }
 
-  private getResetValue(type: FormFieldType): string | number | boolean | null {
-    switch (type) {
+  private getResetValue(
+    field: { type: FormFieldType | number; isMultiSelect?: boolean },
+  ): string | number | boolean | string[] | null {
+    const normalizedType = this.normalizeFieldType(field.type);
+    if (normalizedType === 'Select' && this.isMultiSelectField(field, normalizedType)) {
+      return [];
+    }
+
+    switch (normalizedType) {
       case 'Checkbox':
         return false;
       case 'Select':

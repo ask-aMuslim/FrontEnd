@@ -1,5 +1,5 @@
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { finalize, take } from 'rxjs';
@@ -46,11 +46,8 @@ export class FooterComponent {
   protected subscriptionMessageType: 'success' | 'error' | null = null;
 
   protected readonly currentYear = new Date().getFullYear();
-
-  constructor(
-    private readonly newsletterService: NewsletterService,
-    private readonly cdr: ChangeDetectorRef,
-  ) { }
+  private readonly newsletterService = inject(NewsletterService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   protected readonly footerColumns: FooterColumn[] = [
     {
@@ -84,8 +81,9 @@ export class FooterComponent {
       links: [
         { label: 'Topics', href: '/question-and-answer/topics', external: false },
         { label: 'Meet Scholar', href: '/question-and-answer/meet-scholar', external: false },
-        // { label: 'Forms', href: '/forms', external: false },
+        { label: 'Forms', href: '/forms', external: false },
         { label: 'Contact', href: '/contact', external: false },
+        { label: 'Our Forms', href: '/forms', external: false },
       ],
     },
   ];

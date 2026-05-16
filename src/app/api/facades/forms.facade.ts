@@ -31,6 +31,7 @@ export interface FormFieldDto {
   label: string;
   type: FormFieldType;
   isRequired: boolean;
+  isMultiSelect?: boolean;
   order: number;
   options: FormFieldOptionDto[];
 }
