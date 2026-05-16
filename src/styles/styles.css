@@ -13,10 +13,14 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* Offset for the sticky header */
+}
+
 * {
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif !important;
-  scroll-behavior: smooth;
 }
 
 /* Scrollbar Styles */
