@@ -200,11 +200,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly islamPillarTag = '5 Pillars of Islam';
 
   private readonly islamPillarQuestionIds: Record<string, string> = {
-    'Shahada': 'fa55483c-3f55-4aa2-49f4-08de9b548af0',
-    'Salah': 'fa55483c-3f55-4aa2-49f4-08de9b548af0',
-    'Zakat': '1082c0f9-7fb5-4e81-49f5-08de9b548af0',
-    'Sawm': 'd6e49487-1f68-498f-49f6-08de9b548af0',
-    'Hajj': '8c1cb6b4-0975-42a9-49f7-08de9b548af0',
+    'Shahada': '019e2fcd-6e95-7cbf-83f8-fb2da9f4c8df',
+    'Salah': '019e2fcd-d029-76c4-93a0-db33b9c07436',
+    'Zakat': '019e2fcf-33c2-741c-9dfb-2588fb1706a5',
+    'Sawm': '019e2fcf-a5f8-7017-9d44-1851a15821c6',
+    'Hajj': '019e2fd0-6564-76bd-b09d-308d62caa379',
   };
 
   protected getPillarQuestionQueryParams(pillarName: string): { id: string; categories: string } {
