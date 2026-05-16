@@ -81,9 +81,9 @@
         </div>
 
         <div class="quick-link-list">
-          @for (link of quickLinks; track link.href) {
-            <a [href]="link.href" target="_blank" rel="noopener noreferrer">
-              {{ link.label }}
+          @for (link of quickLinks(); track link.id) {
+            <a [routerLink]="['/forms', link.id]">
+              {{ link.title }}
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M7 17L17 7M17 7H9M17 7V15"

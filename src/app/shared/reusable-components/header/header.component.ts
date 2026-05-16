@@ -37,7 +37,6 @@ export class HeaderComponent {
     { label: 'Q&A', path: '/question-and-answer/topics', section: 'qna' },
     { label: 'Academy', path: '/academy' },
     { label: 'Resources', path: '/resources' },
-    { label: 'Forms', path: '/forms' },
     { label: 'Events', path: '/events' },
     { label: 'Contact', path: '/contact' },
 
