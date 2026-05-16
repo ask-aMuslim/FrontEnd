@@ -50,6 +50,6 @@ describe('NotFound', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const subtitle = compiled.querySelector('.subtitle');
     expect(subtitle).toBeTruthy();
-    expect(subtitle?.textContent).toContain('The path you seek is not here');
+    expect(subtitle?.textContent).toContain('The path you seek Is not here');
   });
 });

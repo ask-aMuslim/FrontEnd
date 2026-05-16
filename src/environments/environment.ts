@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'https://api.askamuslim.com',
-  askAssistantApiBaseUrl: 'https://ethernet-myspace-conclusions-practical.trycloudflare.com',
+  askAssistantApiBaseUrl: 'https://when-size-little-advantage.trycloudflare.com',
   askAssistantApiBaseUrlFallback: 'http://localhost:8000',
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
