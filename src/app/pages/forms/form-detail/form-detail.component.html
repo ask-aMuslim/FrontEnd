@@ -2,6 +2,19 @@
   <header class="form-detail__hero">
     <div class="section-block form-detail__hero-content">
       <button type="button" class="form-detail__back" (click)="goBack()">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
         Back to forms
       </button>
       <h1 id="form-title" class="form-detail__title">{{ formTitle() }}</h1>
@@ -23,12 +36,6 @@
       }
     </div>
   </header>
-  <app-select-dropdown
-    class="form-detail__select-probe"
-    [options]="[]"
-    [value]="null"
-  ></app-select-dropdown>
-
   <section class="section-block form-detail__content">
     @if (isLoading()) {
       <div class="form-state" aria-live="polite">
@@ -156,34 +163,102 @@
                             "
                           ></textarea>
                         } @else if (field.type === "Select") {
-                          <app-select-dropdown
-                            [options]="field.selectOptions"
-                            [value]="
-                              activeForm.get(field.controlName)?.value ?? null
-                            "
-                            [placeholder]="'Select an option'"
-                            [error]="isFieldInvalid(field)"
-                            (select)="onSelectField(field, $event)"
-                          ></app-select-dropdown>
+                          @if (field.isMultiSelect) {
+                            <p
+                              class="form-field__helper form-field__helper--hint"
+                            >
+                              Select all that apply.
+                            </p>
+                          }
+                          @if (field.options.length > 0) {
+                            <div
+                              class="form-field__options form-field__options--choice"
+                              role="listbox"
+                              [attr.aria-label]="field.label"
+                              [attr.aria-multiselectable]="
+                                field.isMultiSelect ? 'true' : null
+                              "
+                              [class.form-field__options--multi]="
+                                field.isMultiSelect
+                              "
+                            >
+                              @for (
+                                option of field.options;
+                                track trackOptionById($index, option)
+                              ) {
+                                <button
+                                  type="button"
+                                  class="form-field__option form-field__option--choice"
+                                  [class.is-selected]="
+                                    isSelectOptionSelected(field, option.value)
+                                  "
+                                  role="option"
+                                  [attr.aria-selected]="
+                                    isSelectOptionSelected(field, option.value)
+                                  "
+                                  (click)="onSelectField(field, option.value)"
+                                >
+                                  @if (field.isMultiSelect) {
+                                    <span
+                                      class="form-field__checkbox-icon"
+                                      aria-hidden="true"
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="none">
+                                        <path
+                                          d="M20 7L10 17L5 12"
+                                          stroke="currentColor"
+                                          stroke-width="2.5"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                        />
+                                      </svg>
+                                    </span>
+                                  } @else {
+                                    <span
+                                      class="form-field__option-dot"
+                                      aria-hidden="true"
+                                    ></span>
+                                  }
+                                  <span>{{ option.label }}</span>
+                                </button>
+                              }
+                            </div>
+                          } @else {
+                            <p class="form-field__helper">
+                              No options available.
+                            </p>
+                          }
                         } @else if (field.type === "Radio") {
-                          <div class="form-field__options">
+                          <div
+                            class="form-field__options form-field__options--choice"
+                            role="radiogroup"
+                            [attr.aria-label]="field.label"
+                          >
                             @if (field.options.length > 0) {
                               @for (
                                 option of field.options;
                                 track trackOptionById($index, option)
                               ) {
-                                <label
-                                  class="form-field__option"
-                                  [attr.for]="option.inputId"
+                                <button
+                                  type="button"
+                                  class="form-field__option form-field__option--choice"
+                                  [class.is-selected]="
+                                    option.value ===
+                                    activeForm.get(field.controlName)?.value
+                                  "
+                                  role="radio"
+                                  [attr.aria-checked]="
+                                    option.value ===
+                                    activeForm.get(field.controlName)?.value
+                                  "
+                                  (click)="onSelectField(field, option.value)"
                                 >
-                                  <input
-                                    type="radio"
-                                    [id]="option.inputId"
-                                    [value]="option.value"
-                                    [formControlName]="field.controlName"
-                                  />
+                                  <span
+                                    class="form-field__option-dot"
+                                    aria-hidden="true"
+                                  ></span>
                                   <span>{{ option.label }}</span>
-                                </label>
+                                </button>
                               }
                             } @else {
                               <p class="form-field__helper">
@@ -201,7 +276,21 @@
                               [id]="field.controlName"
                               [formControlName]="field.controlName"
                             />
-                            <span>
+                            <span
+                              class="form-field__checkbox-icon"
+                              aria-hidden="true"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <path
+                                  d="M20 7L10 17L5 12"
+                                  stroke="currentColor"
+                                  stroke-width="2.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            </span>
+                            <span class="form-field__checkbox-label">
                               {{ field.label }}
                               @if (field.isRequired) {
                                 <span class="form-field__required">*</span>
