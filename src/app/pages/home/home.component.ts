@@ -199,6 +199,22 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly faithPillarTag = '6 Pillars of Faith';
   protected readonly islamPillarTag = '5 Pillars of Islam';
 
+  private readonly islamPillarQuestionIds: Record<string, string> = {
+    'Shahada': 'fa55483c-3f55-4aa2-49f4-08de9b548af0',
+    'Salah': 'fa55483c-3f55-4aa2-49f4-08de9b548af0',
+    'Zakat': '1082c0f9-7fb5-4e81-49f5-08de9b548af0',
+    'Sawm': 'd6e49487-1f68-498f-49f6-08de9b548af0',
+    'Hajj': '8c1cb6b4-0975-42a9-49f7-08de9b548af0',
+  };
+
+  protected getPillarQuestionQueryParams(pillarName: string): { id: string; categories: string } {
+    const questionId = this.islamPillarQuestionIds[pillarName] ?? '';
+    return {
+      id: questionId,
+      categories: JSON.stringify([this.islamPillarTag]),
+    };
+  }
+
   protected readonly serveAudienceCards: readonly ServeAudienceCard[] = [
     { title: 'I’m a Christian', topicTag: 'Christianity' },
     { title: 'I’m a Jew', topicTag: 'Judaism' },

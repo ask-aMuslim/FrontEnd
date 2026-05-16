@@ -422,17 +422,14 @@ export class AssistantChatFacade {
     const deltaText = this.readStringRaw(parsed, ['text', 'delta', 'token', 'chunk'])
       ?? (parsedData ? this.readStringRaw(parsedData, ['text', 'delta', 'token', 'chunk']) : null);
 
-    // 'message', 'content', 'response' are summary fields sent once at the end.
-    // They contain the FULL accumulated answer and must be ignored as deltas
-    // to prevent duplication. We only use them to extract metadata (threadId).
-    const summaryText = this.readStringRaw(parsed, ['message', 'content', 'response'])
-      ?? (parsedData ? this.readStringRaw(parsedData, ['response', 'message', 'content']) : null)
-      ?? '';
+    // 'message', 'content', 'response' are summary fields sent once at the end
+    // (e.g. in the backend's `done` SSE event). They contain the FULL accumulated
+    // answer and must NEVER be treated as delta text — doing so causes the full
+    // response to be appended a second time after streaming completes.
+    // We read them only to extract metadata (threadId, title, etc.).
 
-    // Use deltaText if present. If deltaText IS the text field but it's a very long
-    // summary (> 150 chars) and we already have accumulated content, it is a duplicate.
-    // The de-duplication in emitFromChunk handles this case in the outer loop.
-    const text = deltaText ?? (summaryText.length <= 150 ? summaryText : '');
+    // Only deltaText drives the visible bubble. Summary fields are always ignored.
+    const text = deltaText ?? '';
 
     const parsedErrors = parsed['errors'];
     const errors = Array.isArray(parsedErrors)

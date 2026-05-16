@@ -1,0 +1,26 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100; // Sticky header
+}
+
+app-announcement-bar {
+  position: relative;
+  z-index: 90;
+}
+
+main {
+  flex: 1;
+  background: var(--color-background-base);
+}
+
+app-footer {
+  position: relative;
+}

@@ -900,106 +900,7 @@
             <a
               class="pillar-card pillar-islam-1"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('ff110d68-b49f-4fe0-49f3-08de9b548af0', islamPillarTag)"
-            >
-              <div class="pentagon">
-                <svg
-                  class="pillar-pentagon"
-                  viewBox="0 0 226 227"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="226"
-                  height="227"
-                >
-                  <defs>
-                    <filter
-                      id="filter-pentagon-1"
-                      x="-6"
-                      y="-6"
-                      width="238"
-                      height="239"
-                      filterUnits="userSpaceOnUse"
-                      color-interpolation-filters="sRGB"
-                    >
-                      <feFlood flood-opacity="0" result="BackgroundImageFix" />
-                      <feColorMatrix
-                        in="SourceAlpha"
-                        type="matrix"
-                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-                        result="hardAlpha"
-                      />
-                      <feMorphology
-                        radius="2"
-                        operator="dilate"
-                        in="SourceAlpha"
-                        result="effect1_dropShadow"
-                      />
-                      <feOffset />
-                      <feGaussianBlur stdDeviation="2" />
-                      <feComposite in2="hardAlpha" operator="out" />
-                      <feColorMatrix
-                        type="matrix"
-                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in2="BackgroundImageFix"
-                        result="effect1_dropShadow"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in="SourceGraphic"
-                        in2="effect1_dropShadow"
-                        result="shape"
-                      />
-                    </filter>
-                  </defs>
-                  <g filter="url(#filter-pentagon-1)">
-                    <path
-                      class="pentagon-path"
-                      d="M113 0L220.469 78.4266L179.42 205.323H46.5803L5.53062 78.4266L113 0Z"
-                      fill="#F8F9FA"
-                    />
-                  </g>
-                </svg>
-                <div class="pillar-card-content">
-                  <div class="pillar-card-body">
-                    <span class="pillar-card-number">1</span>
-                    <span class="go-for-more">
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M17.9644 15.8964L17.9652 5.96521L8.034 5.966"
-                          stroke="var(--color-text-caption)"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                        <path
-                          d="M13.0311 20.83L13.0319 10.8988L3.10065 10.8996"
-                          stroke="var(--color-text-caption)"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                    </span>
-                    <span class="pillar-card-label">Testimony of Faith</span>
-                    <span class="pillar-card-title">Shahada</span>
-                  </div>
-                </div>
-              </div>
-            </a>
-
-            <!-- Pentagon 2: Salah (left-center, higher) -->
-            <a
-              class="pillar-card pillar-islam-2"
-              [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('fa55483c-3f55-4aa2-49f4-08de9b548af0', islamPillarTag)"
+              [queryParams]="getPillarQuestionQueryParams('Shahada')"
             >
               <div class="pentagon">
                 <svg
@@ -1098,7 +999,7 @@
             <a
               class="pillar-card pillar-islam-3"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('1082c0f9-7fb5-4e81-49f5-08de9b548af0', islamPillarTag)"
+              [queryParams]="getPillarQuestionQueryParams('Zakat')"
             >
               <div class="pentagon">
                 <svg
@@ -1197,7 +1098,7 @@
             <a
               class="pillar-card pillar-islam-4"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('d6e49487-1f68-498f-49f6-08de9b548af0', islamPillarTag)"
+              [queryParams]="getPillarQuestionQueryParams('Sawm')"
             >
               <div class="pentagon">
                 <svg
@@ -1296,7 +1197,7 @@
             <a
               class="pillar-card pillar-islam-5"
               [routerLink]="pillarQuestionRoute"
-              [queryParams]="getQuestionQueryParams('8c1cb6b4-0975-42a9-49f7-08de9b548af0', islamPillarTag)"
+              [queryParams]="getPillarQuestionQueryParams('Hajj')"
             >
               <div class="pentagon">
                 <svg
