@@ -1,8 +1,8 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'https://api.askamuslim.com',
-  askAssistantApiBaseUrl: 'https://when-size-little-advantage.trycloudflare.com',
-  askAssistantApiBaseUrlFallback: 'http://localhost:8000',
+  askAssistantApiBaseUrl: 'https://source-advantage-compare-roll.trycloudflare.com',
+  askAssistantApiBaseUrlFallback: 'http://127.0.0.1:8000',
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
   BearerToken: '',
