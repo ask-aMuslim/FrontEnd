@@ -954,11 +954,11 @@ app-hero-search-input {
 }
 
 // ============================================
-// 6 PILLARS OF IMAN — HEXAGON ARC (opens downward)
+// 6 PILLARS OF FAITH — HEXAGON ARC (opens downward)
 // ============================================
 
 // --- Mobile (< 640px): 2-column grid ---
-.iman-arc {
+.faith-arc {
   position: relative;
   width: 100%;
   display: flex;
@@ -997,7 +997,7 @@ app-hero-search-input {
     }
   }
 
-  .iman-label {
+  .faith-label {
     order: -1;
     width: 100%;
     margin-bottom: 8px;
@@ -1013,7 +1013,7 @@ app-hero-search-input {
 
 // --- Tablet (768px – 1023px): Arc layout with smaller polygons ---
 @media (min-width: 768px) {
-  .iman-arc {
+  .faith-arc {
     display: block;
     position: relative;
     height: 380px;
@@ -1047,35 +1047,35 @@ app-hero-search-input {
     }
 
     // Arc positions - symmetric from center (using calc to prevent overlap)
-    .pillar-iman-1 {
+    .pillar-faith-1 {
       left: 0;
       top: 195px;
     }
-    .pillar-iman-2 {
+    .pillar-faith-2 {
       left: 10%;
       top: 85px;
     }
-    .pillar-iman-3 {
+    .pillar-faith-3 {
       left: calc(50% - 150px);
       top: 0;
     }
-    .pillar-iman-4 {
+    .pillar-faith-4 {
       right: calc(50% - 150px);
       left: auto;
       top: 0;
     }
-    .pillar-iman-5 {
+    .pillar-faith-5 {
       right: 10%;
       left: auto;
       top: 85px;
     }
-    .pillar-iman-6 {
+    .pillar-faith-6 {
       right: 0;
       left: auto;
       top: 195px;
     }
 
-    .iman-label {
+    .faith-label {
       position: absolute;
       top: 230px;
       left: 50%;
@@ -1091,7 +1091,7 @@ app-hero-search-input {
 
 // --- Desktop Small (1024px – 1279px): Scaled arc layout ---
 @media (min-width: 1024px) {
-  .iman-arc {
+  .faith-arc {
     height: 440px;
 
     .pillar-card {
@@ -1122,45 +1122,45 @@ app-hero-search-input {
     }
 
     // Scaled positions - symmetric from center (calc for no overlap)
-    .pillar-iman-1 {
+    .pillar-faith-1 {
       left: 0;
       top: 250px;
     }
-    .pillar-iman-2 {
+    .pillar-faith-2 {
       left: 12%;
       top: 108px;
     }
-    .pillar-iman-3 {
+    .pillar-faith-3 {
       left: calc(50% - 186px);
       top: -15px;
     }
-    .pillar-iman-4 {
+    .pillar-faith-4 {
       right: calc(50% - 186px);
       left: auto;
       top: -15px;
     }
-    .pillar-iman-5 {
+    .pillar-faith-5 {
       right: 12%;
       left: auto;
       top: 108px;
     }
-    .pillar-iman-6 {
+    .pillar-faith-6 {
       right: 0;
       left: auto;
       top: 250px;
     }
 
-    .iman-label {
+    .faith-label {
       top: 295px;
     }
   }
 }
 @media (min-width: 1080px) {
-  .pillar-iman-3 {
+  .pillar-faith-3 {
     left: calc(50% - 192px);
     top: 2px;
   }
-  .pillar-iman-4 {
+  .pillar-faith-4 {
     right: calc(50% - 192px);
     left: auto;
     top: 2px;
@@ -1168,11 +1168,11 @@ app-hero-search-input {
 }
 
 @media (min-width: 1150px) {
-  .pillar-iman-3 {
+  .pillar-faith-3 {
     left: calc(50% - 195px);
     top: 25px;
   }
-  .pillar-iman-4 {
+  .pillar-faith-4 {
     right: calc(50% - 195px);
     left: auto;
     top: 25px;
@@ -1181,7 +1181,7 @@ app-hero-search-input {
 
 // --- Desktop Large (≥ 1280px): Full Figma arc layout ---
 @media (min-width: 1280px) {
-  .iman-arc {
+  .faith-arc {
     height: 524px;
 
     .pillar-card {
@@ -1213,35 +1213,35 @@ app-hero-search-input {
     }
 
     // Exact Figma positions - symmetric from center (calc for no overlap)
-    .pillar-iman-1 {
+    .pillar-faith-1 {
       left: 0;
       top: 296px;
     }
-    .pillar-iman-2 {
+    .pillar-faith-2 {
       left: 13%;
       top: 128px;
     }
-    .pillar-iman-3 {
+    .pillar-faith-3 {
       left: calc(49% - 222px);
       top: -25px;
     }
-    .pillar-iman-4 {
+    .pillar-faith-4 {
       right: calc(49% - 222px);
       left: auto;
       top: -25px;
     }
-    .pillar-iman-5 {
+    .pillar-faith-5 {
       right: 13%;
       left: auto;
       top: 128px;
     }
-    .pillar-iman-6 {
+    .pillar-faith-6 {
       right: 0;
       left: auto;
       top: 296px;
     }
 
-    .iman-label {
+    .faith-label {
       top: 385px;
     }
   }

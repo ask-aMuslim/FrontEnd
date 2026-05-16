@@ -69,7 +69,7 @@ export class FooterComponent {
           external: true,
         },
         {
-          label: 'IMAN TV',
+          label: 'Faith TV',
           href: 'https://www.youtube.com/@ImanTV01',
           external: true,
         },
@@ -81,6 +81,7 @@ export class FooterComponent {
       links: [
         { label: 'Topics', href: '/question-and-answer/topics', external: false },
         { label: 'Meet Scholar', href: '/question-and-answer/meet-scholar', external: false },
+        { label: 'Forms', href: '/forms', external: false },
         { label: 'Contact', href: '/contact', external: false },
         { label: 'Our Forms', href: '/forms', external: false },
       ],
@@ -90,31 +91,31 @@ export class FooterComponent {
   protected readonly socialLinks: SocialLink[] = [
     {
       icon: '/icons/icons-social-apps/facebook.svg',
-      label: String.raw`\askamuslimofficial`,
+      label: String.raw`askamuslimofficial`,
       href: 'https://www.facebook.com/askamuslimofficial',
       ariaLabel: 'Visit our Facebook page',
     },
     {
       icon: '/icons/icons-social-apps/instagram.svg',
-      label: String.raw`\askamuslim`,
+      label: String.raw`askamuslim`,
       href: 'https://www.instagram.com/askamuslim',
       ariaLabel: 'Visit our Instagram profile',
     },
     {
       icon: '/icons/icons-social-apps/youtube.svg',
-      label: String.raw`\askamuslim`,
+      label: String.raw`askamuslim`,
       href: 'https://www.youtube.com/@AskAMuslim',
       ariaLabel: 'Visit our YouTube channel',
     },
     {
       icon: '/icons/icons-social-apps/threads.svg',
-      label: String.raw`\askamuslim`,
+      label: String.raw`askamuslim`,
       href: 'https://www.threads.com/@askamuslim',
       ariaLabel: 'Visit our Threads profile',
     },
     {
       icon: '/icons/icons-social-apps/tiktok.svg',
-      label: String.raw`\askamuslim_`,
+      label: String.raw`askamuslim`,
       href: 'https://tiktok.com/@askamuslim_',
       ariaLabel: 'Visit our TikTok profile',
     },

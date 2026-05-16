@@ -89,7 +89,7 @@ export class ResourcesComponent {
             '1k0_mAzy1yY9Atv9HrkluN0fGs5d-al65',
         'resources/scientific-posters/PDF%20Versions/AAM%20Human%20Embrology.pdf':
             '1U_9UVx8_ff0sf0vPQzCL608LXMCmbSGH',
-        'resources/scientific-posters/PDF%20Versions/AAM%20Iron%20is%20not%20from%20the%20Earth.pdf':
+        'resources/scientific-posters/PDF%20Versions/AAM%20Iron%20Is%20not%20from%20the%20Earth.pdf':
             '12wyjY3EimYK3TRcrzwgG2-l7kakj7YC9',
         'resources/scientific-posters/PDF%20Versions/AAM%20Mountains%20Stability.pdf':
             '1kdrGz5x5vzLEHfa7eRJUaUq5QO_rdRod',
@@ -157,7 +157,7 @@ export class ResourcesComponent {
         'AAM Expansion of The Universe.pdf',
         'AAM Heavy Clouds.pdf',
         'AAM Human Embrology.pdf',
-        'AAM Iron is not from the Earth.pdf',
+        'AAM Iron Is not from the Earth.pdf',
         'AAM Mountains Stability.pdf',
         'AAM Ocean Internal Waves.pdf',
         'AAM Orbit of the Sun .pdf',

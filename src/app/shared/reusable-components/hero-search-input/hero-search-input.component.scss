@@ -85,10 +85,14 @@
   box-shadow: none;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  // text-overflow: ellipsis; -- removed as per user request
   text-align: start;
   caret-color: var(--color-button-primary-normal);
   transition: color 0.2s ease;
+
+  &::first-letter {
+    text-transform: uppercase;
+  }
 
   // Placeholder via ::before on the contenteditable div
   &:empty::before {

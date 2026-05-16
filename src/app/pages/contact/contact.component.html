@@ -105,12 +105,12 @@
         novalidate
       >
         <div class="form-field">
-          <label for="contact-name">Enter your full name:</label>
+          <label for="contact-name">Name</label>
           <input
             id="contact-name"
             type="text"
             formControlName="name"
-            placeholder="ex: John Doe"
+            placeholder="Full name"
             autocomplete="name"
             [class.input-error]="isFieldInvalid('name')"
           />
@@ -123,14 +123,13 @@
 
         <div class="form-field">
           <label for="contact-email"
-            >Enter your email address: (we’ll send the response to this
-            address)</label
+            >Email</label
           >
           <input
             id="contact-email"
             type="email"
             formControlName="email"
-            placeholder="ex: email@example.com"
+            placeholder="you@example.com"
             autocomplete="email"
             [class.input-error]="isFieldInvalid('email')"
           />
@@ -152,7 +151,7 @@
               formControlName="topic"
               (change)="onTopicSelectionChange()"
             >
-              <option [ngValue]="null">select ..</option>
+              <option [ngValue]="null">Select</option>
               @for (topic of topicOptions; track topic.value) {
                 <option [ngValue]="topic.value">{{ topic.label }}</option>
               }
