@@ -160,19 +160,45 @@ export class AboutComponent implements OnInit, OnDestroy {
       }));
       languagesSpeaks = this.formatLanguages(languageIds);
     } else if (languages.length === 0) {
-      // API response is empty - use fallbacks in order of preference
-      if (this.about.languages.length > 0) {
-        // First try: preserve existing local data
-        languages = this.about.languages;
-        languagesSpeaks = this.about.languagesSpeaks;
-      } else if (this.lastSentLanguageIds.length > 0) {
-        // Second try: reconstruct from the IDs we just sent, using enum labels
-        languages = this.lastSentLanguageIds.map((id) => ({
-          id,
-          name: languageLabels[id],
-          code: '',
-        }));
-        languagesSpeaks = this.lastSentLanguageIds.map((id) => languageLabels[id]).join(', ');
+      // API response is empty - use persistent localStorage workaround if available, otherwise fallbacks
+      let loadedFromStorage = false;
+      if (this.isBrowser) {
+        const identifier = profile.userId || profile.email || this.about.email;
+        if (identifier) {
+          const storedLangs = localStorage.getItem(`student_languages_${identifier}`);
+          if (storedLangs) {
+            try {
+              const parsedLangs = JSON.parse(storedLangs) as Language[];
+              if (Array.isArray(parsedLangs) && parsedLangs.length > 0) {
+                languages = parsedLangs.map((id) => ({
+                  id,
+                  name: languageLabels[id],
+                  code: '',
+                }));
+                languagesSpeaks = parsedLangs.map((id) => languageLabels[id]).join(', ');
+                loadedFromStorage = true;
+              }
+            } catch (e) {
+              console.error('Failed to parse stored languages', e);
+            }
+          }
+        }
+      }
+
+      if (!loadedFromStorage) {
+        if (this.about.languages.length > 0) {
+          // First try: preserve existing local data
+          languages = this.about.languages;
+          languagesSpeaks = this.about.languagesSpeaks;
+        } else if (this.lastSentLanguageIds.length > 0) {
+          // Second try: reconstruct from the IDs we just sent, using enum labels
+          languages = this.lastSentLanguageIds.map((id) => ({
+            id,
+            name: languageLabels[id],
+            code: '',
+          }));
+          languagesSpeaks = this.lastSentLanguageIds.map((id) => languageLabels[id]).join(', ');
+        }
       }
     }
 
@@ -325,6 +351,12 @@ export class AboutComponent implements OnInit, OnDestroy {
     // Update display with language names from enum labels (will be replaced by API response)
     this.about.languagesSpeaks = data.languages.map((langId) => languageLabels[langId]).join(', ');
 
+    // Workaround: Persistently save language preferences in browser's local storage to bypass backend validation bug
+    if (this.isBrowser) {
+      const identifier = this.about.email || 'default';
+      localStorage.setItem(`student_languages_${identifier}`, JSON.stringify(data.languages));
+    }
+
     this.isLoading = true;
     this.clearMessages();
 
@@ -336,7 +368,8 @@ export class AboutComponent implements OnInit, OnDestroy {
       lastName: lastName || undefined,
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
-      languages: data.languages,
+      // Workaround: Send empty list to avoid API validation error "One or more language IDs are invalid"
+      languages: [],
     };
 
     this.executeProfileSave(payload, () => {

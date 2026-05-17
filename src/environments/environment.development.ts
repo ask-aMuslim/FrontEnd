@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'https://api.askamuslim.com',
-  askAssistantApiBaseUrl: 'https://source-advantage-compare-roll.trycloudflare.com',
+  askAssistantApiBaseUrl: 'https://jawless-spoken-hardhat.ngrok-free.dev',
   askAssistantApiBaseUrlFallback: 'http://127.0.0.1:8000',
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),

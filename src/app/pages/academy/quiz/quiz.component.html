@@ -21,7 +21,7 @@
                     {{ displayQuestionCount() }} questions, and you should
                     answer each question in less than
                     {{ quizConfig.timePerQuestion / 60 }} minutes. you should
-                    answer at least {{ quizConfig.passingScore }} questions
+                    answer at least {{ requiredPassingScore() }} questions
                     right to success.
                   </p>
                   <p class="quiz-ready-message">
@@ -372,7 +372,7 @@
                         <p class="message-main">
                           You've answered {{ correctAnswersCount() }} questions
                           out of {{ questions().length }} correctly. You need at
-                          least {{ quizConfig.passingScore }} correct answers to
+                          least {{ requiredPassingScore() }} correct answers to
                           pass.
                         </p>
                         <p class="message-sub">

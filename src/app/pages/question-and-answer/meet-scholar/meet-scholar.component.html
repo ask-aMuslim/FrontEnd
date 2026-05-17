@@ -55,6 +55,7 @@
         [availableTimes]="availableTimes"
         [nextDisabled]="isGuestUser"
         (next)="nextStep()"
+        (back)="previousStep()"
         (selectDate)="selectDate($event)"
         (selectTime)="selectTime($event)"
       />
