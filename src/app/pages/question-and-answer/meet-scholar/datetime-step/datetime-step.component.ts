@@ -29,8 +29,11 @@ export class DatetimeStepComponent {
   nextDisabled = input(false);
 
   next = output<void>();
+  back = output<void>();
   selectDate = output<DateOption>();
   selectTime = output<TimeOption>();
+
+  leftArrowIcon = '/icons/icons-24/arrow-left.svg';
 
   onSelectDate(date: DateOption): void {
     this.selectDate.emit(date);
@@ -51,5 +54,9 @@ export class DatetimeStepComponent {
       return;
     }
     this.next.emit();
+  }
+
+  onBack(): void {
+    this.back.emit();
   }
 }

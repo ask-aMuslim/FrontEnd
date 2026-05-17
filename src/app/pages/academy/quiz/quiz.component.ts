@@ -118,7 +118,6 @@ export class QuizComponent implements OnInit, OnDestroy {
     readonly quizConfig = {
         totalQuestions: 10,
         timePerQuestion: 600, // seconds (10 minutes - exact Figma requirement)
-        passingScore: 8
     };
 
     // Quiz state
@@ -164,7 +163,7 @@ export class QuizComponent implements OnInit, OnDestroy {
             (answer) => answer.selectedOptionId !== null || answer.isSkipped,
         );
 
-        if (this.quizState() === 'results' && !hasAnsweredQuestions && restoredResult?.completed) {
+        if ((this.quizState() === 'results' || this.quizState() === 'review') && !hasAnsweredQuestions && restoredResult?.completed) {
             return restoredResult.score;
         }
 
@@ -186,8 +185,14 @@ export class QuizComponent implements OnInit, OnDestroy {
         return Math.round((this.effectiveCorrectAnswersCount() / total) * 100);
     });
 
+    readonly requiredPassingScore = computed(() => {
+        const restoredResult = this.restoredQuizResult;
+        const total = this.questions().length || restoredResult?.questionCount || this.quizConfig.totalQuestions;
+        return Math.ceil(total * 0.5);
+    });
+
     readonly hasPassed = computed(() =>
-        this.effectiveCorrectAnswersCount() >= this.quizConfig.passingScore
+        this.effectiveCorrectAnswersCount() >= this.requiredPassingScore()
     );
 
     readonly hasSuccessfulDegree = computed(() => {
@@ -195,13 +200,13 @@ export class QuizComponent implements OnInit, OnDestroy {
             (answer) => answer.selectedOptionId !== null || answer.isSkipped,
         );
 
-        if (this.quizState() === 'results' && this.restoredQuizResult?.completed) {
+        if ((this.quizState() === 'results' || this.quizState() === 'review') && this.restoredQuizResult?.completed) {
             if (this.restoredQuizResult.passed) {
                 return true;
             }
 
             if (!hasAnsweredQuestions) {
-                return this.restoredQuizResult.score >= this.quizConfig.passingScore;
+                return this.restoredQuizResult.score >= this.requiredPassingScore();
             }
         }
 
@@ -654,7 +659,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         const completionTimeMs = Date.now() - this.quizStartTime;
         this.quizCompletionTime.set(Math.floor(completionTimeMs / 1000)); // Convert to seconds
 
-        this.quizState.set('results');
+        this.quizState.set('review');
         // Scroll to top when quiz finishes and shows review
         this.scrollService.scrollToTop();
 
@@ -775,9 +780,10 @@ export class QuizComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.timerSubscription), takeUntil(this.destroy$))
             .subscribe(() => {
                 const current = this.timeRemaining();
-                if (current > 0) {
+                if (current > 1) {
                     this.timeRemaining.set(current - 1);
                 } else {
+                    this.timeRemaining.set(0);
                     // Time's up - finish the entire quiz
                     this.finishQuiz();
                 }
@@ -1210,7 +1216,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         }
 
         this.quizCompletionTime.set(storedResult.completionTime);
-        this.quizState.set('results');
+        this.quizState.set('review');
 
         if (this.hasSuccessfulDegree()) {
             this.syncPassedQuizCompletion();
