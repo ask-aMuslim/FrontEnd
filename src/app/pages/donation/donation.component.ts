@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
 
@@ -21,10 +21,8 @@ interface TrustBadge {
   templateUrl: './donation.component.html',
   styleUrl: './donation.component.scss'
 })
-export class DonationComponent implements OnInit, AfterViewInit, OnDestroy {
-  private scriptElement?: HTMLScriptElement;
-  protected showFallback = false;
-  protected loadingScript = true;
+export class DonationComponent implements OnInit {
+  protected loadingIframe = true;
 
   protected readonly impactCards: readonly ImpactCard[] = [
     {
@@ -87,54 +85,9 @@ export class DonationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.metaService.updateTag({ property: 'og:type', content: 'website' });
   }
 
-  ngAfterViewInit(): void {
+  protected onIframeLoad(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.loadZeffyScript();
-    }
-  }
-
-  private loadZeffyScript(): void {
-    // Check if the script is already present in the document
-    const scriptSrc = 'https://www.zeffy.com/embed/v2/zeffy-embed.js';
-    const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
-
-    if (existingScript) {
-      this.loadingScript = false;
-      return;
-    }
-
-    this.scriptElement = document.createElement('script');
-    this.scriptElement.src = scriptSrc;
-    this.scriptElement.async = true;
-
-    this.scriptElement.onload = () => {
-      this.loadingScript = false;
-    };
-
-    this.scriptElement.onerror = () => {
-      this.loadingScript = false;
-      this.showFallback = true;
-    };
-
-    document.body.appendChild(this.scriptElement);
-
-    // Safety timeout: If script doesn't fire load callback within 4.5 seconds, display fallback iframe
-    setTimeout(() => {
-      if (this.loadingScript) {
-        this.showFallback = true;
-        this.loadingScript = false;
-      }
-    }, 4500);
-  }
-
-  protected forceFallback(): void {
-    this.showFallback = true;
-    this.loadingScript = false;
-  }
-
-  ngOnDestroy(): void {
-    if (this.scriptElement && isPlatformBrowser(this.platformId)) {
-      this.scriptElement.remove();
+      this.loadingIframe = false;
     }
   }
 }
