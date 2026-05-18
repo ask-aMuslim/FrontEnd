@@ -82,36 +82,25 @@
             </div>
 
             <!-- Loader State -->
-            @if (loadingScript && !showFallback) {
+            @if (loadingIframe) {
               <div class="donation-loader">
                 <div class="donation-loader__spinner"></div>
                 <p class="donation-loader__text">Loading Secure Checkout...</p>
-                <button type="button" class="donation-loader__skip" (click)="forceFallback()">
-                  Taking too long? Click here to load iframe
-                </button>
               </div>
             }
 
             <!-- Zeffy Form Embed -->
-            <div class="donation-embed-container" [class.donation-embed-container--hidden]="loadingScript && !showFallback">
-              
-              <!-- Standard Zeffy Script Placeholder Container -->
-              @if (!showFallback) {
-                <div data-zeffy-embed data-form-url="/embed/donation-form/donate-to-change-lives-14179"></div>
-              }
-
-              <!-- Zeffy Fallback Iframe (rendered if script fails or forced) -->
-              @if (showFallback) {
-                <div class="donation-iframe-wrapper">
-                  <iframe 
-                    title="Donation form powered by Zeffy" 
-                    src="https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179" 
-                    allowpaymentrequest 
-                    allowTransparency="true"
-                    class="donation-iframe">
-                  </iframe>
-                </div>
-              }
+            <div class="donation-embed-container" [class.donation-embed-container--hidden]="loadingIframe">
+              <div class="donation-iframe-wrapper">
+                <iframe 
+                  title="Donation form powered by Zeffy" 
+                  src="https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179" 
+                  allowpaymentrequest 
+                  allowTransparency="true"
+                  class="donation-iframe"
+                  (load)="onIframeLoad()">
+                </iframe>
+              </div>
             </div>
 
             <!-- Checkout Footer Actions -->

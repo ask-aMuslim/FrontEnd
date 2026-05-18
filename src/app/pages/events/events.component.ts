@@ -120,6 +120,10 @@ export class EventsComponent implements OnInit {
     this.loadEvents();
   }
 
+  get isAnyFilterActive(): boolean {
+    return this.searchTerm.trim().length > 0 || this.selectedEventStatus !== null;
+  }
+
   clearSearch(): void {
     if (!this.searchTerm.trim()) {
       return;
@@ -127,6 +131,13 @@ export class EventsComponent implements OnInit {
 
     this.searchTerm = '';
     this.applySearch();
+  }
+
+  clearAllFilters(): void {
+    this.searchTerm = '';
+    this.selectedEventStatus = null;
+    this.currentPage = 1;
+    this.loadEvents();
   }
 
   onStatusChange(): void {
