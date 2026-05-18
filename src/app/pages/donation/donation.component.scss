@@ -24,10 +24,10 @@
   &__pattern {
     position: absolute;
     inset: 0;
-    background-image: url("/backgrounds/islamic-pattern.svg");
+    background-image: url("/backgrounds/about-resources-hero-background.svg");
     background-position: center;
     background-repeat: repeat;
-    opacity: 0.04;
+    opacity: 0.1;
     pointer-events: none;
   }
 
@@ -315,7 +315,7 @@
   justify-content: center;
   padding: 5rem 2rem;
   text-align: center;
-  min-height: 480px;
+  min-height: 650px;
 
   &__spinner {
     width: 48px;
@@ -355,7 +355,7 @@
   padding: 1rem;
   background: var(--color-background-base-surface, #f8f9fa);
   transition: opacity 0.3s ease;
-  min-height: 480px;
+  min-height: 650px;
 
   &--hidden {
     position: absolute;
@@ -368,7 +368,7 @@
 .donation-iframe-wrapper {
   position: relative;
   overflow: hidden;
-  height: 480px;
+  height: 650px;
   width: 100%;
   border-radius: 12px;
 }
