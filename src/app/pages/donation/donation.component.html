@@ -1,0 +1,169 @@
+<div class="donation-page">
+  <!-- Hero Section -->
+  <section class="donation-hero">
+    <div class="donation-hero__pattern"></div>
+    <div class="donation-hero__container">
+      <div class="donation-hero__content animate-fade-in">
+        <div class="donation-hero__pill">
+          <span>SADAQAH JARIYAH</span>
+          <span class="donation-hero__dot-separator">•</span>
+          <span>Invest in the Hereafter</span>
+        </div>
+        <h1 class="donation-hero__title">Donate to Change Lives</h1>
+        <p class="donation-hero__subtitle">
+          Your generous support directly funds free Quran distributions, academic programs, local and digital dawah tables, and digital outreach to seekers of truth worldwide.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Grid Section -->
+  <section class="donation-content-section">
+    <div class="donation-container">
+      <div class="donation-grid">
+        
+        <!-- Left: Context, Impact Cards, and Quran Quote -->
+        <div class="donation-details-col">
+          <!-- Impact Cards Header -->
+          <div class="donation-section-header">
+            <span class="donation-eyebrow">WHERE YOUR FUNDS GO</span>
+            <h2 class="donation-section-title">Direct Educational Impact</h2>
+          </div>
+
+          <!-- Impact Cards List -->
+          <div class="donation-impact-list">
+            @for (card of impactCards; track card.title) {
+              <div class="donation-impact-card">
+                <div class="donation-impact-card__icon-wrapper" [ngClass]="'donation-impact-card__icon-wrapper--' + card.iconType">
+                  @if (card.iconType === 'dawah') {
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  } @else if (card.iconType === 'quran') {
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                  } @else if (card.iconType === 'academy') {
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                      <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path>
+                    </svg>
+                  }
+                </div>
+                <div class="donation-impact-card__info">
+                  <h3 class="donation-impact-card__title">{{ card.title }}</h3>
+                  <p class="donation-impact-card__desc">{{ card.description }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Quranic Quote Box -->
+          <div class="donation-quote-box">
+            <div class="donation-quote-box__icon">“</div>
+            <blockquote class="donation-quote-box__text">
+              The example of those who spend their wealth in the way of Allah is like a seed of grain which grows seven spikes; in each spike is a hundred grains. And Allah multiplies for whom He wills.
+            </blockquote>
+            <cite class="donation-quote-box__author">Surah Al-Baqarah, 2:261</cite>
+          </div>
+        </div>
+
+        <!-- Right: The Donation Widget Checkout Form -->
+        <div class="donation-form-col">
+          <div class="donation-checkout-wrapper">
+            <div class="donation-checkout-header">
+              <span class="donation-checkout-header__badge">SECURE PORTAL</span>
+              <h3 class="donation-checkout-header__title">Complete Your Donation</h3>
+              <p class="donation-checkout-header__subtitle">Enter your details securely below to finalize your contribution</p>
+            </div>
+
+            <!-- Loader State -->
+            @if (loadingScript && !showFallback) {
+              <div class="donation-loader">
+                <div class="donation-loader__spinner"></div>
+                <p class="donation-loader__text">Loading Secure Checkout...</p>
+                <button type="button" class="donation-loader__skip" (click)="forceFallback()">
+                  Taking too long? Click here to load iframe
+                </button>
+              </div>
+            }
+
+            <!-- Zeffy Form Embed -->
+            <div class="donation-embed-container" [class.donation-embed-container--hidden]="loadingScript && !showFallback">
+              
+              <!-- Standard Zeffy Script Placeholder Container -->
+              @if (!showFallback) {
+                <div data-zeffy-embed data-form-url="/embed/donation-form/donate-to-change-lives-14179"></div>
+              }
+
+              <!-- Zeffy Fallback Iframe (rendered if script fails or forced) -->
+              @if (showFallback) {
+                <div class="donation-iframe-wrapper">
+                  <iframe 
+                    title="Donation form powered by Zeffy" 
+                    src="https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179" 
+                    allowpaymentrequest 
+                    allowTransparency="true"
+                    class="donation-iframe">
+                  </iframe>
+                </div>
+              }
+            </div>
+
+            <!-- Checkout Footer Actions -->
+            <div class="donation-checkout-footer">
+              <p class="donation-checkout-footer__text">
+                Having issues loading the form? 
+                <a href="https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179" target="_blank" rel="noopener noreferrer" class="donation-checkout-footer__link">
+                  Open donation page in a new window
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Badges Bar -->
+  <section class="donation-trust-section">
+    <div class="donation-container">
+      <div class="donation-trust-grid">
+        @for (badge of trustBadges; track badge.title) {
+          <div class="donation-trust-card">
+            <div class="donation-trust-card__icon-wrapper">
+              @if (badge.iconType === 'security') {
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              } @else if (badge.iconType === 'fee') {
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              } @else if (badge.iconType === 'tax') {
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              }
+            </div>
+            <div class="donation-trust-card__info">
+              <h3 class="donation-trust-card__title">{{ badge.title }}</h3>
+              <p class="donation-trust-card__desc">{{ badge.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+</div>

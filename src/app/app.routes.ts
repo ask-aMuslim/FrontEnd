@@ -109,6 +109,14 @@ export const routes: Routes = [
         title: 'Resources',
       },
       {
+        path: 'donation',
+        loadComponent: () =>
+          import('./pages/donation/donation.component').then(
+            (m) => m.DonationComponent,
+          ),
+        title: 'Donate to Change Lives',
+      },
+      {
         path: 'question-and-answer',
         component: QuestionAndAnswerComponent,
         title: 'Question & Answer',
