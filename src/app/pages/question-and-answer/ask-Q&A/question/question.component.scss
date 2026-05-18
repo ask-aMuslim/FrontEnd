@@ -1,0 +1,60 @@
+.question {
+  font-size: 40px;
+  font-weight: 600;
+}
+
+.paragraph {
+  padding: 16px 24px;
+  background-color: var(--color-card-surface-primary);
+}
+
+.rich-content {
+  line-height: 1.6;
+
+  :where(p, div) {
+    margin: 0 0 0.75rem;
+  }
+
+  :where(p, div):last-child {
+    margin-bottom: 0;
+  }
+
+  :where(ul, ol) {
+    padding-inline-start: 1.25rem;
+    margin: 0 0 0.75rem;
+  }
+
+  :where(ul) {
+    list-style: disc;
+  }
+
+  :where(ol) {
+    list-style: decimal;
+  }
+
+  :where(li) {
+    margin: 0.25rem 0;
+  }
+
+  :where(blockquote) {
+    border-inline-start: 3px solid var(--color-button-secondary-normal);
+    margin: 0.75rem 0;
+    padding-inline-start: 0.75rem;
+    color: var(--color-text-caption);
+  }
+
+  :where(a) {
+    color: var(--color-button-primary-normal);
+    text-decoration: underline;
+  }
+}
+
+.rich-content--question {
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+
+  :where(p, div, h1, h2, h3, h4, h5, h6) {
+    margin: 0;
+  }
+}

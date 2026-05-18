@@ -9,6 +9,8 @@ export interface LessonReadDto {
     title?: string;
     description?: string;
     content?: string;
+    contentUrl?: string;
+    isPublished?: boolean;
     type?: number;
     videoUrl?: string;
     externalVideoUrl?: string;
@@ -22,8 +24,24 @@ export type UpdateLessonRequest = Record<string, unknown>;
 
 export interface LessonNote {
     id: string;
-    content: string;
-    createdAt: string;
+    lessonId?: string;
+    content?: string;
+    text?: string;
+    timestamp?: number | string;
+    studentId?: string;
+    createdAt?: string;
+}
+
+export interface UpdateStudentNotePayload {
+    text: string;
+    timestamp: number;
+}
+
+export interface CreateStudentQuestionPayload {
+    studentId: string;
+    lessonId: string;
+    questionText: string;
+    timestamp: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,7 +57,14 @@ export class LessonFacade {
     }
 
     getCourseLessons(courseId: string): Observable<LessonReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Lessons', { CourseId: courseId }), []).pipe(map(asArray<LessonReadDto>));
+        return extractData(
+            this.api.get<unknown>('/api/Lessons', {
+                CourseId: courseId,
+                PageNumber: 1,
+                PageSize: 1000,
+            }),
+            [],
+        ).pipe(map(asArray<LessonReadDto>));
     }
 
     createLesson(payload: CreateLessonRequest): Observable<LessonReadDto | null> {
@@ -62,8 +87,25 @@ export class LessonFacade {
         return extractData(this.api.get<unknown>(`/api/StudentNotes/by-lesson/${lessonId}`), []).pipe(map(asArray<LessonNote>));
     }
 
-    addNote(lessonId: string, content: string): Observable<LessonNote | null> {
-        return extractData(this.api.post<unknown>('/api/StudentNotes', { lessonId, content }), null);
+    getNotesByStudent(studentId: string): Observable<LessonNote[]> {
+        return extractData(this.api.get<unknown>(`/api/StudentNotes/by-student/${studentId}`), []).pipe(map(asArray<LessonNote>));
+    }
+
+    addNote(lessonId: string, studentId: string, text: string, timestamp: number): Observable<LessonNote | null> {
+        return extractData(this.api.post<unknown>('/api/StudentNotes', {
+            lessonId,
+            studentId,
+            text,
+            timestamp,
+        }), null);
+    }
+
+    createStudentQuestion(payload: CreateStudentQuestionPayload): Observable<boolean> {
+        return this.api.post<unknown>('/api/StudentQuestions', payload).pipe(map(() => true));
+    }
+
+    updateNote(noteId: string, payload: UpdateStudentNotePayload): Observable<boolean> {
+        return this.api.put<unknown>(`/api/StudentNotes/${noteId}`, payload).pipe(map(() => true));
     }
 
     deleteNote(noteId: string): Observable<boolean> {

@@ -1,0 +1,103 @@
+<div class="meet-scholar-review-step space-y-5 md:space-y-6 px-2 md:px-0">
+  <div class="meet-scholar-review-step__details-card bg-(--color-card-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4">
+    <h2 class="meet-scholar-review-step__section-title">Booking Details</h2>
+
+    <div class="meet-scholar-review-step__details-list space-y-2">
+      <div class="meet-scholar-review-step__detail-row booking-item-row">
+        <span class="meet-scholar-review-step__detail-label booking-label">Name:</span>
+        <p class="meet-scholar-review-step__detail-value booking-value text-(--color-text-title)">
+          {{ form().get('name')?.value || '-' }}
+        </p>
+      </div>
+
+      <div class="meet-scholar-review-step__detail-row booking-item-row">
+        <span class="meet-scholar-review-step__detail-label booking-label">Email:</span>
+        <p class="meet-scholar-review-step__detail-value booking-value text-(--color-text-title)">
+          {{ form().get('email')?.value || '-' }}
+        </p>
+      </div>
+
+      <div class="meet-scholar-review-step__detail-row booking-item-row">
+        <span class="meet-scholar-review-step__detail-label booking-label">Subject:</span>
+        <p class="meet-scholar-review-step__detail-value booking-value text-(--color-text-title)">
+          {{ getTopicLabel(form().get('topic')?.value) }}
+        </p>
+      </div>
+
+      <div class="meet-scholar-review-step__detail-row booking-item-row">
+        <span class="meet-scholar-review-step__detail-label booking-label">Duration:</span>
+        <p class="meet-scholar-review-step__detail-value booking-value text-var(--color-text-title)">
+          {{ form().get('durationMinutes')?.value }} minutes
+        </p>
+      </div>
+
+      <div class="meet-scholar-review-step__detail-row booking-item-row">
+        <span class="meet-scholar-review-step__detail-label booking-label">Languages:</span>
+        <div class="meet-scholar-review-step__language-list flex flex-wrap gap-2">
+          @for (lang of selectedLanguages(); track lang) {
+            <span
+              class="meet-scholar-review-step__language-chip booking-value inline-flex items-center px-3 py-1 bg-primary-100 text-primary-700 rounded-full"
+            >
+              {{ lang.label }}
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (form().get('scheduledDate')?.value) {
+        <div class="meet-scholar-review-step__detail-row booking-item-row">
+          <span class="meet-scholar-review-step__detail-label booking-label">Preferred Date:</span>
+          <p class="meet-scholar-review-step__detail-value booking-value text-text-title">
+            {{ form().get('scheduledDate')?.value | date: 'fullDate' }}
+          </p>
+        </div>
+      }
+
+      @if (form().get('scheduledTime')?.value) {
+        <div class="meet-scholar-review-step__detail-row booking-item-row">
+          <span class="meet-scholar-review-step__detail-label booking-label">Preferred Time:</span>
+          <p class="meet-scholar-review-step__detail-value booking-value text-text-title">{{ form().get('scheduledTime')?.value }}</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div
+    class="meet-scholar-review-step__message-card mt-4 md:mt-6 mb-8 md:mb-10 bg-(--color-card-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4"
+  >
+    <h2 class="meet-scholar-review-step__section-title">Your Message</h2>
+    <p
+      class="meet-scholar-review-step__message-text mt-4 md:mt-6 mb-6 md:mb-10 text-(--color-text-title) text-sm md:text-[14px] font-normal"
+    >
+      {{ form().get('message')?.value }}
+    </p>
+  </div>
+
+  <div class="meet-scholar-review-step__actions flex flex-col sm:flex-row gap-3 justify-between mb-5">
+    <button
+      type="button"
+      (click)="onBack()"
+      class="meet-scholar-review-step__back-button px-6 md:px-8 py-3 border border-gray-300 text-text-body font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 cursor-pointer justify-center"
+    >
+      <img [src]="leftArrowIcon" alt="Back" class="meet-scholar-review-step__back-icon" />
+      Back
+    </button>
+    <button
+      type="button"
+      (click)="onSubmit()"
+      [disabled]="isSubmitting()"
+      class="meet-scholar-review-step__submit-button button w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      @if (!isSubmitting()) {
+        <span>Confirm Booking</span>
+      }
+      @if (isSubmitting()) {
+        <span>Submitting...</span>
+      }
+    </button>
+  </div>
+
+  @if (submitError()) {
+    <p class="meet-scholar-review-step__error text-sm text-(--color-error)">{{ submitError() }}</p>
+  }
+</div>

@@ -1,0 +1,5 @@
+@use "../edit-form.shared";
+
+.edit-form__input:disabled {
+  background-color: #e5e7eb;
+}

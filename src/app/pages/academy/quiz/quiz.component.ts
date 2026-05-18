@@ -2,17 +2,23 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject, forkJoin, interval, of } from 'rxjs';
+import { Observable, Subject, combineLatest, forkJoin, interval, of } from 'rxjs';
 import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { ScrollService } from '../../../core/services/scroll.service';
 import { QuestionsService } from '../../../core/services/questions.service';
 import { OptionsService } from '../../../core/services/options.service';
+import { QuizAttemptsService } from '../../../core/services/quiz-attempts.service';
+import { QuizAnswerDto } from '../../../api/models/quiz-answer-dto';
+import { ACADEMY_COURSES, ACADEMY_LESSONS } from '../../../core/services/academy-data';
+import { AcademyCourse, AcademyLesson, LessonProgress } from '../../../core/models/interfaces/academy-progress.model';
 import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
+import { AcademySidebarLessonItem } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
+import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 
 // Quiz Question Interface
 interface QuizQuestion {
@@ -31,6 +37,8 @@ interface QuizOption {
     readonly text: string;
 }
 
+type SidebarLessonType = 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
+
 interface QuizAnswer {
     readonly questionId: string;
     readonly selectedOptionId: string | null;
@@ -38,13 +46,38 @@ interface QuizAnswer {
     readonly isSkipped: boolean;
 }
 
-type QuizState = 'intro' | 'in-progress' | 'review' | 'completed' | 'results';
-type QuizTarget = 1 | 2 | 3;
+interface StoredQuizAnswer {
+    readonly questionId: string;
+    readonly questionIndex?: number;
+    readonly selectedOptionId: string | null;
+    readonly isCorrect?: boolean;
+    readonly isSkipped: boolean;
+}
+
+interface StoredQuizResult {
+    readonly completed: boolean;
+    readonly score: number;
+    readonly passed: boolean;
+    readonly completionTime: number;
+    readonly timestamp: string;
+    readonly questionCount: number;
+    readonly answers: readonly StoredQuizAnswer[];
+}
+
+type QuizState = 'intro' | 'in-progress' | 'review' | 'results';
+
+interface CourseInfo {
+    stage: number | null;
+    title: string;
+    totalLessons: number | null;
+    currentLesson: number | null;
+    duration: string;
+}
 
 @Component({
     selector: 'app-quiz',
     standalone: true,
-    imports: [FormsModule, AcademyPageShellComponent],
+    imports: [FormsModule, AcademyPageShellComponent, AcademySidebarHostComponent],
     templateUrl: './quiz.component.html',
     styleUrls: ['./quiz.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,30 +85,39 @@ type QuizTarget = 1 | 2 | 3;
 export class QuizComponent implements OnInit, OnDestroy {
     private static readonly optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
     private static readonly questionNumberOffset = 1;
+    private static readonly syntheticQuizLessonPrefix = 'synthetic-quiz-';
+    private static readonly questionsPageSize = 1000;
     // Route params
     courseId = '';
     lessonId = '';
+    currentCourse: AcademyCourse | undefined;
 
-    readonly bannerImageUrl = '/backgrounds/course-background.png';
+    get bannerImageUrl(): string {
+        return this.currentCourse?.thumbnailUrl || '/backgrounds/course-background.png';
+    }
+
+    get bannerAlt(): string {
+        return 'Quiz background';
+    }
+
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
+
         { label: 'Academy', link: ['/academy'] },
     ];
 
     // Course info
-    readonly courseInfo = signal({
-        stage: 1,
-        code: 'A2',
-        title: 'Prayer (Salah)',
-        totalLessons: 5,
-        currentLesson: 5,
-        duration: '4h 10m'
+    readonly courseInfo = signal<CourseInfo>({
+        stage: null,
+        title: '',
+        totalLessons: null,
+        currentLesson: null,
+        duration: '',
     });
 
     // Quiz configuration
     readonly quizConfig = {
         totalQuestions: 10,
         timePerQuestion: 600, // seconds (10 minutes - exact Figma requirement)
-        passingScore: 8
     };
 
     // Quiz state
@@ -98,16 +140,35 @@ export class QuizComponent implements OnInit, OnDestroy {
     // Quiz data
     readonly questions = signal<QuizQuestion[]>([]);
     readonly activeQuizId = signal<string | null>(null);
+    readonly activeAttemptId = signal<string | null>(null);
     readonly answers = signal<QuizAnswer[]>([]);
 
     // Computed values
     readonly currentQuestion = computed(() => this.questions()[this.currentQuestionIndex()]);
     readonly isLastQuestion = computed(() => this.currentQuestionIndex() === this.questions().length - 1);
     readonly isFirstQuestion = computed(() => this.currentQuestionIndex() === 0);
+    readonly displayQuestionCount = computed(() =>
+        this.questions().length > 0
+            ? this.questions().length
+            : this.quizConfig.totalQuestions,
+    );
 
     readonly correctAnswersCount = computed(() =>
         this.answers().filter(a => a.isCorrect).length
     );
+
+    readonly effectiveCorrectAnswersCount = computed(() => {
+        const restoredResult = this.restoredQuizResult;
+        const hasAnsweredQuestions = this.answers().some(
+            (answer) => answer.selectedOptionId !== null || answer.isSkipped,
+        );
+
+        if ((this.quizState() === 'results' || this.quizState() === 'review') && !hasAnsweredQuestions && restoredResult?.completed) {
+            return restoredResult.score;
+        }
+
+        return this.correctAnswersCount();
+    });
 
     readonly wrongAnswersCount = computed(() =>
         this.answers().filter(a => !a.isCorrect && !a.isSkipped).length
@@ -118,14 +179,39 @@ export class QuizComponent implements OnInit, OnDestroy {
     );
 
     readonly scorePercentage = computed(() => {
-        const total = this.questions().length;
+        const restoredResult = this.restoredQuizResult;
+        const total = this.questions().length || restoredResult?.questionCount || this.quizConfig.totalQuestions;
         if (total === 0) return 0;
-        return Math.round((this.correctAnswersCount() / total) * 100);
+        return Math.round((this.effectiveCorrectAnswersCount() / total) * 100);
+    });
+
+    readonly requiredPassingScore = computed(() => {
+        const restoredResult = this.restoredQuizResult;
+        const total = this.questions().length || restoredResult?.questionCount || this.quizConfig.totalQuestions;
+        return Math.ceil(total * 0.5);
     });
 
     readonly hasPassed = computed(() =>
-        this.correctAnswersCount() >= this.quizConfig.passingScore
+        this.effectiveCorrectAnswersCount() >= this.requiredPassingScore()
     );
+
+    readonly hasSuccessfulDegree = computed(() => {
+        const hasAnsweredQuestions = this.answers().some(
+            (answer) => answer.selectedOptionId !== null || answer.isSkipped,
+        );
+
+        if ((this.quizState() === 'results' || this.quizState() === 'review') && this.restoredQuizResult?.completed) {
+            if (this.restoredQuizResult.passed) {
+                return true;
+            }
+
+            if (!hasAnsweredQuestions) {
+                return this.restoredQuizResult.score >= this.requiredPassingScore();
+            }
+        }
+
+        return this.hasPassed();
+    });
 
     readonly formattedTime = computed(() => {
         const minutes = Math.floor(this.timeRemaining() / 60);
@@ -145,6 +231,11 @@ export class QuizComponent implements OnInit, OnDestroy {
         return (percentage / 100) * 270;
     });
 
+    readonly nextQuizLessonId = computed(() => this.resolveNextQuizLessonId());
+    readonly nextPassedActionLabel = computed(() =>
+        this.nextQuizLessonId() ? 'Next Quiz' : 'Pass',
+    );
+
     readonly formattedCompletionTime = computed(() => {
         const totalSeconds = this.quizCompletionTime();
         const minutes = Math.floor(totalSeconds / 60);
@@ -159,23 +250,17 @@ export class QuizComponent implements OnInit, OnDestroy {
     });
 
     // Lessons for sidebar
-    readonly lessons = signal<Array<{
-        id: string;
-        title: string;
-        duration: string;
-        type: 'intro' | 'video' | 'article' | 'quiz' | 'audio';
-        isCompleted: boolean;
-        isCurrent?: boolean;
-        hasNotification?: boolean;
-    }>>([]);
-
-    // Passed/Completed state
-    readonly userRating = signal<number>(0);
-    readonly userFeedback = signal<string>('');
-    readonly nextCourseName = signal<string>('Prophet Mohamed\'s Journey');
+    readonly lessons = signal<AcademySidebarLessonItem[]>([]);
+    readonly courseLessons = signal<Array<AcademyLesson & { progress: LessonProgress }>>([]);
+    private courseQuizTitle = 'Quiz';
+    private courseQuizLessonId: string | null = null;
 
     private readonly destroy$ = new Subject<void>();
     private timerSubscription?: Subject<void>;
+    private isFinishingQuiz = false;
+    private hasSyncedPassedQuizCompletion = false;
+    private readonly isBrowser: boolean;
+    private restoredQuizResult: StoredQuizResult | null = null;
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -183,19 +268,26 @@ export class QuizComponent implements OnInit, OnDestroy {
         private readonly quizzesService: QuizzesService,
         private readonly questionsService: QuestionsService,
         private readonly optionsService: OptionsService,
+        private readonly quizAttemptsService: QuizAttemptsService,
         private readonly academyProgressService: AcademyProgressService,
         private readonly scrollService: ScrollService,
         @Inject(PLATFORM_ID) private readonly platformId: object
-    ) { }
+    ) {
+        this.isBrowser = isPlatformBrowser(this.platformId);
+    }
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
-        return [
-            ...this.breadcrumbsBase,
-            {
-                label: `Course ${this.courseInfo().code}: ${this.courseInfo().title}`,
-                link: ['/academy/course', this.courseId],
-            },
-        ];
+        const courseTitle = this.courseInfo().title.trim();
+
+        return courseTitle.length > 0
+            ? [
+                ...this.breadcrumbsBase,
+                {
+                    label: courseTitle,
+                    link: ['/academy/course', this.courseId],
+                },
+            ]
+            : [...this.breadcrumbsBase];
     }
 
     get currentBreadcrumb(): string {
@@ -210,15 +302,38 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
             this.courseId = params.get('courseId') || '';
             this.lessonId = params.get('lessonId') || '';
+            this.resetQuizStateForRoute();
             this.loadCourseInfo();
             this.loadQuizData();
             this.checkPreviousCompletion();
         });
     }
 
+    private resetQuizStateForRoute(): void {
+        this.stopTimer();
+        this.isFinishingQuiz = false;
+        this.hasSyncedPassedQuizCompletion = false;
+        this.quizStartTime = 0;
+        this.restoredQuizResult = null;
+
+        this.quizState.set('intro');
+        this.currentQuestionIndex.set(0);
+        this.timeRemaining.set(this.quizConfig.timePerQuestion);
+        this.showHint.set(false);
+        this.selectedOptionId.set(null);
+
+        this.activeQuizId.set(null);
+        this.activeAttemptId.set(null);
+        this.questions.set([]);
+        this.answers.set([]);
+        this.courseLessons.set([]);
+
+        this.quizCompletionTime.set(0);
+    }
+
     private checkPreviousCompletion(): void {
         // Only access localStorage in browser environment
-        if (!isPlatformBrowser(this.platformId)) {
+        if (!this.isBrowser) {
             return;
         }
 
@@ -226,21 +341,23 @@ export class QuizComponent implements OnInit, OnDestroy {
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
         const storedData = localStorage.getItem(storageKey);
 
-        if (storedData) {
-            try {
-                const data = JSON.parse(storedData);
-                if (data.completed && data.score !== undefined) {
-                    this.previousScore.set(data.score);
-                    this.previousCompletionTime.set(data.completionTime || 0);
-                    this.wasPreviouslyPassed.set(data.passed || false);
-                    this.quizState.set('results');
-                }
-            } catch {
-                this.previousScore.set(0);
-                this.previousCompletionTime.set(0);
-                this.wasPreviouslyPassed.set(false);
-            }
+        if (!storedData) {
+            return;
         }
+
+        const parsedResult = this.parseStoredQuizResult(storedData);
+        if (!parsedResult?.completed) {
+            this.previousScore.set(0);
+            this.previousCompletionTime.set(0);
+            this.wasPreviouslyPassed.set(false);
+            return;
+        }
+
+        this.restoredQuizResult = parsedResult;
+        this.previousScore.set(parsedResult.score);
+        this.previousCompletionTime.set(parsedResult.completionTime);
+        this.wasPreviouslyPassed.set(parsedResult.passed);
+        this.quizCompletionTime.set(parsedResult.completionTime);
     }
 
     ngOnDestroy(): void {
@@ -253,11 +370,12 @@ export class QuizComponent implements OnInit, OnDestroy {
         if (!this.courseId) return;
 
         // Load course info from academy progress service
-        const course = this.academyProgressService.getCourseById(this.courseId);
+        const course = this.academyProgressService.getCourseById(this.courseId)
+            ?? ACADEMY_COURSES.find((item) => item.id === this.courseId);
         if (course) {
+            this.currentCourse = course;
             this.courseInfo.set({
                 stage: course.stageId,
-                code: course.id.split('-')[1]?.toUpperCase() || 'A2',
                 title: course.title,
                 totalLessons: course.lessons,
                 currentLesson: course.lessons,
@@ -265,20 +383,63 @@ export class QuizComponent implements OnInit, OnDestroy {
             });
         }
 
-        this.academyProgressService.getCourseLessonsWithProgress(this.courseId)
+        const staticLessons = this.getStaticLessonsForCourse();
+        if (staticLessons.length > 0 && this.lessons().length === 0) {
+            this.lessons.set(staticLessons.map((lesson) => this.mapStaticLessonToSidebarLesson(lesson)));
+
+            const staticQuizLesson = staticLessons.find((lesson) => lesson.type === 'quiz');
+            if (staticQuizLesson) {
+                this.courseQuizTitle = staticQuizLesson.title;
+                this.courseQuizLessonId = staticQuizLesson.id;
+            }
+        }
+
+        combineLatest([
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
+            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
+        ])
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (lessons) => {
+                next: ([lessons, quizzes]) => {
+                    this.courseLessons.set(lessons);
+
+                    const quizLesson = lessons.find((lesson) => this.mapLessonType(lesson.type) === 'quiz');
+                    const linkedCourseQuiz = quizLesson
+                        ? quizzes.find((quiz) => quiz.lessonId === quizLesson.id)
+                        : undefined;
+                    const fallbackCourseQuiz = linkedCourseQuiz
+                        ?? quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0)
+                        ?? null;
+
+                    this.courseQuizTitle = fallbackCourseQuiz?.title?.trim() || 'Quiz';
+                    this.courseQuizLessonId = linkedCourseQuiz?.lessonId?.trim() || quizLesson?.id || null;
+
+                    const aggregatedDuration = this.academyProgressService.calculateCourseVideoDuration(
+                        lessons,
+                        this.courseInfo().duration,
+                    );
+
+                    this.courseInfo.update((current) => ({
+                        ...current,
+                        totalLessons: lessons.length,
+                        currentLesson: lessons.length,
+                        duration: aggregatedDuration,
+                    }));
+
                     this.lessons.set(lessons.map((lesson) => {
                         const lessonType = this.mapLessonType(lesson.type);
                         return {
                             id: lesson.id,
-                            title: lesson.title,
-                            duration: lesson.duration,
+                            quizLessonId: lessonType === 'quiz'
+                                ? (this.courseQuizLessonId ?? lesson.id)
+                                : undefined,
+                            title: lessonType === 'quiz' ? this.courseQuizTitle : lesson.title,
+                            duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
                             type: lessonType,
                             isCompleted: lesson.progress.status === 'completed',
-                            isCurrent: lesson.progress.status === 'current',
-                            hasNotification: lesson.progress.status === 'current'
+                            isLocked: lesson.progress.status === 'locked',
+                            isCurrent: lessonType === 'quiz',
+                            hasNotification: false
                         };
                     }));
                 },
@@ -288,18 +449,40 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     private loadQuizData(): void {
         const query = this.lessonId
-            ? { lessonId: this.lessonId, pageSize: 50 }
-            : { courseId: this.courseId, pageSize: 50 };
+            ? { lessonId: this.lessonId, pageNumber: 1, pageSize: 200 }
+            : { courseId: this.courseId, pageNumber: 1, pageSize: 200 };
 
         this.quizzesService.getAll(query)
             .pipe(
                 switchMap((quizzes) => {
+                    const hasQuizzes = quizzes.length > 0;
+                    const canFallbackToQuizLesson = !hasQuizzes && !this.lessonId && !!this.courseId;
+
+                    if (!canFallbackToQuizLesson) {
+                        return of(quizzes);
+                    }
+
+                    return this.academyProgressService.getAcademyLessons(this.courseId).pipe(
+                        map((lessons) => lessons.find((lesson) => lesson.type === 'quiz')?.id ?? null),
+                        switchMap((quizLessonId) => {
+                            if (!quizLessonId) {
+                                return of(quizzes);
+                            }
+
+                            return this.quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 });
+                        }),
+                        catchError(() => of(quizzes)),
+                    );
+                }),
+                switchMap((quizzes) => {
                     const activeQuiz = quizzes[0];
                     if (!activeQuiz?.id) {
+                        this.syncSidebarQuizLesson(null);
                         return of([] as QuizQuestion[]);
                     }
 
                     this.activeQuizId.set(activeQuiz.id);
+                    this.syncSidebarQuizLesson(activeQuiz);
                     return this.buildQuestionsFromQuizId(activeQuiz.id);
                 }),
                 catchError(() => of([] as QuizQuestion[])),
@@ -308,11 +491,15 @@ export class QuizComponent implements OnInit, OnDestroy {
             .subscribe((questions: QuizQuestion[]) => {
                 this.questions.set(questions);
                 this.initializeAnswers(questions);
+                this.restoreQuizResultFromStorage(questions);
             });
     }
 
     private buildQuestionsFromQuizId(quizId: string): Observable<QuizQuestion[]> {
-        return this.questionsService.getAllByQuizId(quizId).pipe(
+        return this.questionsService.getAllByQuizId(quizId, {
+            pageNumber: 1,
+            pageSize: QuizComponent.questionsPageSize,
+        }).pipe(
             switchMap((questions) => {
                 if (!questions.length) {
                     return of([] as QuizQuestion[]);
@@ -340,11 +527,19 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.answers.set(initialAnswers);
     }
 
+    private resetAnswersToDefault(): void {
+        this.initializeAnswers(this.questions());
+    }
+
     // Quiz Actions
     startQuiz(): void {
         if (this.questions().length === 0) {
             return;
         }
+
+        this.markLastPublishedLessonCompletedForQuizStart();
+
+        this.isFinishingQuiz = false;
         this.quizState.set('in-progress');
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
@@ -355,14 +550,14 @@ export class QuizComponent implements OnInit, OnDestroy {
         // Timer starts with quiz - 10 minutes total for entire quiz
         this.startTimer();
 
-        const payload = this.buildQuizCreationPayload();
-        if (payload) {
-            this.quizzesService
-                .create(payload)
+        const quizId = this.activeQuizId();
+        if (quizId) {
+            this.quizAttemptsService
+                .startAttemptForQuiz(quizId)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
-                    next: () => void 0,
-                    error: () => void 0,
+                    next: (attemptId) => this.activeAttemptId.set(attemptId),
+                    error: () => this.activeAttemptId.set(null),
                 });
         }
     }
@@ -454,6 +649,10 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     private finishQuiz(): void {
+        if (this.isFinishingQuiz) {
+            return;
+        }
+        this.isFinishingQuiz = true;
         this.stopTimer();
 
         // Calculate completion time
@@ -466,70 +665,110 @@ export class QuizComponent implements OnInit, OnDestroy {
 
         // Save quiz results to localStorage
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
-        const quizData = {
+        const quizData: StoredQuizResult = {
             completed: true,
             score: this.correctAnswersCount(),
             passed: this.hasPassed(),
             completionTime: this.quizCompletionTime(),
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            questionCount: this.questions().length,
+            answers: this.answers().map((answer, index) => ({
+                questionId: answer.questionId,
+                questionIndex: index,
+                selectedOptionId: answer.selectedOptionId,
+                isCorrect: answer.isCorrect,
+                isSkipped: answer.isSkipped,
+            })),
         };
-        localStorage.setItem(storageKey, JSON.stringify(quizData));
+        if (this.isBrowser) {
+            localStorage.setItem(storageKey, JSON.stringify(quizData));
+        }
+
+        if (this.hasPassed()) {
+            this.syncPassedQuizCompletion();
+        }
+
+        const attemptId = this.activeAttemptId();
+        if (attemptId) {
+            this.activeAttemptId.set(null);
+            const answersPayload = this.buildQuizAnswerPayload();
+            const allQuestionsAnswered = answersPayload.length === this.questions().length;
+            if (allQuestionsAnswered) {
+                this.quizAttemptsService
+                    .completeAttempt(attemptId, answersPayload)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: () => void 0,
+                        error: () => void 0,
+                    });
+            }
+        }
 
     }
 
     retakeQuiz(): void {
-        // Reset all answers
-        const resetAnswers = this.answers().map(a => ({
-            ...a,
-            selectedOptionId: null,
-            isCorrect: false,
-            isSkipped: false
-        }));
-        this.answers.set(resetAnswers);
+        this.resetAnswersToDefault();
+        this.activeAttemptId.set(null);
+        this.isFinishingQuiz = false;
+        this.hasSyncedPassedQuizCompletion = false;
+        this.currentQuestionIndex.set(0);
+        this.selectedOptionId.set(null);
+        this.showHint.set(false);
         // Scroll to top when starting to retake quiz
         this.scrollService.scrollToTop();
         this.startQuiz();
     }
 
-    completeQuiz(): void {
-        if (this.hasPassed()) {
-            this.quizState.set('completed');
-        } else {
-            this.retakeQuiz();
+    onPassedNextActionClick(): void {
+        if (!this.hasSuccessfulDegree()) {
+            return;
         }
-    }
 
-    goToNextCourse(): void {
-        // Navigate to next course
-        this.router.navigate(['/academy']);
+        this.syncPassedQuizCompletion();
+
+        const nextQuizLessonId = this.nextQuizLessonId();
+
+        if (nextQuizLessonId) {
+            void this.router.navigate(['/academy/course', this.courseId, 'quiz', nextQuizLessonId]);
+            return;
+        }
+
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+
+        void this.router.navigate(['/academy/course', this.courseId, 'congratulations'], {
+            queryParams: currentQuizLessonId ? { lessonId: currentQuizLessonId } : {},
+        });
     }
 
     goToPreviousLesson(): void {
-        // Navigate back to the course page
-        this.router.navigate(['/academy/course', this.courseId]);
-    }
-
-    setRating(rating: number): void {
-        this.userRating.set(rating);
-    }
-
-    updateFeedback(value: string): void {
-        this.userFeedback.set(value);
-    }
-
-    submitFeedback(): void {
-        const feedback = this.userFeedback();
-        const rating = this.userRating();
-
-        // Send feedback and rating to backend via API service
-        if (rating > 0 || feedback.trim().length > 0) {
-            // Feedback submission would be integrated with backend API
-            // placeholder for future implementation
+        const lastLessonId = this.resolveLastPublishedLessonIdBeforeCurrentQuiz();
+        if (lastLessonId) {
+            void this.router.navigate(['/academy/course', this.courseId, 'lesson', lastLessonId]);
+            return;
         }
 
-        // Clear the feedback
-        this.userFeedback.set('');
-        this.userRating.set(0);
+        // Fallback to the course page if a previous lesson cannot be resolved.
+        void this.router.navigate(['/academy/course', this.courseId]);
+    }
+
+    onLessonSelect(lesson: AcademySidebarLessonItem): void {
+        // Navigate to the selected lesson or quiz
+        if (lesson.type === 'quiz') {
+            const targetQuizLessonId = lesson.quizLessonId && lesson.quizLessonId !== this.courseId
+                ? lesson.quizLessonId
+                : this.resolveCurrentQuizLessonId();
+            if (targetQuizLessonId) {
+                void this.router.navigate(['/academy/course', this.courseId, 'quiz', targetQuizLessonId]);
+                return;
+            }
+
+            void this.router.navigate(['quiz'], {
+                relativeTo: this.route.parent,
+            });
+        } else {
+            // Navigate to lesson - use absolute path to course/lesson
+            void this.router.navigate(['/academy/course', this.courseId, 'lesson', lesson.id]);
+        }
     }
 
     // Timer methods
@@ -541,9 +780,10 @@ export class QuizComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.timerSubscription), takeUntil(this.destroy$))
             .subscribe(() => {
                 const current = this.timeRemaining();
-                if (current > 0) {
+                if (current > 1) {
                     this.timeRemaining.set(current - 1);
                 } else {
+                    this.timeRemaining.set(0);
                     // Time's up - finish the entire quiz
                     this.finishQuiz();
                 }
@@ -585,6 +825,14 @@ export class QuizComponent implements OnInit, OnDestroy {
         return '';
     }
 
+    isWrongSelectedOption(
+        question: QuizQuestion,
+        answer: QuizAnswer | undefined,
+        optionId: string,
+    ): boolean {
+        return answer?.selectedOptionId === optionId && optionId !== question.correctOptionId;
+    }
+
     trackByQuestionId(_index: number, question: QuizQuestion): string {
         return question.id;
     }
@@ -600,44 +848,451 @@ export class QuizComponent implements OnInit, OnDestroy {
     goToCertificPage(): void {
         this.router.navigate(['/academy/course', this.courseId, 'certificate']);
     }
-    private mapLessonType(value: unknown): 'intro' | 'video' | 'article' | 'quiz' | 'audio' {
-        if (value === 'quiz' || value === 4) return 'quiz';
-        if (value === 'article' || value === 3) return 'article';
-        if (value === 'audio') return 'audio';
+
+    private markCurrentQuizLessonCompleted(onCompletion: () => void): void {
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+        if (!currentQuizLessonId) {
+            onCompletion();
+            return;
+        }
+
+        this.updateLocalLessonCompletionState(currentQuizLessonId);
+
+        this.academyProgressService
+            .markLessonCompleted(currentQuizLessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    onCompletion();
+                },
+                error: () => {
+                    onCompletion();
+                },
+            });
+    }
+
+    private markLastPublishedLessonCompletedForQuizStart(): void {
+        const lastPublishedLessonId = this.resolveLastPublishedLessonIdBeforeCurrentQuiz();
+        if (!lastPublishedLessonId) {
+            return;
+        }
+
+        const isAlreadyCompleted = this.courseLessons().some((lesson) => {
+            return lesson.id === lastPublishedLessonId && lesson.progress.isCompleted;
+        }) || this.lessons().some((lesson) => {
+            return lesson.id === lastPublishedLessonId && lesson.isCompleted;
+        });
+
+        if (isAlreadyCompleted) {
+            return;
+        }
+
+        this.updateLocalLessonCompletionState(lastPublishedLessonId);
+        this.academyProgressService
+            .markLessonCompleted(lastPublishedLessonId, this.courseId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => void 0,
+                error: () => void 0,
+            });
+    }
+
+    private resolveLastPublishedLessonIdBeforeCurrentQuiz(): string | null {
+        const orderedCourseLessons = [...this.courseLessons()]
+            .slice()
+            .sort((left, right) => left.order - right.order);
+
+        const dynamicLessonId = this.resolveLastPublishedLessonIdFromOrderedList(
+            orderedCourseLessons.map((lesson) => ({ id: lesson.id, type: lesson.type })),
+        );
+        if (dynamicLessonId) {
+            return dynamicLessonId;
+        }
+
+        const orderedStaticLessons = this.getStaticLessonsForCourse()
+            .slice()
+            .sort((left, right) => left.order - right.order);
+
+        return this.resolveLastPublishedLessonIdFromOrderedList(
+            orderedStaticLessons.map((lesson) => ({ id: lesson.id, type: lesson.type })),
+        );
+    }
+
+    private resolveLastPublishedLessonIdFromOrderedList(
+        orderedLessons: ReadonlyArray<{ id: string; type: AcademyLesson['type'] }>,
+    ): string | null {
+        if (orderedLessons.length === 0) {
+            return null;
+        }
+
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+        const nonQuizLessons = orderedLessons.filter((lesson) => this.mapLessonType(lesson.type) !== 'quiz');
+
+        if (!currentQuizLessonId) {
+            return nonQuizLessons.at(-1)?.id ?? null;
+        }
+
+        const currentQuizIndex = orderedLessons.findIndex((lesson) => {
+            return lesson.id === currentQuizLessonId && this.mapLessonType(lesson.type) === 'quiz';
+        });
+
+        if (currentQuizIndex > 0) {
+            const lessonsBeforeQuiz = orderedLessons
+                .slice(0, currentQuizIndex)
+                .filter((lesson) => this.mapLessonType(lesson.type) !== 'quiz');
+            return lessonsBeforeQuiz.at(-1)?.id ?? null;
+        }
+
+        return nonQuizLessons.at(-1)?.id ?? null;
+    }
+
+    private updateLocalLessonCompletionState(lessonId: string): void {
+        this.courseLessons.update((currentLessons) => {
+            return currentLessons.map((lesson) => {
+                if (lesson.id !== lessonId) {
+                    return lesson;
+                }
+
+                return {
+                    ...lesson,
+                    progress: {
+                        ...lesson.progress,
+                        isCompleted: true,
+                        status: 'completed',
+                    },
+                };
+            });
+        });
+
+        this.lessons.update((currentLessons) => {
+            return currentLessons.map((lesson) => {
+                const resolvedLessonId = lesson.quizLessonId ?? lesson.id;
+                if (lesson.id !== lessonId && resolvedLessonId !== lessonId) {
+                    return lesson;
+                }
+
+                return {
+                    ...lesson,
+                    isCompleted: true,
+                };
+            });
+        });
+    }
+
+    private syncPassedQuizCompletion(): void {
+        if (this.hasSyncedPassedQuizCompletion || !this.hasSuccessfulDegree()) {
+            return;
+        }
+
+        this.hasSyncedPassedQuizCompletion = true;
+
+        const nextQuizLessonId = this.nextQuizLessonId();
+        this.markCurrentQuizLessonCompleted(() => {
+            if (!nextQuizLessonId) {
+                this.academyProgressService.markCourseQuizPassed(this.courseId);
+            }
+        });
+    }
+
+    private updateSidebarQuizCompletionState(completedQuizLessonId: string): void {
+        this.lessons.update((currentLessons) => currentLessons.map((lesson) => {
+            if (lesson.type !== 'quiz') {
+                return lesson;
+            }
+
+            const lessonId = lesson.quizLessonId ?? lesson.id;
+            if (lessonId !== completedQuizLessonId) {
+                return lesson;
+            }
+
+            return {
+                ...lesson,
+                isCompleted: true,
+            };
+        }));
+    }
+
+    private resolveCurrentQuizLessonId(): string | null {
+        const routeLessonId = this.lessonId.trim();
+        if (routeLessonId.length > 0) {
+            return routeLessonId;
+        }
+
+        const sidebarQuizLessonId = this.courseQuizLessonId?.trim() ?? '';
+        if (sidebarQuizLessonId.length > 0) {
+            return sidebarQuizLessonId;
+        }
+
+        return this.getOrderedQuizLessonIds()[0] ?? null;
+    }
+
+    private resolveNextQuizLessonId(): string | null {
+        const orderedQuizLessonIds = this.getOrderedQuizLessonIds();
+        if (orderedQuizLessonIds.length <= 1) {
+            return null;
+        }
+
+        const currentQuizLessonId = this.resolveCurrentQuizLessonId();
+        const resolvedCurrentQuizLessonId = currentQuizLessonId && orderedQuizLessonIds.includes(currentQuizLessonId)
+            ? currentQuizLessonId
+            : orderedQuizLessonIds[0];
+        const currentQuizIndex = orderedQuizLessonIds.indexOf(resolvedCurrentQuizLessonId);
+
+        if (currentQuizIndex < 0 || currentQuizIndex >= orderedQuizLessonIds.length - 1) {
+            return null;
+        }
+
+        return orderedQuizLessonIds[currentQuizIndex + 1] ?? null;
+    }
+
+    private getOrderedQuizLessonIds(): string[] {
+        const orderedQuizLessonIds = this.courseLessons()
+            .filter((lesson) => this.mapLessonType(lesson.type) === 'quiz')
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => lesson.id)
+            .filter((lessonId) => lessonId.trim().length > 0);
+
+        if (orderedQuizLessonIds.length > 0) {
+            return orderedQuizLessonIds;
+        }
+
+        return this.getStaticLessonsForCourse()
+            .filter((lesson) => lesson.type === 'quiz')
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => lesson.id)
+            .filter((lessonId) => lessonId.trim().length > 0);
+    }
+
+    private mapLessonType(value: unknown): SidebarLessonType {
+        if (value === 'quiz') return 'quiz';
         if (value === 'intro') return 'intro';
+        if (value === 'audio' || value === 4) return 'audio';
+        if (value === 'document' || value === 3) return 'document';
+        if (value === 'article' || value === 2) return 'article';
+        if (value === 'video' || value === 1) return 'video';
         return 'video';
     }
 
-    private buildQuizCreationPayload(): Record<string, unknown> | null {
-        if (this.lessonId) {
-            return {
-                title: 'Lesson Quiz',
-                lessonId: this.lessonId,
-                targetType: 3 as QuizTarget,
-                target: 3 as QuizTarget,
-            };
+    private buildQuizAnswerPayload(): QuizAnswerDto[] {
+        return this.answers()
+            .filter((answer): answer is QuizAnswer & { selectedOptionId: string } =>
+                typeof answer.selectedOptionId === 'string' && answer.selectedOptionId.length > 0
+            )
+            .map((answer) => ({
+                questionId: answer.questionId,
+                selectedOptionId: answer.selectedOptionId,
+            }));
+    }
+
+    private syncSidebarQuizLesson(activeQuiz: { title?: string; lessonId?: string } | null): void {
+        this.lessons.update((currentLessons) => {
+            const quizTitle = this.courseQuizTitle || activeQuiz?.title?.trim() || 'Quiz';
+            const resolvedQuizLessonId = this.courseQuizLessonId
+                || activeQuiz?.lessonId?.trim()
+                || this.lessonId
+                || '';
+            const quizLessonId = resolvedQuizLessonId.length > 0 && resolvedQuizLessonId !== this.courseId
+                ? resolvedQuizLessonId
+                : undefined;
+
+            const updatedLessons = currentLessons.map((lesson) => {
+                if (lesson.type !== 'quiz') {
+                    return lesson;
+                }
+
+                return {
+                    ...lesson,
+                    title: quizTitle,
+                    duration: 'Assessment',
+                    quizLessonId,
+                    isCurrent: true,
+                    hasNotification: false,
+                };
+            });
+
+            const hasQuizLesson = updatedLessons.some((lesson) => lesson.type === 'quiz');
+            if (hasQuizLesson) {
+                return updatedLessons;
+            }
+
+            return [
+                ...updatedLessons,
+                {
+                    id: `${QuizComponent.syntheticQuizLessonPrefix}${quizLessonId ?? this.courseId}`,
+                    quizLessonId,
+                    title: quizTitle,
+                    duration: 'Assessment',
+                    type: 'quiz' as const,
+                    isCompleted: false,
+                    isLocked: false,
+                    isCurrent: true,
+                    hasNotification: false,
+                },
+            ];
+        });
+    }
+
+    private getStaticLessonsForCourse(): AcademyLesson[] {
+        return ACADEMY_LESSONS
+            .filter((lesson) => lesson.courseId === this.courseId)
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => ({ ...lesson }));
+    }
+
+    private getStaticPreviousLessonId(): string | null {
+        const lessons = ACADEMY_LESSONS
+            .filter((lesson) => lesson.courseId === this.courseId)
+            .slice()
+            .sort((a, b) => a.order - b.order);
+
+        const currentQuizLessonId = this.courseQuizLessonId || this.lessonId;
+        const currentIndex = lessons.findIndex((lesson) => lesson.id === currentQuizLessonId);
+        const previousLesson = currentIndex > 0 ? lessons[currentIndex - 1] : lessons.find((lesson) => lesson.type !== 'quiz') ?? null;
+
+        return previousLesson?.id ?? null;
+    }
+
+    private mapStaticLessonToSidebarLesson(lesson: AcademyLesson): AcademySidebarLessonItem {
+        const lessonType = this.mapLessonType(lesson.type);
+
+        return {
+            id: lesson.id,
+            quizLessonId: lessonType === 'quiz' ? lesson.id : undefined,
+            title: lesson.title,
+            duration: lesson.duration,
+            type: lessonType,
+            isCompleted: false,
+            isLocked: false,
+            isCurrent: lessonType === 'quiz',
+            hasNotification: false,
+        };
+    }
+
+    private restoreQuizResultFromStorage(questions: readonly QuizQuestion[]): void {
+        const storedResult = this.restoredQuizResult;
+        if (!storedResult?.completed || questions.length === 0) {
+            return;
         }
 
-        if (this.courseId) {
+        const storedAnswersById = new Map(storedResult.answers.map((answer) => [answer.questionId, answer]));
+        const storedAnswersByIndex = new Map(
+            storedResult.answers
+                .filter((answer) => typeof answer.questionIndex === 'number')
+                .map((answer) => [answer.questionIndex as number, answer]),
+        );
+
+        const restoredAnswers: QuizAnswer[] = questions.map((question, index) => {
+            const storedAnswer = storedAnswersById.get(question.id) ?? storedAnswersByIndex.get(index);
+
+            if (!storedAnswer) {
+                return {
+                    questionId: question.id,
+                    selectedOptionId: null,
+                    isCorrect: false,
+                    isSkipped: false,
+                };
+            }
+
+            const selectedOptionId = typeof storedAnswer.selectedOptionId === 'string'
+                ? storedAnswer.selectedOptionId
+                : null;
+            const isCorrect = typeof selectedOptionId === 'string' && selectedOptionId === question.correctOptionId;
+
             return {
-                title: 'Course Quiz',
-                courseId: this.courseId,
-                targetType: 2 as QuizTarget,
-                target: 2 as QuizTarget,
+                questionId: question.id,
+                selectedOptionId,
+                isCorrect,
+                isSkipped: storedAnswer.isSkipped,
             };
+        });
+
+        const hasStoredSelections = restoredAnswers.some(
+            (answer) => answer.selectedOptionId !== null || answer.isSkipped,
+        );
+
+        if (hasStoredSelections) {
+            this.answers.set(restoredAnswers);
         }
 
-        const levelId = String(this.courseInfo().stage);
-        if (levelId) {
+        this.quizCompletionTime.set(storedResult.completionTime);
+        this.quizState.set('review');
+
+        if (this.hasSuccessfulDegree()) {
+            this.syncPassedQuizCompletion();
+        }
+    }
+
+    private parseStoredQuizResult(raw: string): StoredQuizResult | null {
+        try {
+            const parsed = JSON.parse(raw) as unknown;
+            const record = this.asRecord(parsed);
+
+            if (record?.['completed'] !== true) {
+                return null;
+            }
+
+            const score = typeof record['score'] === 'number' ? Math.max(0, record['score']) : 0;
+            const passed = typeof record['passed'] === 'boolean' ? record['passed'] : false;
+            const completionTime = typeof record['completionTime'] === 'number' ? Math.max(0, record['completionTime']) : 0;
+            const timestamp = typeof record['timestamp'] === 'string' ? record['timestamp'] : '';
+            const questionCount = typeof record['questionCount'] === 'number'
+                ? Math.max(0, record['questionCount'])
+                : this.quizConfig.totalQuestions;
+            const answers = this.normalizeStoredAnswers(record['answers']);
+
             return {
-                title: 'Level Quiz',
-                levelId,
-                targetType: 1 as QuizTarget,
-                target: 1 as QuizTarget,
+                completed: true,
+                score,
+                passed,
+                completionTime,
+                timestamp,
+                questionCount,
+                answers,
             };
+        } catch {
+            return null;
+        }
+    }
+
+    private normalizeStoredAnswers(value: unknown): StoredQuizAnswer[] {
+        if (!Array.isArray(value)) {
+            return [];
         }
 
-        return null;
+        return value
+            .map((entry): StoredQuizAnswer | null => {
+                const record = this.asRecord(entry);
+                if (!record || typeof record['questionId'] !== 'string') {
+                    return null;
+                }
+
+                const selectedOptionIdValue = record['selectedOptionId'];
+                const selectedOptionId = typeof selectedOptionIdValue === 'string' || selectedOptionIdValue === null
+                    ? selectedOptionIdValue
+                    : null;
+
+                const questionIndex = typeof record['questionIndex'] === 'number'
+                    ? record['questionIndex']
+                    : undefined;
+
+                const isCorrect = record['isCorrect'] === true;
+
+                const normalized: StoredQuizAnswer = {
+                    questionId: record['questionId'],
+                    selectedOptionId,
+                    isSkipped: record['isSkipped'] === true,
+                    ...(typeof questionIndex === 'number' ? { questionIndex } : {}),
+                    ...(isCorrect ? { isCorrect: true } : {}),
+                };
+
+                return normalized;
+            })
+            .filter((answer): answer is StoredQuizAnswer => answer !== null);
+    }
+
+    private asRecord(value: unknown): Record<string, unknown> | null {
+        return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
     }
 
     private mapApiQuestion(
@@ -666,14 +1321,27 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     retakeQuizFromResults(): void {
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
-        localStorage.removeItem(storageKey);
+        if (this.isBrowser) {
+            localStorage.removeItem(storageKey);
+        }
+
+        this.restoredQuizResult = null;
 
         // Reset state
         this.previousScore.set(0);
         this.previousCompletionTime.set(0);
         this.wasPreviouslyPassed.set(false);
+        this.quizCompletionTime.set(0);
+        this.resetAnswersToDefault();
+        this.activeAttemptId.set(null);
+        this.isFinishingQuiz = false;
+        this.hasSyncedPassedQuizCompletion = false;
+        this.currentQuestionIndex.set(0);
+        this.selectedOptionId.set(null);
+        this.showHint.set(false);
 
         // Start fresh quiz
         this.quizState.set('intro');
+        this.scrollService.scrollToTop();
     }
 }

@@ -1,13 +1,24 @@
 import { Injectable, inject } from '@angular/core';
 import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { Observable, from, throwError } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { SocialAuthFacade, SocialAuthResponse } from '../../api/facades/social-auth.facade';
+import { map, switchMap } from 'rxjs/operators';
+import { IdentityFacade, LoginResponse } from '../../api/facades/identity.facade';
+
+export interface SocialAuthResponse {
+    token: string;
+    user: {
+        id?: string;
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        [key: string]: unknown;
+    };
+}
 
 @Injectable({ providedIn: 'root' })
 export class SocialAuthenticationService {
     private readonly socialAuthService = inject(SocialAuthService);
-    private readonly socialAuthFacade = inject(SocialAuthFacade);
+    private readonly identityFacade = inject(IdentityFacade);
 
     /**
      * Authenticate user with Google
@@ -19,9 +30,14 @@ export class SocialAuthenticationService {
                 if (!idToken) {
                     return throwError(() => new Error('No ID token received from Google'));
                 }
-                return this.socialAuthFacade.loginWithGoogle(idToken);
-            }),
-            switchMap((response) => this.storeSessionToken(response))
+                return this.handleGoogleToken(idToken);
+            })
+        );
+    }
+
+    handleGoogleToken(idToken: string): Observable<SocialAuthResponse> {
+        return this.identityFacade.loginGoogle(idToken).pipe(
+            map(response => this.mapToSocialAuthResponse(response))
         );
     }
 
@@ -36,21 +52,23 @@ export class SocialAuthenticationService {
                 if (!accessToken) {
                     return throwError(() => new Error('No access token received from Facebook'));
                 }
-                return this.socialAuthFacade.loginWithFacebook(accessToken);
-            }),
-            switchMap((response) => this.storeSessionToken(response))
+                return this.identityFacade.loginFacebook(accessToken).pipe(
+                    map(response => this.mapToSocialAuthResponse(response))
+                );
+            })
         );
     }
 
-    private storeSessionToken(response: SocialAuthResponse | null): Observable<SocialAuthResponse> {
-        try {
-            if (response?.token) {
-                sessionStorage.setItem('auth_token', response.token);
+    private mapToSocialAuthResponse(response: LoginResponse): SocialAuthResponse {
+        return {
+            token: response.token ?? '',
+            user: {
+                id: response.userId,
+                email: response.email,
+                firstName: response.firstName,
+                lastName: response.lastName
             }
-            return from(Promise.resolve(response || { token: '', user: {} }));
-        } catch (error) {
-            return throwError(() => new Error(`Failed to store session token: ${error}`));
-        }
+        };
     }
 
     signOut(): Observable<void> {

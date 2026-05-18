@@ -214,6 +214,18 @@ export class ErrorNormalizer {
     }
 
     /**
+     * Type guard for objects with an errors array
+     */
+    private hasErrorsArray(value: unknown): value is { errors: unknown[] } {
+        return (
+            typeof value === 'object' &&
+            value !== null &&
+            'errors' in value &&
+            Array.isArray((value as Record<string, unknown>)['errors'])
+        );
+    }
+
+    /**
      * Type guard for ApiError
      */
     private isApiError(value: unknown): value is ApiError {

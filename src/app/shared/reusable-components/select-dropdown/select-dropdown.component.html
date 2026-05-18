@@ -1,4 +1,4 @@
-<div class="custom-select" [class.error]="error()">
+<div class="custom-select" [class.error]="error()" [class.open]="open()">
   <button type="button" class="select-trigger" (click)="toggle()">
     <span class="truncate" [class.placeholder]="!selectedLabel()">
       {{ selectedLabel() || placeholder() }}
@@ -12,7 +12,7 @@
           class="option"
           [class.active]="option.value === value()"
           (click)="onSelect(option)"
-          >
+        >
           {{ option.label }}
         </li>
       }

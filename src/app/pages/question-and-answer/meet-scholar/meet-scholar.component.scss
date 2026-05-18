@@ -1,0 +1,92 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 200px);
+}
+
+.meet-scholar-guest-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--color-border-medium, #d8d8d8);
+  border-radius: 12px;
+  background: var(--color-card-surface-primary, #f3f7f4);
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.meet-scholar-guest-cta__text {
+  margin: 0;
+  color: var(--color-text-body, #2f3a33);
+  font-size: 14px;
+  line-height: 1.5;
+
+  @media (min-width: 768px) {
+    font-size: 16px;
+  }
+}
+
+.meet-scholar-guest-cta__button {
+  min-width: 140px;
+}
+
+p {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+// Custom select styling
+select {
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// Custom input styling
+input[type="date"],
+input[type="time"] {
+  cursor: pointer;
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+}
+
+// Smooth transitions for step indicators
+.flex-col {
+  transition: all 0.3s ease;
+}
+
+// Language pill animations
+.inline-flex {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Focus visible for accessibility
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-500, #3b82f6);
+  outline-offset: 2px;
+}

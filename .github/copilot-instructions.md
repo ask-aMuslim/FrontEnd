@@ -1,50 +1,90 @@
-# ROLE
-You are a Senior Full-Stack Architect and Lead Engineer for "AskAMuslim." You prioritize reasoning quality, type safety, and the "Analyze-Plan-Implement" workflow.
+## AskAMuslim AI Agent Operating Instructions (Single Source of Truth)
 
----
+This file is the **only** project instruction file to be used for agent behavior.
+Ignore any deleted legacy instruction files and avoid loading broad skill packs unless explicitly requested.
 
-# 1. CORE OPERATIONAL SYSTEM (NON-NEGOTIABLE)
-- AI Is an Executor: Never assume intent. If a goal is vague, request success criteria.
-- Structure > Cleverness: Follow the [OUTPUT FORMAT] for every response.
-- One Objective Per Prompt: If I give you multiple tasks, prioritize the blocker and ask for clarification.
+### Execution Model
+- Execute tasks in one flow: **Analyze → Plan → Implement → Verify**.
+- Keep context minimal: only open files required for the task.
+- Do not pause for intermediate confirmations unless blocked by missing requirements.
 
----
+### Architecture and Code Rules
+- Angular 20, standalone components, `ChangeDetectionStrategy.OnPush` by default.
+- Strict TypeScript: no `any`, no unsafe casts, no dead code, no duplicated logic.
+- No HTTP calls in components; use `src/app/api/fn/**` + facades in `src/app/api/facades/**`.
+- Prefer signals + immutable updates; no direct state mutation.
+- No business logic in templates, no inline styles, no magic numbers.
 
-# 2. ARCHITECTURE & CONTEXT LAYERS
-## Frontend (Angular 20+)
-- Paradigm: Standalone components only. Signal-based state management.
-- Structure: Feature-first (`src/app/pages`), Cross-feature (`src/app/shared`), Core logic (`src/app/core`).
-- Routing: Lazy-loaded. `app.routes.ts` (Client) | `app.routes.server.ts` (SSR).
-- Styling: SCSS Design Tokens (`src/styles/_tokens.scss`) + Container System (`containers.css`). No inline styles.
+### Contract and Integration Discipline
+- Treat OpenAPI/Postman contracts as authoritative.
+- For API-impacting changes, validate with project checks (including swagger/contract checks when relevant).
+- Never invent endpoints; verify in workspace before implementation.
 
-## API & Data Flow
-- Transport: OpenAPI generated (`src/app/api`).
-- Pattern: Generated Fn -> Facades (`src/app/api/facades`) -> Core Services (`src/app/core/services`).
-- Error Handling: Use `error-normalizer.ts`. Surface user-facing messages for Auth.
+### Quality Gates
+- Before completion, run and pass: build, test, lint (and contract checks when applicable).
+- Fix introduced errors before finishing.
 
----
+### Context Hygiene
+- Keep one instruction source only: this file.
+- Avoid loading extra rule systems or redundant instruction files.
 
-# 3. TASK EXECUTION ORDER (MANDATORY)
-1. ANALYZE: Identify the module (Page, Shared, or Core) and check against the Tech Stack.
-2. PLAN: Present a numbered plan. Identify which Facades or Services need modification.
-3. CRITIQUE: Self-review the plan for "Minimal Change" and "Regression Risks."
-4. IMPLEMENT: Write code only after plan approval.
-5. VERIFY: Define specific test steps (Network tab, Postman, or Build).
+### Speckit Usage
+- Use Speckit workflows when the task is feature-sized or multi-step.
+- For small scoped edits, apply minimal-change implementation directly, then verify.
+- Orchestrate the full Speckit pipeline using these subagents as needed:
+  - `speckit.analyze`
+  - `speckit.checklist`
+  - `speckit.clarify`
+  - `speckit.constitution`
+  - `speckit.plan`
+  - `speckit.specify`
+  - `speckit.tasks`
+  - `speckit.taskstoissues`
+  - `speckit.implement`
+- Ensure each pipeline step completes successfully and produce the corresponding outputs (spec, plan, tasks, implementation artifacts).
+- Treat Speckit as the authoritative workflow engine; do not bypass it for work that matches a Speckit stage.
 
----
+### Skill System (must remain intact)
+- This repo includes a global AI skill system; do not delete or ignore it.
+- Follow skill guidance when the task or maintainers explicitly require it.
+- Do not load all 600+ skills into the context; only use the subset that applies to the task.
 
-# 4. ENGINEERING RULES (STRICT)
-- TypeScript: `strict` mode. No `any`, no unsafe casts, no unused symbols.
-- Immutability: Keep state updates signal-safe. Prefer immutable patterns for mutations.
-- Paths: Use absolute paths for static assets from `/public/`.
-- Auth: Flows (Login/Register/Reset) must handle error states explicitly and user-friendly.
+### Figma MCP (Talk-to-Figma) — usage
+- Purpose: concise recipe for using the Talk-to-Figma MCP tools to join any Figma channel and fetch node information for any node.
+- Quick steps:
+  1. Join a Figma channel: call `mcp_talktofigma_join_channel` with the channel string (e.g., `{"channel":"qen7sxyt"}`). Wait for confirmation.
+  2. Extract the node id from a Figma URL and prefer the colon format: `1091:40748`.
+    - If the URL shows a hyphen form (e.g., `1091-40748`), convert the hyphen to a colon before calling the tool. If the URL is URL-encoded (e.g., `%2D`), decode it first.
+  3. Get node info: call `mcp_talktofigma_get_node_info` with the nodeId (e.g., `{"nodeId":"1091:40748"}`). The tool returns JSON with node metadata, fills, styles, absoluteBoundingBox, and children.
+  4. For multiple nodes use `mcp_talktofigma_get_nodes_info` with an array of nodeIds.
+  5. Useful related tools (preferred order):
+    - `mcp_talktofigma_get_node_info` / `mcp_talktofigma_read_my_design` — primary ways to obtain full node JSON. If one times out, try the other.
+    - `mcp_talktofigma_get_styles` — retrieve document text/effect/grid styles for mapping design tokens.
+    - `mcp_talktofigma_scan_text_nodes` — extract text content from a frame or selection.
+    - `mcp_talktofigma_get_local_components` — list local components in the document. This call can time out; if it errors, retry or re-join the channel first.
+    - `mcp_talktofigma_clone_node`, `mcp_talktofigma_move_node`, `mcp_talktofigma_delete_node` — modify nodes (use carefully; confirm nodeIds and coordinates).
+    - `mcp_talktofigma_get_reactions` — optional and unreliable in many files. It often returns empty (`nodesWithReactions: 0`) and may trigger connector prompts; only use it when you specifically need prototyping reaction data for connector creation.
+  6. Common errors & remedies:
+    - "Node not found": ensure the nodeId uses colon format (`1091:40748`) and that the agent has joined the correct channel; re-join the channel and retry.
+    - "Error executing command" / timeouts: some MCP calls (like `get_local_components` or `get_styles`) can fail transiently. Retry, re-join the channel, or fetch the node with `get_node_info` or `read_my_design` as a fallback.
+    - "nodesWithReactions: 0": common outcome. Do NOT follow connector-creation prompts (e.g., `reaction_to_connector_strategy`) when reactions are empty.
+    - Web fetch shows "WebGL not supported": expected in headless/webfetch contexts — use MCP tools for authoritative node data.
+    - Access denied: ensure the file is shared with the agent account or ask the file owner to grant access.
+  7. Example payloads:
+    - Join channel: `{ "channel": "qen7sxyt" }`
+    - Get node info: `{ "nodeId": "1091:40748" }`
 
----
 
-# 5. ANTI-HALLUCINATION & SAFETY
-- EVIDENCE RULE: Every technical claim must reference existing code or the `@workspace`.
-- UNCERTAINTY RULE: If confidence < 90%, explain uncertainty. Do not "invent" API endpoints.
-- NO ASSUMPTION RULE: Do not assume the existence of files. Check `src/app/api/fn/**` before suggesting an API call.
+### Verification Tools & Environments
+- **UI tasks**: Use Chrome DevTools MCP to validate UI updates, component render trees, and state changes.
+- **API integration tasks**: Use Postman MCP + Postman extension to validate endpoints, request bodies, and responses; use Chrome DevTools MCP to verify correct UI interaction with the API.
+- **Design reference**: Figma: http://figma.com/design/90ZtQuhT2ww9KvzjZm4SIq/UX~UI-%7C-Ask-A-Muslim?node-id=1-4&p=f&t=DJXus2KQZovbHkMi-0
 
----
+### Access Points
+- **Admin panel**: https://adminpanel.ask-a-muslim.com/auth/login
+  - email: `administrator@ask-a-muslim.com`
+  - password: `P@ssw0rd`
+- **User site (local)**: run locally and log in via:
+  - email: `aa6310336@gmail.com`
+  - password: `Pa$$w0rd`
 

@@ -1,145 +1,216 @@
-<section class="contact-page">
-  <!-- Hero Section -->
-  <div class="hero-section">
-    <div class="hero-content">
-      <h1 class="hero-title">Get in Touch</h1>
-      <p class="hero-subtitle">
-        We'd love to hear from you. Reach out with any questions, feedback, or just to say salam.
+<section class="contact-page" aria-labelledby="contact-hero-title">
+  @if (!submittedContact()) {
+    <header class="hero-section">
+      <div class="hero-pattern" aria-hidden="true"></div>
+      <div class="section-block hero-content">
+        <span class="hero-pill">Contact Us</span>
+        <h1 id="contact-hero-title" class="hero-title">Get in Touch</h1>
+        <p class="hero-subtitle">
+          We'd love to hear from you. If you have any kind of question,
+          suggestion, issue, feedback, or any kind of request, please provide
+          it.
+        </p>
+      </div>
+    </header>
+  }
+
+  @if (submittedContact(); as submitted) {
+    <section class="section-block success-view" aria-live="polite">
+      <div class="success-icon-wrapper" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" class="success-icon">
+          <path
+            d="M20 7L10 17L5 12"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+
+      <h2 class="success-title">Your message sent successfully!</h2>
+      <p class="success-subtitle">
+        Thanks for Contacting Us. We will respond to you as soon as possible to
+        your email.
       </p>
-    </div>
-    <div class="hero-decorative-blobs">
-      <div class="blob blob-1"></div>
-      <div class="blob blob-2"></div>
-    </div>
-  </div>
 
-  <!-- Main Content Grid -->
-  <div class="container">
-    <div class="contact-grid">
-      
-      <!-- Contact Form Column -->
-      <div class="form-column" data-aos="fade-up">
-        <div class="form-card">
-          <h2 class="form-heading">Send a Message</h2>
-          <p class="form-subheading">Fill out the form below and we will get back to you shortly.</p>
+      <article class="submitted-message-card">
+        <h3>“{{ submitted.topicLabel }}”</h3>
+        <p>{{ submitted.message }}</p>
+      </article>
 
-          @if(isSuccess) {
-            <div class="success-message" role="alert">
-              <div class="success-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-              </div>
-              <h4>Message Sent!</h4>
-              <p>Thank you for reaching out. We've received your message.</p>
-            </div>
-          } @else {
-            <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
-              <!-- Name Input -->
-              <div class="form-group">
-                <label for="name">Full Name</label>
-                <div class="input-wrapper" [class.has-error]="isFieldInvalid('name')">
-                  <input 
-                    type="text" 
-                    id="name" 
-                    formControlName="name" 
-                    placeholder="John Doe"
-                    autocomplete="name"
-                  >
-                </div>
-                @if (isFieldInvalid('name')) {
-                  <span class="error-text">Please enter your full name (at least 2 characters)</span>
-                }
-              </div>
+      <div class="success-actions">
+        <button type="button" class="button-light" (click)="goToProfile()">
+          Go to Profile
+        </button>
+        <button
+          type="button"
+          class="send-button success-secondary-button"
+          (click)="onSendAnotherMessage()"
+        >
+          Send another message
+        </button>
+      </div>
 
-              <!-- Email Input -->
-              <div class="form-group">
-                <label for="email">Email Address</label>
-                <div class="input-wrapper" [class.has-error]="isFieldInvalid('email')">
-                  <input 
-                    type="email" 
-                    id="email" 
-                    formControlName="email" 
-                    placeholder="john@example.com"
-                    autocomplete="email"
-                  >
-                </div>
-                @if (isFieldInvalid('email')) {
-                  <span class="error-text">Please enter a valid email address</span>
-                }
-              </div>
+      <p class="success-note">
+        You will be able to send a new message after 48 hours from now.
+      </p>
+    </section>
+  } @else {
+    <section class="section-block contact-content">
+      <div class="welcome-copy">
+        <h2>
+          Welcome,
+          <span>{{ greetingName() }}</span>
+        </h2>
+        <p>
+          Fill out the form below then send it, and we will get back to you
+          shortly.
+        </p>
+      </div>
 
-              <!-- Message Input -->
-              <div class="form-group">
-                <label for="message">Your Message</label>
-                <div class="input-wrapper" [class.has-error]="isFieldInvalid('message')">
-                  <textarea 
-                    id="message" 
-                    formControlName="message" 
-                    rows="5" 
-                    placeholder="How can we help you today?"
-                  ></textarea>
-                </div>
-                @if (isFieldInvalid('message')) {
-                  <span class="error-text">Please provide a message (at least 10 characters)</span>
-                }
-              </div>
+      <article class="quick-links" aria-label="Quick links">
+        <div class="quick-links-title-row">
+          <img
+            src="/icons/icons-24/quick.svg"
+            alt=""
+            aria-hidden="true"
+            class="link-icon"
+          />
+          <h3>Quick Links</h3>
+        </div>
 
-              <!-- Submit Button -->
-              <button 
-                type="submit" 
-                class="btn-primary" 
-                [disabled]="contactForm.invalid || isSubmitting"
-                [class.loading]="isSubmitting"
-              >
-                <span class="btn-text">Send Message</span>
-                @if (isSubmitting) {
-                  <div class="loader-spinner"></div>
-                } @else {
-                  <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                }
-              </button>
-            </form>
+        <div class="quick-link-list">
+          @for (link of quickLinks(); track link.id) {
+            <a [routerLink]="['/forms', link.id]">
+              {{ link.title }}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 17L17 7M17 7H9M17 7V15"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
           }
         </div>
-      </div>
+      </article>
 
-      <!-- Contact Information Cards -->
-      <div class="contact-info-column" data-aos="fade-up">
-        <h2 class="section-heading">Contact Information</h2>
-        <p class="section-description">
-          Find us through our official channels. We strive to respond to all inquiries within 24-48 hours.
-        </p>
-
-        <div class="info-cards">
-          <!-- Email Card -->
-          <div class="info-card">
-            <div class="icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-                <path d="m2 4 10 8 10-8"></path>
-              </svg>
-            </div>
-            <div class="card-details">
-              <h3>Email Us</h3>
-              <a href="mailto:info@askamuslim.com">info&#64;askamuslim.com</a>
-            </div>
-          </div>
-
-          <!-- Location Card (Optional if applicable, hiding mostly as online platform) -->
-          <div class="info-card">
-            <div class="icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-            </div>
-            <div class="card-details">
-              <h3>Location</h3>
-              <p>Global Online Platform</p>
-            </div>
-          </div>
-
+      <form
+        [formGroup]="contactForm"
+        (ngSubmit)="onSubmit()"
+        class="contact-form"
+        novalidate
+      >
+        <div class="form-field">
+          <label for="contact-name">Name</label>
+          <input
+            id="contact-name"
+            type="text"
+            formControlName="name"
+            placeholder="Full name"
+            autocomplete="name"
+            [class.input-error]="isFieldInvalid('name')"
+          />
+          @if (isFieldInvalid("name")) {
+            <p class="field-error">
+              Please enter your full name (minimum 2 characters).
+            </p>
+          }
         </div>
-      </div>
-    </div>
-  </div>
+
+        <div class="form-field">
+          <label for="contact-email"
+            >Email</label
+          >
+          <input
+            id="contact-email"
+            type="email"
+            formControlName="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            [class.input-error]="isFieldInvalid('email')"
+          />
+          @if (isFieldInvalid("email")) {
+            <p class="field-error">Please enter a valid email address.</p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="contact-topic"
+            >Topic — choose the reason for contact:</label
+          >
+          <div
+            class="select-wrapper"
+            [class.input-error]="isFieldInvalid('topic')"
+          >
+            <select
+              id="contact-topic"
+              formControlName="topic"
+              (change)="onTopicSelectionChange()"
+            >
+              <option [ngValue]="null">Select</option>
+              @for (topic of topicOptions; track topic.value) {
+                <option [ngValue]="topic.value">{{ topic.label }}</option>
+              }
+            </select>
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="select-arrow">
+              <path
+                d="M6 9L12 15L18 9"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          @if (isFieldInvalid("topic")) {
+            <p class="field-error">
+              Please choose a topic before sending your message.
+            </p>
+          }
+        </div>
+
+        @if (topicSelected()) {
+          <div class="form-field">
+            <label for="contact-message">Write your message:</label>
+            <textarea
+              id="contact-message"
+              formControlName="message"
+              rows="10"
+              placeholder="Explain in particular what do you need to ask or understand .."
+              [class.input-error]="isFieldInvalid('message')"
+            ></textarea>
+            @if (isFieldInvalid("message")) {
+              <p class="field-error">
+                Please enter a clear message (minimum 10 characters).
+              </p>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="send-button"
+            [disabled]="isSubmitting() || !topicSelected()"
+          >
+            <span>{{ isSubmitting() ? "Sending..." : "Send Message" }}</span>
+            <img
+              src="/icons/icons-24/send.svg"
+              alt="Send icon"
+              aria-hidden="true"
+              class="send-icon"
+            />
+          </button>
+        </div>
+
+        @if (submitError()) {
+          <p class="submit-error" role="alert">{{ submitError() }}</p>
+        }
+      </form>
+    </section>
+  }
 </section>

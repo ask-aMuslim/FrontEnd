@@ -1,4 +1,9 @@
 <div class="academy-container">
+  @if (isRefreshingProgress$ | async) {
+    <div class="academy-global-loader">
+      <div class="progress-bar-indeterminate"></div>
+    </div>
+  }
   <div class="academy-content">
     @if (error) {
       <section class="important-note">
@@ -8,167 +13,229 @@
       </section>
     }
 
-    @if (hasRecentLesson && recentLesson) {
-      <section class="recent-lesson-section" data-aos="fade-up">
-        <div class="section-block">
-          <h2 class="section-title">Your Recent Lesson</h2>
-          <div class="recent-lesson-card">
-            <div class="lesson-sequence">
-              <span
-                >Stage {{ recentLesson.stageNumber }} > {{ recentLesson.courseName }} > Lesson
-                {{ recentLesson.lessonNumber }}</span
-              >
-              <span class="completion-status">
-                <span class="emoji">Good job👏</span>
-                <span class="completion-text">
-                  , you have completed
-                  <span class="highlight">{{ recentLesson.progress }}%</span>
-                  of the course
-                </span>
-              </span>
+      @if (isGuestUser) {
+        <section class="academy-guest-signin" data-aos="fade-up">
+          <div class="section-block academy-guest-signin__content">
+            <div class="academy-guest-signin__copy">
+              <h2 class="academy-guest-signin__title">
+                Sign in to continue your Academy journey
+              </h2>
+              <p class="academy-guest-signin__text">
+                You can browse Academy content as a guest. Sign in to track
+                progress, continue lessons, and take quizzes.
+              </p>
             </div>
-            <div class="lesson-content">
-              <div class="video-thumbnail">
-                <img
-                  [src]="recentLesson.thumbnailUrl"
-                  [alt]="'Thumbnail for ' + recentLesson.courseName"
-                  (error)="onImageError($event)"
-                  loading="lazy"
-                />
-                <button
-                  class="play-button"
-                  [attr.aria-label]="
-                    'Continue learning lesson ' +
-                    recentLesson.lessonNumber +
-                    ' of ' +
-                    recentLesson.courseName
-                  "
-                  (click)="continueLearning()"
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="continueToSignIn()"
+            >
+              Sign In
+            </button>
+          </div>
+        </section>
+      }
+
+      @if (hasRecentLesson && recentLesson) {
+        <section class="recent-lesson-section" data-aos="fade-up">
+          <div class="section-block">
+            <h2 class="section-title">Your Recent Lesson</h2>
+            <div class="recent-lesson-card">
+              <div class="lesson-sequence">
+                <span
+                  >Stage {{ recentLesson.stageNumber }} >
+                  {{ recentLesson.courseName }} > Lesson
+                  {{ recentLesson.lessonNumber }}</span
                 >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4.09961 4.99962C4.09951 4.64771 4.19225 4.302 4.36849 3.99741C4.54473 3.69281 4.79822 3.44011 5.10336 3.26481C5.4085 3.08952 5.75449 2.99784 6.1064 2.99903C6.4583 3.00023 6.80367 3.09425 7.10761 3.27162L19.1046 10.2696C19.4074 10.4453 19.6587 10.6974 19.8335 11.0006C20.0084 11.3039 20.1005 11.6477 20.1008 11.9978C20.1011 12.3478 20.0096 12.6918 19.8353 12.9953C19.661 13.2989 19.4101 13.5514 19.1076 13.7276L7.10761 20.7276C6.80367 20.905 6.4583 20.999 6.1064 21.0002C5.75449 21.0014 5.4085 20.9097 5.10336 20.7344C4.79822 20.5591 4.54473 20.3064 4.36849 20.0018C4.19225 19.6972 4.09951 19.3515 4.09961 18.9996V4.99962Z"
-                      stroke="var(--color-button-primary-normal)"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </button>
+                <span class="completion-status">
+                  @if (recentLesson.progress >= 50) {
+                    <span class="emoji">Good job👏</span>
+                  }
+                  <span class="completion-text">
+                    You have completed
+                    <span class="highlight">{{ recentLesson.progress }}%</span>
+                    of the course
+                  </span>
+                </span>
               </div>
-              <div class="lesson-details">
-                <div class="lesson-header">
-                  <h3 class="course-title">{{ recentLesson.courseName }}</h3>
-                </div>
-                <div class="lesson-info">
-                  <div class="info-row">
-                    <span class="course-category">Worship & Role Models</span>
-                    <span class="separator">-</span>
-                    <span class="lesson-count"
-                      >{{ recentLesson.completedLessons }} out of
-                      {{ recentLesson.totalLessons }} lessons</span
+              <div class="lesson-content">
+                <div class="video-thumbnail">
+                  <img
+                    [src]="recentLesson.thumbnailUrl"
+                    [alt]="'Thumbnail for ' + recentLesson.courseName"
+                    (error)="onImageError($event)"
+                    loading="lazy"
+                  />
+                  <button
+                    class="play-button"
+                    [attr.aria-label]="
+                      'Continue learning lesson ' +
+                      recentLesson.lessonNumber +
+                      ' of ' +
+                      recentLesson.courseName
+                    "
+                    (click)="continueLearning()"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
                     >
-                  </div>
-                  <span class="duration"
-                    >{{ recentLesson.currentTime }} / {{ recentLesson.totalTime }}</span
-                  >
+                      <path
+                        d="M4.09961 4.99962C4.09951 4.64771 4.19225 4.302 4.36849 3.99741C4.54473 3.69281 4.79822 3.44011 5.10336 3.26481C5.4085 3.08952 5.75449 2.99784 6.1064 2.99903C6.4583 3.00023 6.80367 3.09425 7.10761 3.27162L19.1046 10.2696C19.4074 10.4453 19.6587 10.6974 19.8335 11.0006C20.0084 11.3039 20.1005 11.6477 20.1008 11.9978C20.1011 12.3478 20.0096 12.6918 19.8353 12.9953C19.661 13.2989 19.4101 13.5514 19.1076 13.7276L7.10761 20.7276C6.80367 20.905 6.4583 20.999 6.1064 21.0002C5.75449 21.0014 5.4085 20.9097 5.10336 20.7344C4.79822 20.5591 4.54473 20.3064 4.36849 20.0018C4.19225 19.6972 4.09951 19.3515 4.09961 18.9996V4.99962Z"
+                        stroke="var(--color-button-primary-normal)"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
-                <div class="progress-bar-container">
-                  <div class="progress-bar">
-                    <div class="progress-fill" [style.width.%]="recentLesson.progress"></div>
+                <div class="lesson-details">
+                  <div class="lesson-header">
+                    <h3 class="course-title">{{ recentLesson.courseName }}</h3>
                   </div>
+                  <div class="lesson-info">
+                    <div class="info-row">
+                      @if (recentLesson.categoryLabel) {
+                        <span class="course-category">{{
+                          recentLesson.categoryLabel
+                        }}</span>
+                        <span class="separator">-</span>
+                      }
+                      <span class="lesson-count"
+                        >{{ recentLesson.completedLessons }} out of
+                        {{ recentLesson.totalLessons }} lessons</span
+                      >
+                      @if (recentLesson.totalQuizzes > 0) {
+                        <span class="separator">-</span>
+                        <span class="quiz-count"
+                          >{{ recentLesson.completedQuizzes }} out of
+                          {{ recentLesson.totalQuizzes }} quiz(s)</span
+                        >
+                      }
+                    </div>
+                    @if (recentLesson.mediaProgressLabel) {
+                      <span class="duration"
+                        >{{
+                          recentLesson.mediaType === "audio" ? "Audio" : "Video"
+                        }}
+                        • {{ recentLesson.mediaProgressLabel }}</span
+                      >
+                    }
+                  </div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar">
+                      <div
+                        class="progress-fill"
+                        [style.width.%]="recentLesson.progress"
+                      ></div>
+                    </div>
+                  </div>
+                  <button class="continue-button" (click)="continueLearning()">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4.09961 4.99962C4.09951 4.64771 4.19225 4.302 4.36849 3.99741C4.54473 3.69281 4.79822 3.44011 5.10336 3.26481C5.4085 3.08952 5.75449 2.99784 6.1064 2.99903C6.4583 3.00023 6.80367 3.09425 7.10761 3.27162L19.1046 10.2696C19.4074 10.4453 19.6587 10.6974 19.8335 11.0006C20.0084 11.3039 20.1005 11.6477 20.1008 11.9978C20.1011 12.3478 20.0096 12.6918 19.8353 12.9953C19.661 13.2989 19.4101 13.5514 19.1076 13.7276L7.10761 20.7276C6.80367 20.905 6.4583 20.999 6.1064 21.0002C5.75449 21.0014 5.4085 20.9097 5.10336 20.7344C4.79822 20.5591 4.54473 20.3064 4.36849 20.0018C4.19225 19.6972 4.09951 19.3515 4.09961 18.9996V4.99962Z"
+                        stroke="white"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span>Continue Learning</span>
+                  </button>
                 </div>
-                <button class="continue-button" (click)="continueLearning()">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M4.09961 4.99962C4.09951 4.64771 4.19225 4.302 4.36849 3.99741C4.54473 3.69281 4.79822 3.44011 5.10336 3.26481C5.4085 3.08952 5.75449 2.99784 6.1064 2.99903C6.4583 3.00023 6.80367 3.09425 7.10761 3.27162L19.1046 10.2696C19.4074 10.4453 19.6587 10.6974 19.8335 11.0006C20.0084 11.3039 20.1005 11.6477 20.1008 11.9978C20.1011 12.3478 20.0096 12.6918 19.8353 12.9953C19.661 13.2989 19.4101 13.5514 19.1076 13.7276L7.10761 20.7276C6.80367 20.905 6.4583 20.999 6.1064 21.0002C5.75449 21.0014 5.4085 20.9097 5.10336 20.7344C4.79822 20.5591 4.54473 20.3064 4.36849 20.0018C4.19225 19.6972 4.09951 19.3515 4.09961 18.9996V4.99962Z"
-                      stroke="white"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>Continue Learning</span>
-                </button>
               </div>
             </div>
+          </div>
+        </section>
+      }
+      <section class="important-note">
+        <div class="section-block">
+          <div
+            class="important-note-content"
+            [class.expanded]="showFullNote"
+            data-aos="fade-up"
+          >
+            <p class="note-text">{{ importantNote }}</p>
+            <button
+              class="toggle-button"
+              (click)="toggleNote()"
+              [attr.aria-label]="'Toggle note'"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 8L12 16L20 8"
+                  stroke="#010D05"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </section>
-    }
+      <section class="academy-stages" data-aos="fade-up">
+        <div class="section-block">
+          <h2 class="section-title">The Academy</h2>
 
-    <section class="important-note" [class.expanded]="showFullNote" data-aos="fade-up">
-      <div class="section-block">
-        <p class="note-text">{{ importantNote }}</p>
-        <button class="toggle-button" (click)="toggleNote()" [attr.aria-label]="'Toggle note'">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M4 8L12 16L20 8"
-              stroke="#010D05"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-    </section>
-
-    <section class="academy-stages" data-aos="fade-up">
-      <div class="section-block">
-        <h2 class="section-title">The Academy</h2>
-
-        @for (
-          stage of stages;
-          track trackByStageNumber(i, stage);
-          let i = $index;
-          let isLast = $last
-        ) {
-          <div class="stage-wrapper">
-            <div class="stage-container" [class.locked]="stage.isLocked">
-              <h3 class="stage-title">{{ stage.title }}</h3>
-              <app-course-tree 
-                [nodes]="stage.treeCourses"
-                [loading]="isLoading"
-                [error]="error"
-                (courseClick)="onCourseClick($event)"
-                (retryAction)="ngOnInit()">
-              </app-course-tree>
-
-            </div>
-            <div class="stage-divider"></div>
-            <p class="stage-description">{{ stage.description }}</p>
-          </div>
-          @if (!isLast) {
-            <div class="stage-connector">
-              <div class="connector-line">
-                @if (stages[i + 1].isLocked) {
-                  <img src="/academy/lock.png" alt="Locked stage" class="lock-icon" />
-                }
+          @for (
+            stage of stages;
+            track trackByStageNumber(i, stage);
+            let i = $index;
+            let isLast = $last
+          ) {
+            <div class="stage-wrapper">
+              <div class="stage-container" [class.locked]="stage.isLocked">
+                <h3 class="stage-title">{{ stage.title }}</h3>
+                <app-course-tree
+                  [nodes]="stage.treeCourses"
+                  [loading]="false"
+                  [error]="error"
+                  (courseClick)="onCourseClick($event)"
+                  (retryAction)="ngOnInit()"
+                >
+                </app-course-tree>
+                <div class="stage-footer">
+                  <div class="stage-divider"></div>
+                  <p class="stage-description">{{ stage.description }}</p>
+                </div>
               </div>
             </div>
+            @if (!isLast) {
+              <!-- New academy connector design commented out as requested.
+              <div class="connector-line"></div>
+              -->
+
+              <div class="stage-connector">
+                <div class="connector-line"></div>
+                @if (stages[i + 1]?.isLocked) {
+                  <img
+                    src="/icons/icons-40/Lock.svg"
+                    alt="Locked level"
+                    class="lock-icon"
+                  />
+                }
+              </div>
+            }
           }
-        }
-      </div>
-    </section>
-  </div>
+        </div>
+      </section>
+    </div>
 </div>

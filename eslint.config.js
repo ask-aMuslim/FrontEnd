@@ -1,32 +1,58 @@
 // @ts-check
-const eslint = require('@eslint/js');
-const tseslint = require('typescript-eslint');
-const angular = require('@angular-eslint/eslint-plugin');
-const angularTemplate = require('@angular-eslint/eslint-plugin-template');
+const js = require('@eslint/js');
+const angularPlugin = require('@angular-eslint/eslint-plugin');
+const angularTemplatePlugin = require('@angular-eslint/eslint-plugin-template');
 const angularTemplateParser = require('@angular-eslint/template-parser');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
+const tsParser = require('@typescript-eslint/parser');
 
-module.exports = tseslint.config(
+// Flat config format for ESLint 9+ (as per https://eslint.org/docs/latest/use/configure/configuration-files-new)
+module.exports = [
     {
+        // Global ignores
         ignores: [
             '.angular/**',
             'src/app/api/**',
             'dist/**',
             'node_modules/**',
             'scripts/**',
+            '.specify/**',
+            'validate-speckit.js',
         ],
     },
     {
-        files: ['**/*.ts'],
-        ignores: [
-            'src/app/api/**',
-        ],
-        extends: [
-            eslint.configs.recommended,
-            ...tseslint.configs.recommended,
-        ],
+        // TypeScript files
+        files: ['src/**/*.ts'],
+        languageOptions: {
+            parser: tsParser,
+            parserOptions: {
+                project: ['tsconfig.json', 'tsconfig.spec.json', 'tsconfig.app.json'],
+                tsconfigRootDir: __dirname,
+                sourceType: 'module',
+                ecmaVersion: 'latest',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tsPlugin,
+            '@angular-eslint': angularPlugin,
+        },
+        rules: {
+            ...js.configs.recommended.rules,
+            ...tsPlugin.configs.recommended.rules,
+            ...angularPlugin.configs.recommended.rules,
+        },
     },
     {
-        files: ['**/*.html'],
-        ignores: ['**/*.html'],
-    }
-);
+        // HTML templates
+        files: ['src/**/*.html'],
+        languageOptions: {
+            parser: angularTemplateParser,
+        },
+        plugins: {
+            '@angular-eslint/template': angularTemplatePlugin,
+        },
+        rules: {
+            ...angularTemplatePlugin.configs.recommended.rules,
+        },
+    },
+];

@@ -1,6 +1,7 @@
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { type CanActivateFn, Router } from '@angular/router';
+import { from, map } from 'rxjs';
 import { TokenService } from '../auth/token.service';
 
 export const authGuard: CanActivateFn = (_route, state) => {
@@ -18,11 +19,15 @@ export const authGuard: CanActivateFn = (_route, state) => {
     });
   }
 
-  if (tokenService.isAuthenticated()) {
-    return true;
-  }
+  return from(tokenService.initialize()).pipe(
+    map(() => {
+      if (tokenService.hasValidSession()) {
+        return true;
+      }
 
-  return router.createUrlTree(['/login'], {
-    queryParams: { returnUrl: state.url },
-  });
+      return router.createUrlTree(['/login'], {
+        queryParams: { returnUrl: state.url },
+      });
+    })
+  );
 };

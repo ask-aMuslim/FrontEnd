@@ -5,7 +5,7 @@
  * Handles JWT injection and token refresh on 401 responses.
  */
 
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
 import {
     HttpInterceptorFn,
     HttpRequest,
@@ -26,13 +26,16 @@ import {
     take
 } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
 import { TokenService } from '../../auth/token.service';
 import { RefreshQueueService } from '../../auth/refresh-queue.service';
 import {
     SKIP_AUTH,
     SKIP_TOKEN_REFRESH,
-    IS_REFRESH_REQUEST
+    IS_REFRESH_REQUEST,
+    REQUIRE_CREDENTIALS,
 } from '../context-tokens';
+import { environment } from '../../../../environments/environment';
 
 /**
  * Auth Interceptor
@@ -50,6 +53,8 @@ export const authInterceptor: HttpInterceptorFn = (
     const tokenService = inject(TokenService);
     const refreshQueue = inject(RefreshQueueService);
     const router = inject(Router);
+    const platformId = inject(PLATFORM_ID);
+    const isBrowser = isPlatformBrowser(platformId);
 
     // Skip auth for requests marked with SKIP_AUTH
     if (req.context.get(SKIP_AUTH)) {
@@ -61,19 +66,41 @@ export const authInterceptor: HttpInterceptorFn = (
         return next(req);
     }
 
+    const compatibleReq = applyRequestCompatibility(req);
+
     // Get valid token and attach to request
-    return getTokenAndAttach(req, tokenService).pipe(
+    return from(tokenService.initialize()).pipe(
+        switchMap(() => getTokenAndAttach(compatibleReq, tokenService)),
         switchMap(authReq => next(authReq)),
         catchError((error: unknown) => {
-            // Handle 401 Unauthorized
-            if (error instanceof HttpErrorResponse && error.status === 401) {
+            const statusCode = extractStatusCode(error);
+
+            // Handle auth failures (backend may return 401 or 403 on expired/missing token)
+            if (statusCode === 401 || statusCode === 403) {
                 // Check if we should skip refresh for this request
                 if (req.context.get(SKIP_TOKEN_REFRESH)) {
                     return throwError(() => error);
                 }
 
+                const shouldAttemptRefreshForForbidden =
+                    statusCode === 403 && (
+                        tokenService.isTokenExpired()
+                        || tokenService.isTokenExpiringSoon()
+                        || !tokenService.hasValidSession()
+                    );
+
+                if (statusCode === 403 && !shouldAttemptRefreshForForbidden) {
+                    return throwError(() => error);
+                }
+
+                // If user has no session at all, fail gracefully without refresh loop
+                const hasRefreshCapability = tokenService.canUseCookieRefresh();
+                if (!tokenService.hasValidSession() && !hasRefreshCapability) {
+                    return throwError(() => error);
+                }
+
                 // Attempt token refresh and retry
-                return handle401WithRefresh(req, next, tokenService, refreshQueue, router);
+                return handleAuthFailureWithRefresh(compatibleReq, next, tokenService, refreshQueue, router, isBrowser);
             }
 
             return throwError(() => error);
@@ -119,13 +146,21 @@ function handle401WithRefresh(
     next: HttpHandlerFn,
     tokenService: TokenService,
     refreshQueue: RefreshQueueService,
-    router: Router
+    router: Router,
+    isBrowser: boolean
 ): Observable<HttpEvent<unknown>> {
-    // Check if we have a refresh token
-    if (!tokenService.refreshToken()) {
-        // No refresh token - redirect to login
+    // Check if refresh can be attempted via refresh cookie
+    const hasRefreshCapability = tokenService.canUseCookieRefresh();
+    if (!hasRefreshCapability) {
+        // No refresh capability - redirect to login
         tokenService.clearTokens();
-        router.navigate(['/login']);
+        if (isBrowser) {
+            void router.navigate(['/login'], {
+                queryParams: {
+                    returnUrl: router.url
+                }
+            });
+        }
         return throwError(() => new Error('Session expired - please login again'));
     }
 
@@ -140,10 +175,27 @@ function handle401WithRefresh(
             // Refresh failed - clear tokens and redirect to login
             tokenService.clearTokens();
             refreshQueue.cancelAllPending();
-            router.navigate(['/login']);
+            if (isBrowser) {
+                void router.navigate(['/login'], {
+                    queryParams: {
+                        returnUrl: router.url
+                    }
+                });
+            }
             return throwError(() => refreshError);
         })
     );
+}
+
+function handleAuthFailureWithRefresh(
+    req: HttpRequest<unknown>,
+    next: HttpHandlerFn,
+    tokenService: TokenService,
+    refreshQueue: RefreshQueueService,
+    router: Router,
+    isBrowser: boolean
+): Observable<HttpEvent<unknown>> {
+    return handle401WithRefresh(req, next, tokenService, refreshQueue, router, isBrowser);
 }
 
 /**
@@ -153,9 +205,60 @@ function attachAuthHeader(
     req: HttpRequest<unknown>,
     token: string
 ): HttpRequest<unknown> {
-    return req.clone({
-        setHeaders: {
-            Authorization: `Bearer ${token}`
+    return req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+}
+
+function extractStatusCode(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) {
+        return error.status;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+        const maybeStatus = (error as { statusCode?: unknown; status?: unknown }).statusCode
+            ?? (error as { statusCode?: unknown; status?: unknown }).status;
+
+        if (typeof maybeStatus === 'number' && Number.isFinite(maybeStatus)) {
+            return maybeStatus;
         }
+    }
+
+    return null;
+}
+
+function applyRequestCompatibility(req: HttpRequest<unknown>): HttpRequest<unknown> {
+    const setHeaders: Record<string, string> = {};
+    const requiresCredentials = req.context.get(REQUIRE_CREDENTIALS);
+
+    if (!req.headers.has('Accept')) {
+        setHeaders['Accept'] = 'application/json';
+    }
+
+    if (shouldSetJsonContentType(req)) {
+        setHeaders['Content-Type'] = 'application/json';
+    }
+
+    return req.clone({
+        withCredentials: environment.authWithCredentials || requiresCredentials,
+        setHeaders,
     });
+}
+
+function shouldSetJsonContentType(req: HttpRequest<unknown>): boolean {
+    if (req.headers.has('Content-Type')) {
+        return false;
+    }
+
+    if (req.body === null || req.body === undefined) {
+        return false;
+    }
+
+    const isFormData = typeof FormData !== 'undefined' && req.body instanceof FormData;
+    const isBlob = typeof Blob !== 'undefined' && req.body instanceof Blob;
+    const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && req.body instanceof ArrayBuffer;
+
+    if (isFormData || isBlob || isArrayBuffer) {
+        return false;
+    }
+
+    return typeof req.body === 'object';
 }

@@ -18,7 +18,7 @@ export class ProfilePopupComponent {
   }
 
   goToProfile(): void {
-    this.router.navigate(['/account']);
+    this.router.navigate(['/profile']);
     this.close.emit();
   }
 }

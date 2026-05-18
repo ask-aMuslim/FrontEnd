@@ -1,0 +1,370 @@
+<div
+  class="ask-assistant-page"
+  [class.ask-assistant-page--drawer-open]="isHistoryDrawerOpen"
+>
+  <div class="ask-assistant-page__shell">
+    <div class="ask-assistant-page__toolbar">
+      <!-- <div class="ask-assistant-page__toolbar-copy">
+        <p class="ask-assistant-page__eyebrow">Ask Assistant</p>
+        <p
+          class="ask-assistant-page__toolbar-caption text-sm text-(--color-text-caption)"
+        >
+          Live streaming replies with thread history.
+        </p>
+      </div> -->
+
+      <button
+        type="button"
+        class="ask-assistant-page__history-toggle button flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold"
+        (click)="toggleHistoryDrawer()"
+        [attr.aria-expanded]="isHistoryDrawerOpen"
+        aria-controls="ask-assistant-history-drawer"
+      >
+        <span class="ask-assistant-page__history-toggle-label">Chats List</span>
+        <span
+          class="ask-assistant-page__history-toggle-icon h-5 w-5 shrink-0"
+          aria-hidden="true"
+        ></span>
+      </button>
+    </div>
+
+    <main
+      class="ask-assistant-page__stage"
+      [ngClass]="
+        messages().length
+          ? 'ask-assistant-page__stage--thread'
+          : 'ask-assistant-page__stage--empty'
+      "
+    >
+      @if (!messages().length) {
+        <section class="ask-assistant-page__empty-state">
+          <img
+            [src]="logo"
+            alt="Ask A Muslim"
+            class="ask-assistant-page__logo h-[100px] w-[126px] md:h-[164px] md:w-[206px]"
+          />
+          <span
+            class="ask-assistant-page__greeting text-lg md:text-2xl font-medium"
+          >
+            Assalamu Alaykum
+          </span>
+          <h1
+            class="ask-assistant-page__title text-2xl md:text-[36px] font-bold"
+          >
+            Do you have a religious question in mind?
+          </h1>
+
+          <ng-container
+            [ngTemplateOutlet]="askComposer"
+            [ngTemplateOutletContext]="{ sticky: false }"
+          ></ng-container>
+        </section>
+      } @else {
+        <section class="ask-assistant-page__thread">
+          <div class="ask-assistant-page__thread-header">
+            <p class="ask-assistant-page__thread-eyebrow">Current chat</p>
+            <h2 class="ask-assistant-page__thread-title">
+              {{ activeChatTitle }}
+            </h2>
+            <p
+              class="ask-assistant-page__thread-summary text-sm text-(--color-text-caption)"
+            >
+              {{ messages().length }} message{{
+                messages().length === 1 ? "" : "s"
+              }}
+              in this chat.
+            </p>
+          </div>
+
+          <div class="ask-assistant-page__messages-panel">
+            <div
+              #messagesContainer
+              class="ask-assistant-page__messages-list scroll-smooth"
+              aria-live="polite"
+            >
+              @for (
+                message of messages();
+                track trackByMessage($index, message)
+              ) {
+                <div class="ask-assistant-page__message-row">
+                  <div
+                    class="ask-assistant-page__message-stack"
+                    [ngClass]="
+                      message.role === 'user'
+                        ? 'ask-assistant-page__message-stack--user'
+                        : 'ask-assistant-page__message-stack--assistant'
+                    "
+                  >
+                    <div
+                      class="ask-assistant-page__message-bubble"
+                      [ngClass]="
+                        message.role === 'user'
+                          ? 'ask-assistant-page__message-bubble--user'
+                          : 'ask-assistant-page__message-bubble--assistant'
+                      "
+                    >
+                      @if (message.role === 'user') {
+                        {{ message.text }}
+                      } @else {
+                        <div
+                          class="ask-assistant-page__message-markdown"
+                          [class.is-streaming]="isResponding() && $last"
+                          [innerHTML]="message.text | markdown"
+                        ></div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              @if (isResponding() && messages()[messages().length - 1]?.role === 'user') {
+                <div class="ask-assistant-page__typing-indicator">
+                  <span class="ask-assistant-page__typing-dot"></span>
+                  <span class="ask-assistant-page__typing-dot"></span>
+                  <span class="ask-assistant-page__typing-dot"></span>
+                </div>
+              }
+
+              <div
+                #bottomAnchor
+                class="ask-assistant-page__bottom-anchor"
+                aria-hidden="true"
+              ></div>
+            </div>
+          </div>
+
+          <ng-container
+            [ngTemplateOutlet]="askComposer"
+            [ngTemplateOutletContext]="{ sticky: true }"
+          ></ng-container>
+        </section>
+      }
+    </main>
+
+    @if (errorMessage) {
+      <p
+        class="ask-assistant-page__error-message text-sm font-medium text-red-600"
+      >
+        {{ errorMessage }}
+      </p>
+    }
+  </div>
+
+  @if (isHistoryDrawerOpen) {
+    <button
+      type="button"
+      class="ask-assistant-page__drawer-backdrop"
+      aria-label="Close chat history"
+      (click)="closeHistoryDrawer()"
+    ></button>
+  }
+
+  <aside
+    id="ask-assistant-history-drawer"
+    class="ask-assistant-page__history-drawer"
+    [class.is-open]="isHistoryDrawerOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ask-assistant-history-title"
+  >
+    <div class="ask-assistant-page__history-drawer-header">
+      <div>
+        <p class="ask-assistant-page__history-drawer-eyebrow">Chat history</p>
+        <h2
+          id="ask-assistant-history-title"
+          class="ask-assistant-page__history-drawer-title"
+        >
+          Chat history
+        </h2>
+        <p
+          class="ask-assistant-page__history-drawer-summary text-sm text-(--color-text-caption)"
+        >
+          {{ conversations.length }} saved chat{{
+            conversations.length === 1 ? "" : "s"
+          }}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="ask-assistant-page__history-close"
+        (click)="closeHistoryDrawer()"
+        aria-label="Close chat history"
+      >
+        <img
+          [src]="closeIcon"
+          alt=""
+          class="ask-assistant-page__history-close-icon h-5 w-5"
+        />
+      </button>
+    </div>
+
+    <button
+      type="button"
+      class="ask-assistant-page__history-new-chat button flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white"
+      (click)="startNewConversation()"
+    >
+      <img
+        [src]="newChatIcon"
+        alt=""
+        class="ask-assistant-page__history-new-chat-icon h-4 w-4"
+      />
+      <span>New chat</span>
+    </button>
+
+    <div class="ask-assistant-page__history-body">
+      @if (isLoadingConversations) {
+        <p
+          class="ask-assistant-page__history-loading text-sm text-(--color-text-placeholder)"
+        >
+          Loading chats...
+        </p>
+      } @else if (conversationErrorMessage) {
+        <div class="ask-assistant-page__history-empty-state">
+          <p
+            class="ask-assistant-page__history-empty-text text-sm text-(--color-text-caption)"
+          >
+            {{ conversationErrorMessage }}
+          </p>
+          <button
+            type="button"
+            class="ask-assistant-page__history-retry button"
+            (click)="startNewConversation()"
+          >
+            Start a new chat
+          </button>
+        </div>
+      } @else if (conversationSections.length) {
+        <div class="ask-assistant-page__history-sections">
+          @for (
+            section of conversationSections;
+            track trackByConversationSection($index, section)
+          ) {
+            <section class="ask-assistant-page__history-section">
+              <div class="ask-assistant-page__history-section-header">
+                <h3 class="ask-assistant-page__history-section-title">
+                  {{ section.label }}
+                </h3>
+                <span
+                  class="ask-assistant-page__history-section-count text-xs text-(--color-text-placeholder)"
+                >
+                  {{ section.items.length }} chat{{
+                    section.items.length === 1 ? "" : "s"
+                  }}
+                </span>
+              </div>
+
+              <div class="ask-assistant-page__history-list">
+                @for (
+                  conversation of section.items;
+                  track trackByConversation($index, conversation)
+                ) {
+                  <button
+                    type="button"
+                    class="ask-assistant-page__history-item"
+                    [class.is-active]="
+                      isConversationActive(conversation.threadId)
+                    "
+                    (click)="openConversation(conversation.threadId)"
+                  >
+                    <div class="ask-assistant-page__history-item-top">
+                      <div class="ask-assistant-page__history-item-copy">
+                        <span class="ask-assistant-page__history-item-title truncate">{{
+                          conversation.title
+                        }}</span>
+                        <span
+                          class="ask-assistant-page__history-item-thread hidden text-xs text-(--color-text-placeholder)"
+                        >
+                          Chat ID {{ conversation.threadId | slice: 0 : 8 }}…
+                        </span>
+                      </div>
+
+                      @if (isConversationActive(conversation.threadId)) {
+                        <span class="ask-assistant-page__history-badge"
+                          >Active</span
+                        >
+                      }
+                    </div>
+
+                    <div
+                      class="ask-assistant-page__history-item-meta text-xs text-(--color-text-caption)"
+                    >
+                      <span
+                        >Started
+                        {{
+                          conversation.createdAt | date: "MMM d, h:mm a"
+                        }}</span
+                      >
+                      <span
+                        >Updated
+                        {{
+                          conversation.updatedAt | date: "MMM d, h:mm a"
+                        }}</span
+                      >
+                    </div>
+                  </button>
+                }
+              </div>
+            </section>
+          }
+        </div>
+      } @else {
+        <div class="ask-assistant-page__history-empty-state">
+          <p
+            class="ask-assistant-page__history-empty-text text-sm text-(--color-text-caption)"
+          >
+            No previous chats yet.
+          </p>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <ng-template #askComposer let-sticky="sticky">
+    <form
+      (submit)="submitQuestion($event)"
+      class="ask-assistant-page__form"
+      [ngClass]="
+        sticky
+          ? 'ask-assistant-page__form--sticky'
+          : 'ask-assistant-page__form--inline'
+      "
+      autocomplete="off"
+    >
+      <div
+        class="ask-assistant-page__form-row"
+        [ngClass]="
+          sticky
+            ? 'ask-assistant-page__form-row--sticky'
+            : 'ask-assistant-page__form-row--inline'
+        "
+      >
+        <div class="ask-assistant-page__input-shell">
+          <textarea
+            name="ask"
+            #askInput
+            rows="1"
+            [value]="inputValue"
+            (input)="onInput(askInput.value)"
+            (keydown)="onComposerKeydown($event)"
+            placeholder="Ask your question"
+            class="ask-assistant-page__input"
+          ></textarea>
+
+          <!--
+              Static suggestion dropdown removed after live API integration.
+              Keeping this comment to document the intentional deprecation of mock hints.
+              -->
+        </div>
+
+        <button type="submit" class="ask-assistant-page__submit-button button">
+          <span
+            class="ask-assistant-page__submit-label text-base md:text-lg font-semibold text-white"
+          >
+            {{ isResponding() ? "Working..." : "Ask" }}
+          </span>
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</div>

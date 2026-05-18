@@ -13,10 +13,14 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* Offset for the sticky header */
+}
+
 * {
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif !important;
-  scroll-behavior: smooth;
 }
 
 /* Scrollbar Styles */
@@ -121,6 +125,49 @@ h1 {
   font-weight: 700;
 }
 
-span.special-primary {
+.special-primary {
   color: var(--color-button-primary-normal);
+}
+
+.text-caption {
+  color: var(--color-text-caption);
+}
+
+.text-title {
+  color: var(--color-text-title);
+}
+
+.text-primary {
+  color: var(--color-button-primary-normal);
+}
+
+img.aam-late-image {
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+img.aam-late-image.aam-late-image--loaded {
+  opacity: 1;
+}
+
+
+/* .social-buttons .nsm7Bb-HzV7m-LgbsSe {
+  border: none !important;
+} */
+
+.btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-embed-wrapper iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+}
+
+.google-btn-wrapper iframe .qJTHM>#container-div {
+  width: 100% !important;
+  padding: 2px 0px !important;
 }

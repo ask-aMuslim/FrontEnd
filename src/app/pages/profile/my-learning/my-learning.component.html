@@ -1,0 +1,357 @@
+<div class="my-learning">
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="my-learning__loading">
+      <div class="my-learning__spinner"></div>
+      <p>Loading your learning data...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="my-learning__error">
+      <p>{{ error() }}</p>
+      <button class="my-learning__retry-btn" (click)="retryLoad()">
+        Retry
+      </button>
+    </div>
+  }
+
+  <!-- Content -->
+  @if (!isLoading() && !error()) {
+    <div class="saved-lessons" style="display: none">
+      <h2 class="saved-lessons__title">
+        Saved Lessons ({{ savedLessons().length }})
+      </h2>
+      <div class="saved-lessons__divider"></div>
+
+      @if (hasLessons()) {
+        <div class="saved-lessons__row saved-lessons-row" #scrollRow>
+          @for (lesson of savedLessons(); track lesson.id) {
+            <div class="saved-lessons__card">
+              <span class="saved-lessons__course">{{ lesson.course }}</span>
+              <div class="saved-lessons__meta">
+                <div class="saved-lessons__icon">
+                  <div
+                    [inlineSVG]="'/icons/icons-24/video-file.svg'"
+                    class="saved-lessons__icon-svg"
+                  ></div>
+                </div>
+                <div class="saved-lessons__text">
+                  <span class="saved-lessons__lesson">{{ lesson.lesson }}</span>
+                  <div class="saved-lessons__duration">
+                    <div
+                      [inlineSVG]="'/icons/icons-16/duration.svg'"
+                      class="saved-lessons__duration-icon"
+                    ></div>
+                    <span class="saved-lessons__duration-text">
+                      {{ lesson.duration }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="saved-lessons__empty">
+          <div class="saved-lessons__empty-icon">
+            <div
+              [inlineSVG]="'/icons/icons-24/video-file.svg'"
+              class="saved-lessons__empty-icon-svg"
+            ></div>
+          </div>
+          <p class="saved-lessons__empty-text">No saved lessons yet</p>
+          <p class="saved-lessons__empty-hint">
+            Start learning to see your lessons here
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- Remaining Courses in Current Stage -->
+    <div class="remaining-courses mt-4 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2
+          class="text-xl font-bold text-gray-900 border-l-4 border-blue-500 pl-3"
+        >
+          Next Up in Your Current Stage
+        </h2>
+      </div>
+
+      @if (hasRemainingCourses()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (course of remainingCourses(); track course.id) {
+            <div
+              class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-3"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"
+                >
+                  <div
+                    [inlineSVG]="'/icons/icons-24/bookmark.svg'"
+                    class="w-6 h-6"
+                  ></div>
+                </div>
+                <div>
+                  <h3
+                    class="font-bold text-gray-900 line-clamp-1"
+                    [title]="course.title"
+                  >
+                    {{ course.title }}
+                  </h3>
+                  <p class="text-sm font-medium text-blue-600">
+                    {{ course.categoryLabel }}
+                  </p>
+                </div>
+              </div>
+              <div
+                class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50"
+              >
+                <span class="text-sm text-gray-500 flex items-center gap-1">
+                  <div
+                    [inlineSVG]="'/icons/icons-16/duration.svg'"
+                    class="w-4 h-4"
+                  ></div>
+                  {{ course.duration }}
+                </span>
+                <button
+                  (click)="goToCourse(course.id)"
+                  class="text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Start Course
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div
+          class="bg-gray-50 rounded-xl p-8 text-center border border-gray-100"
+        >
+          <div
+            [inlineSVG]="'/icons/icons-24/done.svg'"
+            class="w-12 h-12 text-gray-400 mx-auto mb-3"
+          ></div>
+          <h3 class="font-bold text-gray-900 mb-1">
+            Awesome! You're caught up.
+          </h3>
+          <p class="text-gray-500 text-sm">
+            You have completed all courses in your current stage. Take the stage
+            quiz to unlock the next level.
+          </p>
+        </div>
+      }
+    </div>
+
+    <div class="notes">
+      <div class="notes__header">
+        <div class="notes__header-copy">
+          <h2 class="notes__title">Notes ({{ filteredNotes.length }})</h2>
+          <span class="notes__results-summary">{{ noteResultsSummary }}</span>
+        </div>
+
+        <div class="notes__header-actions">
+          <label class="notes__search">
+            <div
+              [inlineSVG]="'/icons/icons-24/search.svg'"
+              class="notes__search-icon"
+            ></div>
+            <input
+              #notesSearchInput
+              type="text"
+              [value]="searchQuery"
+              placeholder="Search notes, lessons, courses, levels"
+              (input)="onSearchChange(notesSearchInput.value)"
+              class="notes__search-input"
+            />
+          </label>
+
+          <button
+            type="button"
+            class="notes__filter-btn"
+            (click)="openNotesFilterModal()"
+            [attr.aria-expanded]="isNotesFilterModalOpen"
+            aria-controls="notes-filter-modal"
+          >
+            <span class="notes__filter-text">Filters</span>
+            <span class="notes__filter-icon" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="notes__filters-meta">
+        @if (hasActiveNoteFilters) {
+          <button
+            type="button"
+            class="notes__clear-btn"
+            (click)="clearNoteFilters()"
+          >
+            Clear filters
+          </button>
+        }
+      </div>
+
+      @if (isNotesFilterModalOpen) {
+        <div class="notes__modal-backdrop" (click)="closeNotesFilterModal()">
+          <div
+            id="notes-filter-modal"
+            class="notes__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notes-filter-title"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="notes__modal-header">
+              <div class="notes__modal-heading">
+                <h3 id="notes-filter-title" class="notes__modal-title">
+                  Filter notes
+                </h3>
+                <p class="notes__modal-text">
+                  Narrow your notes by course, lesson, level, and sort order.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="notes__modal-close-btn"
+                aria-label="Close filters"
+                (click)="closeNotesFilterModal()"
+              >
+                <span class="notes__modal-close-icon" aria-hidden="true"
+                  >×</span
+                >
+              </button>
+            </div>
+
+            <div class="notes__filters">
+              <div class="notes__filter-group">
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedSortOrder"
+                  #sortOrderSelect
+                  (change)="onSortOrderChange(sortOrderSelect.value)"
+                >
+                  <option value="Latest">Latest</option>
+                  <option value="Oldest">Oldest</option>
+                </select>
+
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedCourseFilter"
+                  #courseFilterSelect
+                  (change)="onCourseFilterChange(courseFilterSelect.value)"
+                >
+                  @for (course of getCourseFilterOptions(); track course) {
+                    <option [value]="course">{{ course }}</option>
+                  }
+                </select>
+
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedLessonFilter"
+                  #lessonFilterSelect
+                  (change)="onLessonFilterChange(lessonFilterSelect.value)"
+                >
+                  @for (lesson of getLessonFilterOptions(); track lesson) {
+                    <option [value]="lesson">{{ lesson }}</option>
+                  }
+                </select>
+
+                <select
+                  class="notes__filter-select"
+                  [value]="selectedLevelFilter"
+                  #levelFilterSelect
+                  (change)="onLevelFilterChange(levelFilterSelect.value)"
+                >
+                  @for (level of getLevelFilterOptions(); track level) {
+                    <option [value]="level">{{ level }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="notes__modal-actions">
+              <button
+                type="button"
+                class="notes__modal-done-btn"
+                (click)="closeNotesFilterModal()"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Notes Loading State -->
+      @if (isLoadingNotes()) {
+        <div class="notes__loading">
+          <div class="my-learning__spinner"></div>
+          <p>Loading notes...</p>
+        </div>
+      }
+
+      <!-- Notes Error State -->
+      @if (notesError()) {
+        <div class="notes__error">
+          <p>{{ notesError() }}</p>
+        </div>
+      }
+
+      <!-- Notes Content -->
+      @if (!isLoadingNotes() && !notesError()) {
+        @if (filteredNotes.length > 0) {
+          <div class="notes__list">
+            @for (note of filteredNotes; track note.id) {
+              <button
+                type="button"
+                class="notes__note-card"
+                (click)="openNoteInLesson(note)"
+              >
+                <div class="notes__note-meta">
+                  <span class="notes__note-label"
+                    >Taken at {{ note.progressTime }}</span
+                  >
+                  <span class="notes__note-created">
+                    {{ formatNoteCreatedAt(note) }}
+                  </span>
+                </div>
+                <div class="notes__note-context">
+                  <span class="notes__note-context-item"
+                    >Lesson: {{ note.lesson }}</span
+                  >
+                  <span class="notes__note-context-item"
+                    >Course: {{ note.course }}</span
+                  >
+                  <span class="notes__note-context-item"
+                    >Level: {{ note.level }}</span
+                  >
+                </div>
+                <p class="notes__note-body">{{ note.body }}</p>
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="notes__empty">
+            <div class="notes__empty-icon">
+              <div
+                [inlineSVG]="'/icons/icons-24/articles.svg'"
+                class="notes__empty-icon-svg"
+              ></div>
+            </div>
+            <p class="notes__empty-text">No notes yet</p>
+            <p class="notes__empty-hint">
+              Take notes while watching lessons to see them here
+            </p>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

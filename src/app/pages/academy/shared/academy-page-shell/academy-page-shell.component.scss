@@ -7,8 +7,9 @@
   width: 100%;
   overflow: hidden;
   position: absolute;
+  top: 0;
   left: 0;
-  z-index: -1;
+  z-index: 0;
 }
 
 .academy-banner-image {
@@ -21,18 +22,28 @@
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .academy-breadcrumb {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 24px;
-  font-family: 'Poppins', sans-serif;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 16px rgba(12, 78, 45, 0.08);
+  font-family: "Poppins", sans-serif;
 
   ol {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     list-style: none;
     margin: 0;
@@ -137,20 +148,11 @@
 
 .academy-page-shell.variant-quiz {
   .academy-page-banner {
-    height: 160px;
-    z-index: -9;
-
-    @media (min-width: 768px) {
-      height: 200px;
-    }
-
-    @media (min-width: 1024px) {
-      height: 256px;
-    }
+    height: 256px;
   }
 
   .academy-banner-image {
-    opacity: 0.3;
+    // Standard opacity for banners
   }
 
   .academy-page-body {
@@ -160,7 +162,7 @@
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 2rem;
 
     @media (min-width: 500px) {
       padding: 40px 2rem 48px;
@@ -169,20 +171,53 @@
     @media (min-width: 768px) {
       padding: 40px 2.5rem 48px;
       max-width: min(1248px, 100% - 5rem);
+      gap: 3rem;
     }
 
     @media (min-width: 1024px) {
       padding: 40px 3rem 48px;
       max-width: min(1248px, 100% - 6rem);
+      gap: 4rem;
     }
 
     @media (min-width: 1280px) {
       padding: 40px 4rem 48px;
       max-width: 1248px;
+      gap: 6rem;
     }
 
     @media (min-width: 1400px) {
       padding: 40px 5rem 48px;
+    }
+  }
+}
+
+:host(.academy-page-shell--congrats) {
+  .academy-page-shell.variant-quiz {
+    .academy-page-banner {
+      left: 50%;
+      width: 100vw;
+      transform: translateX(-50%);
+    }
+
+    .academy-page-body {
+      gap: 1.25rem;
+
+      @media (min-width: 500px) {
+        gap: 1.5rem;
+      }
+
+      @media (min-width: 768px) {
+        gap: 1.75rem;
+      }
+
+      @media (min-width: 1024px) {
+        gap: 2rem;
+      }
+
+      @media (min-width: 1280px) {
+        gap: 2rem;
+      }
     }
   }
 }
@@ -198,7 +233,7 @@
     padding: 32px 1.5rem 48px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 2rem;
 
     @media (min-width: 500px) {
       padding: 32px 2rem 48px;
@@ -207,18 +242,19 @@
     @media (min-width: 768px) {
       padding: 32px 2.5rem 48px;
       max-width: min(1440px, 100% - 5rem);
-      gap: 28px;
+      gap: 3rem;
     }
 
     @media (min-width: 1024px) {
       padding: 32px 3rem 48px;
       max-width: min(1440px, 100% - 6rem);
-      gap: 32px;
+      gap: 4rem;
     }
 
     @media (min-width: 1280px) {
       padding: 32px 4rem 48px;
       max-width: 1440px;
+      gap: 6rem;
     }
 
     @media (min-width: 1440px) {
@@ -250,12 +286,11 @@
 }
 
 .academy-page-shell.variant-lesson {
-  font-family: var(--font-family-english, 'Poppins'), sans-serif;
+  font-family: var(--font-family-english, "Poppins"), sans-serif;
   background: var(--colors-rare-grays-0, #fff);
 
   .academy-page-banner {
     height: 256px;
-    background: linear-gradient(135deg, #156b40 0%, #0c4e2d 100%);
   }
 
   .academy-page-body {
@@ -264,7 +299,7 @@
     padding: 32px 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 2rem;
 
     @media (min-width: 500px) {
       padding: 32px 2rem;
@@ -273,18 +308,19 @@
     @media (min-width: 768px) {
       padding: 32px 2.5rem;
       max-width: min(1248px, 100% - 5rem);
-      gap: 28px;
+      gap: 3rem;
     }
 
     @media (min-width: 1024px) {
       padding: 32px 3rem;
       max-width: min(1248px, 100% - 6rem);
-      gap: 32px;
+      gap: 4rem;
     }
 
     @media (min-width: 1280px) {
       padding: 32px 4rem;
       max-width: 1248px;
+      gap: 6rem;
     }
 
     @media (min-width: 1400px) {

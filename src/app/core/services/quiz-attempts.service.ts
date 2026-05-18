@@ -1,37 +1,93 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
+import { Observable, catchError, filter, map, of, switchMap, take } from 'rxjs';
+import { QuizAttemptFacade } from '../../api/facades/quiz-attempt.facade';
+import { StudentFacade } from '../../api/facades/student.facade';
+import { StudentProfile } from '../models/interfaces/student-profile.model';
+import { QuizAnswerDto } from '../../api/models/quiz-answer-dto';
+import {
+  CreateQuizAttemptRequest,
+  QuizAttemptDto,
+} from '../models/interfaces/quiz-attempt.model';
 
 /**
  * Domain service for quiz attempt CRUD operations.
  *
- * IMPORTANT: QuizAttempts endpoints (/api/QuizAttempts/*) are NOT exposed
- * in the Swagger spec (swagger.json) and therefore have no generated API
- * functions or facades. This service intentionally stays on the legacy
- * ApiService until the backend publishes QuizAttempts in the spec.
- *
- * Related but separate: QuizEvaluationFacade handles server-side quiz
- * evaluation triggers at /api/QuizEvaluation/evaluate/*.
+ * Uses typed facade access for /api/QuizAttempts endpoints.
  */
 @Injectable({ providedIn: 'root' })
 export class QuizAttemptsService {
-  private static readonly QUIZ_ATTEMPTS_PATH = '/api/QuizAttempts';
+  constructor(
+    private readonly facade: QuizAttemptFacade,
+    private readonly studentFacade: StudentFacade,
+  ) { }
 
-  constructor(private readonly api: ApiService) { }
-
-  getByQuiz(quizId: string): Observable<unknown> {
-    return this.api.get<unknown>(`${QuizAttemptsService.QUIZ_ATTEMPTS_PATH}/by-quiz/${quizId}`);
+  getByQuiz(quizId: string): Observable<QuizAttemptDto[]> {
+    return this.facade.getAttemptsByQuiz(quizId).pipe(map((attempts) => attempts.map((attempt) => this.mapAttempt(attempt))));
   }
 
-  getByStudent(studentId: string): Observable<unknown> {
-    return this.api.get<unknown>(`${QuizAttemptsService.QUIZ_ATTEMPTS_PATH}/by-student/${studentId}`);
+  getByStudent(studentId: string): Observable<QuizAttemptDto[]> {
+    return this.facade.getAttemptsByStudent(studentId).pipe(map((attempts) => attempts.map((attempt) => this.mapAttempt(attempt))));
   }
 
-  create(payload: unknown): Observable<unknown> {
-    return this.api.post<unknown>(QuizAttemptsService.QUIZ_ATTEMPTS_PATH, payload);
+  startAttempt(request: CreateQuizAttemptRequest): Observable<string | null> {
+    return this.facade.startAttempt({
+      quizId: String(request.quizId),
+      studentId: String(request.studentId),
+    });
   }
 
-  complete(attemptId: string, payload: unknown): Observable<unknown> {
-    return this.api.put<unknown>(`${QuizAttemptsService.QUIZ_ATTEMPTS_PATH}/complete/${attemptId}`, payload);
+  startAttemptForQuiz(quizId: string): Observable<string | null> {
+    return this.studentFacade.me().pipe(
+      map((profile) => {
+        if (!profile) {
+          return null;
+        }
+
+        const studentIdentifier = this.resolveStudentIdentifier(profile);
+
+        return studentIdentifier
+          ? {
+            ...profile,
+            studentId: studentIdentifier,
+          }
+          : null;
+      }),
+      filter((profile): profile is StudentProfile & { studentId: string } => profile !== null),
+      take(1),
+      switchMap((profile) => this.startAttempt({
+        quizId,
+        studentId: profile.studentId,
+      })),
+      catchError(() => of(null)),
+    );
+  }
+
+  completeAttempt(attemptId: string, answers: QuizAnswerDto[]): Observable<boolean> {
+    return this.facade.completeAttempt(attemptId, { answers });
+  }
+
+  private mapAttempt(attempt: Record<string, unknown>): QuizAttemptDto {
+    return {
+      id: this.asString(attempt['id']),
+      quizId: this.asString(attempt['quizId']),
+      studentId: this.asString(attempt['studentId']),
+      score: typeof attempt['score'] === 'number' ? attempt['score'] : undefined,
+      isPassed: typeof attempt['isPassed'] === 'boolean' ? attempt['isPassed'] : undefined,
+      startedAt: typeof attempt['startedAt'] === 'string' ? attempt['startedAt'] : undefined,
+      completedAt: typeof attempt['completedAt'] === 'string' ? attempt['completedAt'] : undefined,
+      attemptNumber: typeof attempt['attemptNumber'] === 'number' ? attempt['attemptNumber'] : undefined,
+    };
+  }
+
+  private asString(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+  }
+
+  private resolveStudentIdentifier(profile: StudentProfile): string | null {
+    if (typeof profile.studentId === 'string' && profile.studentId.length > 0) {
+      return profile.studentId;
+    }
+
+    return null;
   }
 }

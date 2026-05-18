@@ -5,11 +5,10 @@
   gap: 32px;
   width: 100%;
   max-width: 888px;
-  padding: 24px 0;
 }
 
 .results-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 32px;
   font-weight: 700;
   line-height: normal;
@@ -79,7 +78,7 @@
 }
 
 .score-value {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 40px;
   font-weight: 700;
   line-height: normal;
@@ -93,7 +92,7 @@
 }
 
 .score-label {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: normal;
@@ -185,7 +184,7 @@
 }
 
 .stat-value {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 24px;
   font-weight: 700;
   line-height: normal;
@@ -193,7 +192,7 @@
 }
 
 .stat-label {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
   font-weight: 500;
   line-height: normal;
@@ -261,7 +260,7 @@
 }
 
 .status-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 20px;
   font-weight: 600;
   line-height: normal;
@@ -274,7 +273,7 @@
 }
 
 .status-message {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 150%;
@@ -294,6 +293,7 @@
   gap: 20px;
   padding-top: 8px;
   animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.7s backwards;
+  margin-top: 3rem;
 
   @media (max-width: 640px) {
     flex-direction: column;

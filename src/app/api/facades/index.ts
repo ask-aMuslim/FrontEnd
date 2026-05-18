@@ -10,3 +10,7 @@ export * from './progress.facade';
 export * from './option.facade';
 export * from './muslim-tube.facade';
 export * from './level.facade';
+export * from './lesson-progress.facade';
+export * from './newsletter.facade';
+export * from './assistant-chat.facade';
+export * from './forms.facade';

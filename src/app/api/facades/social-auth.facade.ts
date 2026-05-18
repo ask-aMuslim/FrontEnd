@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
+import { ApiConfiguration } from '../api-configuration';
+import { loginWithGoogle, loginWithFacebook } from '../functions';
 
 export interface SocialAuthResponse {
     token: string;
@@ -14,17 +16,10 @@ export interface SocialAuthResponse {
     };
 }
 
-export interface GoogleIdTokenPayload {
-    idToken: string;
-}
-
-export interface FacebookAccessTokenPayload {
-    accessToken: string;
-}
-
 @Injectable({ providedIn: 'root' })
 export class SocialAuthFacade {
     private readonly http = inject(HttpClient);
+    private readonly config = inject(ApiConfiguration);
 
     /**
      * Login with Google ID Token
@@ -34,15 +29,12 @@ export class SocialAuthFacade {
             return throwError(() => new Error('Invalid Google ID token provided'));
         }
 
-        const payload: GoogleIdTokenPayload = { idToken };
+        console.log('Google ID Token to be sent to backend:', idToken);
 
-        // use relative path to align with other facades and avoid duplicating apiBaseUrl prefix
-        return this.http.post<SocialAuthResponse>(
-            '/api/Authentication/login/google',
-            payload
-        ).pipe(
-            tap((response) => this.validateResponse(response)),
-            catchError((error) => this.handleError(error, 'Google login'))
+        return loginWithGoogle(this.http, this.config.rootUrl, { body: { idToken } }).pipe(
+            map(response => this.mapToSocialAuthResponse(response.body)),
+            tap(mappedResponse => this.validateResponse(mappedResponse)),
+            catchError(error => this.handleError(error, 'Google login'))
         );
     }
 
@@ -54,15 +46,23 @@ export class SocialAuthFacade {
             return throwError(() => new Error('Invalid Facebook access token provided'));
         }
 
-        const payload: FacebookAccessTokenPayload = { accessToken };
-
-        return this.http.post<SocialAuthResponse>(
-            '/api/Authentication/login/facebook',
-            payload
-        ).pipe(
-            tap((response) => this.validateResponse(response)),
-            catchError((error) => this.handleError(error, 'Facebook login'))
+        return loginWithFacebook(this.http, this.config.rootUrl, { body: { accessToken } }).pipe(
+            map(response => this.mapToSocialAuthResponse(response.body)),
+            tap(mappedResponse => this.validateResponse(mappedResponse)),
+            catchError(error => this.handleError(error, 'Facebook login'))
         );
+    }
+
+    private mapToSocialAuthResponse(body: any): SocialAuthResponse {
+        return {
+            token: body?.data?.token || '',
+            user: {
+                id: body?.data?.id,
+                email: body?.data?.email,
+                firstName: body?.data?.firstName,
+                lastName: body?.data?.lastName,
+            }
+        };
     }
 
     private validateResponse(response: SocialAuthResponse | null): void {
@@ -72,7 +72,13 @@ export class SocialAuthFacade {
     }
 
     private handleError(error: unknown, context: string): Observable<never> {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        let errorMessage = 'Unknown error occurred';
+        if (error instanceof HttpErrorResponse) {
+            console.error(`${context} Backend Error:`, error.error);
+            errorMessage = error.error?.message || error.message;
+        } else if (error instanceof Error) {
+            errorMessage = error.message;
+        }
         console.error(`${context} failed:`, errorMessage);
         return throwError(() => new Error(`${context} failed: ${errorMessage}`));
     }

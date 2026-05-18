@@ -1,11 +1,20 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../event.service';
+import { EventStatus } from '../event-status.enum';
+import { getEventStatusBadgeState } from '../event-status.helper';
 import { ProfilePopupComponent } from './profile-popup/profile-popup.component';
 import { SharePopupComponent } from './share-popup/share-popup.component';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
+import { StudentFacade } from '../../../api/facades/student.facade';
+import {
+  EventRegistrationsService,
+  EventRegistrationMyStatusData,
+  EventRegistrationStatus,
+} from '../../../core/services/event-registrations.service';
+import { take } from 'rxjs';
 
 export interface EventDetail {
   id: number | string;
@@ -22,10 +31,13 @@ export interface EventDetail {
   time: string;
   location: string;
   tags: string[];
+  status?: EventStatus;
   isRecorded: boolean;
+  isPublished?: boolean;
   registrationDeadline?: string;
   maxAttendees?: number;
   currentAttendees?: number;
+  meetingLink?: string | null;
   agenda?: string[];
   outcomes?: string[];
 }
@@ -43,17 +55,66 @@ export class EventDetailComponent implements OnInit {
   showProfilePopup = false;
   showSharePopup = false;
   questionText = '';
+  existingQuestionText = '';
+  isRegistered = false;
+  eventRegistrationId: string | null = null;
+  registrationStatus: EventRegistrationStatus | null = null;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private readonly cdr: ChangeDetectorRef,
-  ) { }
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly eventService = inject(EventService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly studentFacade = inject(StudentFacade);
+  private readonly eventRegistrationsService = inject(EventRegistrationsService);
+
+  get statusVariant(): 'upcoming' | 'live' | 'finished' {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).variant;
+  }
+
+  get isFinished(): boolean {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).isFinished;
+  }
+
+  get isLive(): boolean {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).isLive;
+  }
+
+  get statusBadgeText(): string {
+    return getEventStatusBadgeState(
+      'detail',
+      this.event?.status,
+      this.event?.isRecorded === true,
+    ).text;
+  }
+
+  get registrationButtonLabel(): string {
+    if (this.isRegistered) {
+      return 'You Are Already Registered';
+    }
+
+    return this.isLive ? 'Join Live Event' : 'Register Now';
+  }
 
   ngOnInit(): void {
     this.eventId = this.route.snapshot.paramMap.get('id');
     this.loadEventData();
+
+    if (this.eventId) {
+      this.loadMyRegistrationStatus(this.eventId);
+    }
   }
 
   loadEventData(): void {
@@ -93,7 +154,78 @@ export class EventDetailComponent implements OnInit {
   }
 
   registerForEvent(): void {
-    this.showProfilePopup = true;
+    if (!this.eventId) {
+      return;
+    }
+
+    if (this.isRegistered) {
+      return;
+    }
+
+    this.studentFacade
+      .getMyProfileFromApi()
+      .pipe(take(1))
+      .subscribe({
+        next: (profile) => {
+          if (profile?.isProfileCompleted === false) {
+            this.showProfilePopup = true;
+            return;
+          }
+
+          this.createEventRegistration(this.eventId as string);
+        },
+        error: () => {
+          this.showProfilePopup = true;
+        },
+      });
+  }
+
+  joinLiveEvent(): void {
+    const meetingLink = this.event?.meetingLink?.trim();
+    if (!meetingLink || !this.isRegistered) {
+      return;
+    }
+
+    this.document.defaultView?.open(meetingLink, '_blank', 'noopener,noreferrer');
+  }
+
+  private createEventRegistration(eventId: string): void {
+    this.eventRegistrationsService
+      .create({ eventId })
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.loadMyRegistrationStatus(eventId);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private loadMyRegistrationStatus(eventId: string): void {
+    this.eventRegistrationsService
+      .getMyStatus(eventId)
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          this.isRegistered = response.data?.isRegistered === true;
+          this.registrationStatus = response.data?.eventRegistrationStatus ?? null;
+          this.existingQuestionText = response.data?.questionText?.trim() ?? '';
+          this.questionText = '';
+          this.eventRegistrationId = this.resolveEventRegistrationId(response.data);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.isRegistered = false;
+          this.eventRegistrationId = null;
+          this.registrationStatus = null;
+          this.existingQuestionText = '';
+          this.questionText = '';
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   shareEvent(): void {
@@ -106,11 +238,54 @@ export class EventDetailComponent implements OnInit {
 
   submitQuestion(): void {
     const trimmed = this.questionText.trim();
-    if (!trimmed) {
+    if (!this.isRegistered || !trimmed || !this.eventRegistrationId) {
       return;
     }
 
-    this.questionText = '';
+    this.eventRegistrationsService
+      .parkQuestion({
+        eventRegistrationId: this.eventRegistrationId,
+        questionText: trimmed,
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.existingQuestionText = trimmed;
+          this.questionText = '';
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private resolveEventRegistrationId(data: EventRegistrationMyStatusData | null): string | null {
+    if (!data) {
+      return null;
+    }
+
+    const candidates: unknown[] = [
+      data.eventRegistrationId,
+      (data as Partial<{ eventRegistrationID: unknown }>).eventRegistrationID,
+      (data as Partial<{ registrationId: unknown }>).registrationId,
+      (data as Partial<{ registrationID: unknown }>).registrationID,
+      (data as Partial<{ eventRegistration: { id?: unknown } | null }>).eventRegistration?.id,
+      (data as Partial<{ registration: { id?: unknown } | null }>).registration?.id,
+      (data as Partial<{ id: unknown }>).id,
+    ];
+
+    for (const value of candidates) {
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return String(value);
+      }
+    }
+
+    return null;
   }
 
   closeProfilePopup(): void {

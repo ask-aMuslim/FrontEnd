@@ -1,11 +1,29 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs';
 import { ApiConfiguration } from '../api-configuration';
-import { forgotPassword, login, loginWithFacebook, loginWithGoogle, register, resetPassword, verifyOtp } from '../functions';
-import { LoginCommand, LoginWithFacebookCommand, LoginWithGoogleCommand, RegisterCommand } from '../models';
+import {
+  forgotPassword,
+  login,
+  loginWithFacebook,
+  loginWithGoogle,
+  logout as authLogout,
+  register,
+  resetPassword,
+  verifyRegistrationOtp,
+  verifyOtp,
+} from '../functions';
+import {
+  LoginCommand,
+  LoginWithFacebookCommand,
+  LoginWithGoogleCommand,
+  RegisterCommand,
+  ReligiousStatus,
+  Result,
+} from '../models';
 import { TokenService } from '../../core/auth/token.service';
 import { ResultOfAuthenticationResponse } from '../models/result-of-authentication-response';
+import { REQUIRE_CREDENTIALS } from '../../core/http/context-tokens';
 
 export type UserRole = 'Student' | 'Instructor' | 'Admin' | 'NonMuslim';
 
@@ -15,7 +33,8 @@ export interface RegistrationData {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  role: UserRole;
+  religiousStatus: ReligiousStatus;
+  role?: UserRole;
 }
 
 export interface LoginResponse {
@@ -28,16 +47,23 @@ export interface LoginResponse {
   userId?: string;
 }
 
+interface VerifyOtpTokenPayload {
+  token?: string | null;
+  data?: string | {
+    token?: string | null;
+  } | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class IdentityFacade {
-
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  private readonly authCookieContext = new HttpContext().set(REQUIRE_CREDENTIALS, true);
 
   constructor(
     private readonly http: HttpClient,
     private readonly config: ApiConfiguration,
-    private readonly tokenService: TokenService
+    private readonly tokenService: TokenService,
   ) { }
 
   clearError(): void {
@@ -45,25 +71,27 @@ export class IdentityFacade {
   }
 
   register(payload: RegistrationData): Observable<void> {
-    let role: 1 | 2 | 3 | 4 | 5 = 2; // Default to Student (2)
-    if (payload.role === 'Instructor') {
-      role = 3;
-    } else if (payload.role === 'Admin') {
-      role = 1;
-    } else if (payload.role === 'NonMuslim') {
-      role = 5;
-    }
-
     const body: RegisterCommand = {
       email: payload.email,
       password: payload.password,
       firstName: payload.firstName,
       lastName: payload.lastName,
-      role,
+      role: 2,
+      religion: payload.religiousStatus,
     };
 
     return this.withRequestState(
-      register(this.http, this.config.rootUrl, { body }).pipe(map(() => void 0))
+      register(this.http, this.config.rootUrl, { body }).pipe(
+        map(() => void 0),
+      ),
+    );
+  }
+
+  verifyRegistrationOtp(email: string, otp: string): Observable<void> {
+    return this.withRequestState(
+      verifyRegistrationOtp(this.http, this.config.rootUrl, {
+        body: { email, otp },
+      }).pipe(map(() => void 0)),
     );
   }
 
@@ -71,9 +99,13 @@ export class IdentityFacade {
     const body: LoginCommand = { email, password };
 
     return this.withRequestState(
-      login(this.http, this.config.rootUrl, { body }).pipe(
-        map((response) => this.mapAuthenticationResponse(response.body as ResultOfAuthenticationResponse | null))
-      )
+      login(this.http, this.config.rootUrl, { body }, this.authCookieContext).pipe(
+        map((response) =>
+          this.mapAuthenticationResponse(
+            response.body as ResultOfAuthenticationResponse | null,
+          ),
+        ),
+      ),
     );
   }
 
@@ -81,9 +113,13 @@ export class IdentityFacade {
     const body: LoginWithGoogleCommand = { idToken };
 
     return this.withRequestState(
-      loginWithGoogle(this.http, this.config.rootUrl, { body }).pipe(
-        map((response) => this.mapAuthenticationResponse(response.body as ResultOfAuthenticationResponse | null))
-      )
+      loginWithGoogle(this.http, this.config.rootUrl, { body }, this.authCookieContext).pipe(
+        map((response) =>
+          this.mapAuthenticationResponse(
+            response.body as ResultOfAuthenticationResponse | null,
+          ),
+        ),
+      ),
     );
   }
 
@@ -91,35 +127,62 @@ export class IdentityFacade {
     const body: LoginWithFacebookCommand = { accessToken };
 
     return this.withRequestState(
-      loginWithFacebook(this.http, this.config.rootUrl, { body }).pipe(
-        map((response) => this.mapAuthenticationResponse(response.body as ResultOfAuthenticationResponse | null))
-      )
+      loginWithFacebook(this.http, this.config.rootUrl, { body }, this.authCookieContext).pipe(
+        map((response) =>
+          this.mapAuthenticationResponse(
+            response.body as ResultOfAuthenticationResponse | null,
+          ),
+        ),
+      ),
     );
   }
 
   logout(): Observable<void> {
-    this.clearError();
-    this.tokenService.clearTokens();
-    return of(void 0);
+    const context = new HttpContext().set(REQUIRE_CREDENTIALS, true);
+
+    return this.withRequestState(
+      authLogout(this.http, this.config.rootUrl, undefined, context).pipe(
+        map(() => void 0),
+        finalize(() => this.tokenService.clearTokens()),
+      ),
+    );
   }
 
   requestPasswordResetOtp(email: string): Observable<void> {
     return this.withRequestState(
-      forgotPassword(this.http, this.config.rootUrl, { body: { email } }).pipe(map(() => void 0))
+      forgotPassword(this.http, this.config.rootUrl, { body: { email } }).pipe(
+        map(() => void 0),
+      ),
     );
   }
 
-  verifyPasswordResetOtp(email: string, otp: string): Observable<void> {
+  verifyPasswordResetOtp(email: string, otp: string): Observable<string> {
     return this.withRequestState(
-      verifyOtp(this.http, this.config.rootUrl, { body: { email, otp } }).pipe(map(() => void 0))
+      verifyOtp(this.http, this.config.rootUrl, { body: { email, otp } }).pipe(map((response) => {
+        const responseBody = response.body as Result & VerifyOtpTokenPayload;
+        const tokenFromData = typeof responseBody?.data === 'string'
+          ? responseBody.data
+          : responseBody?.data?.token;
+        const token = responseBody?.token ?? tokenFromData;
+
+        if (!token || token.trim().length === 0) {
+          throw new Error('Verification token was not returned by the server.');
+        }
+
+        return token;
+      })),
     );
   }
 
-  resetPassword(email: string, otp: string, newPassword: string): Observable<void> {
+  resetPassword(
+    email: string,
+    token: string,
+    newPassword: string,
+  ): Observable<void> {
     return this.withRequestState(
       resetPassword(this.http, this.config.rootUrl, {
-        body: { email, otp, newPassword },
-      }).pipe(map(() => void 0))
+        body: { email, token, newPassword },
+      }).pipe(map(() => void 0)),
     );
   }
 
@@ -132,7 +195,7 @@ export class IdentityFacade {
         this.error.set(this.resolveErrorMessage(error));
         return throwError(() => error);
       }),
-      finalize(() => this.isLoading.set(false))
+      finalize(() => this.isLoading.set(false)),
     );
   }
 
@@ -157,18 +220,23 @@ export class IdentityFacade {
     return 'Request failed. Please try again.';
   }
 
-  private mapAuthenticationResponse(envelope: ResultOfAuthenticationResponse | null): LoginResponse {
+  private mapAuthenticationResponse(
+    envelope: ResultOfAuthenticationResponse | null,
+  ): LoginResponse {
     const data = envelope?.data ?? {};
 
     if (data.token) {
       const expiresAt = data.expiresAt
         ? new Date(data.expiresAt).getTime()
         : Date.now() + 24 * 60 * 60 * 1000;
-      const expiresIn = Math.max(60, Math.floor((expiresAt - Date.now()) / 1000));
+      const expiresIn = Math.max(
+        60,
+        Math.floor((expiresAt - Date.now()) / 1000),
+      );
 
       this.tokenService.setTokens({
         accessToken: data.token,
-        refreshToken: '',
+        refreshToken: data.refreshToken ?? null,
         expiresIn,
         userId: data.userId ?? undefined,
         userEmail: data.email ?? undefined,

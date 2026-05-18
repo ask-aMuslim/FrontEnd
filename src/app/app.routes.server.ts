@@ -15,36 +15,50 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'academy/lesson/:id',
+    path: 'academy/course/:courseId/quiz/:lessonId',
     renderMode: RenderMode.Server,
   },
+  {
+    path: 'academy/course/:courseId/congratulations',
+    renderMode: RenderMode.Server,
+  },
+
   // Events route with dynamic parameters - use server-side rendering
   {
     path: 'events/:id',
     renderMode: RenderMode.Server,
-  },  // Academy main page - use server-side rendering
+  },  // Academy main page - client-side rendering with resolver
   {
     path: 'academy',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },  // Routes that rely on client-only behavior or long-running calls - avoid prerender timeouts
   {
     path: 'events',
     renderMode: RenderMode.Server,
   },
   {
-    path: 'ask-and-contact/ask-qa',
+    path: 'question-and-answer/topics',
     renderMode: RenderMode.Server,
   },
-  // Muslim Tube video detail with params - use server-side rendering
   {
-    path: 'muslim-tube/video/:id',
+    path: 'question-and-answer/topics/question',
     renderMode: RenderMode.Server,
   },
-  // Muslim Tube channel detail with params - use server-side rendering
   {
-    path: 'muslim-tube/channel/:id',
+    path: 'question-and-answer/ask-assistant',
     renderMode: RenderMode.Server,
   },
+  {
+    path: 'question-and-answer/meet-scholar',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'question-and-answer/meet-scholar/success',
+    renderMode: RenderMode.Server,
+  },
+
+
+
   // Prerender all other routes (static pages like home, about, etc.)
   {
     path: '**',

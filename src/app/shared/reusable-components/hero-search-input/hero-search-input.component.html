@@ -1,0 +1,33 @@
+<div
+  class="hero-search-input"
+  [attr.data-state]="visualState()"
+  [class.is-disabled]="disabled()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+>
+  <img
+    src="/icons/icons-24/search.svg"
+    alt=""
+    aria-hidden="true"
+    class="hero-search-input__icon"
+  />
+
+  <div
+    #editableField
+    class="hero-search-input__field"
+    [id]="inputId()"
+    [attr.data-name]="name()"
+    [attr.data-placeholder]="placeholder()"
+    [attr.contenteditable]="disabled() ? 'false' : 'true'"
+    role="textbox"
+    spellcheck="false"
+    [attr.tabindex]="disabled() ? -1 : 0"
+    [attr.aria-label]="ariaLabel()"
+    [attr.aria-disabled]="disabled()"
+    [attr.data-empty]="value().trim().length === 0 ? 'true' : 'false'"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+    (input)="onEditableInput($event)"
+    (keydown)="onEditableKeydown($event)"
+  ></div>
+</div>

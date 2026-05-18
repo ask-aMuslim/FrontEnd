@@ -1,11 +1,11 @@
-import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
-
-import { Router, ActivatedRoute } from '@angular/router';
-import { Subject, combineLatest } from 'rxjs';
-import { takeUntil, switchMap } from 'rxjs/operators';
+import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
     AcademyCourse,
+    AcademyLesson,
     AcademyStageApi,
     RecentLessonInfo,
     StageProgress,
@@ -14,26 +14,25 @@ import {
 } from '../../core/models/interfaces/academy-progress.model';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { CourseTreeComponent, CourseNode as TreeCourse } from './course-tree/course-tree.component';
+import type { AcademyResolvedData } from './academy.resolver';
 
-/**
- * Course interface for template binding — extends TreeCourse so it can be
- * passed directly to the <app-course-tree> component.
- */
 interface Course extends TreeCourse {
     id: string;
     title: string;
     category: string;
     categoryLabel: string;
     lessons: number;
+    completedLessonsCount: number;
+    totalLessonsCount: number;
+    completedQuizzesCount: number;
+    totalQuizzesCount: number;
     duration: string;
     progress: number;
     status: CourseStatus;
+    hasUnmetPrerequisites: boolean;
     thumbnailUrl?: string;
 }
 
-/**
- * Stage interface for template binding
- */
 interface Stage {
     id: string;
     number: number;
@@ -43,40 +42,37 @@ interface Stage {
     treeCourses: Course[];
 }
 
-/**
- * Recent lesson interface for template binding
- */
 interface RecentLesson {
     stageNumber: number;
     courseId: string;
     courseName: string;
+    categoryLabel: string;
     lessonId: string;
     lessonNumber: number;
     thumbnailUrl: string;
     progress: number;
-    currentTime: string;
-    totalTime: string;
+    mediaType: 'video' | 'audio' | null;
+    mediaProgressLabel: string | null;
     completedLessons: number;
     totalLessons: number;
+    completedQuizzes: number;
+    totalQuizzes: number;
 }
 
 @Component({
     selector: 'app-academy',
     standalone: true,
-    imports: [CourseTreeComponent],
+    imports: [CourseTreeComponent, AsyncPipe],
     templateUrl: './academy.component.html',
     styleUrls: ['./academy.component.scss'],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class AcademyComponent implements OnInit, OnDestroy {
-    private readonly destroy$ = new Subject<void>();
-
-    constructor(
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly academyProgressService: AcademyProgressService,
-        private readonly cdr: ChangeDetectorRef,
-    ) { }
+export class AcademyComponent implements OnInit {
+    private readonly academyProgressService = inject(AcademyProgressService);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+    private readonly authService = inject(AuthService);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     readonly fallbackImage = '/ask-a-muslim-logo.png';
     recentLesson: RecentLesson | null = null;
@@ -84,126 +80,129 @@ export class AcademyComponent implements OnInit, OnDestroy {
     importantNote = 'The Academy consists of multiple stages. Each stage includes a list of courses covering the meaning of belief, true Islamic values from the prophet Mohamed (peace be upon him) and his companions, and important topics we face every day. Each course consists of lessons that will guide you step by step. You can take notes while learning and share them with your scholar. This Academy for new Muslims was created by 40+ scholars from the Islamic Center of America and is endorsed by the International Union of Muslim Scholars.';
     showFullNote = false;
     stages: Stage[] = [];
-    isLoading = true;
     error: string | null = null;
 
+    get isRefreshingProgress$() {
+        return this.academyProgressService.isRefreshingProgress$;
+    }
+
     ngOnInit(): void {
-        this.loadAcademyData();
+        if (this.isGuestUser) {
+            this.error = null;
+            return;
+        }
+
+        const resolved = this.route.snapshot.data['academyData'] as AcademyResolvedData | null;
+        if (!resolved) {
+            this.error = 'Unable to load academy content right now. Please try again.';
+            return;
+        }
+
+        this.applyResolvedData(resolved);
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+    private applyResolvedData(resolved: AcademyResolvedData): void {
+        const { stages, courses, progress, recentCourseLessons } = resolved;
+
+        if (progress.recentLesson) {
+            this.recentLesson = this.mapRecentLesson(progress.recentLesson, courses, recentCourseLessons);
+            this.hasRecentLesson = true;
+        } else {
+            this.recentLesson = null;
+            this.hasRecentLesson = false;
+        }
+
+        this.stages = this.buildStagesFromApi(
+            stages,
+            progress.stageProgress,
+            progress.courseProgress,
+            courses,
+        );
+        this.error = null;
+        this.cdr.detectChanges();
     }
 
-    private loadAcademyData(): void {
-        // First load stages (levels) from API, then load courses and progress
-        this.academyProgressService.getAcademyStages()
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap(apiStages =>
-                    combineLatest([
-                        this.academyProgressService.getStudentProgress(),
-                        this.academyProgressService.getAcademyCourses(),
-                    ]).pipe(
-                        // map to stages
-                        switchMap(([progress, courses]) => {
-                            this.stages = this.buildStagesFromApi(
-                                apiStages,
-                                progress.stageProgress,
-                                progress.courseProgress,
-                                courses
-                            );
+    private mapRecentLesson(
+        info: RecentLessonInfo,
+        courses: AcademyCourse[],
+        courseLessons: AcademyLesson[],
+    ): RecentLesson {
+        const matchedCourse = courses.find((course) => course.id === info.courseId);
+        const matchedLesson = courseLessons.find((lesson) => lesson.id === info.lessonId);
+        const lessonsFromCourseFeed = courseLessons.filter((lesson) => lesson.type !== 'quiz').length;
+        const totalLessons = Math.max(0, lessonsFromCourseFeed, matchedCourse?.lessons ?? 0);
+        const totalCourseItems = Math.max(0, info.totalLessons, courseLessons.length, totalLessons);
+        const completedCourseItems = Math.min(totalCourseItems, Math.max(0, info.completedLessons));
+        const completedLessons = Math.min(totalLessons, completedCourseItems);
+        const totalQuizzes = Math.max(0, totalCourseItems - totalLessons);
+        const completedQuizzes = Math.max(
+            0,
+            Math.min(totalQuizzes, completedCourseItems - completedLessons),
+        );
+        const computedProgress = this.calculateCourseCompletionProgress(completedCourseItems, totalCourseItems);
+        const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
+        let mediaType: 'video' | 'audio' | null = null;
+        if (matchedLesson?.type === 'video' || matchedLesson?.type === 'audio') {
+            mediaType = matchedLesson.type;
+        } else if (info.lessonType === 'video' || info.lessonType === 'audio') {
+            mediaType = info.lessonType;
+        }
+        const normalizedCurrentTime = typeof info.currentTime === 'string' && info.currentTime.trim().length > 0
+            ? info.currentTime.trim()
+            : '0:00';
+        const normalizedTotalTime = typeof info.totalTime === 'string' && info.totalTime.trim().length > 0
+            ? info.totalTime.trim()
+            : '';
+        const hasMediaProgress = !!mediaType
+            && normalizedTotalTime.length > 0
+            && normalizedTotalTime !== '0:00'
+            && normalizedTotalTime !== '0m';
 
-                            if (progress.recentLesson) {
-                                this.recentLesson = this.mapRecentLesson(progress.recentLesson);
-                                this.hasRecentLesson = true;
-                            }
-
-                            this.error = null;
-                            this.isLoading = false;
-                            this.cdr.detectChanges();
-
-                            return [];
-                        })
-                    )
-                )
-            )
-            .subscribe({
-                error: () => {
-                    this.error = 'Unable to load academy content right now. Please try again.';
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                },
-            });
-
-        // Load in parallel – getAcademyCourses internally waits for stages
-        combineLatest([
-            this.academyProgressService.getStudentProgress(),
-            this.academyProgressService.getAcademyCourses(),
-            this.academyProgressService.getAcademyStages(),
-        ])
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: ([progress, courses, apiStages]) => {
-                    if (progress.recentLesson) {
-                        this.recentLesson = this.mapRecentLesson(progress.recentLesson);
-                        this.hasRecentLesson = true;
-                    }
-
-                    this.stages = this.buildStagesFromApi(
-                        apiStages,
-                        progress.stageProgress,
-                        progress.courseProgress,
-                        courses
-                    );
-
-                    this.error = null;
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                },
-                error: () => {
-                    this.error = 'Unable to load academy content right now. Please try again.';
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                },
-            });
-    }
-
-    private mapRecentLesson(info: RecentLessonInfo): RecentLesson {
         return {
             stageNumber: info.stageNumber,
             courseId: info.courseId,
             courseName: info.courseName,
+            categoryLabel: matchedCourse?.categoryLabel?.trim() ?? '',
             lessonId: info.lessonId,
             lessonNumber: info.lessonNumber,
             thumbnailUrl: toApiMediaUrl(info.thumbnailUrl ?? null) || '/images/recent-lesson-thumbnail.jpg',
-            progress: info.progress,
-            currentTime: info.currentTime,
-            totalTime: info.totalTime,
-            completedLessons: info.completedLessons,
-            totalLessons: info.totalLessons,
+            progress: normalizedProgress,
+            mediaType,
+            mediaProgressLabel: hasMediaProgress
+                ? `${normalizedCurrentTime} / ${normalizedTotalTime}`
+                : null,
+            completedLessons,
+            totalLessons,
+            completedQuizzes,
+            totalQuizzes,
         };
+    }
+
+    private calculateCourseCompletionProgress(completedLessons: number, totalLessons: number): number {
+        if (totalLessons <= 0) return 0;
+        return Math.round((Math.min(totalLessons, Math.max(0, completedLessons)) / totalLessons) * 100);
     }
 
     private buildStagesFromApi(
         apiStages: AcademyStageApi[],
-        stageProgress: StageProgress[],
+        _stageProgress: StageProgress[],
         courseProgress: CourseProgress[],
-        courses: AcademyCourse[]
+        courses: AcademyCourse[],
     ): Stage[] {
         return apiStages.map((stageData) => {
-            const stageProg = stageProgress.find((sp) => sp.stageNumber === stageData.number);
-            const isLocked = stageData.number > 1 && !stageProg?.isUnlocked;
-
-            // Match courses to this stage using stageId (which equals stage.number)
+            const isLocked = false;
             const stageCourses = courses.filter(course =>
-                course.stageId === stageData.number || course.levelId === stageData.id
+                course.stageId === stageData.number || course.levelId === stageData.id,
             );
+            const sortedStageCourses = [...stageCourses];
+            sortedStageCourses.sort((a: AcademyCourse, b: AcademyCourse) => (a.order ?? 0) - (b.order ?? 0));
+            let allCourses = sortedStageCourses
+                .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress));
 
-            const allCourses = stageCourses
-                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                .map((c) => this.mapCourseWithProgress(c, courseProgress, isLocked));
+            if (!isLocked && allCourses.length > 0 && allCourses.every((course) => course.status === 'locked')) {
+                const [firstCourse, ...rest] = allCourses;
+                allCourses = [{ ...firstCourse, status: 'available' as CourseStatus }, ...rest];
+            }
 
             return {
                 id: stageData.id,
@@ -219,32 +218,61 @@ export class AcademyComponent implements OnInit, OnDestroy {
     private mapCourseWithProgress(
         course: AcademyCourse,
         courseProgress: CourseProgress[],
-        stageLocked: boolean
     ): Course {
         const progress = courseProgress.find((cp) => cp.courseId === course.id);
 
-        // Evaluate dynamic API prerequisites
-        let hasUnfinishedPrereqs = false;
-        if (course.prerequisites && course.prerequisites.length > 0) {
-            hasUnfinishedPrereqs = course.prerequisites.some(prereqId => {
-                const prereqProgress = courseProgress.find(cp => cp.courseId === prereqId);
-                return !prereqProgress || prereqProgress.status !== 'completed';
-            });
+        const effectivePrerequisites = (course.prerequisites ?? []).filter(
+            (prereqId) => prereqId !== course.id,
+        );
+
+        const hasUnfinishedPrereqs = effectivePrerequisites.some(prereqId => {
+            const prereqProgress = courseProgress.find(cp => cp.courseId === prereqId);
+            return prereqProgress?.status !== 'completed';
+        });
+
+        let status: CourseStatus = 'available';
+        if (hasUnfinishedPrereqs) {
+            status = 'locked';
+        } else if (progress?.status === 'completed' || progress?.status === 'in-progress') {
+            status = progress.status;
         }
 
-        const isCurrentlyLocked = stageLocked || hasUnfinishedPrereqs;
+        const totalLessonsOnly = Math.max(0, course.lessons);
+        const totalCourseItems = Math.max(0, progress?.totalLessons ?? totalLessonsOnly);
+        const completedCourseItems = Math.max(0, Math.min(totalCourseItems, progress?.completedLessons ?? 0));
+        const totalQuizzes = Math.max(0, totalCourseItems - totalLessonsOnly);
+        const completedLessons = Math.max(0, Math.min(totalLessonsOnly, completedCourseItems));
+        const completedQuizzesByOverflow = Math.max(
+            0,
+            Math.min(totalQuizzes, completedCourseItems - completedLessons),
+        );
+        let completedQuizzes = 0;
+        if (totalQuizzes > 0) {
+            completedQuizzes = progress?.quizPassed
+                ? totalQuizzes
+                : completedQuizzesByOverflow;
+        }
+
+        const normalizedProgress = status === 'completed'
+            ? 100
+            : this.calculateCourseCompletionProgress(completedCourseItems, totalCourseItems);
 
         return {
             id: course.id,
             title: course.title,
             category: course.category,
             categoryLabel: course.categoryLabel,
-            lessons: course.lessons,
+            lessons: totalLessonsOnly,
+            completedLessonsCount: completedLessons,
+            totalLessonsCount: totalLessonsOnly,
+            completedQuizzesCount: completedQuizzes,
+            totalQuizzesCount: totalQuizzes,
             duration: course.duration,
-            progress: progress?.progress ?? 0,
-            status: isCurrentlyLocked ? 'locked' : (progress?.status ?? 'available'),
+            progress: normalizedProgress,
+            status,
+            hasUnmetPrerequisites: hasUnfinishedPrereqs,
             thumbnailUrl: course.thumbnailUrl,
-            prerequisites: course.prerequisites ?? []
+            prerequisites: course.prerequisites ?? [],
         };
     }
 
@@ -256,15 +284,13 @@ export class AcademyComponent implements OnInit, OnDestroy {
         if (this.recentLesson) {
             this.router.navigate(
                 ['course', this.recentLesson.courseId, 'lesson', this.recentLesson.lessonId],
-                { relativeTo: this.route }
+                { relativeTo: this.route },
             );
         }
     }
 
     onCourseClick(course: Course | { id: string; status: string }): void {
-        if (course.status !== 'locked' && course.status !== 'unknown') {
-            this.router.navigate(['course', course.id], { relativeTo: this.route });
-        }
+        this.router.navigate(['course', course.id], { relativeTo: this.route });
     }
 
     trackByStageNumber(_index: number, stage: Stage): number {
@@ -282,6 +308,16 @@ export class AcademyComponent implements OnInit, OnDestroy {
         }
     }
 
+    get isGuestUser(): boolean {
+        return !this.authService.isAuthenticated();
+    }
+
+    continueToSignIn(): void {
+        void this.router.navigate(['/login'], {
+            queryParams: { returnUrl: this.router.url },
+        });
+    }
+
     getCourseAriaLabel(course: Course): string {
         let status: string;
         if (course.status === 'locked') {
@@ -293,6 +329,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
         } else {
             status = 'Available';
         }
-        return `${course.title}, ${course.lessons} lessons, ${course.duration}, ${status}, ${course.progress}% complete`;
+        return `${course.title}, ${course.completedLessonsCount} out of ${course.totalLessonsCount} lessons, ${course.completedQuizzesCount} out of ${course.totalQuizzesCount} quizzes, ${course.duration}, ${status}, ${course.progress}% complete`;
     }
 }

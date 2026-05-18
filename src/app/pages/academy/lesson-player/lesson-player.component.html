@@ -53,31 +53,259 @@
 
       <!-- Video Content -->
       @if (isVideoContent && lessonContent) {
-        <div class="media-container video-container">
-          <video controls class="video-player" [poster]="videoContent?.thumbnailUrl">
-            <source [src]="videoContent?.videoUrl" type="video/mp4" />
-            <track kind="captions" srclang="en" label="English" />
-            Your browser does not support the video tag.
-          </video>
-          <div class="video-controls-info">
-            <div class="playback-speed">
-              <span>Speed: 1x</span>
+        <div class="media-container video-container" #lessonMediaContainer>
+          @if (isYouTubeVideo) {
+            <div class="video-embed-wrapper">
+              <div
+                class="video-player video-player--embed"
+                [id]="youtubePlayerHostElementId"
+                title="Lesson video"
+              ></div>
             </div>
-            <div class="duration">{{ videoContent?.duration }}</div>
+          } @else if (useExternalEmbed && externalEmbedUrl) {
+            <div class="video-embed-wrapper">
+              <iframe
+                class="video-player video-player--embed"
+                [src]="externalEmbedUrl"
+                title="Lesson video"
+                loading="lazy"
+                allow="
+                  accelerometer;
+                  autoplay;
+                  clipboard-write;
+                  encrypted-media;
+                  gyroscope;
+                  picture-in-picture;
+                  web-share;
+                "
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          } @else {
+            <video
+              #videoElement
+              controls
+              class="video-player"
+              [src]="videoContent?.videoUrl"
+              [poster]="videoContent?.thumbnailUrl"
+              (loadedmetadata)="onVideoLoadedMetadata(videoElement)"
+              (timeupdate)="onVideoTimeUpdate(videoElement)"
+              (pause)="onVideoPause(videoElement)"
+              (ended)="onVideoEnded(videoElement)"
+            >
+              <track kind="captions" srclang="en" label="English" />
+              Your browser does not support the video tag.
+            </video>
+          }
+          <div class="video-controls-info">
+            <span class="lesson-progress">{{ lessonProgressLabel }}</span>
           </div>
         </div>
       }
 
       <!-- Audio Content -->
       @if (isAudioContent && lessonContent) {
-        <div class="media-container audio-container">
+        <div class="media-container audio-container" #lessonMediaContainer>
           <div class="audio-player-wrapper">
-            <audio controls class="audio-player">
+            <audio
+              #audioElement
+              class="audio-player audio-player--native"
+              (loadedmetadata)="onAudioLoadedMetadata(audioElement)"
+              (play)="onAudioPlay(audioElement)"
+              (timeupdate)="onAudioTimeUpdate(audioElement)"
+              (pause)="onAudioPause(audioElement)"
+              (ended)="onAudioEnded(audioElement)"
+              (ratechange)="onAudioRateChange(audioElement)"
+              (volumechange)="onAudioVolumeChange(audioElement)"
+            >
               <source [src]="audioContent?.audioUrl" type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
-            <div class="audio-info">
-              <span class="duration">{{ audioContent?.duration }}</span>
+
+            <div class="audio-controls-panel">
+              <button
+                class="audio-primary-action"
+                type="button"
+                [attr.aria-label]="
+                  audioIsPlaying ? 'Pause audio' : 'Play audio'
+                "
+                (click)="toggleAudioPlayback()"
+              >
+                @if (audioIsPlaying) {
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <rect
+                      x="6"
+                      y="5"
+                      width="4"
+                      height="14"
+                      rx="1"
+                      fill="#FFFFFF"
+                    />
+                    <rect
+                      x="14"
+                      y="5"
+                      width="4"
+                      height="14"
+                      rx="1"
+                      fill="#FFFFFF"
+                    />
+                  </svg>
+                } @else {
+                  <img
+                    src="/academy-assets/audio-play.svg"
+                    width="40"
+                    height="40"
+                    alt=""
+                    aria-hidden="true"
+                    draggable="false"
+                  />
+                }
+              </button>
+
+              <div class="audio-controls-main">
+                <div class="audio-controls-row">
+                  <button
+                    class="audio-icon-button"
+                    type="button"
+                    aria-label="Back 10 seconds"
+                    (click)="seekAudioBy(-10)"
+                  >
+                    <img
+                      src="/academy-assets/backward-10-seconds.svg"
+                      width="32"
+                      height="32"
+                      alt=""
+                      aria-hidden="true"
+                      draggable="false"
+                    />
+                  </button>
+
+                  <button
+                    class="audio-speed-button"
+                    type="button"
+                    [attr.aria-label]="
+                      'Change playback speed. Current ' + audioPlaybackRateLabel
+                    "
+                    (click)="toggleAudioPlaybackRate()"
+                  >
+                    {{ audioPlaybackRateLabel }}
+                  </button>
+
+                  <button
+                    class="audio-icon-button"
+                    type="button"
+                    aria-label="Forward 10 seconds"
+                    (click)="seekAudioBy(10)"
+                  >
+                    <img
+                      src="/academy-assets/forward-10-seconds.svg"
+                      width="32"
+                      height="32"
+                      alt=""
+                      aria-hidden="true"
+                      draggable="false"
+                    />
+                  </button>
+
+                  <button
+                    class="audio-icon-button"
+                    type="button"
+                    [attr.aria-label]="
+                      audioIsMuted ? 'Unmute audio' : 'Mute audio'
+                    "
+                    (click)="toggleAudioMute()"
+                  >
+                    @if (audioIsMuted) {
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M11 6L7.5 9H5V15H7.5L11 18V6Z"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M15 9L20 14"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                        <path
+                          d="M20 9L15 14"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    } @else {
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M11 6L7.5 9H5V15H7.5L11 18V6Z"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M15 10C16 10.6 16.6 11.6 16.6 12.7C16.6 13.8 16 14.8 15 15.4"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                        <path
+                          d="M17.8 7.8C19.4 8.9 20.3 10.8 20.3 12.7C20.3 14.6 19.4 16.5 17.8 17.6"
+                          stroke="#156B40"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    }
+                  </button>
+
+                  <div class="audio-progress-group">
+                    <div class="audio-progress-track">
+                      <div
+                        class="audio-progress-fill"
+                        [style.width.%]="audioProgressPercent"
+                      ></div>
+                    </div>
+                    <input
+                      class="audio-progress-input"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      [value]="audioProgressPercent"
+                      (input)="onAudioProgressInput($event)"
+                      aria-label="Audio progress"
+                    />
+                  </div>
+
+                  <span class="audio-time">{{ lessonProgressLabel }}</span>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Audio Transcript -->
@@ -93,61 +321,102 @@
       <!-- Article Content Header -->
       @if (isArticleContent && articleContent) {
         <div class="article-header-container">
-          <div class="article-icon">
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="14,2 14,8 20,8"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <line
-                x1="16"
-                y1="13"
-                x2="8"
-                y2="13"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <line
-                x1="16"
-                y1="17"
-                x2="8"
-                y2="17"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="10,9 9,9 8,9"
-                stroke="#156B40"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
+          @if (isContentLoading) {
+            <div class="article-icon">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="14,2 14,8 20,8"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="16"
+                  y1="13"
+                  x2="8"
+                  y2="13"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="16"
+                  y1="17"
+                  x2="8"
+                  y2="17"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="10,9 9,9 8,9"
+                  stroke="#156B40"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          }
           <div class="article-header-content">
-            <p class="article-type">Article</p>
+            <p class="article-type">
+              {{ isDocumentContent ? "Document" : "Article" }}
+            </p>
             @if (articleContent.description) {
-              <p class="article-description">{{ articleContent.description }}</p>
+              <p class="article-description">
+                {{ articleContent.description }}
+              </p>
+            }
+
+            @if (
+              isDocumentContent &&
+              articleContent.documentUrl &&
+              documentEmbedUrl
+            ) {
+              <div class="document-viewer">
+                <iframe
+                  class="document-viewer__frame"
+                  [src]="documentEmbedUrl"
+                  title="Lesson document"
+                  loading="lazy"
+                ></iframe>
+                <a
+                  class="document-viewer__link"
+                  [href]="articleContent.documentUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open document in a new tab
+                </a>
+              </div>
+            } @else {
+              @for (section of articleContent.sections; track section) {
+                <div class="article-section">
+                  @if (section.header) {
+                    <h2 class="section-header">{{ section.header }}</h2>
+                  }
+                  <app-tiptap-viewer
+                    class="section-content"
+                    [content]="section.contentJson || section.content"
+                  ></app-tiptap-viewer>
+                </div>
+              }
             }
           </div>
         </div>
@@ -155,7 +424,9 @@
 
       <!-- Lesson Title and Actions -->
       <div class="lesson-header">
-        <h1 class="lesson-title">{{ lessonContent?.title || currentLesson?.title }}</h1>
+        <h1 class="lesson-title">
+          {{ lessonContent?.title || currentLesson?.title }}
+        </h1>
         <div class="action-buttons-header">
           <button class="btn-icon" (click)="onSave()" title="Save">
             <svg
@@ -227,7 +498,7 @@
             [class.active]="activeTab === 'overview'"
             (click)="setActiveTab('overview')"
           >
-            {{ isIntroContent ? 'Course Overview' : 'Overview' }}
+            {{ isIntroContent ? "Course Overview" : "Overview" }}
           </button>
           <button
             class="tab"
@@ -237,19 +508,19 @@
             Notes
           </button>
           <button
-            class="tab"
+            class="tab tab-feedback"
             [class.active]="activeTab === 'feedback'"
             (click)="setActiveTab('feedback')"
           >
             Feedback
-            <span class="notification-dot"></span>
+            <!-- <span class="notification-dot"></span> -->
           </button>
         </div>
 
         <!-- Tab Content -->
         <div class="tab-content">
           <!-- Overview Tab -->
-          @if (activeTab === 'overview') {
+          @if (activeTab === "overview") {
             <div class="tab-pane">
               <!-- Intro Content Overview -->
               @if (isIntroContent && introContent) {
@@ -261,7 +532,10 @@
                   <div class="learning-objectives-section">
                     <h3 class="section-heading">What You'll Learn</h3>
                     <ul class="objectives-list">
-                      @for (objective of introContent.objectives; track objective) {
+                      @for (
+                        objective of introContent.objectives;
+                        track objective
+                      ) {
                         <li class="objective-item">
                           <svg
                             width="20"
@@ -294,7 +568,13 @@
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <circle cx="12" cy="12" r="10" stroke="#156B40" stroke-width="2" />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="#156B40"
+                          stroke-width="2"
+                        />
                         <polyline
                           points="12,6 12,12 16,14"
                           stroke="#156B40"
@@ -306,7 +586,9 @@
                     </div>
                     <div class="info-details">
                       <span class="info-label">Duration</span>
-                      <span class="info-value">{{ introContent.duration }}</span>
+                      <span class="info-value">{{
+                        introContent.duration
+                      }}</span>
                     </div>
                   </div>
                   <div class="info-card">
@@ -336,7 +618,9 @@
                     </div>
                     <div class="info-details">
                       <span class="info-label">Lessons</span>
-                      <span class="info-value">{{ courseLessons.length }} lessons</span>
+                      <span class="info-value"
+                        >{{ courseLessons.length }} lessons</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -344,7 +628,7 @@
               <!-- Regular Lesson Overview -->
               @if (!isIntroContent) {
                 <p class="tab-description">{{ lessonContent?.description }}</p>
-                <div class="lesson-metadata">
+                <div class="lesson-metadata" style="display: none">
                   <div class="metadata-item">
                     <span>English</span>
                   </div>
@@ -360,41 +644,165 @@
           }
 
           <!-- Notes Tab -->
-          @if (activeTab === 'notes') {
+          @if (activeTab === "notes") {
             <div class="tab-pane notes-pane">
               <div class="note-input-wrapper">
+                @if (editingNote) {
+                  <div class="note-edit-banner">
+                    <span>Editing note for {{ currentLessonTitle }}</span>
+                    <button
+                      type="button"
+                      class="note-edit-cancel"
+                      (click)="cancelNoteEdit()"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                }
                 <textarea
                   class="note-textarea"
                   [(ngModel)]="noteText"
-                  placeholder="Write your note here .."
+                  [placeholder]="
+                    editingNote
+                      ? 'Update your note here ..'
+                      : 'Write your note here ..'
+                  "
                   rows="5"
                 ></textarea>
                 <div class="note-action">
-                  <button class="btn-icon-add" (click)="addNote()" [disabled]="!noteText.trim()">
-                    <span>Add</span>
+                  <button
+                    class="btn-icon-add"
+                    (click)="addNote()"
+                    [disabled]="!noteText.trim()"
+                  >
+                    <span>{{ editingNote ? "Update" : "Add" }}</span>
                   </button>
                 </div>
               </div>
               <div class="other-notes-section">
                 <h3 class="other-notes-title">Other Notes</h3>
                 <div class="notes-filters">
-                  <input
-                    type="text"
-                    class="search-input"
-                    [(ngModel)]="notesSearchQuery"
-                    placeholder="Search"
-                  />
+                  <div class="search-input-wrapper">
+                    <input
+                      type="text"
+                      class="search-input"
+                      [(ngModel)]="notesSearchQuery"
+                      (keydown.enter)="applyNotesSearch()"
+                      placeholder="Search"
+                    />
+                    <button
+                      type="button"
+                      class="search-clear-button"
+                      (click)="clearNotesSearch()"
+                      [style.display]="
+                        notesSearchQuery || appliedNotesSearchQuery
+                          ? 'inline-flex'
+                          : 'none'
+                      "
+                      aria-label="Clear note search"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-primary notes-search-button"
+                    (click)="applyNotesSearch()"
+                  >
+                    <span>Search</span>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M21 21L16.65 16.65"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
                   <select class="filter-select" [(ngModel)]="notesFilter">
                     <option value="latest">Latest</option>
                     <option value="current-lesson">Current Lesson</option>
                   </select>
                 </div>
                 <div class="notes-list">
-                  @for (note of filteredNotes; track note; let i = $index) {
-                    <div class="note-item">
+                  @for (note of filteredNotes; track note.id) {
+                    <div
+                      class="note-item"
+                      role="button"
+                      tabindex="0"
+                      (click)="onLessonNoteClick(note)"
+                      (keydown.enter)="onLessonNoteClick(note)"
+                      (keydown.space)="
+                        onLessonNoteClick(note); $event.preventDefault()
+                      "
+                    >
                       <div class="note-header">
                         <span class="note-timestamp">{{ note.timestamp }}</span>
-                        <button class="btn-more" (click)="deleteNote(i)">Delete</button>
+                        <div class="note-actions">
+                          <button
+                            class="btn-more"
+                            type="button"
+                            [attr.aria-expanded]="activeNoteMenuId === note.id"
+                            aria-haspopup="menu"
+                            aria-label="Open note actions"
+                            (click)="toggleNoteMenu($event, note.id)"
+                          >
+                            <img
+                              src="/icons/icons-24/more.svg"
+                              alt=""
+                              aria-hidden="true"
+                            />
+                          </button>
+
+                          @if (activeNoteMenuId === note.id) {
+                            <div
+                              class="note-menu"
+                              role="menu"
+                              aria-label="Note actions"
+                              (click)="$event.stopPropagation()"
+                            >
+                              <button
+                                type="button"
+                                class="note-menu-item"
+                                role="menuitem"
+                                (click)="goToTimestamp(note)"
+                              >
+                                Go To Timestamp
+                              </button>
+                              <button
+                                type="button"
+                                class="note-menu-item"
+                                role="menuitem"
+                                (click)="editNote(note, $event)"
+                              >
+                                Edit Note
+                              </button>
+                              <button
+                                type="button"
+                                class="note-menu-item note-menu-item--danger"
+                                role="menuitem"
+                                (click)="deleteNote(note.id)"
+                              >
+                                Delete Note
+                              </button>
+                            </div>
+                          }
+                        </div>
                       </div>
                       <p class="note-text">{{ note.text }}</p>
                     </div>
@@ -405,7 +813,7 @@
           }
 
           <!-- Feedback Tab -->
-          @if (activeTab === 'feedback') {
+          @if (activeTab === "feedback") {
             <div class="tab-pane feedback-pane">
               <div class="feedback-section">
                 <h3 class="feedback-title">Rate the lesson's content</h3>
@@ -432,13 +840,21 @@
                   <button
                     class="btn-icon-add"
                     (click)="submitFeedback()"
-                    [disabled]="lessonRating === 0 && !feedbackText.trim()"
+                    [disabled]="
+                      isSubmittingFeedback ||
+                      (lessonRating === 0 && !feedbackText.trim())
+                    "
                   >
-                    Submit
+                    {{ isSubmittingFeedback ? "Submitting..." : "Submit" }}
                   </button>
                 </div>
                 @if (feedbackSubmissionMessage) {
-                  <p class="text-sm text-(--color-success-base)">
+                  <p
+                    class="feedback-submission-message"
+                    [class.feedback-submission-message--error]="
+                      feedbackSubmissionStatus === 'error'
+                    "
+                  >
                     {{ feedbackSubmissionMessage }}
                   </p>
                 }
@@ -448,33 +864,66 @@
         </div>
       </div>
 
-      <!-- Article Content Sections -->
-      @if (isArticleContent && lessonContent) {
-        <div class="article-sections">
-          @for (section of articleContent?.sections; track section) {
-            <div class="article-section">
-              @if (section.header) {
-                <h2 class="section-header">{{ section.header }}</h2>
-              }
-              <div class="section-content" [innerHTML]="section.content"></div>
-            </div>
-          }
-        </div>
-      }
-
       <!-- Navigation Buttons -->
       <div class="navigation-buttons">
-        <button
-          class="btn btn-outlined"
-          (click)="goToPreviousLesson()"
-          [disabled]="!previousAcademyLesson && !previousLesson"
-        >
-          <span>Previous Lesson</span>
-        </button>
+        @if (previousAcademyLesson || previousLesson) {
+          <button
+            class="btn btn-outlined btn-previous"
+            (click)="goToPreviousLesson()"
+          >
+            <svg
+              class="btn-arrow-icon"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M15 19L8 12L15 5"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Previous Lesson</span>
+          </button>
+        }
 
-        @if (nextAcademyLesson || nextLesson) {
-          <button class="btn btn-primary" (click)="goToNextLesson()">
-            <span>{{ isIntroContent ? 'Begin' : 'Next Lesson' }}</span>
+        @if (shouldShowStartQuizButton) {
+          <button
+            class="btn btn-primary btn-start-quiz"
+            (click)="onStartQuizClick()"
+          >
+            <span>Start The Quiz</span>
+          </button>
+        } @else if (nextAcademyLesson || nextLesson) {
+          <button class="btn btn-primary btn-next" (click)="goToNextLesson()">
+            <span>{{ isIntroContent ? "Begin" : "Next Lesson" }}</span>
+            <svg
+              class="btn-arrow-icon"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 5L16 12L9 19"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        } @else if (shouldShowCompletedButton) {
+          <button
+            class="btn btn-primary btn-completed"
+            (click)="onCompleteLessonClick()"
+          >
+            <span>Completed</span>
           </button>
         }
       </div>
@@ -482,45 +931,19 @@
   </div>
 
   <div academy-page-sidebar>
-    <aside class="sidebar">
-      <div class="course-info-card">
-        <div class="course-header">
-          <span class="stage-label">Stage {{ courseInfo.stage }}</span>
-          <h3 class="sidebar-title" [title]="courseInfo.title">{{ courseInfo.title }}</h3>
-        </div>
-        <div class="divider"></div>
-        <div class="course-stats">
-          <p class="stat-item">{{ courseInfo.stats }}</p>
-          <p class="stat-item">Duration: {{ currentCourse?.duration || '4h 10m' }}</p>
-        </div>
-      </div>
-
-      <div class="lessons-list">
-        @for (lesson of courseLessons; track lesson.id; let i = $index) {
-          @if (i === courseLessons.length - 1 && courseLessons.length > 0 && lesson.type === 'quiz') {
-            <div class="ready-divider">
-              <div class="divider-line"></div>
-              <span class="ready-text">Ready?</span>
-              <div class="divider-line"></div>
-            </div>
-          }
-          <div
-            class="lesson-item"
-            [class.completed]="isLessonCompleted(lesson)"
-            [class.current]="isLessonCurrent(lesson)"
-            [class.pending]="isLessonPending(lesson)"
-            (click)="canClickLesson(lesson) && goToLesson(lesson.id)"
-          >
-            <div class="lesson-info">
-              <h4 class="lesson-title">{{ lesson.title }}</h4>
-              <div class="lesson-meta">
-                <span>{{ lesson.duration }}</span>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    </aside>
+    <app-academy-sidebar-host
+      [stageNumber]="courseInfo.stage"
+      [title]="courseInfo.title"
+      [currentLessonNumber]="currentLessonDisplayOrder"
+      [totalLessons]="totalCourseLessonCount"
+      [duration]="resolvedCourseDuration"
+      [overviewLink]="['/academy/course', courseId]"
+      overviewLinkLabel="Course overview"
+      [lessons]="sidebarLessons"
+      [showReadyDividerBeforeQuiz]="true"
+      [highlightReadyDividerBeforeQuiz]="shouldHighlightReadyDividerBeforeQuiz"
+      (lessonSelect)="onSidebarLessonSelect($event)"
+    />
   </div>
 </app-academy-page-shell>
 

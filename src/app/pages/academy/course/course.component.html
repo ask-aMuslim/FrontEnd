@@ -27,6 +27,29 @@
         <div class="course-details">
           <div class="details-card">
             <h1 class="course-title">{{ course.title }}</h1>
+            @if (course.prerequisitesList.length > 0) {
+              <div class="course-prerequisites-overview">
+                <h2 class="section-title">Course prerequisites</h2>
+                <div class="prerequisites-list" role="list">
+                  @for (prereq of course.prerequisitesList; track prereq.id) {
+                    <div
+                      class="prereq-item"
+                      role="listitem"
+                      [class.completed]="prereq.isCompleted"
+                    >
+                      <span class="status-dot" aria-hidden="true"></span>
+                      <span class="prereq-title">{{ prereq.title }}</span>
+                      <span
+                        class="prereq-state"
+                        [class.completed]="prereq.isCompleted"
+                      >
+                        {{ prereq.isCompleted ? "Completed" : "Required" }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
             <!-- Intro Section -->
             <div class="course-section">
               <h2 class="section-title">Intro:</h2>
@@ -34,9 +57,21 @@
             </div>
             <!-- Lessons Section -->
             <div class="course-section">
-              <h2 class="section-title">Lessons:</h2>
-              <p class="section-text">
-                @for (lesson of course.lessons; track lesson; let last = $last) {
+              <h2
+                class="section-title"
+                [style.display]="course.lessons.length === 0 ? 'none' : null"
+              >
+                Lessons:
+              </h2>
+              <p
+                class="section-text"
+                [style.display]="course.lessons.length === 0 ? 'none' : null"
+              >
+                @for (
+                  lesson of course.lessons;
+                  track lesson;
+                  let last = $last
+                ) {
                   {{ lesson }}
                   @if (!last) {
                     <br />
@@ -44,95 +79,89 @@
                 }
               </p>
             </div>
-            <!-- Answers Section -->
-            @if (course.answers.length > 0) {
-              <div class="course-section">
-                <h2 class="section-title">At the end, you will find the answers of:</h2>
-                <p class="section-text">
-                  @for (answer of course.answers; track answer; let last = $last) {
-                    {{ answer }}
-                    @if (!last) {
-                      <br />
-                    }
-                  }
-                </p>
-              </div>
-            }
           </div>
           <!-- Action Buttons -->
           <div class="course-actions">
-            <!-- Locked State -->
-            @if (course.isLocked) {
-              <div class="locked-state">
-                <div class="info-hint">
-                  <svg
-                    class="hint-icon"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+            <div
+              class="unlocked-state"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                justify-content: flex-end;
+              "
+            >
+              @if (
+                !isUserAuthenticated ||
+                course.isLocked ||
+                course.hasUnmetPrerequisites
+              ) {
+                <span
+                  class="restriction-msg"
+                  style="
+                    color: var(--color-text-info);
+                    border: none;
+                    background: transparent;
+                    padding: 0;
+                    font-size: 0.875rem;
+                  "
+                >
+                  @if (!isUserAuthenticated) {
+                    Please sign in to enroll in this course.
+                  } @else if (course.isLocked) {
+                    You must finish the quizzes of all previous stages to unlock
+                    this course.
+                  } @else if (course.hasUnmetPrerequisites) {
+                    You must complete:
+                    {{ course.unmetPrerequisiteNames.join(", ") }}
+                  }
+                </span>
+                <button class="btn btn-disabled" disabled>
+                  <span>{{ primaryActionLabel }}</span>
+                </button>
+              } @else {
+                <!-- Available State -->
+                @if (canTakeQuiz) {
+                  <button
+                    type="button"
+                    (click)="onTakeQuizClick()"
+                    class="btn btn-ghost"
                   >
-                    <path
-                      d="M12 15L12 11.25M21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C10.8181 3 9.64778 3.23279 8.55585 3.68508C7.46392 4.13738 6.47177 4.80031 5.63604 5.63604C4.80031 6.47177 4.13738 7.46392 3.68508 8.55585C3.23279 9.64778 3 10.8181 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21C14.3869 21 16.6761 20.0518 18.364 18.364C20.0518 16.6761 21 14.3869 21 12ZM12 8.25H12.008V8.242H12V8.25Z"
-                      stroke="#2196F3"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    ></path>
-                  </svg>
-                  <p class="hint-text">
-                    You must finish the quizzes of all the previous courses to unlock this course.
-                  </p>
-                </div>
-                <button class="btn btn-disabled" disabled>Begin</button>
-              </div>
-            }
-            <!-- Unlocked State -->
-            @if (!course.isLocked) {
-              <div class="unlocked-state">
-                <button (click)="onTakeQuizClick()" class="btn btn-ghost">
-                  <span>Take the Quiz</span>
-                </button>
-                <button (click)="onBeginClick()" class="btn btn-primary">
-                  <span>Begin</span>
-                </button>
-              </div>
-            }
+                    <span>Take the Quiz</span>
+                  </button>
+                }
+                @if (isBeginDisabled) {
+                  <button type="button" class="btn btn-disabled" disabled>
+                    <span>{{ primaryActionLabel }}</span>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="onBeginClick()"
+                    class="btn btn-primary"
+                    [disabled]="isEnrolling"
+                  >
+                    <span>{{
+                      isEnrolling ? "Enrolling..." : primaryActionLabel
+                    }}</span>
+                  </button>
+                }
+              }
+            </div>
           </div>
         </div>
       </div>
       <div academy-page-sidebar>
-        <aside class="sidebar" aria-label="Course lessons">
-          <div class="course-info-card">
-            <div class="course-header">
-              <span class="stage-label">Stage {{ course.stageNumber }}</span>
-              <h3 class="sidebar-title">{{ course.title }}</h3>
-            </div>
-            <div class="divider"></div>
-            <div class="course-stats">
-              <p class="stat-item">Lessons: {{ course.totalLessons }}</p>
-              <p class="stat-item">Duration: {{ course.duration }}</p>
-            </div>
-          </div>
-
-          <div class="lessons-list">
-            @for (lesson of course.lessonsList; track lesson; let i = $index) {
-              <div
-                [class.lesson-selected]="i === 0 && !course.isLocked"
-                [class.lesson-completed]="lesson.isCompleted"
-                [class.lesson-locked]="lesson.isLocked"
-                (click)="onLessonClick(lesson)"
-                class="lesson-item"
-              >
-                <div class="lesson-info">
-                  <h4 class="lesson-title">{{ lesson.title }}</h4>
-                  <span class="lesson-duration">{{ lesson.duration }}</span>
-                </div>
-              </div>
-            }
-          </div>
-        </aside>
+        <app-academy-sidebar-host
+          [stageLabelOverride]="course.stageLabel"
+          [stageNumber]="course.stageNumber"
+          [title]="course.title"
+          [totalLessons]="course.totalLessons"
+          [duration]="course.duration"
+          [lessons]="course.lessonsList"
+          [showReadyDividerBeforeQuiz]="true"
+          (lessonSelect)="onLessonClick($event)"
+        />
       </div>
     </app-academy-page-shell>
 
@@ -143,19 +172,31 @@
         aria-modal="true"
         aria-labelledby="academy-signin-title"
       >
-        <div class="sign-in-modal__backdrop" (click)="closeSignInPrompt()"></div>
+        <div
+          class="sign-in-modal__backdrop"
+          (click)="closeSignInPrompt()"
+        ></div>
         <div class="sign-in-modal__card">
           <h2 id="academy-signin-title" class="sign-in-modal__title">
             Sign in to begin this course
           </h2>
           <p class="sign-in-modal__text">
-            You can explore course overviews as a guest. To start lessons, please sign in.
+            You can explore course overviews as a guest. To start lessons,
+            please sign in.
           </p>
           <div class="sign-in-modal__actions">
-            <button type="button" class="btn btn-ghost" (click)="closeSignInPrompt()">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              (click)="closeSignInPrompt()"
+            >
               Not now
             </button>
-            <button type="button" class="btn btn-primary" (click)="continueToSignIn()">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="continueToSignIn()"
+            >
               Sign In
             </button>
           </div>

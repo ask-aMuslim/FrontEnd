@@ -1,0 +1,62 @@
+
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+interface DateOption {
+  value: string;
+  label: string;
+  disabled: boolean;
+}
+
+interface TimeOption {
+  value: string;
+  label: string;
+  disabled: boolean;
+}
+
+@Component({
+  selector: 'app-datetime-step',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  templateUrl: './datetime-step.component.html',
+  styleUrl: './datetime-step.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class DatetimeStepComponent {
+  form = input.required<FormGroup>();
+  availableDates = input.required<DateOption[]>();
+  availableTimes = input.required<TimeOption[]>();
+  nextDisabled = input(false);
+
+  next = output<void>();
+  back = output<void>();
+  selectDate = output<DateOption>();
+  selectTime = output<TimeOption>();
+
+  leftArrowIcon = '/icons/icons-24/arrow-left.svg';
+
+  onSelectDate(date: DateOption): void {
+    this.selectDate.emit(date);
+  }
+
+  onSelectTime(time: TimeOption): void {
+    this.selectTime.emit(time);
+  }
+
+  onNext(): void {
+    if (this.nextDisabled()) {
+      return;
+    }
+
+    const durationControl = this.form().get('durationMinutes');
+    durationControl?.markAsTouched();
+    if (durationControl?.invalid) {
+      return;
+    }
+    this.next.emit();
+  }
+
+  onBack(): void {
+    this.back.emit();
+  }
+}

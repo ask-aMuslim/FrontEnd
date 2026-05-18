@@ -1,13 +1,28 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
+import {
+  SelectDropdownComponent,
+  SelectOption,
+} from '../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { EventsService } from '../../core/services/events.service';
 import type { EventCard } from './event-card/event-card.component';
+import { EventStatus } from './event-status.enum';
+import {
+  getEventStatusBadgeState,
+  parseEventStatusValue,
+  resolveEventStatusVariant,
+} from './event-status.helper';
 import {
   asRecord,
+  extractRecord,
   extractArray,
   getValue,
   toBooleanValue,
+  toNumberValue,
   toStringArray,
   toStringValue,
 } from '../../core/helpers/api-response.helper';
@@ -16,45 +31,78 @@ import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 
 @Component({
   selector: 'app-events',
-  imports: [EventCardComponent, InlineSvgDirective],
+  standalone: true,
+  imports: [EventCardComponent, InlineSvgDirective, FormsModule, SelectDropdownComponent],
   templateUrl: './events.component.html',
   styleUrls: ['./events.component.scss'],
 })
 export class EventsComponent implements OnInit {
   private static readonly fallbackImage = '/images/events-image-placeholder.jpg';
   private static readonly fallbackSpeakerImage = '/images/profile-picture-navbar.png';
+  private static readonly defaultPageSize = 9;
+  private static readonly minimumTotalPages = 1;
   private static readonly idOffset = 1;
 
+  protected readonly EventStatus = EventStatus;
+  protected readonly statusOptions: SelectOption<EventStatus | null>[] = [
+    { value: null, label: 'All statuses' },
+    { value: EventStatus.Upcoming, label: 'Upcoming' },
+    { value: EventStatus.Live, label: 'Live' },
+    { value: EventStatus.Finished, label: 'Finished' },
+  ];
+
   currentPage = 1;
-  itemsPerPage = 6;
+  itemsPerPage = EventsComponent.defaultPageSize;
+  totalPages = EventsComponent.minimumTotalPages;
+  hasNextPage = false;
+  searchTerm = '';
+  selectedEventStatus: EventStatus | null = null;
   pages: number[] = [];
 
   eventCards: EventCard[] = [];
+  featuredEventFromNext: EventCard | null = null;
 
-  constructor(
-    private readonly eventsService: EventsService,
-    private readonly cdr: ChangeDetectorRef,
-  ) { }
+  private readonly eventsService = inject(EventsService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   ngOnInit(): void {
+    this.loadFeaturedEvent();
     this.loadEvents();
   }
 
+  private loadFeaturedEvent(): void {
+    this.eventsService.getNext().subscribe({
+      next: (response) => {
+        const record = extractRecord(response);
+        this.featuredEventFromNext = record ? this.mapEvent(record, 0) : null;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.featuredEventFromNext = null;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   private updatePages(): void {
-    const totalPages = Math.ceil(this.eventCards.length / this.itemsPerPage);
-    this.pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    this.pages = Array.from({ length: this.totalPages }, (_value, index) => index + 1);
   }
 
   prevPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.loadEvents();
       this.scrollToTopOfSection();
     }
   }
 
   nextPage(): void {
-    if (this.currentPage < this.pages.length) {
+    if (!this.isLastPage) {
       this.currentPage++;
+      this.loadEvents();
       this.scrollToTopOfSection();
     }
   }
@@ -62,8 +110,33 @@ export class EventsComponent implements OnInit {
   goToPage(page: number): void {
     if (page >= 1 && page <= this.pages.length) {
       this.currentPage = page;
+      this.loadEvents();
       this.scrollToTopOfSection();
     }
+  }
+
+  applySearch(): void {
+    this.currentPage = 1;
+    this.loadEvents();
+  }
+
+  clearSearch(): void {
+    if (!this.searchTerm.trim()) {
+      return;
+    }
+
+    this.searchTerm = '';
+    this.applySearch();
+  }
+
+  onStatusChange(): void {
+    this.currentPage = 1;
+    this.loadEvents();
+  }
+
+  onStatusSelect(status: EventStatus | null): void {
+    this.selectedEventStatus = status;
+    this.onStatusChange();
   }
 
   trackByIndex(index: number): number {
@@ -75,17 +148,51 @@ export class EventsComponent implements OnInit {
   }
 
   get isLastPage(): boolean {
-    return this.currentPage === this.pages.length;
+    if (this.hasNextPage) {
+      return false;
+    }
+
+    return this.currentPage >= this.totalPages;
+  }
+
+  get showPagination(): boolean {
+    return this.currentPage > 1 || this.totalPages > 1 || this.hasNextPage;
   }
 
   get paginatedEventCards(): EventCard[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    return this.eventCards.slice(startIndex, endIndex);
+    return this.eventCards;
   }
 
   get featuredEvent(): EventCard | null {
+    if (this.featuredEventFromNext) {
+      return this.featuredEventFromNext;
+    }
+
     return this.eventCards.length > 0 ? this.eventCards[0] : null;
+  }
+
+  get featuredEventBadgeText(): string {
+    return getEventStatusBadgeState(
+      'hero',
+      this.featuredEvent?.status,
+      this.featuredEvent?.isRecorded === true,
+    ).text;
+  }
+
+  get featuredEventBadgeVariant(): 'upcoming' | 'live' | 'finished' {
+    return getEventStatusBadgeState(
+      'hero',
+      this.featuredEvent?.status,
+      this.featuredEvent?.isRecorded === true,
+    ).variant;
+  }
+
+  get isFeaturedEventLive(): boolean {
+    return getEventStatusBadgeState(
+      'hero',
+      this.featuredEvent?.status,
+      this.featuredEvent?.isRecorded === true,
+    ).isLive;
   }
 
   get featuredEventDay(): string {
@@ -112,24 +219,101 @@ export class EventsComponent implements OnInit {
     return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(parsed);
   }
 
+  goToFeaturedEvent(): void {
+    const featuredEventId = this.featuredEvent?.id;
+    if (!featuredEventId) {
+      return;
+    }
+
+    void this.router.navigate(['/events', featuredEventId]);
+  }
+
   private loadEvents(): void {
-    this.eventsService.getAll().subscribe({
+    const trimmedSearch = this.searchTerm.trim();
+    this.eventsService.getAll({
+      pageNumber: this.currentPage,
+      pageSize: this.itemsPerPage,
+      eventStatus: this.selectedEventStatus ?? undefined,
+      searchTerm: trimmedSearch.length > 0 ? trimmedSearch : undefined,
+    }).subscribe({
       next: (response) => {
-        this.eventCards = this.mapEvents(response);
+        const mappedEvents = this.mapEvents(response);
+        this.eventCards = mappedEvents;
+        const paginationMeta = this.extractPaginationMeta(response, mappedEvents.length);
+        this.hasNextPage = paginationMeta.hasNextPage;
+        this.totalPages = paginationMeta.totalPages;
+        if (this.currentPage > this.totalPages) {
+          this.currentPage = this.totalPages;
+        }
         this.updatePages();
         this.cdr.detectChanges();
       },
       error: () => {
         this.eventCards = [];
+        this.totalPages = EventsComponent.minimumTotalPages;
+        this.hasNextPage = false;
         this.updatePages();
         this.cdr.detectChanges();
       },
     });
   }
 
+  private extractPaginationMeta(
+    response: unknown,
+    fallbackCount: number,
+  ): { totalPages: number; hasNextPage: boolean } {
+    const root = asRecord(response);
+    const nested = asRecord(getValue(root, 'data', 'Data', 'result', 'Result'));
+
+    const totalPages =
+      toNumberValue(getValue(nested, 'totalPages', 'TotalPages', 'pageCount', 'PageCount')) ??
+      toNumberValue(getValue(root, 'totalPages', 'TotalPages', 'pageCount', 'PageCount'));
+
+    if (totalPages && totalPages > 0) {
+      const normalizedTotalPages = Math.max(
+        EventsComponent.minimumTotalPages,
+        Math.ceil(totalPages),
+      );
+      return {
+        totalPages: normalizedTotalPages,
+        hasNextPage: this.currentPage < normalizedTotalPages,
+      };
+    }
+
+    const totalCount =
+      toNumberValue(getValue(nested, 'totalCount', 'TotalCount', 'itemCount', 'ItemCount', 'count', 'Count')) ??
+      toNumberValue(getValue(root, 'totalCount', 'TotalCount', 'itemCount', 'ItemCount', 'count', 'Count')) ??
+      fallbackCount;
+
+    const hasNextPageFromApi =
+      toBooleanValue(getValue(nested, 'hasNextPage', 'HasNextPage')) ||
+      toBooleanValue(getValue(root, 'hasNextPage', 'HasNextPage'));
+
+    if (totalCount > fallbackCount || hasNextPageFromApi) {
+      const normalizedTotalPages = Math.max(
+        EventsComponent.minimumTotalPages,
+        Math.ceil(totalCount / this.itemsPerPage),
+        this.currentPage + (hasNextPageFromApi ? 1 : 0),
+      );
+      return {
+        totalPages: normalizedTotalPages,
+        hasNextPage: hasNextPageFromApi || this.currentPage < normalizedTotalPages,
+      };
+    }
+
+    return {
+      totalPages: Math.max(EventsComponent.minimumTotalPages, this.currentPage),
+      hasNextPage: hasNextPageFromApi,
+    };
+  }
+
   private mapEvents(response: unknown): EventCard[] {
-    const records = extractArray(response);
+    const records = this.getPublishedEventRecords(response);
     return records.map((item, index) => this.mapEvent(item, index));
+  }
+
+  private getPublishedEventRecords(response: unknown): readonly unknown[] {
+    return extractArray(response).filter((item) => this.isPublishedEvent(item));
   }
 
   private mapEvent(item: unknown, index: number): EventCard {
@@ -156,7 +340,13 @@ export class EventsComponent implements OnInit {
     const date = formatEventDateDisplay(startDateValue);
     const timeRange = formatEventTimeRangeDisplay(startDateValue, endDateValue);
     const tags = toStringArray(getValue(record, 'tags', 'Tags', 'categories', 'Categories'));
-    const isRecorded = toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded'));
+    const status = parseEventStatusValue(getValue(record, 'status', 'Status'));
+    const isRecorded =
+      resolveEventStatusVariant(
+        status,
+        toBooleanValue(getValue(record, 'isRecorded', 'IsRecorded')),
+      ) === 'finished';
+    const isPublished = toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
 
     return {
       id,
@@ -170,11 +360,22 @@ export class EventsComponent implements OnInit {
       date,
       timeRange,
       tags,
+      status,
       isRecorded,
+      isPublished,
     };
   }
 
+  private isPublishedEvent(item: unknown): boolean {
+    const record = asRecord(item);
+    return toBooleanValue(getValue(record, 'isPublished', 'IsPublished'));
+  }
+
   private scrollToTopOfSection(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     const section = globalThis.document?.getElementById('events-recorded-section');
     section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

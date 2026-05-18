@@ -21,7 +21,7 @@ export type LessonStatus = 'completed' | 'current' | 'locked' | 'available';
 /**
  * Lesson type for categorization
  */
-export type AcademyLessonType = 'intro' | 'video' | 'article' | 'quiz' | 'audio';
+export type AcademyLessonType = 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
 
 /**
  * Course category within a stage
@@ -48,6 +48,7 @@ export interface AcademyCourse {
     stageId: number;
     levelId?: string;  // actual level UUID from API
     title: string;
+    isPublished?: boolean;
     category: CourseCategory;
     categoryLabel: string;
     lessons: number;
@@ -65,7 +66,10 @@ export interface AcademyLesson {
     id: Id;
     courseId: Id;
     title: string;
+    isPublished?: boolean;
     duration: string;
+    videoUrl?: string;
+    audioUrl?: string;
     type: AcademyLessonType;
     order: number;
     description?: string;
@@ -118,6 +122,7 @@ export interface RecentLessonInfo {
     courseId: Id;
     courseName: string;
     lessonId: Id;
+    lessonType?: AcademyLessonType;
     lessonNumber: number;
     lessonTitle: string;
     thumbnailUrl: string;

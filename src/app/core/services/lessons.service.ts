@@ -1,7 +1,23 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
-import { LessonFacade, LessonReadDto, CreateLessonRequest, UpdateLessonRequest } from '../../api/facades/lesson.facade';
+import { Observable, catchError, filter, map, of, switchMap, take } from 'rxjs';
+import {
+  LessonFacade,
+  LessonReadDto,
+  CreateLessonRequest,
+  UpdateLessonRequest,
+  LessonNote,
+} from '../../api/facades/lesson.facade';
 import { Id } from '../models/interfaces/base.model';
+import { StudentFacade } from '../../api/facades/student.facade';
+import { StudentProfile } from '../models/interfaces/student-profile.model';
+
+export interface LessonNoteSummary {
+  id: Id;
+  timestamp: string;
+  progressSeconds: number;
+  text: string;
+  createdAt: string;
+}
 
 /**
  * Service to handle all lesson-related API calls
@@ -11,6 +27,7 @@ import { Id } from '../models/interfaces/base.model';
 @Injectable({ providedIn: 'root' })
 export class LessonsService {
   private readonly facade = inject(LessonFacade);
+  private readonly studentFacade = inject(StudentFacade);
 
   /**
    * Get all lessons
@@ -60,7 +77,6 @@ export class LessonsService {
 
   /**
    * Save lesson progress for current student
-   * Note: Backend endpoint not verified - placeholder implementation
    */
   saveProgress(lessonId: Id, progress: { completed: boolean; currentTime?: number }): Observable<void> {
     return this.facade.saveProgress(String(lessonId), {
@@ -72,43 +88,168 @@ export class LessonsService {
     );
   }
 
+  submitFeedback(lessonId: Id, payload: { rating: number; feedback?: string }): Observable<boolean> {
+    const normalizedFeedback = payload.feedback?.trim() ?? '';
+    const hasFeedbackPayload = payload.rating > 0 || normalizedFeedback.length > 0;
+
+    if (!hasFeedbackPayload) {
+      return of(false);
+    }
+
+    return this.studentFacade.getMyProfileFromApi().pipe(
+      map((profile) => this.resolveStudentId(profile)),
+      switchMap((studentId) => {
+        if (!studentId) {
+          return of(false);
+        }
+
+        return this.facade.createStudentQuestion({
+          studentId,
+          lessonId: String(lessonId),
+          questionText: this.buildLessonFeedbackText(payload.rating, normalizedFeedback),
+          timestamp: Math.floor(Date.now() / 1000),
+        }).pipe(
+          catchError(() => of(false)),
+        );
+      }),
+      catchError(() => of(false)),
+    );
+  }
+
   /**
    * Get student notes for a lesson
-   * Note: Backend endpoint not verified - placeholder implementation
    */
-  getNotes(lessonId: Id): Observable<Array<{ id: Id; timestamp: string; text: string; createdAt: string }>> {
+  getNotes(lessonId: Id): Observable<LessonNoteSummary[]> {
     return this.facade.getNotes(String(lessonId)).pipe(
       map(notes => notes.map(note => ({
         id: note.id,
-        timestamp: '', // Note: LessonNote doesn't have timestamp
-        text: note.content,
-        createdAt: note.createdAt
+        timestamp: this.formatProgressTime(this.toProgressSeconds(note)),
+        progressSeconds: this.toProgressSeconds(note),
+        text: note.text ?? note.content ?? '',
+        createdAt: this.normalizeCreatedAt(note.createdAt)
       })))
     );
   }
 
   /**
    * Add a note to a lesson
-   * Note: Backend endpoint not verified - placeholder implementation
    */
-  addNote(lessonId: Id, note: { timestamp: string; text: string }): Observable<{ id: Id; timestamp: string; text: string; createdAt: string } | null> {
-    return this.facade.addNote(String(lessonId), note.text).pipe(
+  addNote(
+    lessonId: Id,
+    note: { timestampSeconds: number; text: string },
+  ): Observable<LessonNoteSummary | null> {
+    return this.studentFacade.me().pipe(
+      filter((profile): profile is StudentProfile & { studentId: string } => typeof profile?.studentId === 'string' && profile.studentId.length > 0),
+      take(1),
+      switchMap((profile) =>
+        this.facade.addNote(
+          String(lessonId),
+          profile.studentId,
+          note.text,
+          Math.max(0, note.timestampSeconds),
+        ),
+      ),
       map(result => result ? {
         id: result.id,
-        timestamp: '',
-        text: result.content,
-        createdAt: result.createdAt
-      } : null)
+        timestamp: this.formatProgressTime(this.toProgressSeconds(result, note.timestampSeconds)),
+        progressSeconds: this.toProgressSeconds(result, note.timestampSeconds),
+        text: result.text ?? result.content ?? note.text,
+        createdAt: this.normalizeCreatedAt(result.createdAt)
+      } : null),
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * Update an existing note without changing its timestamp position
+   */
+  updateNote(
+    noteId: Id,
+    note: { timestampSeconds: number; text: string },
+  ): Observable<boolean> {
+    return this.facade.updateNote(String(noteId), {
+      text: note.text,
+      timestamp: Math.max(0, note.timestampSeconds),
+    }).pipe(
+      catchError(() => of(false)),
     );
   }
 
   /**
    * Delete a note
-   * Note: Backend endpoint not verified - placeholder implementation
    */
   deleteNote(noteId: Id): Observable<void> {
     return this.facade.deleteNote(String(noteId)).pipe(
       map(() => void 0)
     );
+  }
+
+  private resolveStudentId(profile: StudentProfile | null): string | null {
+    const candidates = [profile?.studentId, profile?.id, profile?.userId];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private buildLessonFeedbackText(rating: number, feedback: string): string {
+    const feedbackLines = ['[Lesson Feedback]'];
+
+    if (rating > 0) {
+      feedbackLines.push(`Rating: ${rating}/5`);
+    }
+
+    if (feedback.length > 0) {
+      feedbackLines.push(`Feedback: ${feedback}`);
+    }
+
+    return feedbackLines.join('\n');
+  }
+
+  private toProgressSeconds(note: LessonNote, fallbackSeconds = 0): number {
+    const candidate = note.timestamp;
+    let numericValue = Number.NaN;
+    if (typeof candidate === 'number') {
+      numericValue = candidate;
+    } else if (typeof candidate === 'string') {
+      numericValue = Number.parseFloat(candidate);
+    }
+
+    if (Number.isFinite(numericValue) && numericValue >= 0) {
+      if (numericValue <= 86_400) {
+        return numericValue;
+      }
+
+      // Backward compatibility for legacy notes created with epoch milliseconds.
+      if (numericValue > 1_000_000_000) {
+        return fallbackSeconds;
+      }
+
+      return numericValue;
+    }
+
+    return Math.max(0, fallbackSeconds);
+  }
+
+  private formatProgressTime(totalSeconds: number): string {
+    const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const seconds = safeSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  private normalizeCreatedAt(createdAt: string | undefined): string {
+    return typeof createdAt === 'string' && createdAt.trim().length > 0
+      ? createdAt
+      : new Date().toISOString();
   }
 }

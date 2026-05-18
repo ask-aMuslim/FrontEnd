@@ -1,6 +1,7 @@
-import { Component, inject, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnDestroy, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
@@ -12,6 +13,20 @@ import {
 import { IdentityFacade } from '../../../api/facades/identity.facade';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 
+const RESET_FLOW_DRAFT_STORAGE_KEY = 'aam_reset_flow_draft';
+
+type ResetPasswordStep = 1 | 2 | 3;
+
+interface ResetPasswordDraftStorage {
+  currentStep: ResetPasswordStep;
+  userEmail: string;
+  otpDigits: string[];
+  otpTimerExpiresAt: number | null;
+  resetPasswordToken: string;
+  password: string;
+  confirmPassword: string;
+}
+
 @Component({
   selector: 'app-reset-password',
   standalone: true,
@@ -21,6 +36,7 @@ import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 })
 export class ResetPasswordComponent implements OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly identityFacade = inject(IdentityFacade);
@@ -29,7 +45,7 @@ export class ResetPasswordComponent implements OnDestroy {
   protected readonly apiError = this.identityFacade.error;
   protected readonly loading = this.identityFacade.isLoading;
 
-  protected currentStep: 1 | 2 | 3 = 1;
+  protected currentStep: ResetPasswordStep = 1;
   protected emailForm: FormGroup;
   protected otpForm: FormGroup;
   protected passwordForm: FormGroup;
@@ -40,9 +56,16 @@ export class ResetPasswordComponent implements OnDestroy {
 
   // OTP related
   protected otpDigits: string[] = ['', '', '', '', '', ''];
-  protected otpTimer = 60;
-  protected canResendOtp = false;
-  private timerInterval?: ReturnType<typeof setInterval>;
+  private otpTimerExpiresAt: number | null = null;
+  protected readonly otpTimer = signal(60);
+  protected readonly canResendOtp = signal(false);
+  protected readonly formattedTimer = computed(() => {
+    const minutes = Math.floor(this.otpTimer() / 60);
+    const seconds = this.otpTimer() % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  });
+  private timerInterval?: ReturnType<typeof globalThis.setInterval>;
+  private resetPasswordToken = '';
   protected userEmail = '';
 
   constructor() {
@@ -64,11 +87,16 @@ export class ResetPasswordComponent implements OnDestroy {
       },
       { validators: this.passwordMatchValidator },
     );
+
+    this.setupDraftPersistence();
+    this.restoreDraftState();
+    this.syncDraftState();
   }
 
   ngOnDestroy(): void {
     if (this.timerInterval) {
-      clearInterval(this.timerInterval);
+      globalThis.clearInterval(this.timerInterval);
+      this.timerInterval = undefined;
     }
   }
 
@@ -149,10 +177,15 @@ export class ResetPasswordComponent implements OnDestroy {
     this.identityFacade.requestPasswordResetOtp(email).subscribe({
       next: () => {
         this.userEmail = email;
+        this.resetPasswordToken = '';
         this.currentStep = 2;
+        this.showPassword = false;
+        this.showConfirmPassword = false;
+        this.passwordForm.reset({ password: '', confirmPassword: '' });
         this.otpDigits = ['', '', '', '', '', ''];
         this.otpForm.reset({ otp: '' });
         this.startOtpTimer();
+        this.syncDraftState();
       },
       error: () => {
         this.fieldTouched['email'] = true;
@@ -205,44 +238,61 @@ export class ResetPasswordComponent implements OnDestroy {
   }
 
   protected startOtpTimer(): void {
+    this.startOtpTimerFromExpiresAt(Date.now() + 60_000);
+  }
+
+  private startOtpTimerFromExpiresAt(expiresAt: number): void {
     if (!this.isBrowser) return;
 
-    this.otpTimer = 60;
-    this.canResendOtp = false;
+    this.otpTimerExpiresAt = expiresAt;
+
+    const remainingSeconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+    this.otpTimer.set(remainingSeconds);
+    this.canResendOtp.set(remainingSeconds === 0);
 
     if (this.timerInterval) {
-      clearInterval(this.timerInterval);
+      globalThis.clearInterval(this.timerInterval);
+      this.timerInterval = undefined;
+    }
+
+    if (remainingSeconds === 0) {
+      this.syncDraftState();
+      return;
     }
 
     this.timerInterval = globalThis.setInterval(() => {
-      this.otpTimer--;
-      if (this.otpTimer <= 0) {
-        this.canResendOtp = true;
+      const nextTimer = this.otpTimer() - 1;
+      this.otpTimer.set(Math.max(0, nextTimer));
+
+      if (nextTimer <= 0) {
+        this.canResendOtp.set(true);
+        this.otpTimerExpiresAt = Date.now();
         if (this.timerInterval) {
-          clearInterval(this.timerInterval);
+          globalThis.clearInterval(this.timerInterval);
+          this.timerInterval = undefined;
         }
       }
-    }, 1000);
-  }
 
-  protected get formattedTimer(): string {
-    const minutes = Math.floor(this.otpTimer / 60);
-    const seconds = this.otpTimer % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      this.syncDraftState();
+    }, 1000);
+
+    this.syncDraftState();
   }
 
   protected resendOtp(): void {
-    if (this.canResendOtp) {
+    if (this.canResendOtp()) {
       this.identityFacade.clearError();
+      this.resetPasswordToken = '';
       this.otpDigits = ['', '', '', '', '', ''];
       this.otpForm.reset({ otp: '' });
 
       this.identityFacade.requestPasswordResetOtp(this.userEmail).subscribe({
         next: () => {
           this.startOtpTimer();
+          this.syncDraftState();
         },
         error: () => {
-          this.canResendOtp = true;
+          this.canResendOtp.set(true);
         },
       });
     }
@@ -259,11 +309,14 @@ export class ResetPasswordComponent implements OnDestroy {
     this.identityFacade.clearError();
 
     this.identityFacade.verifyPasswordResetOtp(this.userEmail, otp).subscribe({
-      next: () => {
+      next: (token) => {
+        this.resetPasswordToken = token;
         this.currentStep = 3;
         if (this.timerInterval) {
-          clearInterval(this.timerInterval);
+          globalThis.clearInterval(this.timerInterval);
+          this.timerInterval = undefined;
         }
+        this.syncDraftState();
       },
       error: () => {
         this.fieldTouched['otp'] = true;
@@ -280,14 +333,21 @@ export class ResetPasswordComponent implements OnDestroy {
       return;
     }
 
-    const otp = this.otpDigits.join('');
     const password = String(this.passwordForm.get('password')?.value ?? '');
+
+    if (!this.resetPasswordToken) {
+      this.fieldTouched['password'] = true;
+      this.fieldTouched['confirmPassword'] = true;
+      this.identityFacade.clearError();
+      return;
+    }
 
     this.identityFacade.clearError();
     this.identityFacade
-      .resetPassword(this.userEmail, otp, password)
+      .resetPassword(this.userEmail, this.resetPasswordToken, password)
       .subscribe({
         next: () => {
+          this.clearDraftState();
           void this.router.navigate(['/login'], {
             queryParams: { reset: 'success' },
           });
@@ -305,8 +365,22 @@ export class ResetPasswordComponent implements OnDestroy {
 
   protected goToPreviousStep(): void {
     this.identityFacade.clearError();
+    if (this.currentStep === 3) {
+      this.resetPasswordToken = '';
+      this.passwordForm.reset({ password: '', confirmPassword: '' });
+      this.showPassword = false;
+      this.showConfirmPassword = false;
+      this.currentStep = 2;
+      this.syncDraftState();
+      return;
+    }
     if (this.currentStep > 1) {
-      this.currentStep = (this.currentStep - 1) as 1 | 2 | 3;
+      this.resetPasswordToken = '';
+      this.otpDigits = ['', '', '', '', '', ''];
+      this.otpForm.reset({ otp: '' });
+      this.stopOtpTimer();
+      this.currentStep = (this.currentStep - 1) as ResetPasswordStep;
+      this.syncDraftState();
     }
   }
 
@@ -323,5 +397,170 @@ export class ResetPasswordComponent implements OnDestroy {
     }
 
     return password === confirmPassword ? null : { passwordMismatch: true };
+  }
+
+  private setupDraftPersistence(): void {
+    this.emailForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncDraftState());
+
+    this.otpForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncDraftState());
+
+    this.passwordForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncDraftState());
+  }
+
+  private restoreDraftState(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    const state = this.readDraftState();
+    if (!state) {
+      return;
+    }
+
+    this.currentStep = state.currentStep;
+    this.userEmail = state.userEmail;
+    this.resetPasswordToken = state.resetPasswordToken;
+    this.otpDigits = this.normalizeOtpDigits(state.otpDigits);
+    this.otpForm.reset({ otp: this.otpDigits.join('') }, { emitEvent: false });
+    this.emailForm.reset({ email: state.userEmail }, { emitEvent: false });
+    this.passwordForm.reset(
+      {
+        password: state.password,
+        confirmPassword: state.confirmPassword,
+      },
+      { emitEvent: false },
+    );
+
+    this.emailForm.markAsPristine();
+    this.emailForm.markAsUntouched();
+    this.otpForm.markAsPristine();
+    this.otpForm.markAsUntouched();
+    this.passwordForm.markAsPristine();
+    this.passwordForm.markAsUntouched();
+
+    if (state.otpTimerExpiresAt && state.otpTimerExpiresAt > Date.now()) {
+      this.startOtpTimerFromExpiresAt(state.otpTimerExpiresAt);
+    } else if (this.currentStep >= 2) {
+      if (this.timerInterval) {
+        globalThis.clearInterval(this.timerInterval);
+        this.timerInterval = undefined;
+      }
+
+      this.otpTimerExpiresAt = state.otpTimerExpiresAt;
+      this.otpTimer.set(0);
+      this.canResendOtp.set(true);
+    }
+  }
+
+  private syncDraftState(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    if (this.currentStep === 1) {
+      this.stopOtpTimer();
+    }
+
+    const draft: ResetPasswordDraftStorage = {
+      currentStep: this.currentStep,
+      userEmail: String(this.emailForm.get('email')?.value ?? '').trim(),
+      otpDigits: [...this.otpDigits],
+      otpTimerExpiresAt: this.otpTimerExpiresAt,
+      resetPasswordToken: this.resetPasswordToken,
+      password: String(this.passwordForm.get('password')?.value ?? ''),
+      confirmPassword: String(this.passwordForm.get('confirmPassword')?.value ?? ''),
+    };
+
+    try {
+      globalThis.sessionStorage.setItem(
+        RESET_FLOW_DRAFT_STORAGE_KEY,
+        JSON.stringify(draft),
+      );
+    } catch {
+      // Ignore storage write failures.
+    }
+  }
+
+  private clearDraftState(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    try {
+      globalThis.sessionStorage.removeItem(RESET_FLOW_DRAFT_STORAGE_KEY);
+    } catch {
+      // Ignore storage clear failures.
+    }
+
+    this.stopOtpTimer();
+  }
+
+  private readDraftState(): ResetPasswordDraftStorage | null {
+    try {
+      const raw = globalThis.sessionStorage.getItem(RESET_FLOW_DRAFT_STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as Partial<ResetPasswordDraftStorage>;
+      if (
+        parsed.currentStep !== 1 &&
+        parsed.currentStep !== 2 &&
+        parsed.currentStep !== 3
+      ) {
+        return null;
+      }
+
+      if (typeof parsed.userEmail !== 'string') {
+        return null;
+      }
+
+      if (typeof parsed.resetPasswordToken !== 'string') {
+        return null;
+      }
+
+      return {
+        currentStep: parsed.currentStep,
+        userEmail: parsed.userEmail,
+        otpDigits: Array.isArray(parsed.otpDigits) ? parsed.otpDigits : [],
+        otpTimerExpiresAt:
+          typeof parsed.otpTimerExpiresAt === 'number' ? parsed.otpTimerExpiresAt : null,
+        resetPasswordToken: parsed.resetPasswordToken,
+        password: typeof parsed.password === 'string' ? parsed.password : '',
+        confirmPassword: typeof parsed.confirmPassword === 'string' ? parsed.confirmPassword : '',
+      };
+    } catch {
+      this.clearDraftState();
+      return null;
+    }
+  }
+
+  private normalizeOtpDigits(otpDigits: string[]): string[] {
+    const nextDigits = ['', '', '', '', '', ''];
+
+    otpDigits.slice(0, 6).forEach((digit, index) => {
+      if (/^\d$/.test(digit)) {
+        nextDigits[index] = digit;
+      }
+    });
+
+    return nextDigits;
+  }
+
+  private stopOtpTimer(): void {
+    if (this.timerInterval) {
+      globalThis.clearInterval(this.timerInterval);
+      this.timerInterval = undefined;
+    }
+
+    this.otpTimerExpiresAt = null;
+    this.otpTimer.set(60);
+    this.canResendOtp.set(false);
   }
 }

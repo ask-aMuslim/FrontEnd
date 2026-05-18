@@ -50,6 +50,14 @@
   }
 }
 
+.course-prerequisites-overview {
+  margin-bottom: 1.5rem;
+}
+
+.course-prerequisite-names {
+  margin: 0;
+}
+
 .course-section {
   margin-bottom: 1.5rem;
 
@@ -74,6 +82,70 @@
   font-size: 1rem;
   line-height: 1.6;
   color: var(--colors-rare-grays-80, #343a40);
+}
+
+.prerequisites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.prereq-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--colors-rare-grays-5, #f8f9fa);
+  border-radius: 0.5rem;
+  border: 1px solid var(--colors-rare-grays-20, #e9ecef);
+  transition: all 0.2s;
+
+  &.completed {
+    background: var(--colors-green-5, #f0fdf4);
+    border-color: rgba(21, 107, 64, 0.1);
+
+    .status-dot {
+      background: var(--colors-green-100, #156b40);
+    }
+
+    .prereq-title {
+      color: var(--colors-green-100, #156b40);
+      font-weight: 500;
+    }
+
+    .prereq-state {
+      color: var(--colors-green-100, #156b40);
+      background: rgba(21, 107, 64, 0.08);
+      border-color: rgba(21, 107, 64, 0.18);
+      margin-left: auto;
+    }
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--colors-rare-grays-40, #ced4da);
+  }
+
+  .prereq-title {
+    font-size: 0.938rem;
+    color: var(--colors-rare-grays-80, #343a40);
+  }
+
+  .prereq-state {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--colors-rare-grays-60, #6c757d);
+    border: 1px solid var(--colors-rare-grays-30, #dee2e6);
+    border-radius: 999px;
+    padding: 0.35rem 0.6rem;
+    background: var(--colors-rare-grays-0, #fff);
+    white-space: nowrap;
+  }
 }
 
 // ─── Action Buttons ───
@@ -172,134 +244,6 @@
   color: var(--colors-rare-grays-50, #adb5bd);
   border: none;
   cursor: not-allowed;
-}
-
-// ─── Sidebar Styles ───
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  @media (min-width: 1024px) {
-    width: 320px;
-    flex-shrink: 0;
-  }
-}
-
-.course-info-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 8px;
-  background: #f8f9fa;
-
-  .course-header {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    .stage-label {
-      color: #adb5bd;
-      font-family: 'Poppins', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 21px;
-      letter-spacing: 0;
-    }
-
-    .sidebar-title {
-      margin: 0;
-      color: #1a1a1a;
-      font-family: 'Poppins', sans-serif;
-      font-size: 18px;
-      font-weight: 500;
-      line-height: 18px;
-      letter-spacing: 0;
-      text-transform: capitalize;
-    }
-  }
-
-  .divider {
-    height: 1px;
-    background: #e9ecef;
-    margin: 4px 0;
-  }
-
-  .course-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    .stat-item {
-      margin: 0;
-      color: #6c757d;
-      font-family: 'Poppins', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 21px;
-      letter-spacing: 0;
-    }
-  }
-}
-
-// ─── Sidebar Lessons List ───
-.lessons-list {
-  padding: 0;
-
-  .lesson-item {
-    padding: 0.75rem 1rem;
-    border-radius: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    transition:
-      background 0.2s,
-      border-left 0.2s;
-    border-left: 3px solid transparent;
-
-    &:hover {
-      background: var(--colors-rare-grays-10, #f8f9fa);
-    }
-
-    &.lesson-selected {
-      background: var(--colors-orange-10, #fff8e1);
-      border-left-color: var(--colors-orange-100, #ff9800);
-    }
-
-    &.lesson-completed {
-      opacity: 0.7;
-
-      .lesson-title {
-        text-decoration: line-through;
-        color: var(--colors-rare-grays-50, #adb5bd);
-      }
-    }
-
-    &.lesson-locked {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .lesson-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .lesson-title {
-      font-size: 0.938rem;
-      font-weight: 500;
-      color: var(--colors-rare-grays-80, #343a40);
-      margin: 0;
-      line-height: 1.4;
-    }
-
-    .lesson-duration {
-      font-size: 0.813rem;
-      color: var(--colors-rare-grays-60, #6c757d);
-    }
-  }
 }
 
 .sign-in-modal {

@@ -10,6 +10,11 @@ export interface QuestionReadDto {
     [key: string]: unknown;
 }
 
+export interface QuestionQuery {
+    pageNumber?: number;
+    pageSize?: number;
+}
+
 export type QuestionCreateDto = Record<string, unknown>;
 export type QuestionUpdateDto = Record<string, unknown>;
 
@@ -17,8 +22,12 @@ export type QuestionUpdateDto = Record<string, unknown>;
 export class QuestionFacade {
     constructor(private readonly api: ApiService) { }
 
-    getAllQuestions(quizId: string): Observable<QuestionReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Questions', { QuizId: quizId }), []).pipe(map(asArray<QuestionReadDto>));
+    getAllQuestions(quizId: string, query?: QuestionQuery): Observable<QuestionReadDto[]> {
+        return extractData(this.api.get<unknown>('/api/Questions', {
+            QuizId: quizId,
+            PageNumber: query?.pageNumber,
+            PageSize: query?.pageSize,
+        }), []).pipe(map(asArray<QuestionReadDto>));
     }
 
     getQuestionById(id: string): Observable<QuestionReadDto | null> {

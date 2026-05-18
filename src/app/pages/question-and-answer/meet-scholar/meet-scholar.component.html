@@ -1,0 +1,78 @@
+<div class="meet-scholar-page px-2 md:px-0">
+  <!-- Header -->
+  <div class="meet-scholar-page__header mb-6 md:mb-10">
+    <h1 class="meet-scholar-page__title mb-2 text-xl md:text-[32px] text-center md:text-left">
+      Book Your Meeting
+    </h1>
+    <p class="meet-scholar-page__subtitle font-normal text-sm md:text-base sm:text-center md:text-left">
+      Complete the steps below to schedule your free 30-minute session. We will
+      respond to you within 48hr. to your email.
+    </p>
+  </div>
+
+  @if (isGuestUser) {
+    <div class="meet-scholar-page__guest-cta meet-scholar-guest-cta mb-6 md:mb-8">
+      <p class="meet-scholar-page__guest-cta-text meet-scholar-guest-cta__text">
+        You are browsing as a guest. Sign in to complete your meeting booking.
+      </p>
+      <button
+        type="button"
+        class="meet-scholar-page__guest-cta-button button meet-scholar-guest-cta__button"
+        (click)="navigateToSignIn()"
+      >
+        Sign In
+      </button>
+    </div>
+  }
+
+  <!-- Progress Steps -->
+  <app-stepper class="meet-scholar-page__stepper" [steps]="steps" [currentStep]="currentStep()" />
+
+  <!-- Form -->
+  <form [formGroup]="meetingForm" class="meet-scholar-page__form space-y-6">
+    <!-- Step 1: Request -->
+    @if (currentStep() === 1) {
+      <app-request-step
+        class="meet-scholar-page__request-step"
+        [form]="meetingForm"
+        [topics]="topics"
+        [languages]="languages"
+        [availableLanguages]="availableLanguages()"
+        [selectedLanguages]="selectedLanguages()"
+        [nextDisabled]="isGuestUser"
+        (next)="nextStep()"
+        (addLanguage)="addLanguage($event)"
+        (removeLanguage)="removeLanguage($event)"
+      />
+    }
+
+    <!-- Step 2: Date & Time -->
+    @if (currentStep() === 2) {
+      <app-datetime-step
+        class="meet-scholar-page__datetime-step"
+        [form]="meetingForm"
+        [availableDates]="availableDates"
+        [availableTimes]="availableTimes"
+        [nextDisabled]="isGuestUser"
+        (next)="nextStep()"
+        (back)="previousStep()"
+        (selectDate)="selectDate($event)"
+        (selectTime)="selectTime($event)"
+      />
+    }
+
+    <!-- Step 3: Review -->
+    @if (currentStep() === 3) {
+      <app-review-step
+        class="meet-scholar-page__review-step"
+        [form]="meetingForm"
+        [topics]="topics"
+        [selectedLanguages]="selectedLanguages()"
+        [isSubmitting]="isSubmitting()"
+        [submitError]="submitError()"
+        (back)="previousStep()"
+        (submit)="submitMeetingRequest()"
+      />
+    }
+  </form>
+</div>

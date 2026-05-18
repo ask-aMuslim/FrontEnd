@@ -1,0 +1,121 @@
+<aside class="academy-sidebar" [attr.aria-label]="ariaLabel">
+  <div class="course-info-card">
+    <div class="course-header">
+      <div class="stage-row">
+        <span class="stage-label">{{ stageLabel }}</span>
+        @if (overviewLink) {
+          <a class="overview-link" [routerLink]="overviewLink">
+            <span>{{ overviewLinkLabel }}</span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M5 12H19"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M12 5L19 12L12 19"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+        }
+      </div>
+
+      <h3 class="sidebar-title" [title]="title">{{ title }}</h3>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="course-stats">
+      @for (stat of stats; track stat) {
+        <p class="stat-item">{{ stat }}</p>
+      }
+    </div>
+  </div>
+
+  <div
+    class="lessons-list"
+    [class.lessons-list--scrollable]="shouldEnableScroll"
+  >
+    @for (lesson of lessons; track trackByLessonId($index, lesson)) {
+      @if (showReadyDividerBeforeQuiz && lesson.type === "quiz") {
+        <div
+          class="ready-divider"
+          [class.ready-divider--highlight]="
+            highlightReadyDividerBeforeQuiz &&
+            lessons[$index - 1]?.isLastCourseLesson
+          "
+        >
+          <div class="divider-line"></div>
+          <span class="ready-text">Ready?</span>
+          <div class="divider-line"></div>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="lesson-item"
+        [class.lesson-current]="lesson.isCurrent"
+        [class.lesson-last-in-course]="lesson.isLastCourseLesson"
+        [class.lesson-before-ready-divider]="
+          showReadyDividerBeforeQuiz &&
+          lesson.type !== 'quiz' &&
+          lessons[$index + 1]?.type === 'quiz'
+        "
+        [class.lesson-completed]="lesson.isCompleted"
+        [class.lesson-locked]="lesson.isLocked || lesson.isPending"
+        [attr.aria-current]="lesson.isCurrent ? 'true' : null"
+        [disabled]="isLessonDisabled(lesson)"
+        (click)="onLessonClick(lesson)"
+      >
+        <div class="lesson-info">
+          <div class="lesson-title-row">
+            <img
+              class="lesson-type-icon"
+              [src]="getLessonIconPath(lesson)"
+              [alt]="getLessonIconAlt(lesson)"
+              width="16"
+              height="16"
+              draggable="false"
+            />
+            <h4
+              [class.lesson-title]="lesson.type !== 'quiz'"
+              [class.quiz-title]="lesson.type === 'quiz'"
+            >
+              {{ lesson.title }}
+            </h4>
+          </div>
+
+          @if (shouldShowDuration(lesson)) {
+            <span class="lesson-duration">
+              <img
+                class="lesson-duration-icon"
+                src="/academy-assets/duration.svg"
+                alt=""
+                aria-hidden="true"
+                width="14"
+                height="14"
+                draggable="false"
+              />
+              <span>{{ lesson.duration }}</span>
+            </span>
+          }
+        </div>
+
+        @if (lesson.hasNotification) {
+          <span class="notification-dot" aria-hidden="true"></span>
+        }
+      </button>
+    }
+  </div>
+</aside>

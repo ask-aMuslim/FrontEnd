@@ -1,6 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 
 import { PageContainerComponent } from './page-container.component';
+
+@Component({
+    standalone: true,
+    imports: [PageContainerComponent],
+    template: `<app-page-container>Test Content</app-page-container>`,
+})
+class TestHostComponent { }
 
 describe('PageContainerComponent', () => {
     let component: PageContainerComponent;
@@ -34,11 +42,11 @@ describe('PageContainerComponent', () => {
     });
 
     it('should render content', () => {
-        const testContent = 'Test Content';
-        fixture.nativeElement.innerHTML = `<app-page-container>${testContent}</app-page-container>`;
-        fixture.detectChanges();
-        const container = fixture.nativeElement.querySelector('.page-container');
+        const hostFixture = TestBed.createComponent(TestHostComponent);
+        hostFixture.detectChanges();
+        const container = hostFixture.nativeElement.querySelector('.page-container') as HTMLElement | null;
         expect(container).toBeTruthy();
+        expect(container?.textContent).toContain('Test Content');
     });
 
     it('should have page-container class', () => {

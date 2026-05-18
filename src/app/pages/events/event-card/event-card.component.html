@@ -12,18 +12,25 @@
 
   <div class="event-card__content">
     <div class="event-card__meta">
-      @if (event.isRecorded) {
-        <div class="event-card__badge event-card__badge--recorded">
-          <span class="event-card__badge-text event-card__badge-text--recorded">Recorded</span>
-        </div>
-      }
-      @if (!event.isRecorded) {
-        <div class="event-card__badge event-card__badge--live">
-          <span class="event-card__badge-text event-card__badge-text--live">&bull; Live</span>
-        </div>
-      }
+      <div
+        class="event-card__badge"
+        [class.event-card__badge--upcoming]="badgeVariant === 'upcoming'"
+        [class.event-card__badge--live]="badgeVariant === 'live'"
+        [class.event-card__badge--finished]="badgeVariant === 'finished'"
+      >
+        <span
+          class="event-card__badge-text"
+          [class.event-card__badge-text--upcoming]="badgeVariant === 'upcoming'"
+          [class.event-card__badge-text--live]="badgeVariant === 'live'"
+          [class.event-card__badge-text--finished]="badgeVariant === 'finished'"
+          >{{ badgeText }}</span
+        >
+      </div>
       <div class="event-card__date">
-        <div [inlineSVG]="'/icons/icons-16/calendar.svg'" class="event-card__date-icon"></div>
+        <div
+          [inlineSVG]="'/icons/icons-16/calendar.svg'"
+          class="event-card__date-icon"
+        ></div>
         <span class="event-card__date-text">{{ event.date }}</span>
       </div>
     </div>

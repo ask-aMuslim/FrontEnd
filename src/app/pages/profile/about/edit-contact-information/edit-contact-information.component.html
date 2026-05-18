@@ -1,0 +1,76 @@
+<div class="edit-form">
+  <div class="edit-form__header">
+    <h2 class="edit-form__title">Edit Contact Information</h2>
+    <div
+      [inlineSVG]="'/icons/icons-24/user-edit.svg'"
+      class="edit-form__icon"
+    ></div>
+  </div>
+
+  <div class="edit-form__fields">
+    <div class="edit-form__field">
+      <label class="edit-form__label" for="city">City</label>
+      <input
+        id="city"
+        type="text"
+        [(ngModel)]="city"
+        placeholder="e.g., Cairo"
+        class="edit-form__input"
+      />
+    </div>
+    <div class="edit-form__field">
+      <label class="edit-form__label" for="country">Country</label>
+      <input
+        id="country"
+        type="text"
+        [(ngModel)]="country"
+        placeholder="e.g., Egypt"
+        class="edit-form__input"
+      />
+    </div>
+    <div class="edit-form__field">
+      <label class="edit-form__label" for="countryCode">Country Code</label>
+      <input
+        id="countryCode"
+        type="text"
+        [(ngModel)]="countryCode"
+        placeholder="e.g., +20"
+        maxlength="5"
+        pattern="(\+[0-9]{1,4})"
+        class="edit-form__input"
+      />
+    </div>
+
+    <div class="edit-form__field">
+      <label class="edit-form__label" for="phoneNumber">Phone Number</label>
+      <input
+        id="phoneNumber"
+        type="tel"
+        [(ngModel)]="phoneNumber"
+        placeholder="+20 123 456 7890"
+        class="edit-form__input"
+      />
+    </div>
+
+    <div class="edit-form__field">
+      <label class="edit-form__label" for="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        [(ngModel)]="email"
+        disabled
+        placeholder="user@example.com"
+        class="edit-form__input"
+      />
+    </div>
+  </div>
+
+  <div class="edit-form__actions">
+    <button (click)="onCancel()" class="edit-form__btn edit-form__btn--cancel">
+      Cancel
+    </button>
+    <button (click)="onSave()" class="edit-form__btn edit-form__btn--save">
+      Save
+    </button>
+  </div>
+</div>

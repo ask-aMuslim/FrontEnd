@@ -1,0 +1,102 @@
+<section class="forms-page" aria-labelledby="forms-title">
+  <header class="forms-hero">
+    <div class="section-block forms-hero__content">
+      <span class="forms-pill">Forms</span>
+      <h1 id="forms-title" class="forms-hero__title">Choose a form</h1>
+      <p class="forms-hero__subtitle">
+        Browse the available forms and open the one you need to fill out.
+      </p>
+    </div>
+  </header>
+
+  <section class="section-block forms-content">
+    <div class="forms-toolbar">
+      <div class="forms-search">
+        <div class="forms-search__input-wrapper">
+          <input
+            #searchInput
+            type="text"
+            class="forms-search__input"
+            placeholder="Search forms"
+            [value]="searchTerm()"
+            (input)="onSearchInput(searchInput.value)"
+          />
+          @if (searchTerm().trim().length > 0) {
+            <button
+              type="button"
+              class="forms-search__clear-btn"
+              (click)="clearSearch()"
+              aria-label="Clear search"
+            >
+              <span class="forms-search__clear-icon">&times;</span>
+            </button>
+          }
+        </div>
+        <button type="button" class="forms-search__btn" (click)="applySearch()">
+          Search
+        </button>
+      </div>
+    </div>
+    @if (isLoading()) {
+      <div class="forms-state" aria-live="polite">
+        <p class="forms-state__title">Loading forms...</p>
+        <p class="forms-state__subtitle">
+          Please wait while we fetch the latest list.
+        </p>
+      </div>
+    } @else if (loadError(); as errorMessage) {
+      <div class="forms-state forms-state--error" role="alert">
+        <p class="forms-state__title">We could not load the forms</p>
+        <p class="forms-state__subtitle">{{ errorMessage }}</p>
+      </div>
+    } @else {
+      @if (hasForms()) {
+        <div class="forms-grid" role="list">
+          @for (form of formCards(); track trackById($index, form)) {
+            <article class="form-card" role="listitem">
+              <div class="form-card__body">
+                <h2 class="form-card__title">{{ form.title }}</h2>
+                <p class="form-card__description">{{ form.description }}</p>
+              </div>
+              <a
+                class="form-card__action"
+                [routerLink]="['/forms', form.id]"
+                aria-label="Open form {{ form.title }}"
+              >
+                Fill this form
+              </a>
+            </article>
+          }
+        </div>
+        @if (showPagination()) {
+          <div class="forms-pagination">
+            <button
+              type="button"
+              class="forms-pagination__button"
+              (click)="prevPage()"
+              [disabled]="isFirstPage()"
+            >
+              Previous
+            </button>
+            <span class="forms-pagination__page">Page {{ currentPage() }}</span>
+            <button
+              type="button"
+              class="forms-pagination__button"
+              (click)="nextPage()"
+              [disabled]="!hasNextPage()"
+            >
+              Next
+            </button>
+          </div>
+        }
+      } @else {
+        <div class="forms-state" aria-live="polite">
+          <p class="forms-state__title">No forms available</p>
+          <p class="forms-state__subtitle">
+            Please check back later or reach out via the contact page.
+          </p>
+        </div>
+      }
+    }
+  </section>
+</section>

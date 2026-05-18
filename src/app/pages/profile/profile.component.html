@@ -1,0 +1,500 @@
+<section class="section-container profile-header">
+  <img
+    src="/backgrounds/profile-background.png"
+    alt="Profile background"
+    class="profile-cover"
+  />
+  <div class="profile-header__overlay">
+    <div class="section-block profile-header__block">
+      <div class="profile-header__info">
+        <div class="profile-avatar-wrapper">
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            (error)="
+              $event.target.src = '/images/profile-placeholder.svg';
+              $event.target.onerror = null
+            "
+            alt="Profile image"
+            class="profile-avatar"
+          />
+          <button
+            type="button"
+            class="profile-avatar-actions"
+            [disabled]="isUploadingAvatar"
+            [attr.aria-expanded]="isAvatarOptionsOpen"
+            aria-haspopup="dialog"
+            aria-label="Open profile picture options"
+            (click)="openAvatarOptionsModal()"
+          >
+            <div [inlineSVG]="'/icons/icons-24/more.svg'"></div>
+          </button>
+        </div>
+        <input
+          #avatarFileInput
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          class="profile-avatar-input"
+          (change)="onAvatarFileSelected($event)"
+        />
+        <div class="profile-details">
+          <div class="profile-name-section">
+            <div class="profile-name-row">
+              <h2 class="profile-name">{{ userProfile.name }}</h2>
+              @if (userProfile.gender === "Male") {
+                <span class="profile-gender-badge profile-gender-badge--male">
+                  {{ userProfile.religion }}
+                  <div
+                    [inlineSVG]="'/icons/icons-24/male.svg'"
+                    class="profile-gender-icon profile-gender-icon--male"
+                  ></div>
+                </span>
+              }
+              @if (userProfile.gender === "Female") {
+                <span class="profile-gender-badge profile-gender-badge--female">
+                  {{ userProfile.religion }}
+                  <div
+                    [inlineSVG]="'/icons/icons-24/female.svg'"
+                    class="profile-gender-icon profile-gender-icon--female"
+                  ></div>
+                </span>
+              }
+              <!-- <button
+                class="profile-logout-btn"
+                type="button"
+                (click)="logout()"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M16 17L21 12L16 7"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M21 12H9"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>Logout</span>
+              </button> -->
+            </div>
+            <span class="profile-bio">{{ userProfile.bio }}</span>
+          </div>
+          <button
+            (click)="continueLearnig()"
+            class="button profile-continue-btn"
+          >
+            <span
+              class="profile-continue-btn__label profile-continue-btn__label--desktop"
+            >
+              Continue Learning
+            </span>
+            <span
+              class="profile-continue-btn__label profile-continue-btn__label--mobile"
+            >
+              Continue
+            </span>
+            <div
+              [inlineSVG]="'/icons/icons-24/arrow-right.svg'"
+              class="profile-continue-btn__icon"
+            ></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+@if (isAvatarOptionsOpen) {
+  <div class="profile-avatar-modal" (click)="closeAvatarOptionsModal()">
+    <div
+      class="profile-avatar-modal__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-avatar-options-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="profile-avatar-modal__close-btn"
+        aria-label="Close profile picture options"
+        (click)="closeAvatarOptionsModal()"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <div class="profile-avatar-modal__header">
+        <div class="profile-avatar-modal__preview-shell">
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            alt="Current profile picture"
+            class="profile-avatar-modal__preview-image"
+          />
+        </div>
+        <div class="profile-avatar-modal__title-group">
+          <h2
+            id="profile-avatar-options-title"
+            class="profile-avatar-modal__title"
+          >
+            Profile picture options
+          </h2>
+          <p class="profile-avatar-modal__text">
+            Choose how you'd like to manage your profile picture.
+          </p>
+        </div>
+      </div>
+
+      <div class="profile-avatar-modal__actions">
+        <button
+          type="button"
+          class="profile-avatar-modal__action profile-avatar-modal__action--view"
+          (click)="viewAvatarPicture()"
+        >
+          <span class="profile-avatar-modal__action-icon">
+            <div [inlineSVG]="'/icons/icons-24/eye.svg'"></div>
+          </span>
+          <span class="profile-avatar-modal__action-text">
+            <span class="profile-avatar-modal__action-title">View picture</span>
+            <span class="profile-avatar-modal__action-description"
+              >Open the full-size image.</span
+            >
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="profile-avatar-modal__action profile-avatar-modal__action--update"
+          [disabled]="isUploadingAvatar"
+          (click)="startAvatarUpdate()"
+        >
+          <span class="profile-avatar-modal__action-icon">
+            <div [inlineSVG]="'/icons/icons-24/user-edit.svg'"></div>
+          </span>
+          <span class="profile-avatar-modal__action-text">
+            <span class="profile-avatar-modal__action-title"
+              >Update picture</span
+            >
+            <span class="profile-avatar-modal__action-description"
+              >Upload a new profile image.</span
+            >
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="profile-avatar-modal__action profile-avatar-modal__action--delete"
+          [disabled]="isUploadingAvatar || !userProfile.imageUrl"
+          (click)="deleteAvatarPicture()"
+        >
+          <span class="profile-avatar-modal__action-icon">
+            <div [inlineSVG]="'/icons/icons-24/minus.svg'"></div>
+          </span>
+          <span class="profile-avatar-modal__action-text">
+            <span class="profile-avatar-modal__action-title"
+              >Delete picture</span
+            >
+            <span class="profile-avatar-modal__action-description"
+              >Remove the current profile image.</span
+            >
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (isAvatarPreviewOpen) {
+  <div class="profile-avatar-modal" (click)="closeAvatarPreviewModal()">
+    <div
+      class="profile-avatar-modal__dialog profile-avatar-modal__dialog--preview"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-avatar-preview-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="profile-avatar-modal__close-btn"
+        aria-label="Close profile picture preview"
+        (click)="closeAvatarPreviewModal()"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <div class="profile-avatar-modal__preview-content">
+        <h2
+          id="profile-avatar-preview-title"
+          class="profile-avatar-modal__title profile-avatar-modal__title--center"
+        >
+          Profile picture
+        </h2>
+        <div
+          class="profile-avatar-modal__preview-shell profile-avatar-modal__preview-shell--large"
+        >
+          <img
+            [src]="userProfile.imageUrl || '/images/profile-placeholder.svg'"
+            alt="Profile picture preview"
+            class="profile-avatar-modal__preview-image profile-avatar-modal__preview-image--large"
+          />
+        </div>
+        <p
+          class="profile-avatar-modal__text profile-avatar-modal__text--center"
+        >
+          {{
+            userProfile.imageUrl
+              ? "This is your current profile image."
+              : "You are using the default placeholder image right now."
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+}
+
+<section class="section-container profile-content">
+  <div class="section-block">
+    <div class="profile-content__layout">
+      <!-- Verse of the Day - Only shown when data is available from API -->
+      @if (currentVerse.text) {
+        <div class="verse-card">
+          <div class="verse-card__header">
+            <div
+              [inlineSVG]="'/icons/icons-24/bookmark.svg'"
+              class="verse-card__icon"
+            ></div>
+            <h2 class="verse-card__label">Verse of the Day</h2>
+            <h2 class="verse-card__reference">
+              &#123;Sura: {{ currentVerse.sura }}, Aya:
+              {{ currentVerse.aya }}&#125;
+            </h2>
+          </div>
+          <h2 class="verse-card__arabic">{{ currentVerse.text }}</h2>
+          <h2 class="verse-card__translation">
+            {{ currentVerse.textEnglish }}
+          </h2>
+          <div class="verse-card__action">
+            <button class="verse-card__btn">
+              Understand More
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="verse-card__btn-icon"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.6"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="profile-grid">
+        <!-- Left Side - Dynamic Tab Content -->
+        <div class="profile-main">
+          <div class="profile-tabs">
+            @for (tab of tabs; track tab; let i = $index) {
+              <button
+                (click)="selectTab(i)"
+                class="profile-tab"
+                [class.profile-tab--active]="i === activeTabIndex"
+                [class.profile-tab--hidden]="tab === 'My Inquiries'"
+              >
+                {{ tab }}
+              </button>
+            }
+          </div>
+
+          <!-- About Tab -->
+          @if (activeTabIndex === 0) {
+            <app-about
+              (profileHeaderUpdated)="onAboutProfileUpdated($event)"
+            ></app-about>
+          }
+
+          <!-- My Learning Tab -->
+          @if (activeTabIndex === 1) {
+            <app-my-learning></app-my-learning>
+          }
+
+          <!-- My Inquiries Tab -->
+          @if (activeTabIndex === 2) {
+            <div class="profile-tab-panel profile-tab-panel--hidden">
+              <app-my-inquiries></app-my-inquiries>
+            </div>
+          }
+        </div>
+
+        <!-- Right Side -->
+        <div class="profile-sidebar">
+          <div
+            class="upcoming-event-widget"
+            [class.upcoming-event-widget--hidden]="!upcomingEvent"
+          >
+            @if (upcomingEvent) {
+              <h2 class="upcoming-event-widget__title">Upcoming Event</h2>
+              <div class="upcoming-event-card">
+                <div class="upcoming-event-card__meta">
+                  <div class="upcoming-event-card__meta-item">
+                    <div
+                      [inlineSVG]="'/icons/icons-16/calendar.svg'"
+                      class="upcoming-event-card__meta-icon"
+                    ></div>
+                    <span class="upcoming-event-card__meta-text">{{
+                      upcomingEvent.date
+                    }}</span>
+                  </div>
+                  <div class="upcoming-event-card__meta-item">
+                    <div
+                      [inlineSVG]="'/icons/icons-16/clock.svg'"
+                      class="upcoming-event-card__meta-icon"
+                    ></div>
+                    <span class="upcoming-event-card__meta-text">{{
+                      upcomingEvent.time
+                    }}</span>
+                  </div>
+                </div>
+                <h2 class="upcoming-event-card__title">
+                  {{ upcomingEvent.title }}
+                </h2>
+                <div class="upcoming-event-card__speaker">
+                  <img
+                    [src]="
+                      upcomingEvent.speakerImage ||
+                      '/images/profile-placeholder.svg'
+                    "
+                    (error)="
+                      $event.target.src = '/images/profile-placeholder.svg';
+                      $event.target.onerror = null
+                    "
+                    alt="speaker"
+                    class="upcoming-event-card__speaker-image"
+                  />
+                  <div class="upcoming-event-card__speaker-info">
+                    <span class="upcoming-event-card__speaker-name">{{
+                      upcomingEvent.speaker
+                    }}</span>
+                    <span class="upcoming-event-card__speaker-role">{{
+                      upcomingEvent.speakerRole
+                    }}</span>
+                  </div>
+                </div>
+                <div class="upcoming-event-card__divider"></div>
+                <div class="upcoming-event-card__footer">
+                  <button
+                    (click)="viewEventDetails()"
+                    class="upcoming-event-card__details-btn"
+                  >
+                    View Details
+                  </button>
+                  @if (upcomingEvent.isRegistered) {
+                    <div class="upcoming-event-card__status">
+                      <div
+                        [inlineSVG]="'/icons/icons-24/done.svg'"
+                        class="upcoming-event-card__status-icon"
+                      ></div>
+                      <span class="upcoming-event-card__status-text">
+                        Registered
+                      </span>
+                    </div>
+                  } @else {
+                    <button
+                      type="button"
+                      class="upcoming-event-card__status"
+                      (click)="handleRegisterNowClick()"
+                    >
+                      <span class="upcoming-event-card__status-text">
+                        Register now
+                      </span>
+                      <div
+                        [inlineSVG]="'/icons/icons-16/arrow-right.svg'"
+                        class="upcoming-event-card__status-icon"
+                      ></div>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="mosque-widget mosque-widget--hidden">
+            <h2 class="mosque-widget__title">Looking for a near Mosque?</h2>
+            <div class="mosque-widget__selects">
+              <button class="mosque-widget__select">
+                Select your city
+                <div
+                  [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
+                  class="mosque-widget__select-icon"
+                ></div>
+              </button>
+              <button class="mosque-widget__select">
+                Select your area
+                <div
+                  [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
+                  class="mosque-widget__select-icon"
+                ></div>
+              </button>
+            </div>
+            <button class="mosque-widget__btn">
+              Get on Map
+              <div class="mosque-widget__btn-icon">
+                <div [inlineSVG]="'/icons/icons-24/arrow-right.svg'"></div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

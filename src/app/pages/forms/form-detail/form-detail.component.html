@@ -1,0 +1,450 @@
+<section class="form-detail" aria-labelledby="form-title">
+  <header class="form-detail__hero">
+    <div class="section-block form-detail__hero-content">
+      <button type="button" class="form-detail__back" (click)="goBack()">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Back to forms
+      </button>
+      <h1 id="form-title" class="form-detail__title">{{ formTitle() }}</h1>
+      <div class="form-detail__meta">
+        <span class="form-detail__pill">Public form</span>
+        <span class="form-detail__meta-dot" aria-hidden="true"></span>
+        <span class="form-detail__meta-text">{{ fieldCount() }} fields</span>
+        <span class="form-detail__meta-dot" aria-hidden="true"></span>
+        @if (hasRequiredFields()) {
+          <span class="form-detail__meta-text">
+            {{ requiredCount() }} required
+          </span>
+        } @else {
+          <span class="form-detail__meta-text">All optional</span>
+        }
+      </div>
+      @if (formDescription()) {
+        <p class="form-detail__subtitle">{{ formDescription() }}</p>
+      }
+    </div>
+  </header>
+  <section class="section-block form-detail__content">
+    @if (isLoading()) {
+      <div class="form-state" aria-live="polite">
+        <p class="form-state__title">Loading form...</p>
+        <p class="form-state__subtitle">Please wait while we prepare it.</p>
+      </div>
+    } @else {
+      @if (loadError(); as errorMessage) {
+        <div class="form-state form-state--error" role="alert">
+          <p class="form-state__title">We could not load this form</p>
+          <p class="form-state__subtitle">{{ errorMessage }}</p>
+          <button
+            type="button"
+            class="form-detail__secondary"
+            (click)="goBack()"
+          >
+            Go back
+          </button>
+        </div>
+      } @else {
+        @if (!isPublished()) {
+          <div class="form-state" role="alert">
+            <p class="form-state__title">This form Is not available</p>
+            <p class="form-state__subtitle">
+              Please choose another form or check back later.
+            </p>
+            <button
+              type="button"
+              class="form-detail__secondary"
+              (click)="goBack()"
+            >
+              Browse forms
+            </button>
+          </div>
+        } @else {
+          @if (submissionId(); as submittedId) {
+            <div class="form-success" role="status">
+              <div class="form-success__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M20 7L10 17L5 12"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <h2 class="form-success__title">Form submitted</h2>
+              <p class="form-success__subtitle">
+                Your response has been recorded.
+              </p>
+              <button
+                type="button"
+                class="form-detail__primary"
+                (click)="submitAnother()"
+              >
+                Submit another response
+              </button>
+            </div>
+          } @else {
+            @if (formGroup(); as activeForm) {
+              <div class="form-detail__layout">
+                <aside class="form-detail__aside">
+                  <div class="form-detail__summary">
+                    <div class="form-detail__summary-card">
+                      <span class="form-detail__summary-label">Fields</span>
+                      <span class="form-detail__summary-value">
+                        {{ fieldCount() }}
+                      </span>
+                    </div>
+                    <div class="form-detail__summary-card">
+                      <span class="form-detail__summary-label">Required</span>
+                      <span class="form-detail__summary-value">
+                        {{ requiredCount() }}
+                      </span>
+                    </div>
+                    <div class="form-detail__summary-card">
+                      <span class="form-detail__summary-label">Optional</span>
+                      <span class="form-detail__summary-value">
+                        {{ optionalCount() }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="form-detail__note">
+                    <h3 class="form-detail__note-title">Before you submit</h3>
+                    <p class="form-detail__note-text">
+                      Required fields are marked with an asterisk. Your response
+                      is saved once you submit the form.
+                    </p>
+                  </div>
+                </aside>
+                <form
+                  class="form-detail__form form-detail__panel"
+                  [formGroup]="activeForm"
+                  (ngSubmit)="submitForm()"
+                  novalidate
+                >
+                  <div class="form-detail__fields">
+                    @for (field of fields(); track trackById($index, field)) {
+                      <div class="form-field">
+                        @if (field.type !== "Checkbox") {
+                          <label
+                            [attr.for]="field.controlName"
+                            class="form-field__label"
+                          >
+                            {{ field.label }}
+                            @if (field.isRequired) {
+                              <span class="form-field__required">*</span>
+                            }
+                          </label>
+                          <!-- <span class="form-field__type">{{
+                            field.typeLabel
+                          }}</span> -->
+                        }
+
+                        @if (field.type === "TextArea") {
+                          <textarea
+                            [id]="field.controlName"
+                            [formControlName]="field.controlName"
+                            [rows]="textAreaRows"
+                            [placeholder]="field.placeholder"
+                            [class.form-field__input--error]="
+                              isFieldInvalid(field)
+                            "
+                          ></textarea>
+                        } @else if (field.type === "Select") {
+                          @if (field.isMultiSelect) {
+                            <p
+                              class="form-field__helper form-field__helper--hint"
+                            >
+                              Select all that apply.
+                            </p>
+                          }
+                          @if (field.options.length > 0) {
+                            <div
+                              class="form-field__options form-field__options--choice"
+                              role="listbox"
+                              [attr.aria-label]="field.label"
+                              [attr.aria-multiselectable]="
+                                field.isMultiSelect ? 'true' : null
+                              "
+                              [class.form-field__options--multi]="
+                                field.isMultiSelect
+                              "
+                            >
+                              @for (
+                                option of field.options;
+                                track trackOptionById($index, option)
+                              ) {
+                                <button
+                                  type="button"
+                                  class="form-field__option form-field__option--choice"
+                                  [class.is-selected]="
+                                    isSelectOptionSelected(field, option.value)
+                                  "
+                                  role="option"
+                                  [attr.aria-selected]="
+                                    isSelectOptionSelected(field, option.value)
+                                  "
+                                  (click)="onSelectField(field, option.value)"
+                                >
+                                  @if (field.isMultiSelect) {
+                                    <span
+                                      class="form-field__checkbox-icon"
+                                      aria-hidden="true"
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="none">
+                                        <path
+                                          d="M20 7L10 17L5 12"
+                                          stroke="currentColor"
+                                          stroke-width="2.5"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                        />
+                                      </svg>
+                                    </span>
+                                  } @else {
+                                    <span
+                                      class="form-field__option-dot"
+                                      aria-hidden="true"
+                                    ></span>
+                                  }
+                                  <span>{{ option.label }}</span>
+                                </button>
+                              }
+                            </div>
+                          } @else {
+                            <p class="form-field__helper">
+                              No options available.
+                            </p>
+                          }
+                        } @else if (field.type === "Radio") {
+                          <div
+                            class="form-field__options form-field__options--choice"
+                            role="radiogroup"
+                            [attr.aria-label]="field.label"
+                          >
+                            @if (field.options.length > 0) {
+                              @for (
+                                option of field.options;
+                                track trackOptionById($index, option)
+                              ) {
+                                <button
+                                  type="button"
+                                  class="form-field__option form-field__option--choice"
+                                  [class.is-selected]="
+                                    option.value ===
+                                    activeForm.get(field.controlName)?.value
+                                  "
+                                  role="radio"
+                                  [attr.aria-checked]="
+                                    option.value ===
+                                    activeForm.get(field.controlName)?.value
+                                  "
+                                  (click)="onSelectField(field, option.value)"
+                                >
+                                  <span
+                                    class="form-field__option-dot"
+                                    aria-hidden="true"
+                                  ></span>
+                                  <span>{{ option.label }}</span>
+                                </button>
+                              }
+                            } @else {
+                              <p class="form-field__helper">
+                                No options available.
+                              </p>
+                            }
+                          </div>
+                        } @else if (field.type === "Checkbox") {
+                          <label
+                            class="form-field__checkbox"
+                            [attr.for]="field.controlName"
+                          >
+                            <input
+                              type="checkbox"
+                              [id]="field.controlName"
+                              [formControlName]="field.controlName"
+                            />
+                            <span
+                              class="form-field__checkbox-icon"
+                              aria-hidden="true"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <path
+                                  d="M20 7L10 17L5 12"
+                                  stroke="currentColor"
+                                  stroke-width="2.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            </span>
+                            <span class="form-field__checkbox-label">
+                              {{ field.label }}
+                              @if (field.isRequired) {
+                                <span class="form-field__required">*</span>
+                              }
+                            </span>
+                          </label>
+                          <span class="form-field__type">{{
+                            field.typeLabel
+                          }}</span>
+                        } @else if (field.type === "File") {
+                          <input
+                            [id]="field.controlName"
+                            type="file"
+                            (change)="onFileSelected(field, $event)"
+                            [class.form-field__input--error]="
+                              isFieldInvalid(field)
+                            "
+                          />
+                        } @else if (field.type === "PhoneNumber") {
+                          <div class="form-field__phone-group">
+                            @if (
+                              field.countryCodeControlName &&
+                              field.countryCodeOptions
+                            ) {
+                              <div class="form-field__country-code-wrapper">
+                                <label
+                                  [attr.for]="field.countryCodeControlName"
+                                  class="form-field__country-code-label"
+                                >
+                                  Country Code
+                                </label>
+                                <app-select-dropdown
+                                  [id]="field.countryCodeControlName"
+                                  [options]="field.countryCodeOptions"
+                                  [value]="
+                                    activeForm.get(field.countryCodeControlName)
+                                      ?.value ?? '+1'
+                                  "
+                                  [placeholder]="'Select country'"
+                                  [attr.aria-label]="'Select country code'"
+                                  [error]="
+                                    !!(
+                                      activeForm.get(
+                                        field.countryCodeControlName
+                                      )?.invalid &&
+                                      (activeForm.get(
+                                        field.countryCodeControlName
+                                      )?.dirty ||
+                                        activeForm.get(
+                                          field.countryCodeControlName
+                                        )?.touched)
+                                    )
+                                  "
+                                  (select)="
+                                    onCountryCodeSelected(field, $event)
+                                  "
+                                ></app-select-dropdown>
+                              </div>
+                            }
+                            <div class="form-field__phone-input-wrapper">
+                              <input
+                                [id]="field.controlName"
+                                type="tel"
+                                [formControlName]="field.controlName"
+                                [placeholder]="field.placeholder"
+                                [attr.inputmode]="'tel'"
+                                [attr.autocomplete]="'tel'"
+                                [attr.aria-label]="'Phone number'"
+                                [attr.aria-invalid]="
+                                  isFieldInvalid(field) ||
+                                  !!phoneFieldValidation()[field.id]
+                                "
+                                [attr.aria-describedby]="
+                                  isFieldInvalid(field) ||
+                                  !!phoneFieldValidation()[field.id]
+                                    ? field.controlName + '-error'
+                                    : null
+                                "
+                                [class.form-field__input--error]="
+                                  isFieldInvalid(field) ||
+                                  !!phoneFieldValidation()[field.id]
+                                "
+                                class="form-field__phone-input"
+                                (input)="onPhoneNumberInput(field, $event)"
+                                (blur)="onPhoneNumberBlur(field)"
+                                (paste)="onPhonePaste(field, $event)"
+                              />
+                            </div>
+                          </div>
+                        } @else {
+                          <input
+                            [id]="field.controlName"
+                            [type]="field.inputType"
+                            [formControlName]="field.controlName"
+                            [placeholder]="field.placeholder"
+                            [class.form-field__input--error]="
+                              isFieldInvalid(field)
+                            "
+                          />
+                        }
+
+                        @if (field.type === "PhoneNumber") {
+                          @if (
+                            phoneFieldValidation()[field.id];
+                            as phoneError
+                          ) {
+                            <p
+                              class="form-field__error"
+                              [attr.id]="field.controlName + '-error'"
+                            >
+                              {{ phoneError }}
+                            </p>
+                          }
+                        } @else if (isFieldInvalid(field)) {
+                          <p class="form-field__error">
+                            {{ getFieldError(field) }}
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  @if (submitError(); as submitErrorMessage) {
+                    <div class="form-detail__error" role="alert">
+                      {{ submitErrorMessage }}
+                    </div>
+                  }
+
+                  <div class="form-detail__actions">
+                    <button
+                      type="button"
+                      class="form-detail__secondary"
+                      (click)="goBack()"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      class="form-detail__primary"
+                      [disabled]="!canSubmit()"
+                    >
+                      @if (isSubmitting()) {
+                        Submitting...
+                      } @else {
+                        Submit form
+                      }
+                    </button>
+                  </div>
+                </form>
+              </div>
+            }
+          }
+        }
+      }
+    }
+  </section>
+</section>

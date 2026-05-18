@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, shareReplay, finalize } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 
@@ -27,8 +27,15 @@ export interface QuizQuery {
 export class QuizFacade {
     constructor(private readonly api: ApiService) { }
 
+    private readonly activeRequests = new Map<string, Observable<QuizReadDto[]>>();
+
     getAllQuizzes(query?: QuizQuery): Observable<QuizReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Quizzes', {
+        const cacheKey = JSON.stringify(query || {});
+        if (this.activeRequests.has(cacheKey)) {
+            return this.activeRequests.get(cacheKey)!;
+        }
+
+        const request$ = extractData(this.api.get<unknown>('/api/Quizzes', {
             LevelId: query?.levelId,
             CourseId: query?.courseId,
             LessonId: query?.lessonId,
@@ -36,7 +43,14 @@ export class QuizFacade {
             PageNumber: query?.pageNumber,
             PageSize: query?.pageSize,
             SearchTerm: query?.searchTerm,
-        }), []).pipe(map(asArray<QuizReadDto>));
+        }), []).pipe(
+            map(asArray<QuizReadDto>),
+            finalize(() => this.activeRequests.delete(cacheKey)),
+            shareReplay(1)
+        );
+
+        this.activeRequests.set(cacheKey, request$);
+        return request$;
     }
 
     getQuizById(id: string): Observable<QuizReadDto | null> {

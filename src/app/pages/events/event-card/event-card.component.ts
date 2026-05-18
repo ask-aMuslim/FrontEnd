@@ -1,8 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EventService } from '../event.service';
+import { EventStatus } from '../event-status.enum';
+import { getEventStatusBadgeState } from '../event-status.helper';
 
 export interface EventCard {
   id: number | string;
@@ -16,7 +18,9 @@ export interface EventCard {
   date: string;
   timeRange?: string;
   tags: string[];
+  status?: EventStatus;
   isRecorded?: boolean;
+  isPublished?: boolean;
 }
 
 @Component({
@@ -31,10 +35,24 @@ export class EventCardComponent {
 
   @Input() event!: EventCard;
 
-  constructor(
-    private readonly router: Router,
-    private readonly eventService: EventService,
-  ) { }
+  private readonly router = inject(Router);
+  private readonly eventService = inject(EventService);
+
+  get badgeVariant(): 'upcoming' | 'live' | 'finished' {
+    return getEventStatusBadgeState(
+      'card',
+      this.event.status,
+      this.event.isRecorded === true,
+    ).variant;
+  }
+
+  get badgeText(): string {
+    return getEventStatusBadgeState(
+      'card',
+      this.event.status,
+      this.event.isRecorded === true,
+    ).text;
+  }
 
   onCardClick(): void {
     this.eventService.setSelectedEvent(this.event);

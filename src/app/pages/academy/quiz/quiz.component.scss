@@ -1,6 +1,6 @@
 // Quiz Component Styles - Figma Design Match
-@use '../../../app.scss' as *;
-@use './quiz-results.scss';
+@use "../../../app.scss" as *;
+@use "./quiz-results.scss";
 
 // ==================== VARIABLES ====================
 :root {
@@ -12,7 +12,6 @@
 // ==================== CONTAINER ====================
 .quiz-container {
   min-height: 100vh;
-  background-color: #ffffff;
   width: 100%;
   overflow-x: hidden; // Prevent horizontal overflow
   box-sizing: border-box; // Include padding in width calculation
@@ -23,93 +22,12 @@
   width: 100%;
   padding: 2rem;
   margin-left: 5px;
-  background-color: #ffffff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 0px 5px rgba(0, 0, 0, 0.15);
 
   @media (min-width: 1024px) {
     max-width: 888px; // Exact Figma
   }
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 16px;
-  border: 0.5px solid #adb5bd;
-  border-radius: var(--border-radius-default);
-  @media (min-width: 1024px) {
-    width: 320px; // Exact Figma
-    flex-shrink: 0;
-  }
-
-  .course-info-card {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px; // Exact Figma
-    border-radius: 8px;
-    background: #f8f9fa; // Exact Figma
-
-    .course-header {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-
-      .stage-label {
-        color: #adb5bd; // Exact Figma
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px; // Exact Figma
-        font-weight: 500; // Medium
-        line-height: 21px; // Exact Figma
-        letter-spacing: 0;
-      }
-
-      .sidebar-title {
-        margin: 0;
-        color: #1a1a1a; // Exact Figma
-        font-family: 'Poppins', sans-serif;
-        font-size: 18px; // Exact Figma
-        font-weight: 500; // Medium
-        line-height: 18px; // Exact Figma (100%)
-        letter-spacing: 0;
-        text-transform: capitalize;
-      }
-    }
-
-    .divider {
-      height: 1px;
-      background: #e9ecef;
-      margin: 4px 0;
-    }
-
-    .course-stats {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-
-      .stat-item {
-        margin: 0;
-        color: #6c757d; // Exact Figma
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px; // Exact Figma
-        font-weight: 500; // Medium
-        line-height: 21px; // Exact Figma
-        letter-spacing: 0;
-      }
-    }
-  }
-}
-
-.lessons-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0; // No gap - items connected
-  padding: 0; // No inner padding
-  background: #ffffff;
-  overflow: hidden; // Clean rounded corners
 }
 
 // ==================== SIDEBAR TOGGLE ====================
@@ -196,7 +114,7 @@
 }
 
 .quiz-intro-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 24px; // Exact Figma
   font-weight: 600; // SemiBold
   line-height: 36px; // Exact Figma: 36px
@@ -206,7 +124,7 @@
 }
 
 .quiz-intro-description {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 16px; // Exact Figma
   font-weight: 400; // Regular
   line-height: 25.6px; // Exact Figma: 25.600000381469727px
@@ -216,7 +134,7 @@
 }
 
 .quiz-ready-message {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 16px; // Exact Figma
   font-weight: 400; // Regular
   line-height: 25.6px; // Exact Figma: 25.600000381469727px
@@ -259,7 +177,7 @@
   height: 56px;
   padding: 0 32px;
   border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 18px;
   font-weight: 600;
   line-height: normal;
@@ -292,7 +210,7 @@
     overflow: hidden;
 
     &::before {
-      content: '';
+      content: "";
       position: absolute;
       top: 50%;
       left: 50%;
@@ -393,7 +311,7 @@
   background-color: transparent;
   border: none;
   border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 18px;
   font-weight: 600;
   line-height: normal;
@@ -406,143 +324,13 @@
   }
 }
 
-.lessons-separator {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 0;
-  margin: 8px 0;
-
-  .separator-line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
-  }
-
-  .separator-text {
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 100%;
-    letter-spacing: 0.5px;
-    color: #6c757d;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-}
-
-.lesson-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px; // Exact Figma
-  padding: 12px 16px; // Increased horizontal padding
-  border-radius: 0; // No border-radius for connected look
-  border-bottom: 0.5px solid #e9ecef; // Separator between items
-  background-color: #fff; // Exact Figma
-  min-height: 71px; // Exact Figma height
-  width: 100%;
-  position: relative;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-
-  &:last-child {
-    border-bottom: none; // No border on last item
-  }
-
-  &:hover:not(.pending) {
-    background-color: #f8f9fa;
-  }
-
-  &.completed {
-    .lesson-title {
-      color: #156b40; // Exact Figma
-    }
-  }
-
-  &.current {
-    background-color: #fdf9ee; // Exact Figma
-
-    .lesson-title {
-      color: #343a40; // Exact Figma
-    }
-  }
-
-  &.pending {
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-}
-
-.lesson-icon {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-.lesson-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.lesson-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 100%;
-  letter-spacing: 0;
-  text-transform: capitalize;
-  color: #1a1a1a;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap; // Force single line for ellipsis to work reliably
-  display: block; // Flex child needs block behavior for text-overflow to work sometimes
-  max-width: 100%;
-}
-
-.lesson-duration {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: normal;
-  color: #6c757d;
-
-  svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-  }
-}
-
-.notification-dot {
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #f44336;
-}
-
 // ==================== QUESTIONS SIDEBAR (IN PROGRESS) ====================
 .questions-sidebar {
   background-color: #fff;
   border-radius: 8px;
   border: 0.5px solid #adb5bd;
-  padding: 40px 24px 48px;
+  padding: 0;
+  padding-bottom: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -579,8 +367,9 @@
     top: 0;
     max-height: none;
     flex-direction: row;
-    justify-content: space-between;
-    padding: 24px;
+    justify-content: center;
+    padding: 0;
+    padding-bottom: 10px;
     overflow-y: visible;
     flex-wrap: wrap;
   }
@@ -604,7 +393,7 @@
 
     @media (max-width: 1024px) {
       width: auto;
-      padding: 24px;
+      padding: 0;
 
       .timer-container,
       .questions-list {
@@ -625,21 +414,35 @@
 // ==================== TIMER ====================
 .timer-container {
   position: relative;
-  width: 240px; // Increased from 180px for better timer display
+  width: 100%;
   height: 240px;
+  min-height: 240px;
+  max-height: 240px;
+  flex: 0 0 240px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px; // Center the timer
+  padding: 40px 24px 24px;
+  box-sizing: border-box;
   background-color: var(--color-background-base-surface);
+  margin-bottom: 2rem;
+
   @media (max-width: 1024px) {
     width: 160px;
     height: 160px;
+    min-height: 160px;
+    max-height: 160px;
+    flex: 0 0 160px;
+    padding: 24px 24px 16px;
   }
 
   @media (max-width: 640px) {
     width: 140px;
     height: 140px;
+    min-height: 140px;
+    max-height: 140px;
+    flex: 0 0 140px;
+    padding: 20px 20px 12px;
   }
 }
 
@@ -663,7 +466,7 @@
 }
 
 .timer-value {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 40px;
   font-weight: 700;
   line-height: normal;
@@ -676,7 +479,7 @@
 }
 
 .timer-label {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: normal;
@@ -696,11 +499,18 @@
   align-items: stretch;
   gap: 12px;
   width: 100%;
+  padding: 0 24px 48px;
+  box-sizing: border-box;
 
   @media (max-width: 1024px) {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
+    padding: 0 24px 24px;
+  }
+
+  @media (max-width: 640px) {
+    padding: 0 12px 16px;
   }
 }
 
@@ -773,7 +583,7 @@
 }
 
 .question-text {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 18px;
   font-weight: 600;
   line-height: 160%;
@@ -817,7 +627,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 14px;
     font-weight: 600;
     color: #343a40;
@@ -831,7 +641,7 @@
   }
 
   .option-text {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 150%;
@@ -864,7 +674,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 16px;
   font-weight: 500;
   color: #156b40;
@@ -890,7 +700,7 @@
   border-left: 3px solid #156b40;
 
   p {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 14px;
     line-height: 160%;
     color: #343a40;
@@ -918,7 +728,7 @@
 }
 
 .review-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 28px;
   font-weight: 700;
   line-height: normal;
@@ -958,7 +768,7 @@
     flex-shrink: 0;
 
     .score-value {
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       font-size: 20px;
       font-weight: 700;
       color: #fff;
@@ -987,7 +797,7 @@
     flex-shrink: 0;
 
     .score-value {
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       font-size: 20px;
       font-weight: 700;
       color: #fff;
@@ -1002,7 +812,7 @@
 }
 
 .message-main {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 16px;
   font-weight: 500;
   line-height: 150%;
@@ -1011,7 +821,7 @@
 }
 
 .message-sub {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 150%;
@@ -1043,7 +853,7 @@
   }
 
   .question-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 16px;
     font-weight: 600;
     line-height: 150%;
@@ -1085,14 +895,22 @@
     gap: 4px;
 
     .answer-label {
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       font-size: 16px;
       font-weight: 500;
       color: #343a40;
     }
 
+    .answer-text {
+      font-family: "Poppins", sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 150%;
+      color: #343a40;
+    }
+
     .answer-hint {
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       font-size: 14px;
       font-weight: 400;
       color: #156b40;
@@ -1107,8 +925,10 @@
 
 .review-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
   padding-top: 8px;
 
   @media (max-width: 640px) {
@@ -1160,7 +980,7 @@
   }
 
   .score-percentage {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: #fff;
@@ -1170,8 +990,19 @@
 .score-message {
   flex: 1;
 
+  .results-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.5px;
+    color: #010d05;
+    margin: 0 0 8px;
+    text-align: left;
+  }
+
   .message-text {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 150%;
@@ -1195,16 +1026,8 @@
   border-radius: 8px;
   border: 1px solid #e9ecef;
 
-  &.correct {
-    border-left: 3px solid #4caf50;
-  }
-
-  &.incorrect {
-    border-left: 3px solid #f44336;
-  }
-
   .review-question-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 16px;
     font-weight: 600;
     line-height: 150%;
@@ -1241,7 +1064,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 14px;
     font-weight: 600;
     flex-shrink: 0;
@@ -1261,7 +1084,7 @@
     flex: 1;
 
     .answer-text {
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       font-size: 15px;
       font-weight: 400;
       line-height: 150%;
@@ -1279,93 +1102,12 @@
 }
 
 .answer-hint {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #6c757d;
   padding-left: 44px;
   margin: 0;
-}
-
-// ==================== COURSE SIDEBAR (for review/results layout) ====================
-.course-sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  border: 0.5px solid #adb5bd;
-  border-radius: var(--border-radius-default, 8px);
-  background: #fff;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  @media (min-width: 1024px) {
-    width: 320px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 24px;
-  }
-
-  &.collapsed {
-    @media (min-width: 1024px) {
-      width: 64px;
-      overflow: hidden;
-
-      .sidebar-header,
-      .sidebar-divider,
-      .course-stats,
-      .lessons-list {
-        opacity: 0;
-        pointer-events: none;
-      }
-    }
-  }
-}
-
-.sidebar-header {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: #f8f9fa;
-  border-radius: var(--border-radius-default, 8px) var(--border-radius-default, 8px) 0 0;
-
-  .stage-label {
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: #adb5bd;
-  }
-
-  .course-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 18px;
-    font-weight: 500;
-    line-height: 100%;
-    color: #1a1a1a;
-    margin: 0;
-    text-transform: capitalize;
-  }
-}
-
-.sidebar-divider {
-  height: 1px;
-  background: #e9ecef;
-}
-
-.course-stats {
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  .stat-item {
-    display: flex;
-    gap: 4px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: #6c757d;
-  }
 }
 
 // ==================== CONGRATS/COMPLETED STATE ====================
@@ -1392,7 +1134,7 @@
 }
 
 .congrats-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 36px;
   font-weight: 700;
   line-height: normal;
@@ -1407,7 +1149,7 @@
 }
 
 .congrats-subtitle {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 18px;
   font-weight: 400;
   line-height: 150%;
@@ -1422,7 +1164,7 @@
 }
 
 .congrats-detail {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 150%;
@@ -1440,7 +1182,7 @@
 
   .score-number {
     position: absolute;
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 28px;
     font-weight: 700;
     color: #156b40;
@@ -1455,7 +1197,7 @@
   animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s backwards;
 
   .rating-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 18px;
     font-weight: 600;
     color: #343a40;
@@ -1492,7 +1234,7 @@
   animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.6s backwards;
 
   .feedback-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-size: 18px;
     font-weight: 600;
     color: #343a40;
@@ -1505,7 +1247,7 @@
   padding: 16px;
   border: 1.5px solid #e9ecef;
   border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
   line-height: 150%;
   color: #343a40;

@@ -1,9 +1,9 @@
 /* Overrides for large screens: adjustments starting at 1280px and further tightening at 1440px */
 
-/* -- from 1280px: decrease pentagon sizes and pull center Iman pillars closer -- */
+/* -- from 1280px: decrease pentagon sizes and pull center faith pillars closer -- */
 
 @media (min-width: 1280px) {
-  .iman-arc,
+  .faith-arc,
   .islam-arc {
     /* minimize spacing between pillar cards */
     gap: 0 !important;
@@ -12,16 +12,17 @@
     justify-content: center;
   }
 
-  /* Hexagon (6 pillars) - scale down slightly */
-  .iman-arc {
+  /* Hexagon (6 pillars) - maintain design size at large screens */
+  .faith-arc {
     .pillar-card {
-      width: 160px;
-      height: 160px;
+      /* keep same 228px size as defined in home.scss for consistency */
+      width: 228px;
+      height: 228px;
 
       .hexagon,
       .pillar-hexagon {
-        width: 160px;
-        height: 160px;
+        width: 228px;
+        height: 228px;
       }
 
       .pillar-card-title {
@@ -36,16 +37,16 @@
     }
   }
 
-  /* Pentagon (5 pillars) - scale down accordingly */
+  /* Pentagon (5 pillars) - match hexagon dimensions exactly */
   .islam-arc {
     .pillar-card {
-      width: 160px;
-      height: 160px;
+      width: 228px;
+      height: 228px;
 
       .pentagon,
       .pillar-pentagon {
-        width: 160px;
-        height: 160px;
+        width: 228px;
+        height: 228px;
       }
 
       .pillar-card-title {
@@ -61,36 +62,36 @@
   }
 
   /* Position nudges to tighten gaps horizontally and vertically (mirror 1280px values) */
-  .home-page .iman-arc {
-    .pillar-iman-1 {
+  .home-page .faith-arc {
+    .pillar-faith-1 {
       left: calc(10% + 8px) !important;
       top: 282px !important;
     }
-    .pillar-iman-2 {
+    .pillar-faith-2 {
       left: calc(20% + 0px) !important;
       top: 140px !important;
     }
-    .pillar-iman-3 {
+    .pillar-faith-3 {
       left: calc(35%) !important;
       top: 30px !important;
     }
-    .pillar-iman-4 {
+    .pillar-faith-4 {
       right: calc(35%) !important;
       left: auto !important;
       top: 30px !important;
     }
-    .pillar-iman-5 {
+    .pillar-faith-5 {
       right: calc(20% + 0px) !important;
       left: auto !important;
       top: 140px !important;
     }
-    .pillar-iman-6 {
+    .pillar-faith-6 {
       right: calc(10% + 8px) !important;
       left: auto !important;
       top: 282px !important;
     }
-    .iman-label {
-      top: 338px !important;
+    .faith-label {
+      top: 373px !important;
     }
   }
 
@@ -119,7 +120,7 @@
       top: 92px !important;
     }
     .islam-label {
-      top: 0 !important;
+      top: 35px !important;
     }
   }
 
@@ -131,5 +132,96 @@
     transition:
       transform 0.3s ease,
       filter 0.3s ease;
+  }
+}
+
+/* -- 1440px+: fine-tune faith arc — 2&5 closer to center, 3&4 closer to edges -- */
+@media (min-width: 1440px) {
+  .home-page .faith-arc {
+    .pillar-faith-2 {
+      left: 21% !important;
+      top: 140px !important;
+    }
+    .pillar-faith-3 {
+      left: 34.5% !important;
+      top: 30px !important;
+    }
+    .pillar-faith-4 {
+      right: 34.5% !important;
+      left: auto !important;
+      top: 30px !important;
+    }
+    .pillar-faith-5 {
+      right: 21% !important;
+      left: auto !important;
+      top: 140px !important;
+    }
+  }
+}
+
+/* -- 1280px–1439px only: stretch pillars toward page edges to reduce overlap -- */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  /* Hexagon (6 faith pillars) – spread wider */
+  .home-page .faith-arc {
+    .pillar-faith-1 {
+      left: 2% !important;
+      top: 282px !important;
+    }
+    .pillar-faith-2 {
+      left: 15% !important;
+      top: 140px !important;
+    }
+    .pillar-faith-3 {
+      left: 32% !important;
+      top: 30px !important;
+    }
+    .pillar-faith-4 {
+      right: 32% !important;
+      left: auto !important;
+      top: 30px !important;
+    }
+    .pillar-faith-5 {
+      right: 15% !important;
+      left: auto !important;
+      top: 140px !important;
+    }
+    .pillar-faith-6 {
+      right: 2% !important;
+      left: auto !important;
+      top: 282px !important;
+    }
+    .faith-label {
+      top: 373px !important;
+    }
+  }
+
+  /* Pentagon (5 islam pillars) – spread wider */
+  .home-page .islam-arc {
+    .pillar-islam-1 {
+      left: 3% !important;
+      top: 92px !important;
+    }
+    .pillar-islam-2 {
+      left: 22% !important;
+      top: 180px !important;
+    }
+    .pillar-islam-3 {
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      top: 230px !important;
+    }
+    .pillar-islam-4 {
+      right: 22% !important;
+      left: auto !important;
+      top: 180px !important;
+    }
+    .pillar-islam-5 {
+      right: 3% !important;
+      left: auto !important;
+      top: 92px !important;
+    }
+    .islam-label {
+      top: 35px !important;
+    }
   }
 }

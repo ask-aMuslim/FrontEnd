@@ -1,175 +1,168 @@
 <div class="course-tree-wrapper">
-
-  <!-- Header Section removed as requested -->
-
-  <!-- Loading State -->
   @if (loading()) {
-    <div class="flex flex-col items-center justify-center py-20">
-      <div class="relative w-20 h-20 mb-6">
-        <div class="absolute inset-0 rounded-full border-4 border-gray-100"></div>
-        <div class="absolute inset-0 rounded-full border-4 border-primary-500 border-t-transparent animate-spin"></div>
-      </div>
-      <p class="text-gray-500 font-medium tracking-wide animate-pulse">Laying the foundations...</p>
+    <div class="course-tree-state">
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Laying the foundations...</p>
     </div>
-  }
-
-  <!-- Error State -->
-  @else if (error()) {
-    <div class="error-state text-center py-16 bg-red-50 rounded-2xl border border-red-100 shadow-sm max-w-xl mx-auto">
-      <svg class="w-16 h-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  } @else if (error()) {
+    <div class="course-tree-error">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="retry()">Try Again</button>
+    </div>
+  } @else if (nodes().length === 0) {
+    <div class="course-tree-empty">
+      <p>No courses available right now.</p>
+    </div>
+  } @else {
+    <div class="course-tree" #treeCanvas>
+      <svg
+        class="course-tree__connector-canvas"
+        aria-hidden="true"
+        focusable="false"
+        [attr.width]="connectorCanvasWidth()"
+        [attr.height]="connectorCanvasHeight()"
+        [attr.viewBox]="
+          '0 0 ' + connectorCanvasWidth() + ' ' + connectorCanvasHeight()
+        "
+      >
+        @for (connectorPath of connectorPaths(); track connectorPath.id) {
+          <path
+            class="course-tree__connector-path"
+            [attr.d]="connectorPath.d"
+          ></path>
+        }
       </svg>
-      <h3 class="text-xl font-bold text-gray-900 mb-2">Something went wrong</h3>
-      <p class="text-gray-600 mb-6">{{ error() }}</p>
-      <button (click)="retry()" class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-sm font-medium">Try Again</button>
+
+      @for (groupLayers of groupedLayers(); track $index) {
+        <div class="course-tree__group">
+          @for (layer of groupLayers; track $index; let layerIndex = $index) {
+            <div
+              class="course-tree__layer"
+              [class.course-tree__layer--overflow]="layer.length > 3"
+              [class.course-tree__layer--parent-of-overflow]="
+                layer.length === 1 &&
+                (groupLayers[layerIndex + 1]?.length ?? 0) > 3
+              "
+              [style.--course-tree-next-layer-count]="
+                groupLayers[layerIndex + 1]?.length ?? 0
+              "
+            >
+              @for (node of layer; track node.id) {
+                <button
+                  type="button"
+                  class="course-card"
+                  [attr.data-course-node-id]="node.id"
+                  [class.course-card--available]="node.status === 'available'"
+                  [class.course-card--in-progress]="
+                    node.status === 'in-progress'
+                  "
+                  [class.course-card--completed]="node.status === 'completed'"
+                  [class.course-card--locked]="node.status === 'locked'"
+                  [attr.aria-disabled]="node.status === 'locked'"
+                  [attr.tabindex]="node.status === 'locked' ? -1 : 0"
+                  (click)="onNodeClick(node)"
+                >
+                  @if (node.status === "locked") {
+                    <span class="course-card__locked-badge" aria-hidden="true">
+                      <img
+                        class="course-card__locked-icon"
+                        src="/academy-assets/locked.svg"
+                        alt=""
+                      />
+                    </span>
+                  }
+
+                  <h4 class="course-card__title">{{ node.title }}</h4>
+
+                  @if (node.description) {
+                    <p class="course-card__description">
+                      {{ node.description }}
+                    </p>
+                  }
+
+                  <div class="course-card__meta">
+                    @if (node.categoryLabel) {
+                      <span class="course-card__meta-item">{{
+                        node.categoryLabel
+                      }}</span>
+                    }
+                    @if (node.lessons !== undefined) {
+                      <span class="course-card__meta-item">
+                        <img
+                          class="course-card__meta-icon"
+                          src="/icons/icons-24/lesson.svg"
+                          alt=""
+                          aria-hidden="true"
+                        />
+                        {{ node.lessons }} lessons
+                      </span>
+                    }
+                    @if (node.duration) {
+                      <span class="course-card__meta-item">
+                        <img
+                          class="course-card__meta-icon"
+                          src="/icons/icons-24/time.svg"
+                          alt=""
+                          aria-hidden="true"
+                        />
+                        {{ node.duration }}
+                      </span>
+                    }
+                  </div>
+
+                  @if (node.status !== "locked") {
+                    <div class="course-card__progress">
+                      <div class="course-card__progress-track">
+                        <div
+                          class="course-card__progress-fill"
+                          [style.width.%]="getProgressPercentage(node)"
+                        ></div>
+                      </div>
+                      <span class="course-card__progress-text"
+                        >{{ getProgressPercentage(node) }}%</span
+                      >
+                    </div>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
     </div>
   }
+</div>
 
-  <!-- Empty State -->
-  @else if (nodes().length === 0) {
-    <div class="empty-state text-center py-16 bg-gray-50 rounded-xl border border-gray-100 shadow-sm max-w-xl mx-auto">
-      <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-        </svg>
-      </div>
-      <h3 class="text-xl font-bold text-gray-900 mb-2">No Courses Available</h3>
-      <p class="text-gray-600">We couldn't find any prerequisite logic to display.</p>
-    </div>
-  }
+<!--
+Future implementation snapshot (commented out intentionally for future updates):
 
-  <!-- Data View -->
   @else {
     <div class="tree-container relative w-full h-full min-h-[400px]">
-      
-      <!-- SVG Connectors Overlay (Desktop Only) -->
-      <svg class="hidden md:block absolute top-0 left-0 w-full h-full pointer-events-none z-0" style="min-height: 100%;">
+
+      <svg class="absolute top-0 left-0 w-full h-full pointer-events-none z-0" style="min-height: 100%;">
         @for (path of svgPaths(); track $index) {
           <path [attr.d]="path" fill="none" stroke="#cbd5e1" stroke-width="2.5" class="svg-anim-path" stroke-linecap="round" />
         }
       </svg>
 
-      <!-- Desktop: Dynamic tree layout (works with any number of courses and siblings) -->
-      <div class="hidden md:flex justify-center flex-col items-center pb-20 w-full max-w-[1200px] mx-auto text-left gap-12 mt-8 z-10">
-        @for (layer of layers(); track $index; let isLast = $last) {
-          <div class="relative z-10 flex flex-row flex-wrap justify-center items-center gap-12 w-full">
+      <div class="flex justify-center flex-col items-center pb-20 w-full max-w-[1200px] mx-auto text-left gap-8 md:gap-12 mt-8 z-10 px-4 md:px-0">
+        @for (layer of layers(); track $index) {
+          <div class="relative z-10 flex flex-row flex-wrap justify-center items-center gap-6 md:gap-12 w-full">
             @for (node of layer; track node.id) {
-              <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node, format: 'desktop'}"></ng-container>
+              <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node}"></ng-container>
             }
           </div>
-          <!-- Removed static line: dynamic SVG lines will connect prerequisites -->
-        }
-      </div>
-
-      <!-- Mobile Vertical Timeline -->
-    <div class="md:hidden relative px-4 py-8">
-      <div class="absolute left-[39px] top-12 bottom-12 w-0.5 bg-gradient-to-b from-primary-200 via-gray-300 to-transparent"></div>
-      <div class="flex flex-col gap-8">
-        @for (node of nodes(); track node.id) {
-          <div class="flex relative z-10 w-full group items-stretch">
-            <div class="mr-6 flex flex-col items-center pt-6 z-10">
-              <div class="w-8 h-8 rounded-full border-4 flex items-center justify-center bg-white shadow-sm transition-colors duration-300 ring-4 ring-white"
-                   [class]="{
-                      'border-green-500': node.status === 'completed',
-                      'border-blue-500': node.status === 'available',
-                      'border-gray-200': node.status === 'locked' || node.status === 'in-progress'
-                     }">
-                @if(node.status === 'completed') {
-                  <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                } @else if(node.status === 'available') {
-                  <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                } @else if(node.status === 'in-progress') {
-                  <div class="w-3 h-3 bg-orange-400 rounded-full"></div>
-                }
-              </div>
-            </div>
-            <div class="flex-1 w-full min-w-0">
-              <ng-container *ngTemplateOutlet="nodeTemplate; context: {$implicit: node, format: 'mobile'}"></ng-container>
-            </div>
-          </div>
         }
       </div>
     </div>
-  </div>
   }
 
-</div>
-
-<!-- Reusable Node Template -->
-<ng-template #nodeTemplate let-node let-format="format">
-  <button 
-    class="course-node-card text-left transition-all duration-300 rounded-2xl border p-6 relative group focus:outline-none flex flex-col items-start bg-white"
-    [class]="{
-      'w-[340px] h-[180px]': format === 'desktop',
-      'w-full min-h-[160px]': format === 'mobile',
-      'border-green-200 shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-green-300 cursor-pointer': node.status === 'completed',
-      'border-blue-200 shadow-lg hover:shadow-2xl hover:-translate-y-1.5 hover:border-blue-400 cursor-pointer ring-1 ring-blue-50/50': node.status === 'available',
-      'bg-orange-50/30 border-orange-200 shadow-md hover:shadow-lg hover:-translate-y-1 hover:border-orange-300 cursor-pointer': node.status === 'in-progress',
-      'bg-gray-50/60 border-gray-200 opacity-80 cursor-not-allowed shadow-none': node.status === 'locked'
-    }"
-    (click)="onNodeClick(node)"
-    [attr.aria-disabled]="node.status === 'locked'"
-    [attr.tabindex]="node.status === 'locked' ? -1 : 0">
-    
-    <!-- Status Accent Gradient Bar -->
-    <div class="absolute top-0 left-0 w-full h-1.5 rounded-t-2xl opacity-90 transition-opacity group-hover:opacity-100"
-      [class]="{
-        'bg-gradient-to-r from-green-400 to-green-600': node.status === 'completed',
-        'bg-gradient-to-r from-blue-400 to-blue-600': node.status === 'available',
-        'bg-gradient-to-r from-orange-400 to-orange-500': node.status === 'in-progress',
-        'bg-gray-300': node.status === 'locked'
-      }">
-    </div>
-
-    <!-- Node Header & Icon -->
-    <div class="flex justify-between items-center w-full mb-4">
-      <div class="flex items-center gap-2.5">
-        @switch(node.status) {
-          @case('completed') {
-            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 shadow-sm">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-            </span>
-            <span class="text-xs font-bold text-green-700 uppercase tracking-widest">Completed</span>
-          }
-          @case('available') {
-            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 shadow-sm ring-4 ring-blue-50">
-              <svg class="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </span>
-            <span class="text-xs font-bold text-blue-700 uppercase tracking-widest">Available</span>
-          }
-          @case('in-progress') {
-            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-600 shadow-sm">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </span>
-            <span class="text-xs font-bold text-orange-600 uppercase tracking-widest">In Progress</span>
-          }
-          @case('locked') {
-            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-500 shadow-inner">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            </span>
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Locked</span>
-          }
-        }
-      </div>
-      
-      @if(node.status === 'completed') {
-         <span class="text-green-500 opacity-60"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg></span>
-      }
-    </div>
-
-    <!-- Node Content -->
-    <h4 class="font-bold text-gray-900 leading-snug mb-2 text-[1.1rem] line-clamp-2 w-full text-balance" [title]="node.title">
-      {{ node.title }}
-    </h4>
-    <p class="text-sm text-gray-500 leading-relaxed font-medium line-clamp-2 w-full" [title]="node.description">
-      {{ node.description || 'No description provided.' }}
-    </p>
-
-    <!-- Interactive Hover Arrow -->
-    @if(node.status !== 'locked') {
-      <div class="absolute bottom-5 right-5 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-3 group-hover:translate-x-0 shadow-sm border border-blue-100">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-      </div>
-    }
-  </button>
-</ng-template>
+  <ng-template #nodeTemplate let-node>
+    <button
+      [id]="'course-node-' + node.id"
+      class="course-node-card text-left transition-all duration-300 rounded-2xl border p-5 md:p-6 relative group focus:outline-none flex flex-col items-start bg-white w-[280px] sm:w-[300px] md:w-[340px] min-h-[160px] md:h-[180px]"
+      ...
+    >
+    </button>
+  </ng-template>
+-->

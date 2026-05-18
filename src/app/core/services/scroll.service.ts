@@ -1,5 +1,5 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 
 /**
  * Scroll Service
@@ -12,6 +12,7 @@ import { isPlatformBrowser } from '@angular/common';
 })
 export class ScrollService {
     private readonly platformId = inject(PLATFORM_ID);
+    private readonly document = inject(DOCUMENT);
 
     /**
      * Scroll to the top of the page
@@ -26,7 +27,7 @@ export class ScrollService {
         }
 
         if (delay > 0) {
-            setTimeout(() => {
+            globalThis.setTimeout(() => {
                 this.performScroll(0, behavior);
             }, delay);
         } else {
@@ -42,11 +43,12 @@ export class ScrollService {
      * @param offset - optional pixel offset from the element (for fixed headers)
      */
     scrollToElement(selector: string, behavior: ScrollBehavior = 'auto', offset: number = 0): void {
-        if (!isPlatformBrowser(this.platformId)) {
+        const window = this.document.defaultView;
+        if (!isPlatformBrowser(this.platformId) || !window) {
             return;
         }
 
-        const element = document.querySelector(selector);
+        const element = this.document.querySelector(selector);
         if (element) {
             const targetPosition = element.getBoundingClientRect().top + window.scrollY - offset;
             this.performScroll(targetPosition, behavior);
@@ -62,9 +64,13 @@ export class ScrollService {
     }
 
     private performScroll(position: number, behavior: ScrollBehavior): void {
-        window.scrollTo({
-            top: position,
-            behavior: behavior
-        });
+        const window = this.document.defaultView;
+        if (window) {
+            window.scrollTo({
+                top: position,
+                behavior: behavior
+            });
+        }
     }
 }
+
