@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, PLATFORM_ID, inject, output } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Subject, takeUntil, finalize } from 'rxjs';
+import { Subject, takeUntil, finalize, filter, take } from 'rxjs';
 import { InlineSvgDirective } from '../../../shared/directives/inline-svg.directive';
 import { EditMainInformationComponent } from './edit-main-information/edit-main-information.component';
 import { EditPersonalInformationComponent } from './edit-personal-information/edit-personal-information.component';
@@ -107,16 +107,16 @@ export class AboutComponent implements OnInit, OnDestroy {
     this.error = null;
 
     this.studentFacade
-      .getMyProfileFromApi()
+      .getMyProfile()
       .pipe(
+        filter((profile): profile is StudentProfile => profile !== null),
+        take(1),
         takeUntil(this.destroy$),
         finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (profile) => {
-          if (profile) {
-            this.mapProfileToModel(profile);
-          }
+          this.mapProfileToModel(profile);
         },
         error: (err: ProfileError) => {
           this.error = this.getErrorMessage(err);

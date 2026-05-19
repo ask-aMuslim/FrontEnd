@@ -32,6 +32,7 @@ import {
     AcademyLesson,
     LessonProgress,
 } from '../../../core/models/interfaces/academy-progress.model';
+import { LessonPlayerResolvedData } from './lesson-player.resolver';
 import { LessonType } from '../../../core/models/interfaces/enums.model';
 import {
     LessonContent,
@@ -196,9 +197,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        combineLatest([this.route.paramMap, this.route.queryParamMap])
+        combineLatest([this.route.paramMap, this.route.queryParamMap, this.route.data])
             .pipe(takeUntil(this.destroy$))
-            .subscribe(([params, queryParams]) => {
+            .subscribe(([params, queryParams, routeData]) => {
                 this.courseId = params.get('courseId') || '';
                 this.lessonId = params.get('lessonId') || '';
 
@@ -206,7 +207,13 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     const requestedTab = queryParams.get('tab') === 'notes' ? 'notes' : 'overview';
                     const requestedSeekSeconds = this.parseSeekQueryParam(queryParams.get('seek'));
                     this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
-                    this.loadLessonData();
+
+                    const resolved = routeData['resolvedData'] as LessonPlayerResolvedData | null;
+                    if (resolved && resolved.lessonData.content.id === this.lessonId) {
+                        this.applyResolvedLessonData(resolved);
+                    } else {
+                        this.loadLessonData();
+                    }
                 }
             });
     }
@@ -215,6 +222,69 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.teardownYouTubeIntegration();
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    private applyResolvedLessonData(resolved: LessonPlayerResolvedData): void {
+        const { course, lessonsWithProgress, quizzes, lessonData, notes } = resolved;
+        const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
+        const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
+        const scopedQuizzes = quizzes.filter((quiz) => {
+            const lessonId = typeof quiz.lessonId === 'string' ? quiz.lessonId.trim() : '';
+            return lessonId.length === 0 || courseLessonIds.has(lessonId);
+        });
+
+        if (!currentLesson) {
+            this.error = 'Lesson not found';
+            this.isLoading = false;
+            this.isContentLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+
+        const aggregatedVideoDuration = this.academyProgressService.calculateCourseVideoDuration(
+            lessonsWithProgress,
+            '0m',
+        );
+
+        this.currentCourse = {
+            ...course,
+            duration: aggregatedVideoDuration,
+        };
+        this.hasCourseQuiz = scopedQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
+        this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, scopedQuizzes);
+        this.courseQuizTitle = this.resolveCourseQuizTitle(lessonsWithProgress, scopedQuizzes);
+        this.courseLessons = lessonsWithProgress.map((lesson) => ({
+            ...lesson,
+            progress: {
+                ...lesson.progress,
+                status: lesson.id === this.lessonId ? 'current' : lesson.progress.status
+            }
+        }));
+        this.currentLesson = this.stripProgress(currentLesson);
+        this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
+        this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
+        this.isIntroLesson = this.currentLesson.type === 'intro';
+
+        const enrichedContent = this.applyResolvedVideoDuration(lessonData.content);
+        this.lessonData = lessonData;
+        this.lessonContent = enrichedContent;
+        this.nextLesson = lessonData.nextLesson;
+        this.previousLesson = lessonData.previousLesson;
+        this.hasSyncedCompletion = this.videoProgressService.isLessonCompleted(this.lessonId);
+        this.initializeYouTubeIntegration();
+        this.applyPendingPlaybackSeek();
+
+        this.previousNotes = notes;
+        this.captureRecentLessonSnapshot();
+
+        this.isLoading = false;
+        this.isContentLoading = false;
+        this.cdr.detectChanges();
+
+        this.academyProgressService.updateLessonProgress({
+            lessonId: this.lessonId,
+            courseId: this.courseId,
+        }).pipe(takeUntil(this.destroy$)).subscribe();
     }
 
     private loadLessonData(): void {
@@ -232,69 +302,13 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: ([course, lessonsWithProgress, quizzes, lessonData, notes]) => {
-                    const currentLesson = lessonsWithProgress.find((lesson) => lesson.id === this.lessonId);
-                    const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
-                    const scopedQuizzes = quizzes.filter((quiz) => {
-                        const lessonId = typeof quiz.lessonId === 'string' ? quiz.lessonId.trim() : '';
-                        return lessonId.length === 0 || courseLessonIds.has(lessonId);
-                    });
-
-                    if (!currentLesson) {
-                        this.error = 'Lesson not found';
-                        this.isLoading = false;
-                        this.isContentLoading = false;
-                        this.cdr.detectChanges();
-                        return;
-                    }
-
-                    const aggregatedVideoDuration = this.academyProgressService.calculateCourseVideoDuration(
+                    this.applyResolvedLessonData({
+                        course,
                         lessonsWithProgress,
-                        '0m',
-                    );
-
-                    this.currentCourse = {
-                        ...course,
-                        duration: aggregatedVideoDuration,
-                    };
-                    // Check if there are any quizzes for this course (course-level or lesson-level)
-                    this.hasCourseQuiz = scopedQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
-                    this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, scopedQuizzes);
-                    this.courseQuizTitle = this.resolveCourseQuizTitle(lessonsWithProgress, scopedQuizzes);
-                    this.courseLessons = lessonsWithProgress.map((lesson) => ({
-                        ...lesson,
-                        progress: {
-                            ...lesson.progress,
-                            status: lesson.id === this.lessonId ? 'current' : lesson.progress.status
-                        }
-                    }));
-                    this.currentLesson = this.stripProgress(currentLesson);
-                    this.nextAcademyLesson = this.resolveNextLesson(lessonsWithProgress, this.lessonId);
-                    this.previousAcademyLesson = this.resolvePreviousLesson(lessonsWithProgress, this.lessonId);
-                    this.isIntroLesson = this.currentLesson.type === 'intro';
-
-                    // Process lesson data
-                    const enrichedContent = this.applyResolvedVideoDuration(lessonData.content);
-                    this.lessonData = lessonData;
-                    this.lessonContent = enrichedContent;
-                    this.nextLesson = lessonData.nextLesson;
-                    this.previousLesson = lessonData.previousLesson;
-                    this.hasSyncedCompletion = this.videoProgressService.isLessonCompleted(this.lessonId);
-                    this.initializeYouTubeIntegration();
-                    this.applyPendingPlaybackSeek();
-
-                    // Process lesson notes
-                    this.previousNotes = notes;
-
-                    this.captureRecentLessonSnapshot();
-
-                    this.isLoading = false;
-                    this.isContentLoading = false;
-                    this.cdr.detectChanges();
-
-                    this.academyProgressService.updateLessonProgress({
-                        lessonId: this.lessonId,
-                        courseId: this.courseId,
-                    }).pipe(takeUntil(this.destroy$)).subscribe();
+                        quizzes,
+                        lessonData,
+                        notes,
+                    });
                 },
                 error: () => {
                     this.error = 'Unable to load this lesson right now. Please try again.';

@@ -55,4 +55,40 @@ export class MyInquiriesComponent implements OnInit {
 
     return null;
   }
+    private formatDate(value: string | null): string {
+        if (!value) {
+            return 'Unknown date';
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toLocaleDateString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
+    }
+
+    private resolveRequesterId(profile: { studentId?: unknown; id?: unknown; userId?: unknown } | null): string | null {
+        if (!profile) {
+            return null;
+        }
+
+        if (typeof profile.studentId === 'string' && profile.studentId.length > 0) {
+            return profile.studentId;
+        }
+
+        if (typeof profile.id === 'string' && profile.id.length > 0) {
+            return profile.id;
+        }
+
+        if (typeof profile.userId === 'string' && profile.userId.length > 0) {
+            return profile.userId;
+        }
+
+        return null;
+    }
 }

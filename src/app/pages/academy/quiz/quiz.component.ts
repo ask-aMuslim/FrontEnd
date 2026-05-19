@@ -19,23 +19,7 @@ import {
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import { AcademySidebarLessonItem } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
 import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
-
-// Quiz Question Interface
-interface QuizQuestion {
-    readonly id: string;
-    readonly questionNumber: number;
-    readonly questionText: string;
-    readonly options: readonly QuizOption[];
-    readonly correctOptionId: string;
-    readonly hint?: string;
-    readonly evidenceSource?: string;
-}
-
-interface QuizOption {
-    readonly id: string;
-    readonly label: string;
-    readonly text: string;
-}
+import { QuizQuestion, QuizOption, QuizResolvedData } from './quiz.resolver';
 
 type SidebarLessonType = 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
 
@@ -303,9 +287,14 @@ export class QuizComponent implements OnInit, OnDestroy {
             this.courseId = params.get('courseId') || '';
             this.lessonId = params.get('lessonId') || '';
             this.resetQuizStateForRoute();
-            this.loadCourseInfo();
-            this.loadQuizData();
             this.checkPreviousCompletion();
+        });
+
+        this.route.data.pipe(takeUntil(this.destroy$)).subscribe((data) => {
+            const resolved = data['resolvedQuizData'] as QuizResolvedData | null;
+            if (resolved) {
+                this.handleResolvedQuizData(resolved);
+            }
         });
     }
 
@@ -366,155 +355,71 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.stopTimer();
     }
 
-    private loadCourseInfo(): void {
-        if (!this.courseId) return;
+    private handleResolvedQuizData(data: QuizResolvedData): void {
+        // 1. Course
+        this.currentCourse = data.course;
+        this.courseInfo.set({
+            stage: data.course.stageId,
+            title: data.course.title,
+            totalLessons: data.course.lessons,
+            currentLesson: data.course.lessons,
+            duration: data.course.duration
+        });
 
-        // Load course info from academy progress service
-        const course = this.academyProgressService.getCourseById(this.courseId)
-            ?? ACADEMY_COURSES.find((item) => item.id === this.courseId);
-        if (course) {
-            this.currentCourse = course;
-            this.courseInfo.set({
-                stage: course.stageId,
-                title: course.title,
-                totalLessons: course.lessons,
-                currentLesson: course.lessons,
-                duration: course.duration
-            });
+        // 2. Lessons
+        this.courseLessons.set(data.lessonsWithProgress);
+
+        const quizLesson = data.lessonsWithProgress.find((lesson) => this.mapLessonType(lesson.type) === 'quiz');
+        const linkedCourseQuiz = quizLesson
+            ? data.quizzes.find((quiz) => quiz.lessonId === quizLesson.id)
+            : undefined;
+        const fallbackCourseQuiz = linkedCourseQuiz
+            ?? data.quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0)
+            ?? null;
+
+        this.courseQuizTitle = fallbackCourseQuiz?.title?.trim() || 'Quiz';
+        this.courseQuizLessonId = linkedCourseQuiz?.lessonId?.trim() || quizLesson?.id || null;
+
+        const aggregatedDuration = this.academyProgressService.calculateCourseVideoDuration(
+            data.lessonsWithProgress,
+            this.courseInfo().duration,
+        );
+
+        this.courseInfo.update((current) => ({
+            ...current,
+            totalLessons: data.lessonsWithProgress.length,
+            currentLesson: data.lessonsWithProgress.length,
+            duration: aggregatedDuration,
+        }));
+
+        this.lessons.set(data.lessonsWithProgress.map((lesson) => {
+            const lessonType = this.mapLessonType(lesson.type);
+            return {
+                id: lesson.id,
+                quizLessonId: lessonType === 'quiz'
+                    ? (this.courseQuizLessonId ?? lesson.id)
+                    : undefined,
+                title: lessonType === 'quiz' ? this.courseQuizTitle : lesson.title,
+                duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
+                type: lessonType,
+                isCompleted: lesson.progress.status === 'completed',
+                isLocked: lesson.progress.status === 'locked',
+                isCurrent: lessonType === 'quiz',
+                hasNotification: false
+            };
+        }));
+
+        // 3. Quiz and Questions
+        if (data.activeQuiz) {
+            this.activeQuizId.set(data.activeQuiz.id ?? null);
+            this.syncSidebarQuizLesson(data.activeQuiz);
+        } else {
+            this.syncSidebarQuizLesson(null);
         }
 
-        const staticLessons = this.getStaticLessonsForCourse();
-        if (staticLessons.length > 0 && this.lessons().length === 0) {
-            this.lessons.set(staticLessons.map((lesson) => this.mapStaticLessonToSidebarLesson(lesson)));
-
-            const staticQuizLesson = staticLessons.find((lesson) => lesson.type === 'quiz');
-            if (staticQuizLesson) {
-                this.courseQuizTitle = staticQuizLesson.title;
-                this.courseQuizLessonId = staticQuizLesson.id;
-            }
-        }
-
-        combineLatest([
-            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
-            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
-        ])
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: ([lessons, quizzes]) => {
-                    this.courseLessons.set(lessons);
-
-                    const quizLesson = lessons.find((lesson) => this.mapLessonType(lesson.type) === 'quiz');
-                    const linkedCourseQuiz = quizLesson
-                        ? quizzes.find((quiz) => quiz.lessonId === quizLesson.id)
-                        : undefined;
-                    const fallbackCourseQuiz = linkedCourseQuiz
-                        ?? quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0)
-                        ?? null;
-
-                    this.courseQuizTitle = fallbackCourseQuiz?.title?.trim() || 'Quiz';
-                    this.courseQuizLessonId = linkedCourseQuiz?.lessonId?.trim() || quizLesson?.id || null;
-
-                    const aggregatedDuration = this.academyProgressService.calculateCourseVideoDuration(
-                        lessons,
-                        this.courseInfo().duration,
-                    );
-
-                    this.courseInfo.update((current) => ({
-                        ...current,
-                        totalLessons: lessons.length,
-                        currentLesson: lessons.length,
-                        duration: aggregatedDuration,
-                    }));
-
-                    this.lessons.set(lessons.map((lesson) => {
-                        const lessonType = this.mapLessonType(lesson.type);
-                        return {
-                            id: lesson.id,
-                            quizLessonId: lessonType === 'quiz'
-                                ? (this.courseQuizLessonId ?? lesson.id)
-                                : undefined,
-                            title: lessonType === 'quiz' ? this.courseQuizTitle : lesson.title,
-                            duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
-                            type: lessonType,
-                            isCompleted: lesson.progress.status === 'completed',
-                            isLocked: lesson.progress.status === 'locked',
-                            isCurrent: lessonType === 'quiz',
-                            hasNotification: false
-                        };
-                    }));
-                },
-                error: () => { }
-            });
-    }
-
-    private loadQuizData(): void {
-        const query = this.lessonId
-            ? { lessonId: this.lessonId, pageNumber: 1, pageSize: 200 }
-            : { courseId: this.courseId, pageNumber: 1, pageSize: 200 };
-
-        this.quizzesService.getAll(query)
-            .pipe(
-                switchMap((quizzes) => {
-                    const hasQuizzes = quizzes.length > 0;
-                    const canFallbackToQuizLesson = !hasQuizzes && !this.lessonId && !!this.courseId;
-
-                    if (!canFallbackToQuizLesson) {
-                        return of(quizzes);
-                    }
-
-                    return this.academyProgressService.getAcademyLessons(this.courseId).pipe(
-                        map((lessons) => lessons.find((lesson) => lesson.type === 'quiz')?.id ?? null),
-                        switchMap((quizLessonId) => {
-                            if (!quizLessonId) {
-                                return of(quizzes);
-                            }
-
-                            return this.quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 });
-                        }),
-                        catchError(() => of(quizzes)),
-                    );
-                }),
-                switchMap((quizzes) => {
-                    const activeQuiz = quizzes[0];
-                    if (!activeQuiz?.id) {
-                        this.syncSidebarQuizLesson(null);
-                        return of([] as QuizQuestion[]);
-                    }
-
-                    this.activeQuizId.set(activeQuiz.id);
-                    this.syncSidebarQuizLesson(activeQuiz);
-                    return this.buildQuestionsFromQuizId(activeQuiz.id);
-                }),
-                catchError(() => of([] as QuizQuestion[])),
-                takeUntil(this.destroy$)
-            )
-            .subscribe((questions: QuizQuestion[]) => {
-                this.questions.set(questions);
-                this.initializeAnswers(questions);
-                this.restoreQuizResultFromStorage(questions);
-            });
-    }
-
-    private buildQuestionsFromQuizId(quizId: string): Observable<QuizQuestion[]> {
-        return this.questionsService.getAllByQuizId(quizId, {
-            pageNumber: 1,
-            pageSize: QuizComponent.questionsPageSize,
-        }).pipe(
-            switchMap((questions) => {
-                if (!questions.length) {
-                    return of([] as QuizQuestion[]);
-                }
-
-                return forkJoin(questions.map((question, index) => this.loadQuestionWithOptions(question, index)));
-            })
-        );
-    }
-
-    private loadQuestionWithOptions(question: { id?: string; text?: string }, index: number) {
-        return this.optionsService.getByQuestion(String(question.id ?? '')).pipe(
-            map((options) => this.mapApiQuestion(question, options, index)),
-            catchError(() => of(this.mapApiQuestion(question, [], index)))
-        );
+        this.questions.set(data.questions);
+        this.initializeAnswers(data.questions);
+        this.restoreQuizResultFromStorage(data.questions);
     }
 
     private initializeAnswers(questions: QuizQuestion[]): void {
