@@ -109,6 +109,20 @@ export const routes: Routes = [
         title: 'Resources',
       },
       {
+        path: 'mosques/:id',
+        loadComponent: () =>
+          import('./pages/mosques/mosque-detail/mosque-detail.component').then(
+            (m) => m.MosqueDetailComponent,
+          ),
+        title: 'Mosque Details',
+      },
+      {
+        path: 'mosques',
+        loadComponent: () =>
+          import('./pages/mosques/mosques.component').then((m) => m.MosquesComponent),
+        title: 'Mosques',
+      },
+      {
         path: 'donation',
         loadComponent: () =>
           import('./pages/donation/donation.component').then(

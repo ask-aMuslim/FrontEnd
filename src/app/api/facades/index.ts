@@ -14,3 +14,4 @@ export * from './lesson-progress.facade';
 export * from './newsletter.facade';
 export * from './assistant-chat.facade';
 export * from './forms.facade';
+export * from './mosques.facade';

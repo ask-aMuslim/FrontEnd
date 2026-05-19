@@ -1,0 +1,211 @@
+<section class="mosque-detail-page" aria-labelledby="mosque-detail-title">
+  <section class="mosque-detail-hero">
+    <div class="section-block mosque-detail-hero__content">
+      <a class="mosque-detail-back-link" routerLink="/mosques"
+        >Back to mosques</a
+      >
+
+      @if (isLoading()) {
+        <div class="mosque-detail-state" aria-live="polite">
+          <p class="mosque-detail-state__title">Loading mosque details...</p>
+          <p class="mosque-detail-state__subtitle">
+            Please wait while we fetch the latest information.
+          </p>
+        </div>
+      } @else if (loadError(); as errorMessage) {
+        <div
+          class="mosque-detail-state mosque-detail-state--error"
+          role="alert"
+        >
+          <p class="mosque-detail-state__title">
+            We could not load this mosque
+          </p>
+          <p class="mosque-detail-state__subtitle">{{ errorMessage }}</p>
+        </div>
+      } @else if (mosque(); as mosque) {
+        <div class="mosque-detail-hero__grid">
+          <div class="mosque-detail-hero__copy">
+            <span class="mosque-detail-pill">Mosque details</span>
+            <h1 id="mosque-detail-title" class="mosque-detail-title">
+              {{ mosque.name }}
+            </h1>
+            <p class="mosque-detail-summary">{{ description() }}</p>
+
+            @if (badges().length > 0) {
+              <div class="mosque-detail-badges">
+                @for (badge of badges(); track badge) {
+                  <span class="mosque-detail-badge">{{ badge }}</span>
+                }
+              </div>
+            }
+
+            <div class="mosque-detail-actions">
+              @if (mosque.googleMapsUrl) {
+                <a
+                  class="mosque-detail-action mosque-detail-action--primary"
+                  [href]="mosque.googleMapsUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open directions
+                </a>
+              }
+
+              @if (mosque.websiteUrl) {
+                <a
+                  class="mosque-detail-action mosque-detail-action--secondary"
+                  [href]="mosque.websiteUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Visit website
+                </a>
+              }
+            </div>
+          </div>
+
+          @if (imageUrl(); as imageUrl) {
+            <img
+              class="mosque-detail-image"
+              [src]="imageUrl"
+              [alt]="mosque.name"
+            />
+          } @else {
+            <div
+              class="mosque-detail-image mosque-detail-image--placeholder"
+              aria-hidden="true"
+            >
+              {{ mosque.name.charAt(0) }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (!isLoading() && !loadError() && mosque(); as mosque) {
+    <section class="section-block mosque-detail-content">
+      <div class="mosque-detail-grid">
+        <article class="mosque-detail-panel">
+          <h2 class="mosque-detail-panel__title">About this mosque</h2>
+          <p class="mosque-detail-panel__body">{{ description() }}</p>
+        </article>
+
+        <article class="mosque-detail-panel">
+          <h2 class="mosque-detail-panel__title">Location</h2>
+          <p class="mosque-detail-meta">
+            <span class="mosque-detail-meta__label">Address</span>
+            <span>{{ location() }}</span>
+          </p>
+
+          @if (coordinates()) {
+            <div class="mosque-detail-map-card">
+              <div class="mosque-detail-map-card__header">
+                <div>
+                  <p class="mosque-detail-map-card__title">Location map</p>
+                  <p class="mosque-detail-map-card__subtitle">
+                    Zoom in for the surrounding area or recenter on the mosque.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="mosque-detail-map-card__button"
+                  (click)="recenterMap()"
+                >
+                  Recenter map
+                </button>
+              </div>
+
+              <div
+                class="mosque-detail-map"
+                #detailMap
+                aria-label="Mosque location map"
+              ></div>
+            </div>
+          } @else {
+            <p class="mosque-detail-note">
+              A map preview is not available because this mosque does not have
+              coordinates yet.
+            </p>
+          }
+        </article>
+
+        <article class="mosque-detail-panel">
+          <h2 class="mosque-detail-panel__title">Contact</h2>
+
+          @if (mosque.imamName) {
+            <p class="mosque-detail-meta">
+              <span class="mosque-detail-meta__label">Imam</span>
+              <span>{{ mosque.imamName }}</span>
+            </p>
+          }
+
+          @if (mosque.phoneNumber) {
+            <p class="mosque-detail-meta">
+              <span class="mosque-detail-meta__label">Phone</span>
+              <a
+                class="mosque-detail-link"
+                [href]="'tel:' + mosque.phoneNumber"
+              >
+                {{ mosque.phoneNumber }}
+              </a>
+            </p>
+          }
+
+          @if (mosque.email) {
+            <p class="mosque-detail-meta">
+              <span class="mosque-detail-meta__label">Email</span>
+              <a class="mosque-detail-link" [href]="'mailto:' + mosque.email">
+                {{ mosque.email }}
+              </a>
+            </p>
+          }
+
+          @if (
+            !mosque.imamName &&
+            !mosque.phoneNumber &&
+            !mosque.email &&
+            !mosque.websiteUrl
+          ) {
+            <p class="mosque-detail-note">
+              No contact information has been added for this mosque yet.
+            </p>
+          }
+        </article>
+
+        <article class="mosque-detail-panel">
+          <h2 class="mosque-detail-panel__title">More information</h2>
+
+          <p class="mosque-detail-meta">
+            <span class="mosque-detail-meta__label">Verification</span>
+            <span>{{
+              mosque.isVerified ? "Verified listing" : "Community listing"
+            }}</span>
+          </p>
+
+          @if (mosque.distanceInKm !== null) {
+            <p class="mosque-detail-meta">
+              <span class="mosque-detail-meta__label">Distance</span>
+              <span>{{ mosque.distanceInKm | number: "1.1-1" }} km away</span>
+            </p>
+          }
+
+          <p class="mosque-detail-meta">
+            <span class="mosque-detail-meta__label">Women prayer area</span>
+            <span>{{
+              mosque.hasWomenPrayerArea ? "Available" : "Not listed"
+            }}</span>
+          </p>
+
+          <p class="mosque-detail-meta">
+            <span class="mosque-detail-meta__label">Friday khutbah</span>
+            <span>{{
+              mosque.hasFridayKhutbah ? "Available" : "Not listed"
+            }}</span>
+          </p>
+        </article>
+      </div>
+    </section>
+  }
+</section>
