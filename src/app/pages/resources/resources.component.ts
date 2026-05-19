@@ -1,41 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, Input } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-
-interface ResourceCard {
-    readonly id: string;
-    readonly title: string;
-    readonly subtitle: string;
-    readonly articleUrl: string;
-    readonly downloadUrl: string;
-    readonly thumbnailUrl: string;
-    readonly thumbnailUrls?: readonly string[];
-    readonly thumbnailAlt: string;
-    readonly driveFileId?: string;
-}
-
-interface ResourceTab {
-    readonly id: string;
-    readonly label: string;
-}
-
-type ResourceGalleryId = 'gallery-1' | 'gallery-2';
-
-interface ResourceGallery {
-    readonly id: ResourceGalleryId;
-    readonly eyebrow?: string;
-    readonly title?: string;
-    readonly surface: 'base' | 'surface';
-    readonly tabs: readonly ResourceTab[];
-    readonly cardsByTab: Readonly<Record<string, readonly ResourceCard[]>>;
-}
-
-interface NewMuslimCard {
-    readonly id: string;
-    readonly title: string;
-    readonly subtitle: string;
-    readonly url?: string;
-}
+import {
+  ResourceCard,
+  ResourceTab,
+  ResourceGalleryId,
+  ResourceGallery,
+  NewMuslimCard,
+  ResourcesResolvedData
+} from './resources.resolver';
 
 @Component({
     selector: 'app-resources',
@@ -233,7 +206,7 @@ export class ResourcesComponent {
         },
     ];
 
-    protected readonly galleries: readonly ResourceGallery[] = [
+    protected galleries: readonly ResourceGallery[] = [
         {
             id: 'gallery-1',
             eyebrow: 'Seek. Learn. Understand.',
@@ -280,6 +253,13 @@ export class ResourcesComponent {
     private readonly usePdfPreviewByCardId = signal<Record<string, boolean>>({});
     private readonly thumbnailLoadingByCardId = signal<Record<string, boolean>>({});
 
+    @Input() set resolvedData(data: ResourcesResolvedData | null) {
+        if (data) {
+            this.galleries = data.galleries;
+            this.newMuslimCards = data.newMuslimCards;
+        }
+    }
+
     protected readonly resourcesCta = {
         title: 'Do You Have Any Questions?',
         subtitle:
@@ -290,7 +270,7 @@ export class ResourcesComponent {
         askQuestionUrl: '/question-and-answer/topics',
     } as const;
 
-    protected readonly newMuslimCards: readonly NewMuslimCard[] = [
+    protected newMuslimCards: readonly NewMuslimCard[] = [
         {
             id: 'wudu',
             title: 'How to Perform Ablution (Wudu)',

@@ -3,14 +3,14 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
-import { MyLearningComponent } from './my-learning/my-learning.component';
+// import { MyLearningComponent } from './my-learning/my-learning.component';
 import { AboutComponent } from './about/about.component';
 import { MyInquiriesComponent } from './my-inquiries/my-inquiries.component';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { AuthService } from '../../core/services/auth.service';
 import type { StudentProfile } from '../../api/facades/student.facade';
-import { EventsService } from '../../core/services/events.service';
+// import { EventsService } from '../../core/services/events.service';
 import { asRecord, getValue, toBooleanValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
@@ -47,7 +47,7 @@ interface Verse {
   selector: 'app-profile',
   imports: [
     InlineSvgDirective,
-    MyLearningComponent,
+    // MyLearningComponent,
     AboutComponent,
     MyInquiriesComponent,
   ],
@@ -62,12 +62,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly academyProgressService = inject(AcademyProgressService);
   private readonly studentFacade = inject(StudentFacade);
-  private readonly eventsService = inject(EventsService);
+  // private readonly eventsService = inject(EventsService);
   private readonly destroy$ = new Subject<void>();
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['About', 'My Learning', 'My Inquiries'];
+  tabs = ['About', 'My Inquiries'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {
@@ -92,7 +92,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadProfile();
-    this.loadUpcomingEvent();
+    // this.loadUpcomingEvent();
   }
 
   ngOnDestroy(): void {
@@ -126,6 +126,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   continueLearnig(): void {
+    // Commented out to stop recent lesson requests
+    /*
     this.academyProgressService
       .getRecentLesson()
       .pipe(take(1))
@@ -142,6 +144,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
         void this.router.navigate(['/academy']);
       });
+    */
   }
 
   viewEventDetails(): void {
@@ -384,6 +387,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
+  /*
   private loadUpcomingEvent(): void {
     this.upcomingEvent = null;
 
@@ -434,6 +438,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       error: () => void 0,
     });
   }
+  */
 
   private buildDisplayName(firstName?: string, lastName?: string): string | null {
     const first = toStringValue(firstName ?? null);

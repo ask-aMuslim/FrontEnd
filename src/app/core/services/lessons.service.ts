@@ -96,7 +96,9 @@ export class LessonsService {
       return of(false);
     }
 
-    return this.studentFacade.getMyProfileFromApi().pipe(
+    return this.studentFacade.getMyProfile().pipe(
+      filter((profile) => profile !== null),
+      take(1),
       map((profile) => this.resolveStudentId(profile)),
       switchMap((studentId) => {
         if (!studentId) {

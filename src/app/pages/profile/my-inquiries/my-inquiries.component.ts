@@ -119,17 +119,21 @@ export class MyInquiriesComponent implements OnInit, OnDestroy {
         });
     }
 
-    private resolveRequesterId(profile: { id?: unknown; userId?: unknown } | null): string | null {
+    private resolveRequesterId(profile: { studentId?: unknown; id?: unknown; userId?: unknown } | null): string | null {
         if (!profile) {
             return null;
         }
 
-        if (typeof profile.userId === 'string' && profile.userId.length > 0) {
-            return profile.userId;
+        if (typeof profile.studentId === 'string' && profile.studentId.length > 0) {
+            return profile.studentId;
         }
 
         if (typeof profile.id === 'string' && profile.id.length > 0) {
             return profile.id;
+        }
+
+        if (typeof profile.userId === 'string' && profile.userId.length > 0) {
+            return profile.userId;
         }
 
         return null;

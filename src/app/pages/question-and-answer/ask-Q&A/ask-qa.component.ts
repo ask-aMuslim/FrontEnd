@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  Input,
   OnInit,
   PLATFORM_ID,
   QueryList,
@@ -20,6 +21,7 @@ import { PaginationComponent } from '../../../shared/reusable-components/paginat
 import { QasService } from '../../../core/services/qas.service';
 import { asRecord, extractArray, getValue, toNumberValue, toStringArray, toStringValue } from '../../../core/helpers/api-response.helper';
 import { TagsService } from '../../../core/services/tags.service';
+import { AskQaResolvedData } from './ask-qa.resolver';
 
 interface TagFilterOption {
   id: string;
@@ -82,16 +84,48 @@ export class AskQaComponent implements OnInit {
     private readonly cdr: ChangeDetectorRef,
   ) { }
 
+  @Input() set resolvedData(data: AskQaResolvedData | null) {
+    if (data) {
+      this.tagFilterOptions = data.categories;
+      this.categories = ['All', ...data.categories.map((tag) => tag.name)];
+      this.allFilteredQuestions = data.initialQuestions;
+      this.totalCount = data.initialQuestions.length;
+      this.totalPages = Math.max(
+        AskQaComponent.minimumTotalPages,
+        Math.ceil(this.totalCount / this.itemsPerPage),
+      );
+      this.selectedCategory = data.initialSelectedCategoryIndex;
+      this.loadedTagId = this.selectedCategoryTagId || 'all';
+      this.currentPage = PAGINATION.DEFAULT_PAGE;
+      this.questions = this.getTagPaginatedQuestions();
+
+      const initialQuery = this.route.snapshot.queryParamMap.get('question');
+      if (initialQuery) {
+        this.searchQuery = initialQuery;
+        this.onSearch();
+      }
+
+      this.cdr.markForCheck();
+      this.queueSelectedCategoryScroll();
+    }
+  }
+
   ngOnInit(): void {
-    this.initialCategoryQuery = this.route.snapshot.queryParamMap.get('category')
-      ?? this.route.snapshot.queryParamMap.get('tag');
-    this.loadCategories();
-    if (!this.initialCategoryQuery) {
-      this.loadQuestions();
+    // If resolvedData didn't populate categories (fallback mode), perform traditional lazy loading
+    if (this.categories.length === QA_CATEGORIES.length && this.categories.every((c, i) => c === QA_CATEGORIES[i])) {
+      this.initialCategoryQuery = this.route.snapshot.queryParamMap.get('category')
+        ?? this.route.snapshot.queryParamMap.get('tag');
+      this.loadCategories();
+      if (!this.initialCategoryQuery) {
+        this.loadQuestions();
+      }
     }
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
+      if (this.allFilteredQuestions.length > 0) {
+        this.onSearch();
+      }
     }
   }
 

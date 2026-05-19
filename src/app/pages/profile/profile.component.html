@@ -98,6 +98,8 @@
             </div>
             <span class="profile-bio">{{ userProfile.bio }}</span>
           </div>
+          <!-- Commented out to stop learning requests -->
+          <!--
           <button
             (click)="continueLearnig()"
             class="button profile-continue-btn"
@@ -117,6 +119,7 @@
               class="profile-continue-btn__icon"
             ></div>
           </button>
+          -->
         </div>
       </div>
     </div>
@@ -363,13 +366,15 @@
             ></app-about>
           }
 
-          <!-- My Learning Tab -->
-          @if (activeTabIndex === 1) {
+          <!-- My Learning Tab (Commented out to stop all requests) -->
+          <!--
+          @if (activeTabIndex === -1) {
             <app-my-learning></app-my-learning>
           }
+          -->
 
-          <!-- My Inquiries Tab -->
-          @if (activeTabIndex === 2) {
+          <!-- My Inquiries Tab (Index adjusted from 2 to 1 as My Learning tab is commented out) -->
+          @if (activeTabIndex === 1) {
             <div class="profile-tab-panel profile-tab-panel--hidden">
               <app-my-inquiries></app-my-inquiries>
             </div>

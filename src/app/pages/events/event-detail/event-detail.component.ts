@@ -14,7 +14,7 @@ import {
   EventRegistrationMyStatusData,
   EventRegistrationStatus,
 } from '../../../core/services/event-registrations.service';
-import { take } from 'rxjs';
+import { take, filter } from 'rxjs';
 
 export interface EventDetail {
   id: number | string;
@@ -163,8 +163,11 @@ export class EventDetailComponent implements OnInit {
     }
 
     this.studentFacade
-      .getMyProfileFromApi()
-      .pipe(take(1))
+      .getMyProfile()
+      .pipe(
+        filter((profile) => profile !== null),
+        take(1)
+      )
       .subscribe({
         next: (profile) => {
           if (profile?.isProfileCompleted === false) {

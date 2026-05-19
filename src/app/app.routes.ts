@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { HomeComponent } from './pages/home/home.component';
+import { homeResolver } from './pages/home/home.resolver';
+import { askQaResolver } from './pages/question-and-answer/ask-Q&A/ask-qa.resolver';
+import { resourcesResolver } from './pages/resources/resources.resolver';
 import { authGuard, guestGuard } from './core/guards';
 import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
 import { LoginComponent } from './core/auth/login/login.component';
@@ -10,13 +13,17 @@ import { QuestionAndAnswerComponent } from './pages/question-and-answer/question
 import { AcademyComponent } from './pages/academy/academy.component';
 import { CourseComponent } from './pages/academy/course/course.component';
 import { academyResolver } from './pages/academy/academy.resolver';
+import { courseResolver } from './pages/academy/course/course.resolver';
 import { EventsComponent } from './pages/events/events.component';
 import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
 import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
+import { lessonPlayerResolver } from './pages/academy/lesson-player/lesson-player.resolver';
 import { QuizComponent } from './pages/academy/quiz/quiz.component';
+import { quizResolver } from './pages/academy/quiz/quiz.resolver';
 import { CongratulationsComponent } from './pages/academy/congratulations/congratulations.component';
+import { congratulationsResolver } from './pages/academy/congratulations/congratulations.resolver';
 
 const createQuestionAndAnswerRoutes = (): Routes => [
   { path: '', pathMatch: 'full', redirectTo: 'topics' },
@@ -27,6 +34,7 @@ const createQuestionAndAnswerRoutes = (): Routes => [
         (m) => m.AskQaComponent,
       ),
     title: 'Ask Questions',
+    resolve: { resolvedData: askQaResolver },
   },
   {
     path: 'topics/question',
@@ -84,7 +92,7 @@ export const routes: Routes = [
     path: '',
     component: AppLayoutComponent,
     children: [
-      { path: 'home', component: HomeComponent, title: 'Home' },
+      { path: 'home', component: HomeComponent, title: 'Home', resolve: { heroBubbles: homeResolver } },
       {
         path: 'certificates',
         loadComponent: () => import('./pages/certificates/certificates.component').then(m => m.CertificatesComponent),
@@ -107,6 +115,7 @@ export const routes: Routes = [
             (m) => m.ResourcesComponent,
           ),
         title: 'Resources',
+        resolve: { resolvedData: resourcesResolver },
       },
       {
         path: 'mosques/:id',
@@ -143,30 +152,34 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
           { path: '', component: AcademyComponent, title: 'Academy', resolve: { academyData: academyResolver } },
-          { path: 'course/:id', component: CourseComponent, title: 'Course' },
+          { path: 'course/:id', component: CourseComponent, title: 'Course', resolve: { resolvedData: courseResolver } },
           {
             path: 'course/:courseId/lesson/:lessonId',
             component: LessonPlayerComponent,
             canActivate: [authGuard],
             title: 'Lesson Player',
+            resolve: { resolvedData: lessonPlayerResolver },
           },
           {
             path: 'course/:courseId/quiz',
             component: QuizComponent,
             canActivate: [authGuard],
             title: 'Quiz',
+            resolve: { resolvedQuizData: quizResolver },
           },
           {
             path: 'course/:courseId/quiz/:lessonId',
             component: QuizComponent,
             canActivate: [authGuard],
             title: 'Quiz',
+            resolve: { resolvedQuizData: quizResolver },
           },
           {
             path: 'course/:courseId/congratulations',
             component: CongratulationsComponent,
             canActivate: [authGuard],
             title: 'Congratulations',
+            resolve: { resolvedCongratulationsData: congratulationsResolver },
           },
         ],
       },
