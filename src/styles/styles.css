@@ -267,6 +267,15 @@ img.aam-late-image.aam-late-image--loaded {
   transform: rotate(45deg);
 }
 
+.leaflet-pin-marker__core {
+  width: calc(var(--pin-size) * 0.28);
+  height: calc(var(--pin-size) * 0.28);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  transform: rotate(45deg);
+}
+
 .leaflet-pin-marker__shadow {
   position: absolute;
   left: 50%;

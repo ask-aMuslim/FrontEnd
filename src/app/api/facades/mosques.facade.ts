@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map, of } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 import { getMosqueById } from '../fn/mosques/get-mosque-by-id';
@@ -72,6 +72,7 @@ export class MosquesFacade {
         hasPreviousPage: false,
         hasNextPage: false,
     };
+    private static readonly mapPageSize = 100;
 
     constructor(private readonly api: ApiService) { }
 
@@ -121,6 +122,37 @@ export class MosquesFacade {
             }),
             [],
         ).pipe(map((items) => asArray(items).map((item) => this.mapMosque(item))));
+    }
+
+    getAllMosques(params: GetPublicMosquesParams = {}): Observable<MosqueDto[]> {
+        return this.getMosques({
+            ...params,
+            pageNumber: 1,
+            pageSize: MosquesFacade.mapPageSize,
+        }).pipe(
+            switchMap((firstPage) => {
+                if (firstPage.totalPages <= 1) {
+                    return of(firstPage.items);
+                }
+
+                const remainingPageRequests = Array.from(
+                    { length: firstPage.totalPages - 1 },
+                    (_value, index) =>
+                        this.getMosques({
+                            ...params,
+                            pageNumber: index + 2,
+                            pageSize: MosquesFacade.mapPageSize,
+                        }),
+                );
+
+                return forkJoin(remainingPageRequests).pipe(
+                    map((remainingPages) => [
+                        ...firstPage.items,
+                        ...remainingPages.flatMap((page) => page.items),
+                    ]),
+                );
+            }),
+        );
     }
 
     private hasSearchFilters(params: GetPublicMosquesParams): boolean {

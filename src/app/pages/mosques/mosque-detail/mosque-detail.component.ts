@@ -161,7 +161,7 @@ export class MosqueDetailComponent implements OnInit, OnDestroy {
     this.detailLayer?.remove();
 
     const marker = L.marker([latitude, longitude], {
-      icon: this.createPinMarkerIcon(L, '1', '#156b40', 34),
+      icon: this.createPinMarkerIcon(L, null, '#156b40', 34),
       riseOnHover: true,
       zIndexOffset: 500,
     }).bindTooltip(mosqueName, {
@@ -184,13 +184,16 @@ export class MosqueDetailComponent implements OnInit, OnDestroy {
 
   private createPinMarkerIcon(
     leaflet: typeof import('leaflet'),
-    label: string,
+    label: string | null,
     color: string,
     size = 32,
   ) {
     const width = size + 16;
     const height = size + 24;
-    const fontSize = label.length > 2 ? 10 : 13;
+    const fontSize = label && label.length > 2 ? 10 : 13;
+    const pinContent = label
+      ? `<span class="leaflet-pin-marker__label">${this.escapeHtml(label)}</span>`
+      : '<span class="leaflet-pin-marker__core"></span>';
 
     return leaflet.divIcon({
       className: 'leaflet-pin-marker-wrapper',
@@ -200,7 +203,7 @@ export class MosqueDetailComponent implements OnInit, OnDestroy {
           style="--pin-color:${color};--pin-size:${size}px;--pin-label-size:${fontSize}px;"
         >
           <span class="leaflet-pin-marker__shape">
-            <span class="leaflet-pin-marker__label">${this.escapeHtml(label)}</span>
+            ${pinContent}
           </span>
           <span class="leaflet-pin-marker__shadow"></span>
         </span>

@@ -61,6 +61,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly mosques = signal<MosqueDto[]>([]);
+  readonly allMapMosques = signal<MosqueDto[]>([]);
   readonly searchTerm = signal('');
   readonly cityFilter = signal('');
   readonly currentPage = signal(1);
@@ -81,6 +82,9 @@ export class MosquesComponent implements OnInit, OnDestroy {
   readonly nearbyMosqueCards = computed<MosqueCard[]>(() =>
     this.nearbyMosques().map((mosque) => this.mapMosqueCard(mosque)),
   );
+  readonly allMapMosquesWithCoordinates = computed(() =>
+    this.allMapMosques().filter((mosque) => this.hasCoordinates(mosque)),
+  );
   readonly mosquesWithCoordinates = computed(() =>
     this.mosques().filter((mosque) => this.hasCoordinates(mosque)),
   );
@@ -88,9 +92,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
     this.nearbyMosques().filter((mosque) => this.hasCoordinates(mosque)),
   );
   readonly mapMosques = computed(() =>
-    this.nearbyMosquesWithCoordinates().length > 0
-      ? this.nearbyMosquesWithCoordinates()
-      : this.mosquesWithCoordinates(),
+    this.mergeMosquesForMap(this.allMapMosquesWithCoordinates(), this.nearbyMosquesWithCoordinates()),
   );
 
   readonly hasMosques = computed(() => this.mosqueCards().length > 0);
@@ -105,8 +107,8 @@ export class MosquesComponent implements OnInit, OnDestroy {
   });
   readonly mapLocationSummary = computed(() =>
     this.userLocation()
-      ? 'Live location enabled for nearest-pin highlighting'
-      : 'Showing mosque locations from the current list',
+      ? 'Live location enabled. All mosque pins are loaded from the API.'
+      : 'Showing all mosque locations loaded from the API',
   );
   readonly highlightedNearbyPinCount = computed(() =>
     this.canHighlightNearestPins()
@@ -162,6 +164,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadMosques();
+    this.loadAllMapMosques();
 
     if (this.isBrowser) {
       this.loadNearbyMosques();
@@ -188,6 +191,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
   applyFilters(): void {
     this.currentPage.set(1);
     this.loadMosques();
+    this.loadAllMapMosques();
   }
 
   clearFilters(): void {
@@ -199,6 +203,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
     this.cityFilter.set('');
     this.currentPage.set(1);
     this.loadMosques();
+    this.loadAllMapMosques();
   }
 
   prevPage(): void {
@@ -290,6 +295,23 @@ export class MosquesComponent implements OnInit, OnDestroy {
           this.hasNextPage.set(false);
           this.loadError.set(this.resolveErrorMessage(error));
           this.isLoading.set(false);
+        },
+      });
+  }
+
+  private loadAllMapMosques(): void {
+    this.mosquesFacade
+      .getAllMosques({
+        name: this.searchTerm().trim() || undefined,
+        city: this.cityFilter().trim() || undefined,
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: (mosques) => {
+          this.allMapMosques.set(mosques);
+        },
+        error: () => {
+          this.allMapMosques.set(this.mosques());
         },
       });
   }
@@ -404,11 +426,11 @@ export class MosquesComponent implements OnInit, OnDestroy {
     this.nearbyLayer?.remove();
 
     const highlightedMosqueIds = this.resolveHighlightedMosqueIds(mosques, userLocation);
-    const mosqueMarkers = mosques.map((mosque, index) =>
+    const mosqueMarkers = mosques.map((mosque) =>
       L.marker([mosque.latitude as number, mosque.longitude as number], {
         icon: this.createPinMarkerIcon(
           L,
-          String(index + 1),
+          null,
           highlightedMosqueIds.has(mosque.id) ? '#f59e0b' : '#156b40',
         ),
         riseOnHover: true,
@@ -426,7 +448,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
 
     if (userLocation) {
       const userMarker = L.marker([userLocation.latitude, userLocation.longitude], {
-        icon: this.createPinMarkerIcon(L, 'You', '#2563eb', 38),
+        icon: this.createPinMarkerIcon(L, null, '#2563eb', 38),
         riseOnHover: true,
         zIndexOffset: 800,
       }).bindTooltip('Your location', {
@@ -455,13 +477,16 @@ export class MosquesComponent implements OnInit, OnDestroy {
 
   private createPinMarkerIcon(
     leaflet: typeof import('leaflet'),
-    label: string,
+    label: string | null,
     color: string,
     size = 32,
   ) {
     const width = size + 16;
     const height = size + 24;
-    const fontSize = label.length > 2 ? 10 : 13;
+    const fontSize = label && label.length > 2 ? 10 : 13;
+    const pinContent = label
+      ? `<span class="leaflet-pin-marker__label">${this.escapeHtml(label)}</span>`
+      : '<span class="leaflet-pin-marker__core"></span>';
 
     return leaflet.divIcon({
       className: 'leaflet-pin-marker-wrapper',
@@ -471,7 +496,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
           style="--pin-color:${color};--pin-size:${size}px;--pin-label-size:${fontSize}px;"
         >
           <span class="leaflet-pin-marker__shape">
-            <span class="leaflet-pin-marker__label">${this.escapeHtml(label)}</span>
+            ${pinContent}
           </span>
           <span class="leaflet-pin-marker__shadow"></span>
         </span>
@@ -580,6 +605,27 @@ export class MosquesComponent implements OnInit, OnDestroy {
     return 2 * earthRadiusKm * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
   }
 
+  private mergeMosquesForMap(primaryMosques: MosqueDto[], secondaryMosques: MosqueDto[]): MosqueDto[] {
+    const mosquesById = new Map<string, MosqueDto>();
+
+    for (const mosque of [...primaryMosques, ...secondaryMosques]) {
+      const existingMosque = mosquesById.get(mosque.id);
+
+      if (!existingMosque) {
+        mosquesById.set(mosque.id, mosque);
+        continue;
+      }
+
+      mosquesById.set(mosque.id, {
+        ...existingMosque,
+        ...mosque,
+        distanceInKm: mosque.distanceInKm ?? existingMosque.distanceInKm,
+      });
+    }
+
+    return [...mosquesById.values()];
+  }
+
   private escapeHtml(value: string): string {
     return value
       .replaceAll('&', '&amp;')
@@ -635,19 +681,58 @@ export class MosquesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const boundsPoints = mosques.map(
-      (mosque) => [mosque.latitude as number, mosque.longitude as number] as [number, number],
-    );
-
-    if (userLocation) {
-      boundsPoints.unshift([userLocation.latitude, userLocation.longitude]);
-    }
-
-    const bounds = boundsPoints;
+    const bounds = this.resolveDefaultBoundsPoints(userLocation, mosques);
     this.nearbyMap.fitBounds(bounds, {
       padding: [28, 28],
       maxZoom: userLocation ? 14 : 13,
     });
+  }
+
+  private resolveDefaultBoundsPoints(
+    userLocation: { latitude: number; longitude: number } | null,
+    mosques: MosqueDto[],
+  ): [number, number][] {
+    if (!userLocation) {
+      return mosques.map(
+        (mosque) => [mosque.latitude as number, mosque.longitude as number] as [number, number],
+      );
+    }
+
+    const nearestMosque = this.resolveNearestMosque(mosques, userLocation);
+    if (!nearestMosque) {
+      return [[userLocation.latitude, userLocation.longitude]];
+    }
+
+    return [
+      [userLocation.latitude, userLocation.longitude],
+      [nearestMosque.latitude as number, nearestMosque.longitude as number],
+    ];
+  }
+
+  private resolveNearestMosque(
+    mosques: MosqueDto[],
+    userLocation: { latitude: number; longitude: number } | null,
+  ): MosqueDto | null {
+    if (!userLocation) {
+      return null;
+    }
+
+    return [...mosques].sort((left, right) => {
+      const leftDistance = this.resolveMosqueDistanceKm(left, userLocation);
+      const rightDistance = this.resolveMosqueDistanceKm(right, userLocation);
+
+      if (leftDistance === null && rightDistance === null) {
+        return left.name.localeCompare(right.name);
+      }
+      if (leftDistance === null) {
+        return 1;
+      }
+      if (rightDistance === null) {
+        return -1;
+      }
+
+      return leftDistance - rightDistance;
+    })[0] ?? null;
   }
 
   private resolveLocation(mosque: MosqueDto): string {
