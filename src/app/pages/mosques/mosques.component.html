@@ -2,67 +2,16 @@
   <header class="mosques-hero">
     <div class="section-block mosques-hero__content">
       <span class="mosques-pill">Mosques</span>
-      <h1 id="mosques-title" class="mosques-hero__title">Find a mosque</h1>
+      <h1 id="mosques-title" class="mosques-hero__title">Trusted mosques</h1>
       <p class="mosques-hero__subtitle">
-        Browse active mosques by name or city and open directions, contact
-        details, and website links.
+        Browse trusted active mosques that follow a sound and valid methodology,
+        then open directions, contact details, and website links with
+        confidence.
       </p>
     </div>
   </header>
 
   <section class="section-block mosques-content">
-    <div class="mosques-toolbar">
-      <div class="mosques-search">
-        <div class="mosques-search__input-wrapper">
-          <label class="sr-only" for="mosques-name-search"
-            >Search mosque name</label
-          >
-          <input
-            #searchInput
-            id="mosques-name-search"
-            type="text"
-            class="mosques-search__input"
-            placeholder="Search by mosque name"
-            [value]="searchTerm()"
-            (input)="onSearchInput(searchInput.value)"
-          />
-        </div>
-
-        <div class="mosques-search__input-wrapper">
-          <label class="sr-only" for="mosques-city-search"
-            >Filter by city</label
-          >
-          <input
-            #cityInput
-            id="mosques-city-search"
-            type="text"
-            class="mosques-search__input"
-            placeholder="Filter by city"
-            [value]="cityFilter()"
-            (input)="onCityInput(cityInput.value)"
-          />
-        </div>
-
-        <button
-          type="button"
-          class="mosques-search__btn"
-          (click)="applyFilters()"
-        >
-          Search
-        </button>
-
-        @if (hasFilters()) {
-          <button
-            type="button"
-            class="mosques-search__secondary-btn"
-            (click)="clearFilters()"
-          >
-            Clear
-          </button>
-        }
-      </div>
-    </div>
-
     <section class="mosques-nearby" aria-labelledby="nearby-mosques-title">
       <div class="mosques-nearby__header">
         <div>
@@ -238,6 +187,76 @@
                 mosques.
               </p>
             </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="mosques-directory"
+      aria-labelledby="mosques-directory-title"
+    >
+      <div class="mosques-directory__header">
+        <div>
+          <p class="mosques-nearby__eyebrow">Mosque directory</p>
+          <h2 id="mosques-directory-title" class="mosques-nearby__title">
+            Browse trusted mosque listings
+          </h2>
+          <p class="mosques-nearby__subtitle">
+            Search and filter the full mosque directory by name or city, then
+            open each mosque profile for more details.
+          </p>
+        </div>
+      </div>
+
+      <div class="mosques-toolbar">
+        <div class="mosques-search">
+          <div class="mosques-search__input-wrapper">
+            <label class="sr-only" for="mosques-name-search"
+              >Search mosque name</label
+            >
+            <input
+              #searchInput
+              id="mosques-name-search"
+              type="text"
+              class="mosques-search__input"
+              placeholder="Search by mosque name"
+              [value]="searchTerm()"
+              (input)="onSearchInput(searchInput.value)"
+            />
+          </div>
+
+          <div class="mosques-search__input-wrapper">
+            <label class="sr-only" for="mosques-city-search"
+              >Filter by city</label
+            >
+            <input
+              #cityInput
+              id="mosques-city-search"
+              type="text"
+              class="mosques-search__input"
+              placeholder="Filter by city"
+              [value]="cityFilter()"
+              (input)="onCityInput(cityInput.value)"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="mosques-search__btn"
+            (click)="applyFilters()"
+          >
+            Search
+          </button>
+
+          @if (hasFilters()) {
+            <button
+              type="button"
+              class="mosques-search__secondary-btn"
+              (click)="clearFilters()"
+            >
+              Clear
+            </button>
           }
         </div>
       </div>

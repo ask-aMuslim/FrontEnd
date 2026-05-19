@@ -51,6 +51,9 @@
 }
 
 .mosques-content {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
   padding: 72px 0 96px;
 }
 
@@ -151,7 +154,6 @@
 }
 
 .mosques-nearby {
-  margin-bottom: 32px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -159,6 +161,25 @@
   border-radius: 24px;
   background: #f8fbf8;
   border: 1px solid #e4efe2;
+}
+
+.mosques-directory {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid #e4efe2;
+  box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.22);
+}
+
+.mosques-directory__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
 }
 
 .mosques-nearby__header {
@@ -337,6 +358,27 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: 720px;
+  overflow-y: auto;
+  padding-right: 8px;
+  align-self: start;
+  scrollbar-width: thin;
+  scrollbar-color: #c5d8c8 #eef5ee;
+}
+
+.mosques-nearby__list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.mosques-nearby__list::-webkit-scrollbar-track {
+  border-radius: 9999px;
+  background: #eef5ee;
+}
+
+.mosques-nearby__list::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: #c5d8c8;
+  border: 2px solid #eef5ee;
 }
 
 .mosques-nearby-card {
@@ -609,16 +651,23 @@
     padding: 56px 0 80px;
   }
 
-  .mosques-results-meta {
-    flex-direction: column;
-  }
-
+  .mosques-directory,
   .mosques-nearby {
     padding: 20px;
   }
 
+  .mosques-results-meta {
+    flex-direction: column;
+  }
+
   .mosques-nearby__content {
     grid-template-columns: 1fr;
+  }
+
+  .mosques-nearby__list {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
   }
 
   .mosques-nearby__map {
