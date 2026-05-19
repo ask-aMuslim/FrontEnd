@@ -52,6 +52,7 @@ export class StudentFacade {
   // Cache for profile data
   private readonly profileCache$ = new BehaviorSubject<StudentProfile | null>(null);
   private profileLoading = false;
+  private profileFetched = false;
 
   /**
    * Get all students (admin only)
@@ -117,8 +118,8 @@ export class StudentFacade {
    * This method uses caching to avoid redundant API calls.
    */
   me(): Observable<StudentProfile | null> {
-    // Trigger fetch if cache is empty and not already loading
-    if (this.profileCache$.getValue() === null && !this.profileLoading) {
+    // Trigger fetch if cache is empty, not already loading, and not yet fetched
+    if (this.profileCache$.getValue() === null && !this.profileLoading && !this.profileFetched) {
       this.fetchProfile().subscribe();
     }
 
@@ -133,9 +134,11 @@ export class StudentFacade {
         next: (profile) => {
           this.profileCache$.next(profile);
           this.profileLoading = false;
+          this.profileFetched = true;
         },
         error: () => {
           this.profileLoading = false;
+          this.profileFetched = true;
         },
       })
     );
@@ -165,6 +168,7 @@ export class StudentFacade {
     return this.profileService.getMyProfile().pipe(
       tap((profile) => {
         this.profileCache$.next(profile);
+        this.profileFetched = true;
       })
     );
   }
@@ -248,6 +252,7 @@ export class StudentFacade {
   clearCache(): void {
     this.profileCache$.next(null);
     this.profileLoading = false;
+    this.profileFetched = false;
   }
 
   /**

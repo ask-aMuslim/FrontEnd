@@ -8,6 +8,7 @@ import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
+import { CongratulationsResolvedData } from './congratulations.resolver';
 
 @Component({
     selector: 'app-congratulations',
@@ -65,9 +66,15 @@ export class CongratulationsComponent implements OnInit, OnDestroy {
                 this.courseId = params.get('courseId') ?? '';
                 this.nextCourseId = null;
                 this.nextCourseName.set('');
+            });
 
-                this.loadCourseTitle();
-                this.resolveNextCourse();
+        this.route.data
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((data) => {
+                const resolved = data['resolvedCongratulationsData'] as CongratulationsResolvedData | null;
+                if (resolved) {
+                    this.handleResolvedData(resolved);
+                }
             });
     }
 
@@ -85,69 +92,18 @@ export class CongratulationsComponent implements OnInit, OnDestroy {
         void this.router.navigate(['/academy']);
     }
 
-    private loadCourseTitle(): void {
-        if (!this.courseId) {
-            return;
+    private handleResolvedData(data: CongratulationsResolvedData): void {
+        const normalizedTitle = data.course.title?.trim() ?? '';
+        if (normalizedTitle && normalizedTitle.toLowerCase() !== 'unknown course') {
+            this.courseTitle.set(normalizedTitle);
         }
 
-        const cachedCourse = this.academyProgressService.getCourseById(this.courseId);
-        if (cachedCourse?.title?.trim()) {
-            this.courseTitle.set(cachedCourse.title);
+        if (data.nextCourse) {
+            this.nextCourseId = data.nextCourse.id ?? null;
+            this.nextCourseName.set(data.nextCourse.title?.trim() ?? '');
+        } else {
+            this.nextCourseId = null;
+            this.nextCourseName.set('');
         }
-
-        const staticCourse = ACADEMY_COURSES.find((course) => course.id === this.courseId);
-        if (staticCourse?.title?.trim()) {
-            this.courseTitle.set(staticCourse.title);
-        }
-
-        this.academyProgressService
-            .getAcademyCourseById(this.courseId)
-            .pipe(
-                takeUntil(this.destroy$),
-                catchError(() => of(null)),
-            )
-            .subscribe((course) => {
-                const normalizedTitle = course?.title?.trim() ?? '';
-                if (!normalizedTitle || normalizedTitle.toLowerCase() === 'unknown course') {
-                    return;
-                }
-
-                this.courseTitle.set(normalizedTitle);
-            });
-    }
-
-    private resolveNextCourse(): void {
-        if (!this.courseId) {
-            return;
-        }
-
-        this.academyProgressService
-            .getAcademyCourses()
-            .pipe(
-                takeUntil(this.destroy$),
-                catchError(() => of([])),
-            )
-            .subscribe((courses) => {
-                const orderedCourses = [...courses].sort((left, right) => {
-                    const stageDifference = (left.stageId ?? 0) - (right.stageId ?? 0);
-                    if (stageDifference !== 0) {
-                        return stageDifference;
-                    }
-
-                    const leftOrder = left.order ?? Number.MAX_SAFE_INTEGER;
-                    const rightOrder = right.order ?? Number.MAX_SAFE_INTEGER;
-                    if (leftOrder !== rightOrder) {
-                        return leftOrder - rightOrder;
-                    }
-
-                    return left.title.localeCompare(right.title);
-                });
-
-                const currentIndex = orderedCourses.findIndex((course) => course.id === this.courseId);
-                const nextCourse = currentIndex >= 0 ? orderedCourses[currentIndex + 1] : undefined;
-
-                this.nextCourseId = nextCourse?.id ?? null;
-                this.nextCourseName.set(nextCourse?.title?.trim() ?? '');
-            });
     }
 }

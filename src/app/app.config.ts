@@ -1,5 +1,5 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideZonelessChangeDetection } from '@angular/core';
-import { provideRouter, withViewTransitions, withInMemoryScrolling } from '@angular/router';
+import { provideRouter, withViewTransitions, withInMemoryScrolling, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { SocialAuthServiceConfig, SOCIAL_AUTH_CONFIG, GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-social-login';
 
@@ -41,7 +41,8 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({
         scrollPositionRestoration: 'top',
         anchorScrolling: 'enabled'
-      })
+      }),
+      withComponentInputBinding()
     ),
     // HTTP client with functional interceptors
     provideHttpClient(
