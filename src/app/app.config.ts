@@ -2,6 +2,7 @@ import { ApplicationConfig, inject, provideAppInitializer, provideZonelessChange
 import { provideRouter, withViewTransitions, withInMemoryScrolling, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { SocialAuthServiceConfig, SOCIAL_AUTH_CONFIG, GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-social-login';
+import { provideClientHydration, withEventReplay, withIncrementalHydration } from '@angular/platform-browser';
 
 import { routes } from './app.routes';
 import { provideApiConfiguration } from './api/api-configuration';
@@ -35,6 +36,7 @@ export const getSocialAuthConfig = (): SocialAuthServiceConfig => {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
+    provideClientHydration(withEventReplay(), withIncrementalHydration()),
     provideRouter(
       routes,
       withViewTransitions(),

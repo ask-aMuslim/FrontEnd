@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../../../shared/reusable-components/header/header.component';
 import { FooterComponent } from '../../../shared/reusable-components/footer/footer.component';
@@ -10,6 +10,7 @@ import { AnnouncementBarComponent } from '../../../shared/reusable-components/an
   imports: [RouterOutlet, HeaderComponent, FooterComponent, AnnouncementBarComponent],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayoutComponent {
 

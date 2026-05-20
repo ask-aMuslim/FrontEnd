@@ -33,7 +33,7 @@ export class VideoProgressService {
                 distinctUntilChanged((previous, current) =>
                     previous.courseId === current.courseId
                     && previous.lessonId === current.lessonId
-                    && Math.floor(previous.videoProgressPercentage) === Math.floor(current.videoProgressPercentage),
+                    && Math.floor(this.resolveProgressPercentage(previous)) === Math.floor(this.resolveProgressPercentage(current)),
                 ),
             )
             .subscribe((snapshot) => {
@@ -43,9 +43,9 @@ export class VideoProgressService {
 
     recordProgress(snapshot: LessonVideoProgressPayload): void {
         const normalizedSnapshot = this.normalizeSnapshot(snapshot);
-        this.persistProgressLocally(normalizedSnapshot.lessonId, normalizedSnapshot.videoProgressPercentage);
+        this.persistProgressLocally(normalizedSnapshot.lessonId, this.resolveProgressPercentage(normalizedSnapshot));
 
-        if (normalizedSnapshot.videoProgressPercentage >= this.completionThreshold) {
+        if (this.resolveProgressPercentage(normalizedSnapshot) >= this.completionThreshold) {
             this.markLessonCompleted(normalizedSnapshot.lessonId);
         }
 
@@ -54,14 +54,14 @@ export class VideoProgressService {
 
     flushProgress(snapshot: LessonVideoProgressPayload): void {
         const normalizedSnapshot = this.normalizeSnapshot(snapshot);
-        this.persistProgressLocally(normalizedSnapshot.lessonId, normalizedSnapshot.videoProgressPercentage);
+        this.persistProgressLocally(normalizedSnapshot.lessonId, this.resolveProgressPercentage(normalizedSnapshot));
         this.trySync(normalizedSnapshot, true);
     }
 
     syncCompletion(snapshot: LessonVideoProgressPayload): void {
         const normalizedSnapshot = this.normalizeSnapshot({
             ...snapshot,
-            videoProgressPercentage: Math.max(this.completionThreshold, snapshot.videoProgressPercentage),
+            progressPercentage: Math.max(this.completionThreshold, this.resolveProgressPercentage(snapshot)),
         });
         this.markLessonCompleted(normalizedSnapshot.lessonId);
         this.flushProgress(normalizedSnapshot);
@@ -105,7 +105,7 @@ export class VideoProgressService {
         return {
             courseId: snapshot.courseId,
             lessonId: snapshot.lessonId,
-            videoProgressPercentage: this.clampPercentage(snapshot.videoProgressPercentage),
+            progressPercentage: this.clampPercentage(this.resolveProgressPercentage(snapshot)),
         };
     }
 
@@ -131,10 +131,11 @@ export class VideoProgressService {
         }
 
         const state = this.getOrCreateSyncState(snapshot.lessonId);
-        const progressDelta = snapshot.videoProgressPercentage - state.lastSyncedPercentage;
+        const progressPercentage = this.resolveProgressPercentage(snapshot);
+        const progressDelta = progressPercentage - state.lastSyncedPercentage;
         const elapsedSinceSync = Date.now() - state.lastSyncedAt;
         const completionPending =
-            snapshot.videoProgressPercentage >= this.completionThreshold && !state.completionSynced;
+            progressPercentage >= this.completionThreshold && !state.completionSynced;
 
         const shouldSync =
             forceSync
@@ -153,15 +154,15 @@ export class VideoProgressService {
 
         const payload: LessonVideoProgressPayload = {
             ...snapshot,
-            videoProgressPercentage: completionPending
-                ? Math.max(snapshot.videoProgressPercentage, this.completionThreshold)
-                : snapshot.videoProgressPercentage,
+            progressPercentage: completionPending
+                ? Math.max(progressPercentage, this.completionThreshold)
+                : progressPercentage,
         };
 
         state.inFlight = true;
 
         this.lessonProgressFacade
-            .saveLessonVideoProgress(payload)
+            .saveLessonProgress(payload)
             .pipe(
                 retry({ count: 1, delay: 1000 }),
                 catchError(() => of(false)),
@@ -182,11 +183,11 @@ export class VideoProgressService {
 
                 state.lastSyncedPercentage = Math.max(
                     state.lastSyncedPercentage,
-                    payload.videoProgressPercentage,
+                    this.resolveProgressPercentage(payload),
                 );
                 state.lastSyncedAt = Date.now();
 
-                if (payload.videoProgressPercentage >= this.completionThreshold) {
+                if (this.resolveProgressPercentage(payload) >= this.completionThreshold) {
                     state.completionSynced = true;
                 }
             });
@@ -218,9 +219,13 @@ export class VideoProgressService {
             return current;
         }
 
-        return current.videoProgressPercentage >= previous.videoProgressPercentage
+        return this.resolveProgressPercentage(current) >= this.resolveProgressPercentage(previous)
             ? current
             : previous;
+    }
+
+    private resolveProgressPercentage(snapshot: LessonVideoProgressPayload): number {
+        return this.clampPercentage(snapshot.progressPercentage ?? snapshot.videoProgressPercentage ?? 0);
     }
 
     private progressStorageKey(lessonId: string): string {

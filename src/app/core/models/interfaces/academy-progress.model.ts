@@ -153,9 +153,9 @@ export interface StudentProgress {
 export interface UpdateLessonProgressRequest {
     lessonId: Id;
     courseId: Id;
-    isCompleted?: boolean;
-    watchTime?: number;
-    lastPosition?: number;
+    lessonType?: AcademyLessonType;
+    progressPercentage?: number;
+    markAsRead?: boolean;
 }
 
 /**

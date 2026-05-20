@@ -26,7 +26,7 @@ export const homeResolver: ResolveFn<string[]> = () => {
     'How to perform Hajj?',
   ];
 
-  return qasService.getAll({ pageNumber: 1, pageSize: 100 }).pipe(
+  return qasService.getAll({ pageNumber: 1, pageSize: 12, tags: heroTag }).pipe(
     map((response) => {
       const records = extractArray(response);
       if (records.length > 0) {

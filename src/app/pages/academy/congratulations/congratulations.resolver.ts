@@ -4,7 +4,6 @@ import { type ResolveFn } from '@angular/router';
 import { combineLatest, of } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { ACADEMY_COURSES } from '../../../core/services/academy-data';
 import { AcademyCourse } from '../../../core/models/interfaces/academy-progress.model';
 
@@ -25,11 +24,6 @@ export const congratulationsResolver: ResolveFn<CongratulationsResolvedData | nu
     }
 
     const academyProgressService = inject(AcademyProgressService);
-    const authService = inject(AuthService);
-
-    if (!authService.isAuthenticated()) {
-        return of(null);
-    }
 
     return academyProgressService.getAcademyCourseById(courseId).pipe(
         take(1),

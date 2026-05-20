@@ -1,28 +1,12 @@
 import { Routes } from '@angular/router';
-import { NotFoundComponent } from './pages/not-found/not-found.component';
-import { HomeComponent } from './pages/home/home.component';
 import { homeResolver } from './pages/home/home.resolver';
 import { askQaResolver } from './pages/question-and-answer/ask-Q&A/ask-qa.resolver';
 import { resourcesResolver } from './pages/resources/resources.resolver';
 import { authGuard, guestGuard } from './core/guards';
-import { AuthLayoutComponent } from './core/layouts/auth-layout/auth-layout.component';
-import { LoginComponent } from './core/auth/login/login.component';
-import { RegisterComponent } from './core/auth/register/register.component';
-import { AppLayoutComponent } from './core/layouts/app-layout/app-layout.component';
-import { QuestionAndAnswerComponent } from './pages/question-and-answer/question-and-answer.component';
-import { AcademyComponent } from './pages/academy/academy.component';
-import { CourseComponent } from './pages/academy/course/course.component';
 import { academyResolver } from './pages/academy/academy.resolver';
 import { courseResolver } from './pages/academy/course/course.resolver';
-import { EventsComponent } from './pages/events/events.component';
-import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
-import { ProfileComponent } from './pages/profile/profile.component';
-import { ResetPasswordComponent } from './core/auth/reset-password/reset-password.component';
-import { LessonPlayerComponent } from './pages/academy/lesson-player/lesson-player.component';
 import { lessonPlayerResolver } from './pages/academy/lesson-player/lesson-player.resolver';
-import { QuizComponent } from './pages/academy/quiz/quiz.component';
 import { quizResolver } from './pages/academy/quiz/quiz.resolver';
-import { CongratulationsComponent } from './pages/academy/congratulations/congratulations.component';
 import { congratulationsResolver } from './pages/academy/congratulations/congratulations.resolver';
 
 const createQuestionAndAnswerRoutes = (): Routes => [
@@ -68,7 +52,6 @@ const createQuestionAndAnswerRoutes = (): Routes => [
       ).then((m) => m.MeetScholarSuccessComponent),
     title: 'Meeting Request Submitted',
   },
-
 ];
 
 export const routes: Routes = [
@@ -78,34 +61,78 @@ export const routes: Routes = [
   // Auth layout routes (guest only — redirect to /home if authenticated)
   {
     path: '',
-    component: AuthLayoutComponent,
+    loadComponent: () =>
+      import('./core/layouts/auth-layout/auth-layout.component').then(
+        (m) => m.AuthLayoutComponent,
+      ),
     canActivate: [guestGuard],
     children: [
-      { path: 'login', component: LoginComponent, title: 'Login' },
-      { path: 'register', component: RegisterComponent, title: 'Register' },
-      { path: 'reset-password', component: ResetPasswordComponent, title: 'Reset Password' },
+      {
+        path: 'login',
+        loadComponent: () =>
+          import('./core/auth/login/login.component').then(
+            (m) => m.LoginComponent,
+          ),
+        title: 'Login',
+      },
+      {
+        path: 'register',
+        loadComponent: () =>
+          import('./core/auth/register/register.component').then(
+            (m) => m.RegisterComponent,
+          ),
+        title: 'Register',
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () =>
+          import('./core/auth/reset-password/reset-password.component').then(
+            (m) => m.ResetPasswordComponent,
+          ),
+        title: 'Reset Password',
+      },
     ],
   },
 
   // App layout routes
   {
     path: '',
-    component: AppLayoutComponent,
+    loadComponent: () =>
+      import('./core/layouts/app-layout/app-layout.component').then(
+        (m) => m.AppLayoutComponent,
+      ),
     children: [
-      { path: 'home', component: HomeComponent, title: 'Home', resolve: { heroBubbles: homeResolver } },
+      {
+        path: 'home',
+        loadComponent: () =>
+          import('./pages/home/home.component').then(
+            (m) => m.HomeComponent,
+          ),
+        title: 'Home',
+        resolve: { heroBubbles: homeResolver },
+      },
       {
         path: 'certificates',
-        loadComponent: () => import('./pages/certificates/certificates.component').then(m => m.CertificatesComponent),
+        loadComponent: () =>
+          import('./pages/certificates/certificates.component').then(
+            (m) => m.CertificatesComponent,
+          ),
         title: 'Certificates of Achievement',
       },
       {
         path: 'certificates/:id',
-        loadComponent: () => import('./pages/certificates/certificate-detail/certificate-detail.component').then(m => m.CertificateDetailComponent),
+        loadComponent: () =>
+          import('./pages/certificates/certificate-detail/certificate-detail.component').then(
+            (m) => m.CertificateDetailComponent,
+          ),
         title: 'Certificate Details',
       },
       {
         path: 'about',
-        loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent),
+        loadComponent: () =>
+          import('./pages/about/about.component').then(
+            (m) => m.AboutComponent,
+          ),
         title: 'About',
       },
       {
@@ -141,42 +168,72 @@ export const routes: Routes = [
       },
       {
         path: 'question-and-answer',
-        component: QuestionAndAnswerComponent,
+        loadComponent: () =>
+          import('./pages/question-and-answer/question-and-answer.component').then(
+            (m) => m.QuestionAndAnswerComponent,
+          ),
         title: 'Question & Answer',
         children: createQuestionAndAnswerRoutes(),
       },
-
 
       {
         path: 'academy',
         canActivate: [authGuard],
         children: [
-          { path: '', component: AcademyComponent, title: 'Academy', resolve: { academyData: academyResolver } },
-          { path: 'course/:id', component: CourseComponent, title: 'Course', resolve: { resolvedData: courseResolver } },
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/academy/academy.component').then(
+                (m) => m.AcademyComponent,
+              ),
+            title: 'Academy',
+            resolve: { academyData: academyResolver },
+          },
+          {
+            path: 'course/:id',
+            loadComponent: () =>
+              import('./pages/academy/course/course.component').then(
+                (m) => m.CourseComponent,
+              ),
+            title: 'Course',
+            resolve: { resolvedData: courseResolver },
+          },
           {
             path: 'course/:courseId/lesson/:lessonId',
-            component: LessonPlayerComponent,
+            loadComponent: () =>
+              import('./pages/academy/lesson-player/lesson-player.component').then(
+                (m) => m.LessonPlayerComponent,
+              ),
             canActivate: [authGuard],
             title: 'Lesson Player',
             resolve: { resolvedData: lessonPlayerResolver },
           },
           {
             path: 'course/:courseId/quiz',
-            component: QuizComponent,
+            loadComponent: () =>
+              import('./pages/academy/quiz/quiz.component').then(
+                (m) => m.QuizComponent,
+              ),
             canActivate: [authGuard],
             title: 'Quiz',
             resolve: { resolvedQuizData: quizResolver },
           },
           {
             path: 'course/:courseId/quiz/:lessonId',
-            component: QuizComponent,
+            loadComponent: () =>
+              import('./pages/academy/quiz/quiz.component').then(
+                (m) => m.QuizComponent,
+              ),
             canActivate: [authGuard],
             title: 'Quiz',
             resolve: { resolvedQuizData: quizResolver },
           },
           {
             path: 'course/:courseId/congratulations',
-            component: CongratulationsComponent,
+            loadComponent: () =>
+              import('./pages/academy/congratulations/congratulations.component').then(
+                (m) => m.CongratulationsComponent,
+              ),
             canActivate: [authGuard],
             title: 'Congratulations',
             resolve: { resolvedCongratulationsData: congratulationsResolver },
@@ -186,8 +243,22 @@ export const routes: Routes = [
       {
         path: 'events',
         children: [
-          { path: '', component: EventsComponent, title: 'Events' },
-          { path: ':id', component: EventDetailComponent, title: 'Event Details' },
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/events/events.component').then(
+                (m) => m.EventsComponent,
+              ),
+            title: 'Events',
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./pages/events/event-detail/event-detail.component').then(
+                (m) => m.EventDetailComponent,
+              ),
+            title: 'Event Details',
+          },
         ],
       },
       {
@@ -211,13 +282,31 @@ export const routes: Routes = [
       },
       {
         path: 'contact',
-        loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
+        loadComponent: () =>
+          import('./pages/contact/contact.component').then(
+            (m) => m.ContactComponent,
+          ),
         title: 'Contact Us',
       },
-      { path: 'profile', component: ProfileComponent, title: 'Profile', canActivate: [authGuard] },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./pages/profile/profile.component').then(
+            (m) => m.ProfileComponent,
+          ),
+        title: 'Profile',
+        canActivate: [authGuard],
+      },
     ],
   },
 
   // Not Found route
-  { path: '**', component: NotFoundComponent, title: 'Page Not Found' },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./pages/not-found/not-found.component').then(
+        (m) => m.NotFoundComponent,
+      ),
+    title: 'Page Not Found',
+  },
 ];

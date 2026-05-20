@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AcademyComponent } from './academy.component';
-import { AcademyCourse, AcademyLesson, CourseProgress, RecentLessonInfo } from '../../core/models/interfaces/academy-progress.model';
+import { AcademyCourse, CourseProgress, RecentLessonInfo } from '../../core/models/interfaces/academy-progress.model';
 
 describe('AcademyComponent', () => {
     let component: AcademyComponent;
@@ -27,7 +27,6 @@ describe('AcademyComponent', () => {
             mapRecentLesson: (
                 info: RecentLessonInfo,
                 courses: AcademyCourse[],
-                courseLessons: AcademyLesson[],
             ) => {
                 completedLessons: number;
                 totalLessons: number;
@@ -37,22 +36,21 @@ describe('AcademyComponent', () => {
             } | null;
         };
 
-        const recentLesson = academyComponent.mapRecentLesson(
-            {
-                stageNumber: 1,
-                courseId: 'course-1',
-                courseName: 'Course title',
-                lessonId: 'lesson-2',
-                lessonType: 'video',
-                lessonNumber: 2,
-                lessonTitle: 'Lesson 2',
-                thumbnailUrl: '',
-                progress: 95,
-                currentTime: '0:00',
-                totalTime: '10:00',
-                completedLessons: 2,
-                totalLessons: 3,
-            },
+        const recentLesson = academyComponent.mapRecentLesson({
+            stageNumber: 1,
+            courseId: 'course-1',
+            courseName: 'Course title',
+            lessonId: 'lesson-2',
+            lessonType: 'video',
+            lessonNumber: 2,
+            lessonTitle: 'Lesson 2',
+            thumbnailUrl: '',
+            progress: 95,
+            currentTime: '0:00',
+            totalTime: '10:00',
+            completedLessons: 2,
+            totalLessons: 3,
+        },
             [{
                 id: 'course-1',
                 stageId: 1,
@@ -64,32 +62,6 @@ describe('AcademyComponent', () => {
                 isPublished: true,
                 prerequisites: [],
             }],
-            [
-                {
-                    id: 'lesson-1',
-                    courseId: 'course-1',
-                    title: 'Lesson 1',
-                    duration: '10m',
-                    type: 'video',
-                    order: 1,
-                },
-                {
-                    id: 'lesson-2',
-                    courseId: 'course-1',
-                    title: 'Lesson 2',
-                    duration: '10m',
-                    type: 'video',
-                    order: 2,
-                },
-                {
-                    id: 'lesson-3',
-                    courseId: 'course-1',
-                    title: 'Lesson 3',
-                    duration: '10m',
-                    type: 'video',
-                    order: 3,
-                },
-            ],
         );
 
         expect(recentLesson).not.toBeNull();
@@ -111,7 +83,6 @@ describe('AcademyComponent', () => {
             mapRecentLesson: (
                 info: RecentLessonInfo,
                 courses: AcademyCourse[],
-                courseLessons: AcademyLesson[],
             ) => {
                 completedLessons: number;
                 totalLessons: number;
@@ -121,22 +92,21 @@ describe('AcademyComponent', () => {
             } | null;
         };
 
-        const recentLesson = academyComponent.mapRecentLesson(
-            {
-                stageNumber: 1,
-                courseId: 'course-1',
-                courseName: 'Course title',
-                lessonId: 'lesson-6',
-                lessonType: 'video',
-                lessonNumber: 6,
-                lessonTitle: 'Lesson 6',
-                thumbnailUrl: '',
-                progress: 86,
-                currentTime: '0:00',
-                totalTime: '10:00',
-                completedLessons: 6,
-                totalLessons: 7,
-            },
+        const recentLesson = academyComponent.mapRecentLesson({
+            stageNumber: 1,
+            courseId: 'course-1',
+            courseName: 'Course title',
+            lessonId: 'lesson-6',
+            lessonType: 'video',
+            lessonNumber: 6,
+            lessonTitle: 'Lesson 6',
+            thumbnailUrl: '',
+            progress: 86,
+            currentTime: '0:00',
+            totalTime: '10:00',
+            completedLessons: 6,
+            totalLessons: 7,
+        },
             [{
                 id: 'course-1',
                 stageId: 1,
@@ -148,7 +118,6 @@ describe('AcademyComponent', () => {
                 isPublished: true,
                 prerequisites: [],
             }],
-            [],
         );
 
         expect(recentLesson).not.toBeNull();
@@ -160,7 +129,7 @@ describe('AcademyComponent', () => {
         }).toEqual({
             totalLessons: 6,
             completedQuizzes: 0,
-            totalQuizzes: 1,
+            totalQuizzes: 0,
         });
         expect(recentLesson?.progress).toBe(86);
     });
@@ -170,7 +139,6 @@ describe('AcademyComponent', () => {
             mapRecentLesson: (
                 info: RecentLessonInfo,
                 courses: AcademyCourse[],
-                courseLessons: AcademyLesson[],
             ) => {
                 completedLessons: number;
                 totalLessons: number;
@@ -180,22 +148,21 @@ describe('AcademyComponent', () => {
             } | null;
         };
 
-        const recentLesson = academyComponent.mapRecentLesson(
-            {
-                stageNumber: 1,
-                courseId: 'course-1',
-                courseName: 'Course title',
-                lessonId: 'lesson-6',
-                lessonType: 'video',
-                lessonNumber: 6,
-                lessonTitle: 'Lesson 6',
-                thumbnailUrl: '',
-                progress: 0,
-                currentTime: '0:00',
-                totalTime: '10:00',
-                completedLessons: 6,
-                totalLessons: 7,
-            },
+        const recentLesson = academyComponent.mapRecentLesson({
+            stageNumber: 1,
+            courseId: 'course-1',
+            courseName: 'Course title',
+            lessonId: 'lesson-6',
+            lessonType: 'video',
+            lessonNumber: 6,
+            lessonTitle: 'Lesson 6',
+            thumbnailUrl: '',
+            progress: 0,
+            currentTime: '0:00',
+            totalTime: '10:00',
+            completedLessons: 6,
+            totalLessons: 7,
+        },
             [{
                 id: 'course-1',
                 stageId: 1,
@@ -207,56 +174,6 @@ describe('AcademyComponent', () => {
                 isPublished: true,
                 prerequisites: [],
             }],
-            [
-                {
-                    id: 'lesson-1',
-                    courseId: 'course-1',
-                    title: 'Lesson 1',
-                    duration: '10m',
-                    type: 'video',
-                    order: 1,
-                },
-                {
-                    id: 'lesson-2',
-                    courseId: 'course-1',
-                    title: 'Lesson 2',
-                    duration: '10m',
-                    type: 'video',
-                    order: 2,
-                },
-                {
-                    id: 'lesson-3',
-                    courseId: 'course-1',
-                    title: 'Lesson 3',
-                    duration: '10m',
-                    type: 'video',
-                    order: 3,
-                },
-                {
-                    id: 'lesson-4',
-                    courseId: 'course-1',
-                    title: 'Lesson 4',
-                    duration: '10m',
-                    type: 'video',
-                    order: 4,
-                },
-                {
-                    id: 'lesson-5',
-                    courseId: 'course-1',
-                    title: 'Lesson 5',
-                    duration: '10m',
-                    type: 'video',
-                    order: 5,
-                },
-                {
-                    id: 'lesson-6',
-                    courseId: 'course-1',
-                    title: 'Lesson 6',
-                    duration: '10m',
-                    type: 'video',
-                    order: 6,
-                },
-            ],
         );
 
         expect(recentLesson).not.toBeNull();
@@ -268,7 +185,7 @@ describe('AcademyComponent', () => {
         }).toEqual({
             totalLessons: 6,
             completedQuizzes: 0,
-            totalQuizzes: 1,
+            totalQuizzes: 0,
         });
         expect(recentLesson?.progress).toBe(86);
     });

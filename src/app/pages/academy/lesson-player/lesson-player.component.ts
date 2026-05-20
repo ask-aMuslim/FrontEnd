@@ -31,6 +31,7 @@ import {
     AcademyCourse,
     AcademyLesson,
     LessonProgress,
+    UpdateLessonProgressRequest,
 } from '../../../core/models/interfaces/academy-progress.model';
 import { LessonPlayerResolvedData } from './lesson-player.resolver';
 import { LessonType } from '../../../core/models/interfaces/enums.model';
@@ -209,7 +210,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
 
                     const resolved = routeData['resolvedData'] as LessonPlayerResolvedData | null;
-                    if (resolved && resolved.lessonData.content.id === this.lessonId) {
+                    if (resolved?.lessonData.content.id === this.lessonId) {
                         this.applyResolvedLessonData(resolved);
                     } else {
                         this.loadLessonData();
@@ -281,10 +282,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.isContentLoading = false;
         this.cdr.detectChanges();
 
-        this.academyProgressService.updateLessonProgress({
-            lessonId: this.lessonId,
-            courseId: this.courseId,
-        }).pipe(takeUntil(this.destroy$)).subscribe();
+        const initialProgressRequest = this.buildInitialLessonProgressRequest();
+        if (initialProgressRequest) {
+            this.academyProgressService.updateLessonProgress(initialProgressRequest)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe();
+        }
     }
 
     private loadLessonData(): void {
@@ -489,7 +492,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         const nextId = this.nextAcademyLesson?.id || this.nextLesson?.id;
         if (nextId) {
             this.academyProgressService
-                .markLessonCompleted(this.lessonId, this.courseId)
+                .markLessonCompleted(this.lessonId, this.courseId, this.currentLesson?.type)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
                     next: () => {
@@ -936,7 +939,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
         if (this.hasSyncedCompletion) {
             this.academyProgressService
-                .markLessonCompleted(this.lessonId, this.courseId)
+                .markLessonCompleted(this.lessonId, this.courseId, this.currentLesson?.type)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
                     next: () => {
@@ -953,7 +956,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.videoProgressService.markLessonCompleted(this.lessonId);
 
         this.academyProgressService
-            .markLessonCompleted(this.lessonId, this.courseId)
+            .markLessonCompleted(this.lessonId, this.courseId, this.currentLesson?.type)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: () => {
@@ -1053,7 +1056,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             if (payload) {
                 this.videoProgressService.syncCompletion({
                     ...payload,
-                    videoProgressPercentage: 100,
+                    progressPercentage: 100,
                 });
             }
             this.syncLessonCompletionState();
@@ -1359,10 +1362,10 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         player.currentTime = Math.max(0, Math.min(duration, restoredPositionSeconds));
     }
 
-    private buildMediaProgressPayload(videoProgressPercentage: number): {
+    private buildMediaProgressPayload(progressPercentage: number): {
         courseId: string;
         lessonId: string;
-        videoProgressPercentage: number;
+        progressPercentage: number;
     } | null {
         if (!this.courseId || !this.lessonId) {
             return null;
@@ -1371,7 +1374,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         return {
             courseId: this.courseId,
             lessonId: this.lessonId,
-            videoProgressPercentage,
+            progressPercentage,
         };
     }
 
@@ -1384,7 +1387,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.videoProgressService.recordProgress(payload);
 
         if (
-            payload.videoProgressPercentage >= LessonPlayerComponent.completionThresholdPercentage
+            payload.progressPercentage >= LessonPlayerComponent.completionThresholdPercentage
             && !this.hasSyncedCompletion
         ) {
             this.videoProgressService.syncCompletion(payload);
@@ -1445,7 +1448,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.videoProgressService.markLessonCompleted(this.lessonId);
 
         this.academyProgressService
-            .markLessonCompleted(this.lessonId, this.courseId)
+            .markLessonCompleted(this.lessonId, this.courseId, this.currentLesson?.type)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: () => {
@@ -1458,7 +1461,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     private buildVideoProgressPayload(): {
         courseId: string;
         lessonId: string;
-        videoProgressPercentage: number;
+        progressPercentage: number;
     } | null {
         if (!this.courseId || !this.lessonId) {
             return null;
@@ -1471,14 +1474,14 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
 
         const currentTime = this.safelyGetYouTubeCurrentTime();
         const rawProgress = (currentTime / duration) * 100;
-        const videoProgressPercentage = Number.isFinite(rawProgress)
+        const progressPercentage = Number.isFinite(rawProgress)
             ? Math.max(0, Math.min(100, rawProgress))
             : 0;
 
         return {
             courseId: this.courseId,
             lessonId: this.lessonId,
-            videoProgressPercentage,
+            progressPercentage,
         };
     }
 
@@ -1641,6 +1644,22 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             totalTimeSeconds: snapshot?.totalTimeSeconds,
             progressPercentage: snapshot?.progressPercentage,
         });
+    }
+
+    private buildInitialLessonProgressRequest(): UpdateLessonProgressRequest | null {
+        if (!this.courseId || !this.lessonId) {
+            return null;
+        }
+
+        const lessonType = this.currentLesson?.type;
+        const isReadLesson = lessonType === 'article' || lessonType === 'document';
+
+        return {
+            courseId: this.courseId,
+            lessonId: this.lessonId,
+            lessonType,
+            ...(isReadLesson ? { markAsRead: true } : {}),
+        };
     }
 
     private teardownYouTubeIntegration(emitFinalProgress = true): void {

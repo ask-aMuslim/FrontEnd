@@ -14,6 +14,7 @@ import {
   afterNextRender,
   NgZone,
   Input,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -67,6 +68,7 @@ interface ServeAudienceCard {
   imports: [CommonModule, RouterModule, FormsModule, /* EventCardComponent, */ HeroSearchInputComponent],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('bubblesContainer') bubblesContainer?: ElementRef<HTMLDivElement>;

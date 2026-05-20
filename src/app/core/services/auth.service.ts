@@ -10,7 +10,7 @@
  * @deprecated Use IdentityFacade and TokenService directly
  */
 
-import { Injectable, effect, signal, inject } from '@angular/core';
+import { Injectable, Injector, effect, signal, inject } from '@angular/core';
 import { Observable, map, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -31,6 +31,7 @@ export class AuthService {
   private readonly tokenService = inject(TokenService);
   private readonly studentFacade = inject(StudentFacade);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   // Reactive authentication state using signals
   // These now delegate to TokenService
@@ -57,8 +58,6 @@ export class AuthService {
       this.hydrateCurrentUserFromProfile();
     }
   }
-
-  private readonly socialAuthService = inject(SocialAuthenticationService);
 
   /**
    * Set authenticated user state (for manual state updates)
@@ -93,7 +92,7 @@ export class AuthService {
     this._currentUser.set(null);
 
     // Also clear social auth state (Google/Facebook) to prevent auto-login bounce
-    this.socialAuthService.signOut().subscribe({
+    this.injector.get(SocialAuthenticationService, null)?.signOut().subscribe({
       error: () => {
         /* ignore */
       },

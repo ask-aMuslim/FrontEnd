@@ -37,8 +37,8 @@ describe('MyInquiriesComponent', () => {
     fixture.detectChanges();
   });
 
-  it('prefers the student profile id when loading inquiries', () => {
-    expect(inquiryRequestsServiceSpy.getByRequester).toHaveBeenCalledWith('student-123');
+  it('prefers the authenticated user id when loading inquiries', () => {
+    expect(inquiryRequestsServiceSpy.getByRequester).toHaveBeenCalledWith('user-789');
   });
 
   it('creates the component', () => {

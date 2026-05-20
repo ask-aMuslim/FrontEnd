@@ -1,8 +1,9 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, combineLatest, of } from 'rxjs';
-import { takeUntil, switchMap, catchError } from 'rxjs/operators';
+import { takeUntil, switchMap, catchError, tap, take } from 'rxjs/operators';
 import {
     AcademyProgressService,
     CourseEnrollmentState,
@@ -85,6 +86,8 @@ export class CourseComponent implements OnInit, OnDestroy {
     private readonly quizzesService = inject(QuizzesService);
     private readonly authService = inject(AuthService);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     // Course data loaded from service
     course: CourseDetails | null = null;
@@ -171,6 +174,13 @@ export class CourseComponent implements OnInit, OnDestroy {
             .subscribe((data) => {
                 const resolved = data['resolvedData'] as CourseResolvedData | null;
                 if (!resolved) {
+                    if (this.isBrowser) {
+                        const courseId = this.route.snapshot.paramMap.get('id') || '';
+                        if (courseId) {
+                            this.loadCourseDataDirectly(courseId);
+                            return;
+                        }
+                    }
                     this.error = 'This course is unavailable right now.';
                     this.isLoading = false;
                     this.cdr.detectChanges();
@@ -198,6 +208,77 @@ export class CourseComponent implements OnInit, OnDestroy {
                 this.isLoading = false;
                 this.cdr.detectChanges();
             });
+    }
+
+    private loadCourseDataDirectly(courseId: string): void {
+        this.isLoading = true;
+        this.error = null;
+
+        this.academyProgressService.getAcademyCourseById(courseId).pipe(
+            takeUntil(this.destroy$),
+            switchMap((courseData) => {
+                if (!courseData || courseData.id !== courseId) {
+                    this.error = 'This course is unavailable right now.';
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
+                    return of(null);
+                }
+
+                const prerequisites = courseData.prerequisites ?? [];
+                return combineLatest([
+                    of(courseData),
+                    this.academyProgressService.getTargetedCourseProgress(courseId).pipe(take(1), catchError(() => of(undefined))),
+                    this.academyProgressService.getCourseLessonsWithProgress(courseId).pipe(take(1), catchError(() => of([]))),
+                    this.academyProgressService.getAcademyStages().pipe(take(1), catchError(() => of([]))),
+                    this.academyProgressService.getCurrentStudentCourseEnrollment(courseId).pipe(take(1), catchError(() => of(undefined))),
+                    this.quizzesService.getAll({ courseId, pageSize: 200 }).pipe(take(1), catchError(() => of([]))),
+                    this.academyProgressService.getTargetedPrerequisiteDetails(prerequisites).pipe(take(1), catchError(() => of([]))),
+                ]).pipe(
+                    take(1),
+                    tap(([
+                        courseInfo,
+                        courseProgress,
+                        lessonsWithProgress,
+                        stages,
+                        enrollmentState,
+                        quizzes,
+                        prerequisitesList,
+                    ]) => {
+                        const safeEnrollmentState = enrollmentState || {
+                            enrollmentId: null,
+                            status: null,
+                            isEnrolled: false,
+                            isCompleted: false,
+                        };
+
+                        this.course = this.buildCourseDetails(
+                            courseInfo,
+                            courseProgress,
+                            lessonsWithProgress,
+                            stages,
+                            safeEnrollmentState,
+                            quizzes,
+                            prerequisitesList
+                        );
+                        this.error = null;
+                        this.isLoading = false;
+                        this.cdr.detectChanges();
+                    }),
+                    catchError(() => {
+                        this.error = 'This course is unavailable right now.';
+                        this.isLoading = false;
+                        this.cdr.detectChanges();
+                        return of(null);
+                    })
+                );
+            }),
+            catchError(() => {
+                this.error = 'This course is unavailable right now.';
+                this.isLoading = false;
+                this.cdr.detectChanges();
+                return of(null);
+            })
+        ).subscribe();
     }
 
     ngOnDestroy(): void {

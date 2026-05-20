@@ -7,7 +7,6 @@ import { AcademyProgressService } from '../../../core/services/academy-progress.
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { QuestionsService } from '../../../core/services/questions.service';
 import { OptionsService } from '../../../core/services/options.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { ACADEMY_COURSES } from '../../../core/services/academy-data';
 import {
     AcademyCourse,
@@ -67,6 +66,127 @@ function mapApiQuestion(
     };
 }
 
+function resolveRouteQuizzes(
+    academyProgressService: AcademyProgressService,
+    quizzesService: QuizzesService,
+    courseId: string,
+    lessonId: string,
+): Observable<QuizReadDto[]> {
+    const query = lessonId
+        ? { lessonId, pageNumber: 1, pageSize: 200 }
+        : { courseId, pageNumber: 1, pageSize: 200 };
+
+    return quizzesService.getAll(query).pipe(
+        take(1),
+        switchMap((routeQuizzes) => {
+            const hasQuizzes = routeQuizzes.length > 0;
+            const canFallbackToQuizLesson = !hasQuizzes && !lessonId && !!courseId;
+
+            if (!canFallbackToQuizLesson) {
+                return of(routeQuizzes);
+            }
+
+            return academyProgressService.getAcademyLessons(courseId).pipe(
+                take(1),
+                map((lessons) => lessons.find((l) => l.type === 'quiz')?.id ?? null),
+                switchMap((quizLessonId) => {
+                    if (!quizLessonId) {
+                        return of(routeQuizzes);
+                    }
+
+                    return quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 }).pipe(take(1));
+                }),
+                catchError(() => of(routeQuizzes)),
+            );
+        }),
+    );
+}
+
+function resolveQuizQuestions(
+    course: AcademyCourse,
+    lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[],
+    quizzes: QuizReadDto[],
+    activeQuiz: QuizReadDto,
+    questionsService: QuestionsService,
+    optionsService: OptionsService,
+): Observable<QuizResolvedData> {
+    const activeQuizId = String(activeQuiz.id ?? '');
+    if (!activeQuizId) {
+        return of<QuizResolvedData>({
+            course,
+            lessonsWithProgress,
+            quizzes,
+            activeQuiz,
+            questions: [],
+        });
+    }
+
+    return questionsService.getAllByQuizId(activeQuizId, {
+        pageNumber: 1,
+        pageSize: 1000,
+    }).pipe(
+        take(1),
+        switchMap((questions) => {
+            if (!questions.length) {
+                return of<QuizResolvedData>({
+                    course,
+                    lessonsWithProgress,
+                    quizzes,
+                    activeQuiz,
+                    questions: [],
+                });
+            }
+
+            const questionWithOptionsObservables = questions.map((question, index) =>
+                optionsService.getByQuestion(String(question.id ?? '')).pipe(
+                    take(1),
+                    map((options) => mapApiQuestion(question, options, index)),
+                    catchError(() => of(mapApiQuestion(question, [], index))),
+                ),
+            );
+
+            return forkJoin(questionWithOptionsObservables).pipe(
+                map((questionsWithOptions) => ({
+                    course,
+                    lessonsWithProgress,
+                    quizzes,
+                    activeQuiz,
+                    questions: questionsWithOptions,
+                })),
+            );
+        }),
+        catchError(() => of<QuizResolvedData>({
+            course,
+            lessonsWithProgress,
+            quizzes,
+            activeQuiz,
+            questions: [],
+        })),
+    );
+}
+
+function buildQuizResolvedData(
+    course: AcademyCourse,
+    lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[],
+    quizzes: QuizReadDto[],
+    routeQuizzes: QuizReadDto[],
+    questionsService: QuestionsService,
+    optionsService: OptionsService,
+): Observable<QuizResolvedData> {
+    const activeQuiz = routeQuizzes[0] ?? null;
+    if (!activeQuiz?.id) {
+        return of({
+            course,
+            lessonsWithProgress,
+            quizzes,
+            activeQuiz: null,
+            questions: [],
+        });
+    }
+
+    return resolveQuizQuestions(course, lessonsWithProgress, quizzes, activeQuiz, questionsService, optionsService);
+}
+
 export const quizResolver: ResolveFn<QuizResolvedData | null> = (route) => {
     const platformId = inject(PLATFORM_ID);
     if (!isPlatformBrowser(platformId)) {
@@ -84,11 +204,6 @@ export const quizResolver: ResolveFn<QuizResolvedData | null> = (route) => {
     const quizzesService = inject(QuizzesService);
     const questionsService = inject(QuestionsService);
     const optionsService = inject(OptionsService);
-    const authService = inject(AuthService);
-
-    if (!authService.isAuthenticated()) {
-        return of(null);
-    }
 
     return academyProgressService.getAcademyCourseById(courseId).pipe(
         take(1),
@@ -103,98 +218,27 @@ export const quizResolver: ResolveFn<QuizResolvedData | null> = (route) => {
                 academyProgressService.getCourseLessonsWithProgress(courseId).pipe(take(1), catchError(() => of([]))),
                 quizzesService.getAll({ courseId, pageSize: 200 }).pipe(take(1), catchError(() => of([]))),
             ]).pipe(
-                switchMap(([course, lessonsWithProgress, quizzes]) => {
-                    const query = lessonId
-                        ? { lessonId: lessonId, pageNumber: 1, pageSize: 200 }
-                        : { courseId: courseId, pageNumber: 1, pageSize: 200 };
-
-                    return quizzesService.getAll(query).pipe(
-                        take(1),
-                        switchMap((routeQuizzes) => {
-                            const hasQuizzes = routeQuizzes.length > 0;
-                            const canFallbackToQuizLesson = !hasQuizzes && !lessonId && !!courseId;
-
-                            if (!canFallbackToQuizLesson) {
-                                return of(routeQuizzes);
-                            }
-
-                            return academyProgressService.getAcademyLessons(courseId).pipe(
-                                take(1),
-                                map((lessons) => lessons.find((l) => l.type === 'quiz')?.id ?? null),
-                                switchMap((quizLessonId) => {
-                                    if (!quizLessonId) {
-                                        return of(routeQuizzes);
-                                    }
-
-                                    return quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 }).pipe(take(1));
-                                }),
-                                catchError(() => of(routeQuizzes)),
-                            );
-                        }),
-                        switchMap((finalQuizzes) => {
-                            const activeQuiz = finalQuizzes[0] ?? null;
-                            if (!activeQuiz?.id) {
-                                return of<QuizResolvedData>({
-                                    course,
-                                    lessonsWithProgress,
-                                    quizzes,
-                                    activeQuiz: null,
-                                    questions: [],
-                                });
-                            }
-
-                            return questionsService.getAllByQuizId(activeQuiz.id, {
-                                pageNumber: 1,
-                                pageSize: 1000,
-                            }).pipe(
-                                take(1),
-                                switchMap((questions) => {
-                                    if (!questions.length) {
-                                        return of<QuizResolvedData>({
-                                            course,
-                                            lessonsWithProgress,
-                                            quizzes,
-                                            activeQuiz,
-                                            questions: [],
-                                        });
-                                    }
-
-                                    const questionWithOptionsObservables = questions.map((question, index) => {
-                                        return optionsService.getByQuestion(String(question.id ?? '')).pipe(
-                                            take(1),
-                                            map((options) => mapApiQuestion(question, options, index)),
-                                            catchError(() => of(mapApiQuestion(question, [], index)))
-                                        );
-                                    });
-
-                                    return forkJoin(questionWithOptionsObservables).pipe(
-                                        map((questionsWithOptions) => ({
-                                            course,
-                                            lessonsWithProgress,
-                                            quizzes,
-                                            activeQuiz,
-                                            questions: questionsWithOptions,
-                                        }))
-                                    );
-                                }),
-                                catchError(() => of<QuizResolvedData>({
-                                    course,
-                                    lessonsWithProgress,
-                                    quizzes,
-                                    activeQuiz,
-                                    questions: [],
-                                }))
-                            );
-                        }),
+                switchMap(([course, lessonsWithProgress, quizzes]) =>
+                    resolveRouteQuizzes(academyProgressService, quizzesService, courseId, lessonId).pipe(
+                        switchMap((routeQuizzes) =>
+                            buildQuizResolvedData(
+                                course,
+                                lessonsWithProgress,
+                                quizzes,
+                                routeQuizzes,
+                                questionsService,
+                                optionsService,
+                            ),
+                        ),
                         catchError(() => of<QuizResolvedData>({
                             course,
                             lessonsWithProgress,
                             quizzes,
                             activeQuiz: null,
                             questions: [],
-                        }))
-                    );
-                })
+                        })),
+                    ),
+                ),
             );
         }),
         catchError(() => of(null))

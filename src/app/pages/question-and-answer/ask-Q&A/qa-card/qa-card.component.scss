@@ -1,3 +1,34 @@
+.topics-question-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.topics-question-card__content,
+.topics-question-card__heading {
+  min-width: 0;
+}
+
+.topics-question-card__categories {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.topics-question-card__category {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.topics-question-card__category-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.topics-question-card__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .learn-more span {
   color: var(--color-button-primary-normal);
 }

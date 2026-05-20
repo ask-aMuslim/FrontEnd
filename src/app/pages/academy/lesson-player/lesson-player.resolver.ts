@@ -6,7 +6,6 @@ import { catchError, take, switchMap } from 'rxjs/operators';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { LessonContentService, LessonNoteItem } from '../../../core/services/lesson-content.service';
-import { AuthService } from '../../../core/services/auth.service';
 import {
     AcademyCourse,
     AcademyLesson,
@@ -39,11 +38,6 @@ export const lessonPlayerResolver: ResolveFn<LessonPlayerResolvedData | null> = 
     const academyProgressService = inject(AcademyProgressService);
     const quizzesService = inject(QuizzesService);
     const lessonContentService = inject(LessonContentService);
-    const authService = inject(AuthService);
-
-    if (!authService.isAuthenticated()) {
-        return of(null);
-    }
 
     return combineLatest([
         academyProgressService.getAcademyCourseById(courseId).pipe(take(1)),
@@ -54,7 +48,7 @@ export const lessonPlayerResolver: ResolveFn<LessonPlayerResolvedData | null> = 
     ]).pipe(
         take(1),
         switchMap((res) => {
-            if (!res || !res[0] || !res[1] || !res[3]) {
+            if (!res?.[0] || !res?.[1] || !res?.[3]) {
                 return of(null);
             }
             return of<LessonPlayerResolvedData>({

@@ -8,7 +8,6 @@ import {
     CourseEnrollmentState,
 } from '../../../core/services/academy-progress.service';
 import { QuizzesService } from '../../../core/services/quizzes.service';
-import { AuthService } from '../../../core/services/auth.service';
 import {
     AcademyCourse,
     AcademyLesson,
@@ -41,29 +40,25 @@ export const courseResolver: ResolveFn<CourseResolvedData | null> = (route) => {
 
     const academyProgressService = inject(AcademyProgressService);
     const quizzesService = inject(QuizzesService);
-    const authService = inject(AuthService);
-
-    if (!authService.isAuthenticated()) {
-        return of(null);
-    }
 
     return academyProgressService.getAcademyCourseById(courseId).pipe(
         take(1),
         switchMap((courseData) => {
-            if (!courseData || courseData.id !== courseId) {
+            if (courseData?.id !== courseId) {
                 return of(null);
             }
 
             const prerequisites = courseData.prerequisites ?? [];
             return combineLatest([
                 of(courseData),
-                academyProgressService.getTargetedCourseProgress(courseId).pipe(catchError(() => of(undefined))),
-                academyProgressService.getCourseLessonsWithProgress(courseId).pipe(catchError(() => of([]))),
-                academyProgressService.getAcademyStages().pipe(catchError(() => of([]))),
-                academyProgressService.getCurrentStudentCourseEnrollment(courseId).pipe(catchError(() => of(undefined))),
-                quizzesService.getAll({ courseId, pageSize: 200 }).pipe(catchError(() => of([]))),
-                academyProgressService.getTargetedPrerequisiteDetails(prerequisites).pipe(catchError(() => of([]))),
+                academyProgressService.getTargetedCourseProgress(courseId).pipe(take(1), catchError(() => of(undefined))),
+                academyProgressService.getCourseLessonsWithProgress(courseId).pipe(take(1), catchError(() => of([]))),
+                academyProgressService.getAcademyStages().pipe(take(1), catchError(() => of([]))),
+                academyProgressService.getCurrentStudentCourseEnrollment(courseId).pipe(take(1), catchError(() => of(undefined))),
+                quizzesService.getAll({ courseId, pageSize: 200 }).pipe(take(1), catchError(() => of([]))),
+                academyProgressService.getTargetedPrerequisiteDetails(prerequisites).pipe(take(1), catchError(() => of([]))),
             ]).pipe(
+                take(1),
                 switchMap(([
                     courseInfo,
                     courseProgress,
