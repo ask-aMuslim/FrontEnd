@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, PLATFORM_ID, afterNextRender } from '@angular/core';
+import { Component, OnDestroy, inject, PLATFORM_ID, afterNextRender, ChangeDetectionStrategy } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
@@ -11,7 +11,8 @@ import * as AOS from 'aos';
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrls: ['./app.scss']
+  styleUrls: ['./app.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnDestroy {
   protected readonly title = 'AskAMuslim';

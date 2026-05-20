@@ -18,6 +18,24 @@ html {
   scroll-padding-top: 80px; /* Offset for the sticky header */
 }
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+}
+
+app-root {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
 * {
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif !important;
@@ -170,4 +188,195 @@ img.aam-late-image.aam-late-image--loaded {
 .google-btn-wrapper iframe .qJTHM>#container-div {
   width: 100% !important;
   padding: 2px 0px !important;
+}
+
+/* Leaflet needs its own image sizing so Tailwind/base resets do not hide tiles and markers. */
+.leaflet-container {
+  font: inherit;
+}
+
+.leaflet-container img,
+.leaflet-container svg,
+.leaflet-container canvas {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.leaflet-container {
+  background: linear-gradient(180deg, #edf5ef 0%, #e6f0e8 100%);
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 16px 30px -22px rgba(15, 23, 42, 0.45) !important;
+}
+
+.leaflet-control-zoom a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 34px !important;
+  border: 1px solid #d9e7db !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #1e3a28 !important;
+}
+
+.leaflet-control-zoom a:hover,
+.leaflet-control-zoom a:focus-visible {
+  background: #f4faf5 !important;
+  color: #156b40 !important;
+}
+
+.leaflet-control-attribution {
+  border-radius: 10px 0 0 0;
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #516057 !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-pin-marker-wrapper {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-pin-marker {
+  position: relative;
+  display: block;
+  width: calc(var(--pin-size) + 16px);
+  height: calc(var(--pin-size) + 24px);
+  pointer-events: none;
+}
+
+.leaflet-pin-marker__shape {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: var(--pin-size);
+  height: var(--pin-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% 50% 50% 0;
+  border: 3px solid #ffffff;
+  background: var(--pin-color);
+  box-shadow: 0 16px 28px -18px rgba(15, 23, 42, 0.42);
+  transform: translateX(-50%) rotate(-45deg);
+}
+
+.leaflet-pin-marker__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: var(--pin-label-size);
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(45deg);
+}
+
+.leaflet-pin-marker__core {
+  width: calc(var(--pin-size) * 0.28);
+  height: calc(var(--pin-size) * 0.28);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  transform: rotate(45deg);
+}
+
+.leaflet-pin-marker__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: calc(var(--pin-size) * 0.58);
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.22);
+  transform: translateX(-50%);
+  filter: blur(2px);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  box-shadow: 0 16px 34px -26px rgba(15, 23, 42, 0.42);
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  color: #244130;
+  line-height: 1.5;
+}
+
+.leaflet-popup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.leaflet-popup-card__eyebrow {
+  margin: 0;
+  color: #156b40;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.leaflet-popup-card__title {
+  margin: 0;
+  color: #0b1a10;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.leaflet-popup-card__meta {
+  margin: 0;
+  color: #52625a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.leaflet-popup-card__distance {
+  margin: 0;
+  color: #156b40;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.leaflet-popup-card__action {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background: #edf6ef;
+  color: #156b40;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.leaflet-popup-card__action:hover,
+.leaflet-popup-card__action:focus-visible {
+  background: #def0e1;
+  color: #0f5a34;
 }

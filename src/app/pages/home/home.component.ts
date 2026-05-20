@@ -13,6 +13,8 @@ import {
   ViewChild,
   afterNextRender,
   NgZone,
+  Input,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -66,6 +68,7 @@ interface ServeAudienceCard {
   imports: [CommonModule, RouterModule, FormsModule, /* EventCardComponent, */ HeroSearchInputComponent],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('bubblesContainer') bubblesContainer?: ElementRef<HTMLDivElement>;
@@ -78,16 +81,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     { value: '250+', label: 'Scholars & Teachers', icon: 'scholars' },
   ];
 
-  protected heroBubbles: string[] = [
-    'Who Is Allah?',
-    'What Is Islam?',
-    'Is Islam peaceful?',
-    'What Is Shahada?',
-    'How to start praying?',
-    'Why do Muslims fast?',
-    'What Is Zakat?',
-    'How to perform Hajj?',
-  ];
+  @Input() heroBubbles: string[] = [];
 
   protected readonly featureCards: FeatureCard[] = [
     {
@@ -269,56 +263,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   */
 
   ngOnInit(): void {
-    if (this.isBrowser) {
-      // this.loadEventsSection();
-      this.loadHeroBubbles();
-    }
-  }
-
-  private loadHeroBubbles(): void {
-    if (!this.isBrowser) {
-      return;
-    }
-
-    const heroTag = 'Hero Page Questions';
-
-    this.qasService.getAll({ pageNumber: 1, pageSize: 100 }).subscribe({
-      next: (response) => {
-        const records = extractArray(response);
-        if (records.length > 0) {
-          const allMatchingQuestions = records
-            .map(item => asRecord(item))
-            .filter(record => {
-              // Ensure the record actually has the required tag
-              const tags = toStringArray(getValue(record, 'categories', 'Categories', 'tags', 'Tags'));
-              return tags.some(t => t.trim() === heroTag);
-            })
-            .map(record => {
-              const translations = extractArray(getValue(record, 'translations', 'Translations'));
-              const firstTranslation = translations.length > 0 ? asRecord(translations[0]) : null;
-              return toStringValue(
-                firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
-              ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
-            })
-            .filter(val => val.trim().length > 0);
-
-          const fetchedBubbles = allMatchingQuestions.slice(0, 8); // Take only the first 8 questions
-
-          if (fetchedBubbles.length > 0) {
-            this.heroBubbles = fetchedBubbles;
-            this.cdr.detectChanges();
-
-            // Re-setup bubbles animation if needed for the new elements
-            setTimeout(() => {
-              if (this.heroBubbles.length > 0) {
-                this.syncBubblesAnimation(true);
-              }
-            }, 100);
-          }
-        }
-      },
-      error: () => void 0,
-    });
+    // heroBubbles is pre-fetched by route resolver
   }
 
   protected isSvgIcon(feature: FeatureCard): boolean {

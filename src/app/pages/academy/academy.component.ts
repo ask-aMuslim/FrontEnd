@@ -1,16 +1,18 @@
-import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, inject } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, inject, PLATFORM_ID } from '@angular/core';
+import { AsyncPipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { filter, take, catchError } from 'rxjs/operators';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
     AcademyCourse,
-    AcademyLesson,
     AcademyStageApi,
     RecentLessonInfo,
     StageProgress,
     CourseProgress,
     CourseStatus,
+    StudentProgress,
 } from '../../core/models/interfaces/academy-progress.model';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { CourseTreeComponent, CourseNode as TreeCourse } from './course-tree/course-tree.component';
@@ -73,6 +75,8 @@ export class AcademyComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly authService = inject(AuthService);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly platformId = inject(PLATFORM_ID);
+    private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     readonly fallbackImage = '/ask-a-muslim-logo.png';
     recentLesson: RecentLesson | null = null;
@@ -94,6 +98,10 @@ export class AcademyComponent implements OnInit {
 
         const resolved = this.route.snapshot.data['academyData'] as AcademyResolvedData | null;
         if (!resolved) {
+            if (this.isBrowser) {
+                this.loadAcademyDataDirectly();
+                return;
+            }
             this.error = 'Unable to load academy content right now. Please try again.';
             return;
         }
@@ -102,10 +110,10 @@ export class AcademyComponent implements OnInit {
     }
 
     private applyResolvedData(resolved: AcademyResolvedData): void {
-        const { stages, courses, progress, recentCourseLessons } = resolved;
+        const { stages, courses, progress } = resolved;
 
         if (progress.recentLesson) {
-            this.recentLesson = this.mapRecentLesson(progress.recentLesson, courses, recentCourseLessons);
+            this.recentLesson = this.mapRecentLesson(progress.recentLesson, courses);
             this.hasRecentLesson = true;
         } else {
             this.recentLesson = null;
@@ -122,29 +130,42 @@ export class AcademyComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
+    private loadAcademyDataDirectly(): void {
+        this.error = null;
+        this.cdr.detectChanges();
+
+        forkJoin({
+            stages: this.academyProgressService.getAcademyStages(),
+            courses: this.academyProgressService.getAcademyOverviewCourses(),
+            progress: this.academyProgressService.progress$.pipe(
+                filter((p): p is StudentProgress => p !== null),
+                take(1),
+            ),
+        }).pipe(
+            catchError(() => of(null))
+        ).subscribe((resolved) => {
+            if (!resolved) {
+                this.error = 'Unable to load academy content right now. Please try again.';
+                this.cdr.detectChanges();
+                return;
+            }
+
+            this.applyResolvedData(resolved);
+        });
+    }
+
     private mapRecentLesson(
         info: RecentLessonInfo,
         courses: AcademyCourse[],
-        courseLessons: AcademyLesson[],
     ): RecentLesson {
         const matchedCourse = courses.find((course) => course.id === info.courseId);
-        const matchedLesson = courseLessons.find((lesson) => lesson.id === info.lessonId);
-        const lessonsFromCourseFeed = courseLessons.filter((lesson) => lesson.type !== 'quiz').length;
-        const totalLessons = Math.max(0, lessonsFromCourseFeed, matchedCourse?.lessons ?? 0);
-        const totalCourseItems = Math.max(0, info.totalLessons, courseLessons.length, totalLessons);
-        const completedCourseItems = Math.min(totalCourseItems, Math.max(0, info.completedLessons));
-        const completedLessons = Math.min(totalLessons, completedCourseItems);
-        const totalQuizzes = Math.max(0, totalCourseItems - totalLessons);
-        const completedQuizzes = Math.max(
-            0,
-            Math.min(totalQuizzes, completedCourseItems - completedLessons),
-        );
-        const computedProgress = this.calculateCourseCompletionProgress(completedCourseItems, totalCourseItems);
-        const normalizedProgress = Math.max(0, Math.min(100, computedProgress));
+        const totalLessons = Math.max(0, info.totalLessons, matchedCourse?.lessons ?? 0);
+        const completedLessons = Math.min(totalLessons, Math.max(0, info.completedLessons));
+        const totalQuizzes = 0;
+        const completedQuizzes = 0;
+        const normalizedProgress = Math.max(0, Math.min(100, info.progress));
         let mediaType: 'video' | 'audio' | null = null;
-        if (matchedLesson?.type === 'video' || matchedLesson?.type === 'audio') {
-            mediaType = matchedLesson.type;
-        } else if (info.lessonType === 'video' || info.lessonType === 'audio') {
+        if (info.lessonType === 'video' || info.lessonType === 'audio') {
             mediaType = info.lessonType;
         }
         const normalizedCurrentTime = typeof info.currentTime === 'string' && info.currentTime.trim().length > 0
@@ -201,7 +222,7 @@ export class AcademyComponent implements OnInit {
 
             if (!isLocked && allCourses.length > 0 && allCourses.every((course) => course.status === 'locked')) {
                 const [firstCourse, ...rest] = allCourses;
-                allCourses = [{ ...firstCourse, status: 'available' as CourseStatus }, ...rest];
+                allCourses = [{ ...firstCourse, status: 'available' }, ...rest];
             }
 
             return {
@@ -290,7 +311,7 @@ export class AcademyComponent implements OnInit {
     }
 
     onCourseClick(course: Course | { id: string; status: string }): void {
-        this.router.navigate(['course', course.id], { relativeTo: this.route });
+        void this.router.navigate(['/academy/course', course.id]);
     }
 
     trackByStageNumber(_index: number, stage: Stage): number {

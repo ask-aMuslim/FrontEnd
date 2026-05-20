@@ -48,8 +48,7 @@
               "
             >
               @for (node of layer; track node.id) {
-                <button
-                  type="button"
+                <a
                   class="course-card"
                   [attr.data-course-node-id]="node.id"
                   [class.course-card--available]="node.status === 'available'"
@@ -59,8 +58,8 @@
                   [class.course-card--completed]="node.status === 'completed'"
                   [class.course-card--locked]="node.status === 'locked'"
                   [attr.aria-disabled]="node.status === 'locked'"
-                  [attr.tabindex]="node.status === 'locked' ? -1 : 0"
-                  (click)="onNodeClick(node)"
+                  [routerLink]="node.status !== 'locked' ? ['/academy/course', node.id] : null"
+                  (click)="onNodeClick(node); $event.preventDefault()"
                 >
                   @if (node.status === "locked") {
                     <span class="course-card__locked-badge" aria-hidden="true">
@@ -123,7 +122,7 @@
                       >
                     </div>
                   }
-                </button>
+                </a>
               }
             </div>
           }

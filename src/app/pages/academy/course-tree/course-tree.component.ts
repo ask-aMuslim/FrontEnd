@@ -12,6 +12,7 @@ import {
   afterNextRender,
   afterEveryRender,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 export interface CourseNode {
@@ -53,7 +54,7 @@ interface EdgeGeometry {
 @Component({
   selector: 'app-course-tree',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './course-tree.component.html',
   styleUrls: ['./course-tree.component.scss']
@@ -226,6 +227,7 @@ export class CourseTreeComponent {
     if (node.status === 'locked') {
       return;
     }
+
     this.courseClick.emit(node);
   }
 

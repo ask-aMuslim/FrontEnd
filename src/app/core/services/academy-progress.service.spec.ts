@@ -128,8 +128,7 @@ describe('AcademyProgressService progress mapping', () => {
 
         const progressRecord: ProgressReadDto = {
             courseId: 'course-quiz',
-            lessonCompletionRate: 100,
-            totalLessonsCompleted: 6,
+            progress: 100,
             isCompleted: false,
             completedProgress: false,
         };
@@ -180,8 +179,7 @@ describe('AcademyProgressService progress mapping', () => {
 
         const progressRecord: ProgressReadDto = {
             courseId: 'course-standalone-quiz',
-            lessonCompletionRate: 100,
-            totalLessonsCompleted: 3,
+            progress: 100,
             isCompleted: false,
             completedProgress: false,
         };

@@ -1,0 +1,428 @@
+<section class="mosques-page" aria-labelledby="mosques-title">
+  <header class="mosques-hero">
+    <div class="section-block mosques-hero__content">
+      <span class="mosques-pill">Mosques</span>
+      <h1 id="mosques-title" class="mosques-hero__title">Trusted mosques</h1>
+      <p class="mosques-hero__subtitle">
+        Browse trusted active mosques that follow a sound and valid methodology,
+        then open directions, contact details, and website links with
+        confidence.
+      </p>
+    </div>
+  </header>
+
+  <section class="section-block mosques-content">
+    <section class="mosques-nearby" aria-labelledby="nearby-mosques-title">
+      <div class="mosques-nearby__header">
+        <div>
+          <p class="mosques-nearby__eyebrow">Nearby preview</p>
+          <h2 id="nearby-mosques-title" class="mosques-nearby__title">
+            Nearest mosques around you
+          </h2>
+          <p class="mosques-nearby__subtitle">
+            Use your current location to preview the closest mosques and open a
+            dedicated details page for each one.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="mosques-search__secondary-btn"
+          (click)="loadNearbyMosques()"
+        >
+          Use my location
+        </button>
+      </div>
+
+      <div class="mosques-nearby__content">
+        <div class="mosques-nearby__map-panel">
+          <div class="mosques-nearby__map-card">
+            <div class="mosques-nearby__map-header">
+              <div class="mosques-nearby__map-copy">
+                <h3 class="mosques-nearby__map-title">Mosque map</h3>
+                <p class="mosques-nearby__map-subtitle">
+                  {{ mapPinSummary() }}
+                </p>
+              </div>
+              @if (hasNearbyMapData()) {
+                <button
+                  type="button"
+                  class="mosques-nearby__map-button"
+                  (click)="recenterNearbyMap()"
+                >
+                  Recenter map
+                </button>
+              }
+            </div>
+
+            <div class="mosques-nearby__map-status">
+              <span class="mosques-nearby__map-pill">
+                {{ mapLocationSummary() }}
+              </span>
+              <span class="mosques-nearby__map-hint"
+                >Use mouse wheel or touch gestures to zoom.</span
+              >
+            </div>
+
+            @if (hasNearbyMapData()) {
+              <div
+                class="mosques-nearby__map"
+                #nearbyMap
+                aria-label="Nearby mosques map"
+              ></div>
+              <div class="mosques-nearby__legend" aria-label="Map legend">
+                @if (userLocation()) {
+                  <span class="mosques-nearby__legend-item">
+                    <span
+                      class="mosques-nearby__legend-dot mosques-nearby__legend-dot--user"
+                    ></span>
+                    Your location
+                  </span>
+                }
+                @if (highlightedNearbyPinCount() > 0) {
+                  <span class="mosques-nearby__legend-item">
+                    <span
+                      class="mosques-nearby__legend-dot mosques-nearby__legend-dot--nearest"
+                    ></span>
+                    {{ highlightedNearbyPinCount() }} nearest mosque pins
+                  </span>
+                }
+                <span class="mosques-nearby__legend-item">
+                  <span
+                    class="mosques-nearby__legend-dot mosques-nearby__legend-dot--mosque"
+                  ></span>
+                  Other mosque pins
+                </span>
+              </div>
+            } @else {
+              <div class="mosques-state">
+                <p class="mosques-state__title">Map preview unavailable</p>
+                <p class="mosques-state__subtitle">
+                  No mosque coordinates are available to display on the map yet.
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="mosques-nearby__list" role="list">
+          @if (isNearbyLoading()) {
+            <div class="mosques-state" aria-live="polite">
+              <p class="mosques-state__title">Finding nearby mosques...</p>
+              <p class="mosques-state__subtitle">
+                Please wait while we use your location to load the closest
+                listings.
+              </p>
+            </div>
+          } @else if (hasNearbyMosques()) {
+            @for (
+              mosque of nearbyMosqueCards();
+              track trackById($index, mosque)
+            ) {
+              <article class="mosques-nearby-card" role="listitem">
+                <div class="mosques-nearby-card__body">
+                  <div class="mosques-nearby-card__header">
+                    <h3 class="mosques-nearby-card__title">
+                      {{ mosque.name }}
+                    </h3>
+
+                    @if (mosque.distanceLabel) {
+                      <span class="mosques-nearby-card__distance">{{
+                        mosque.distanceLabel
+                      }}</span>
+                    }
+                  </div>
+
+                  <p class="mosques-nearby-card__location">
+                    {{ mosque.location || "Location unavailable" }}
+                  </p>
+                  <p class="mosques-nearby-card__description">
+                    {{ mosque.description }}
+                  </p>
+                </div>
+
+                <div class="mosques-nearby-card__actions">
+                  <a
+                    class="mosque-card__action mosque-card__action--primary"
+                    [routerLink]="['/mosques', mosque.id]"
+                  >
+                    View details
+                  </a>
+
+                  @if (mosque.googleMapsUrl) {
+                    <a
+                      class="mosque-card__action mosque-card__action--secondary"
+                      [href]="mosque.googleMapsUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open map
+                    </a>
+                  }
+                </div>
+              </article>
+            }
+          } @else if (nearbyError(); as nearbyErrorMessage) {
+            <div class="mosques-state" aria-live="polite">
+              <p class="mosques-state__title">
+                We could not load nearby mosques
+              </p>
+              <p class="mosques-state__subtitle">{{ nearbyErrorMessage }}</p>
+            </div>
+          } @else if (shouldShowNearbyEmptyState()) {
+            <div class="mosques-state" aria-live="polite">
+              <p class="mosques-state__title">No nearby mosques found</p>
+              <p class="mosques-state__subtitle">
+                We used your location but could not find mosque listings nearby
+                yet.
+              </p>
+            </div>
+          } @else {
+            <div class="mosques-state" aria-live="polite">
+              <p class="mosques-state__title">
+                Enable location to preview nearby mosques
+              </p>
+              <p class="mosques-state__subtitle">
+                We will use your device location to load the nearest active
+                mosques.
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="mosques-directory"
+      aria-labelledby="mosques-directory-title"
+    >
+      <div class="mosques-directory__header">
+        <div>
+          <p class="mosques-nearby__eyebrow">Mosque directory</p>
+          <h2 id="mosques-directory-title" class="mosques-nearby__title">
+            Browse trusted mosque listings
+          </h2>
+          <p class="mosques-nearby__subtitle">
+            Search and filter the full mosque directory by name or city, then
+            open each mosque profile for more details.
+          </p>
+        </div>
+      </div>
+
+      <div class="mosques-toolbar">
+        <div class="mosques-search">
+          <div class="mosques-search__input-wrapper">
+            <label class="sr-only" for="mosques-name-search"
+              >Search mosque name</label
+            >
+            <input
+              #searchInput
+              id="mosques-name-search"
+              type="text"
+              class="mosques-search__input"
+              placeholder="Search by mosque name"
+              [value]="searchTerm()"
+              (input)="onSearchInput(searchInput.value)"
+            />
+          </div>
+
+          <div class="mosques-search__input-wrapper">
+            <label class="sr-only" for="mosques-city-search"
+              >Filter by city</label
+            >
+            <input
+              #cityInput
+              id="mosques-city-search"
+              type="text"
+              class="mosques-search__input"
+              placeholder="Filter by city"
+              [value]="cityFilter()"
+              (input)="onCityInput(cityInput.value)"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="mosques-search__btn"
+            (click)="applyFilters()"
+          >
+            Search
+          </button>
+
+          @if (hasFilters()) {
+            <button
+              type="button"
+              class="mosques-search__secondary-btn"
+              (click)="clearFilters()"
+            >
+              Clear
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <div class="mosques-state" aria-live="polite">
+          <p class="mosques-state__title">Loading mosques...</p>
+          <p class="mosques-state__subtitle">
+            Please wait while we fetch the latest list.
+          </p>
+        </div>
+      } @else if (loadError(); as errorMessage) {
+        <div class="mosques-state mosques-state--error" role="alert">
+          <p class="mosques-state__title">We could not load the mosques</p>
+          <p class="mosques-state__subtitle">{{ errorMessage }}</p>
+        </div>
+      } @else if (hasMosques()) {
+        <div class="mosques-results-meta">
+          <p class="mosques-results-meta__text">
+            Showing {{ mosqueCards().length }} of {{ totalCount() }} mosques
+          </p>
+          <p class="mosques-results-meta__text">
+            Page {{ currentPage() }} of {{ totalPages() }}
+          </p>
+        </div>
+
+        <div class="mosques-grid" role="list">
+          @for (mosque of mosqueCards(); track trackById($index, mosque)) {
+            <article class="mosque-card" role="listitem">
+              @if (mosque.imageUrl) {
+                <img
+                  class="mosque-card__image"
+                  [src]="mosque.imageUrl"
+                  [alt]="mosque.name"
+                  loading="lazy"
+                />
+              } @else {
+                <div
+                  class="mosque-card__image mosque-card__image--placeholder"
+                  aria-hidden="true"
+                >
+                  {{ mosque.name.charAt(0) }}
+                </div>
+              }
+
+              <div class="mosque-card__body">
+                <div class="mosque-card__header">
+                  <h2 class="mosque-card__title">{{ mosque.name }}</h2>
+
+                  @if (mosque.badges.length > 0) {
+                    <div class="mosque-card__badges">
+                      @for (badge of mosque.badges; track badge) {
+                        <span class="mosque-card__badge">{{ badge }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <p class="mosque-card__description">{{ mosque.description }}</p>
+
+                <div class="mosque-card__details">
+                  @if (mosque.location) {
+                    <p class="mosque-card__detail">
+                      <span class="mosque-card__detail-label">Location</span>
+                      <span>{{ mosque.location }}</span>
+                    </p>
+                  }
+
+                  @if (mosque.imamName) {
+                    <p class="mosque-card__detail">
+                      <span class="mosque-card__detail-label">Imam</span>
+                      <span>{{ mosque.imamName }}</span>
+                    </p>
+                  }
+
+                  @if (mosque.phoneNumber) {
+                    <p class="mosque-card__detail">
+                      <span class="mosque-card__detail-label">Phone</span>
+                      <a
+                        class="mosque-card__inline-link"
+                        [href]="mosque.phoneHref"
+                      >
+                        {{ mosque.phoneNumber }}
+                      </a>
+                    </p>
+                  }
+
+                  @if (mosque.email) {
+                    <p class="mosque-card__detail">
+                      <span class="mosque-card__detail-label">Email</span>
+                      <a
+                        class="mosque-card__inline-link"
+                        [href]="mosque.emailHref"
+                      >
+                        {{ mosque.email }}
+                      </a>
+                    </p>
+                  }
+                </div>
+
+                <div class="mosque-card__actions">
+                  <a
+                    class="mosque-card__action mosque-card__action--primary"
+                    [routerLink]="['/mosques', mosque.id]"
+                  >
+                    View Details
+                  </a>
+
+                  @if (mosque.googleMapsUrl) {
+                    <a
+                      class="mosque-card__action mosque-card__action--secondary"
+                      [href]="mosque.googleMapsUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open Map
+                    </a>
+                  }
+
+                  @if (mosque.websiteUrl) {
+                    <a
+                      class="mosque-card__action mosque-card__action--secondary"
+                      [href]="mosque.websiteUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Website
+                    </a>
+                  }
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+
+        @if (showPagination()) {
+          <div class="mosques-pagination">
+            <button
+              type="button"
+              class="mosques-pagination__button"
+              (click)="prevPage()"
+              [disabled]="isFirstPage()"
+            >
+              Previous
+            </button>
+            <span class="mosques-pagination__page"
+              >Page {{ currentPage() }}</span
+            >
+            <button
+              type="button"
+              class="mosques-pagination__button"
+              (click)="nextPage()"
+              [disabled]="!hasNextPage()"
+            >
+              Next
+            </button>
+          </div>
+        }
+      } @else {
+        <div class="mosques-state" aria-live="polite">
+          <p class="mosques-state__title">No mosques found</p>
+          <p class="mosques-state__subtitle">
+            Try a different mosque name or city to broaden your search.
+          </p>
+        </div>
+      }
+    </section>
+  </section>
+</section>

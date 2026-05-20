@@ -51,3 +51,6 @@ shape.md
 craft.md
 .agents/skills/impeccable/
 skills-lock.json
+
+# --- Metrics ---
+metrics/

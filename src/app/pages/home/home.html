@@ -272,6 +272,7 @@
   </section>
   -->
 
+  @defer (on viewport) {
   <section class="islam-section">
     <div class="section-block section-block--wide">
       <div class="section-shell islam-shell">
@@ -1395,7 +1396,11 @@
       </div>
     </div>
   </section>
+  } @placeholder {
+    <div style="min-height: 900px; background-color: #ffffff;"></div>
+  }
 
+  @defer (on viewport) {
   <section
     class="what-is-quran-section"
     [class.what-is-quran-section--logged-in]="authService.isAuthenticated()"
@@ -1463,8 +1468,12 @@
       </div>
     </div>
   </section>
+  } @placeholder {
+    <div style="min-height: 500px; background-color: var(--color-background-base-surface);"></div>
+  }
 
   @if (!authService.isAuthenticated()) {
+  @defer (on viewport) {
   <section class="home-serve" aria-labelledby="home-serve-title">
     <div class="section-block section-block--wide">
       <div class="home-serve__shell" data-aos="fade-up">
@@ -1489,8 +1498,12 @@
       </div>
     </div>
   </section>
+  } @placeholder {
+    <div style="min-height: 400px; background-color: #ffffff;"></div>
+  }
   }
 
+  @defer (on viewport) {
   <section
     class="advice-section"
     [class.advice-section--logged-in]="authService.isAuthenticated()"
@@ -1515,4 +1528,7 @@
       </div>
     </div>
   </section>
+  } @placeholder {
+    <div style="min-height: 290px; background-color: #156b40; transform: translateY(-140px); margin-bottom: -140px;"></div>
+  }
 </div>

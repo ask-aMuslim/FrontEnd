@@ -5,7 +5,10 @@
       <div class="user-card" (click)="toggleUserMenu($event)">
         <img
           [src]="authService.getCurrentUserImageUrl()"
-          (error)="$event.target.src='/images/profile-placeholder.svg'; $event.target.onerror=null;"
+          (error)="
+            $event.target.src = '/images/profile-placeholder.svg';
+            $event.target.onerror = null
+          "
           alt="{{ authService.currentUser()?.name }}"
           class="user-avatar"
         />
@@ -45,26 +48,30 @@
       </div>
 
       @if (isUserMenuOpen()) {
-      <div class="user-popup" role="menu">
-        <button class="user-popup__item" type="button" (click)="goToProfile()">
-          <img
-            class="user-popup__icon"
-            src="/icons/icons-24/user-edit.svg"
-            alt=""
-            aria-hidden="true"
-          />
-          Profile
-        </button>
-        <button class="user-popup__item" type="button" (click)="logout()">
-          <img
-            class="user-popup__icon"
-            src="/icons/icons-24/logout.svg"
-            alt=""
-            aria-hidden="true"
-          />
-          Logout
-        </button>
-      </div>
+        <div class="user-popup" role="menu">
+          <button
+            class="user-popup__item"
+            type="button"
+            (click)="goToProfile()"
+          >
+            <img
+              class="user-popup__icon"
+              src="/icons/icons-24/user-edit.svg"
+              alt=""
+              aria-hidden="true"
+            />
+            Profile
+          </button>
+          <button class="user-popup__item" type="button" (click)="logout()">
+            <img
+              class="user-popup__icon"
+              src="/icons/icons-24/logout.svg"
+              alt=""
+              aria-hidden="true"
+            />
+            Logout
+          </button>
+        </div>
       }
     </div>
   </ng-template>
@@ -84,7 +91,12 @@
 
   <div class="nav-shell">
     <a class="brand" routerLink="/home" aria-label="Ask A Muslim home">
-      <img src="/ask-a-muslim-logo.png" alt="Ask A Muslim logo" width="118" height="54" />
+      <img
+        src="/ask-a-muslim-logo.png"
+        alt="Ask A Muslim logo"
+        width="118"
+        height="54"
+      />
     </a>
 
     <nav
@@ -116,33 +128,45 @@
       </button>
       <ul>
         @for (link of navLinks; track trackByLabel($index, link)) {
-        <li
-          [routerLink]="link.path"
-          routerLinkActive="active"
-          #rla="routerLinkActive"
-          (click)="closeNav()"
-          [class.qna-active]="link.section === 'qna' && isQnaSectionActive()"
-          [attr.aria-current]="rla.isActive || (link.section === 'qna' && isQnaSectionActive()) ? 'page' : null"
-          class="nav-item"
-        >
-          <a class="nav-link"> {{ link.label }} </a>
-        </li>
+          <li
+            [routerLink]="link.path"
+            routerLinkActive="active"
+            #rla="routerLinkActive"
+            (click)="closeNav()"
+            [class.qna-active]="link.section === 'qna' && isQnaSectionActive()"
+            [attr.aria-current]="
+              rla.isActive || (link.section === 'qna' && isQnaSectionActive())
+                ? 'page'
+                : null
+            "
+            class="nav-item"
+          >
+            <a class="nav-link"> {{ link.label }} </a>
+          </li>
         }
       </ul>
       <div class="mobile-user-card">
         @if (authService.isAuthenticated()) {
-        <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+          <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
         } @else {
-        <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+          <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
         }
       </div>
     </nav>
 
     <div class="header-right">
+      <a
+        routerLink="/donation"
+        class="auth-btn auth-btn--login donate-btn"
+        (click)="closeNav()"
+      >
+        Donate
+      </a>
+
       @if (authService.isAuthenticated()) {
-      <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
+        <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
       } @else {
-      <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
+        <ng-container *ngTemplateOutlet="authButtonsTemplate"></ng-container>
       }
 
       <button
