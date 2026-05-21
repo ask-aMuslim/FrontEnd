@@ -155,14 +155,6 @@
     </nav>
 
     <div class="header-right">
-      <a
-        routerLink="/donation"
-        class="auth-btn auth-btn--login donate-btn"
-        (click)="closeNav()"
-      >
-        Donate
-      </a>
-
       @if (authService.isAuthenticated()) {
         <ng-container *ngTemplateOutlet="userCardTemplate"></ng-container>
       } @else {
