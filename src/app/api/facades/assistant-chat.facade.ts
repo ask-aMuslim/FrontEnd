@@ -13,6 +13,11 @@ export interface AssistantChatRequest {
   userId: string;
   message: string;
   threadId: string | null;
+  threadName: string;
+  religiousStatus: number;
+  isMuslim: boolean;
+  isNewMuslim: boolean;
+  oldReligion: string;
 }
 
 export interface AssistantThreadRecord {
@@ -43,7 +48,12 @@ export interface AssistantStreamRecord {
 interface ChatStreamBody {
   userId: string;
   question: string;
-  threadId: string | null;
+  threadId: string;
+  threadname: string;
+  religiousStatus: number;
+  isMuslim: boolean;
+  isNewMuslim: boolean;
+  oldReligion: string;
 }
 
 interface AssistantStreamState {
@@ -554,7 +564,12 @@ export class AssistantChatFacade {
     return {
       userId: request.userId,
       question: request.message,
-      threadId: request.threadId,
+      threadId: request.threadId ?? '',
+      threadname: request.threadName,
+      religiousStatus: request.religiousStatus,
+      isMuslim: request.isMuslim,
+      isNewMuslim: request.isNewMuslim,
+      oldReligion: request.oldReligion,
     };
   }
 

@@ -3,6 +3,18 @@
   publish = "dist/AskAMuslim"
 
 [[redirects]]
+  from = "/backend/*"
+  to = "https://api.askamuslim.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/assistant-api/*"
+  to = "https://jawless-spoken-hardhat.ngrok-free.dev/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

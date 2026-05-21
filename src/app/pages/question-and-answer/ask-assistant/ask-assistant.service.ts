@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import {
   AssistantChatFacade,
   AssistantChatRequest,
@@ -9,12 +9,13 @@ import {
   AssistantThreadRecord,
 } from '../../../api/facades/assistant-chat.facade';
 import { TokenService } from '../../../core/auth/token.service';
+import { StudentProfileService } from '../../../core/services/student-profile.service';
 import {
+  AskAssistantChatContext,
   AskAssistantConversation,
   AskAssistantMessageSeed,
   AskAssistantStreamUpdate,
 } from './ask-assistant.model';
-import { buildChatTitleFromMessages } from './ask-assistant-title.util';
 
 @Injectable({ providedIn: 'root' })
 export class AskAssistantService {
@@ -22,11 +23,13 @@ export class AskAssistantService {
   private static readonly guestIdPrefix = 'guest-';
   private static readonly fallbackServerGuestId = 'guest-server';
   private static readonly fallbackChatTitle = 'New chat';
+  private static readonly fallbackReligiousStatus = 1;
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly assistantChatFacade = inject(AssistantChatFacade);
   private readonly tokenService = inject(TokenService);
+  private readonly studentProfileService = inject(StudentProfileService);
 
   getResolvedUserId(): string {
     const authenticatedUserId = this.tokenService.userId();
@@ -65,14 +68,23 @@ export class AskAssistantService {
     userId: string;
     question: string;
     threadId: string | null;
+    threadName: string;
   }): Observable<AskAssistantStreamUpdate> {
-    const request: AssistantChatRequest = {
-      userId: payload.userId,
-      message: payload.question,
-      threadId: payload.threadId,
-    };
+    return this.getChatContext(payload.userId, payload.threadName).pipe(
+      switchMap((context) => {
+        const request: AssistantChatRequest = {
+          userId: payload.userId,
+          message: payload.question,
+          threadId: payload.threadId,
+          threadName: context.threadName,
+          religiousStatus: context.religiousStatus,
+          isMuslim: context.isMuslim,
+          isNewMuslim: context.isNewMuslim,
+          oldReligion: context.oldReligion,
+        };
 
-    return this.assistantChatFacade.streamChat(request).pipe(
+        return this.assistantChatFacade.streamChat(request);
+      }),
       map((event) => this.mapStreamUpdate(event)),
     );
   }
@@ -102,6 +114,65 @@ export class AskAssistantService {
       statusCode: event.statusCode,
       title: event.title,
     };
+  }
+
+  private getChatContext(userId: string, threadName: string): Observable<AskAssistantChatContext> {
+    const normalizedThreadName = this.normalizeThreadName(threadName);
+    const fallbackContext = this.buildFallbackChatContext(normalizedThreadName);
+
+    if (!this.tokenService.isAuthenticated()) {
+      return of(fallbackContext);
+    }
+
+    return this.studentProfileService.getMyProfile().pipe(
+      map((profile) => {
+        if (!profile) {
+          return fallbackContext;
+        }
+
+        const religiousStatus = this.normalizeReligiousStatus(profile.religiousStatus);
+        const isMuslim = typeof profile.isMuslim === 'boolean'
+          ? profile.isMuslim
+          : religiousStatus !== 1;
+        const isNewMuslim = typeof profile.isNewMuslim === 'boolean'
+          ? profile.isNewMuslim
+          : religiousStatus === 3;
+
+        return {
+          threadName: normalizedThreadName,
+          religiousStatus,
+          isMuslim,
+          isNewMuslim,
+          oldReligion: this.normalizeOldReligion(profile.oldReligion),
+        };
+      }),
+      catchError(() => of(fallbackContext)),
+    );
+  }
+
+  private buildFallbackChatContext(threadName: string): AskAssistantChatContext {
+    return {
+      threadName,
+      religiousStatus: AskAssistantService.fallbackReligiousStatus,
+      isMuslim: false,
+      isNewMuslim: false,
+      oldReligion: '',
+    };
+  }
+
+  private normalizeThreadName(threadName: string): string {
+    const normalized = threadName.trim();
+    return normalized.length > 0 ? normalized : AskAssistantService.fallbackChatTitle;
+  }
+
+  private normalizeOldReligion(oldReligion: unknown): string {
+    return typeof oldReligion === 'string' ? oldReligion.trim() : '';
+  }
+
+  private normalizeReligiousStatus(value: unknown): number {
+    return value === 1 || value === 2 || value === 3
+      ? value
+      : AskAssistantService.fallbackReligiousStatus;
   }
 
   private getOrCreateGuestUserId(): string {
