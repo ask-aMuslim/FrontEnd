@@ -1,1 +1,3 @@
+/backend/* https://api.askamuslim.com/:splat 200!
+/assistant-api/* https://jawless-spoken-hardhat.ngrok-free.dev/:splat 200!
 /* /index.html 200
