@@ -293,6 +293,26 @@
   }
 }
 
+.support-btn {
+  &:hover {
+    background: var(--color-button-primary-normal);
+    border-color: var(--color-button-primary-normal);
+    color: #ffffff;
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--color-button-primary-normal) 82%, white);
+    border-color: color-mix(in srgb, var(--color-button-primary-normal) 82%, white);
+    color: #ffffff;
+  }
+}
+
+.support-btn--active {
+  background: var(--color-button-primary-normal);
+  border-color: var(--color-button-primary-normal);
+  color: #ffffff;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
