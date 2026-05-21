@@ -39,7 +39,7 @@ export class HeaderComponent {
     { label: 'Resources', path: '/resources' },
     { label: 'Events', path: '/events' },
     { label: 'Contact', path: '/contact' },
-
+    { label: 'Donate', path: '/donation' },
   ];
 
   protected isMobileMenuOpen = signal(false);
@@ -93,5 +93,4 @@ export class HeaderComponent {
   isQnaSectionUrl(url: string): boolean {
     return url.startsWith('/question-and-answer');
   }
-
 }

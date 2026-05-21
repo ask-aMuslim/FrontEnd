@@ -166,7 +166,7 @@ app-hero-search-input {
   padding: 0 0.75rem;
   // Pushes caption to bottom of flex column, padding-bottom on .hero-content
   // creates the breathing room above the next section's curved border.
-  margin: auto auto 0;
+  margin: auto auto 2rem;
   opacity: 0.5;
 }
 
@@ -385,7 +385,7 @@ app-hero-search-input {
       color: #010d05;
       font-size: clamp(2rem, 4vw, 2.5rem);
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.4;
     }
 
     p {

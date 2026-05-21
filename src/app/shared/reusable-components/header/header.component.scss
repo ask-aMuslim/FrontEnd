@@ -291,64 +291,6 @@
       transform: translateY(-1px);
     }
   }
-
-  &.donate-btn {
-    background: var(--color-button-secondary-normal);
-    border-color: var(--color-button-secondary-normal);
-    box-shadow: 0 2px 8px rgba(236, 193, 64, 0.15);
-    position: relative;
-    overflow: hidden;
-    animation: donatePulse 2.5s infinite;
-
-    &::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: -150%;
-      width: 70%;
-      height: 100%;
-      background: linear-gradient(
-        to right,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.4) 50%,
-        rgba(255, 255, 255, 0) 100%
-      );
-      transform: skewX(-25deg);
-      animation: donateShine 3s infinite;
-    }
-
-    &:hover {
-      background: var(--color-button-secondary-hovering);
-      border-color: var(--color-button-secondary-hovering);
-      box-shadow: 0 4px 12px rgba(236, 193, 64, 0.4);
-      animation: none;
-      transform: translateY(-1px);
-    }
-  }
-}
-
-@keyframes donatePulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(236, 193, 64, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 12px rgba(236, 193, 64, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(236, 193, 64, 0);
-  }
-}
-
-@keyframes donateShine {
-  0% {
-    left: -150%;
-  }
-  20% {
-    left: 150%;
-  }
-  100% {
-    left: 150%;
-  }
 }
 
 .sr-only {
