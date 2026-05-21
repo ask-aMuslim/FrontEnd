@@ -181,6 +181,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         userId: this.userId,
         question,
         threadId: this.activeThreadId,
+        threadName: this.resolveOutgoingThreadName(tempTitle),
       })
       .pipe(
         takeUntil(this.destroy$),
@@ -323,6 +324,26 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     }
+  }
+
+  private resolveOutgoingThreadName(fallbackTitle: string): string {
+    if (this.activeThreadId) {
+      const existingConversation = this.conversations.find(
+        (conversation) => conversation.threadId === this.activeThreadId,
+      );
+      const existingTitle = existingConversation?.title?.trim();
+      if (existingTitle) {
+        return existingTitle;
+      }
+    }
+
+    const activeTitle = this.activeChatTitle.trim();
+    if (activeTitle && activeTitle !== 'New chat') {
+      return activeTitle;
+    }
+
+    const normalizedFallback = fallbackTitle.trim();
+    return normalizedFallback || 'New chat';
   }
 
 
