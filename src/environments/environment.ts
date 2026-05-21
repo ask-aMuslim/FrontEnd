@@ -1,8 +1,14 @@
+import {
+  resolveApiBaseUrl,
+  resolveAssistantApiBaseUrl,
+  resolveAssistantApiFallbackBaseUrl,
+} from './runtime-endpoints';
+
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.askamuslim.com',
-  askAssistantApiBaseUrl: 'https://jawless-spoken-hardhat.ngrok-free.dev',
-  askAssistantApiBaseUrlFallback: 'http://127.0.0.1:8000',
+  apiBaseUrl: resolveApiBaseUrl(),
+  askAssistantApiBaseUrl: resolveAssistantApiBaseUrl(),
+  askAssistantApiBaseUrlFallback: resolveAssistantApiFallbackBaseUrl(),
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
   googleClientId: '859661315178-6fi4qmdnmgsuqhdjpdp9kdioi58g9uds.apps.googleusercontent.com',
