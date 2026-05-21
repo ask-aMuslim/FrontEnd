@@ -71,6 +71,30 @@
               "outputHashing": "all",
               "sourceMap": false
             },
+            "netlify": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": true
+              },
+              "outputHashing": "all",
+              "sourceMap": false,
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public",
+                  "output": "/"
+                },
+                {
+                  "glob": "_redirects",
+                  "input": "netlify",
+                  "output": "/"
+                }
+              ]
+            },
             "development": {
               "buildOptimizer": false,
               "optimization": false,

@@ -6,6 +6,7 @@
     "ng": "ng",
     "start": "ng serve --watch",
     "build": "ng build",
+    "build:netlify": "ng build --configuration netlify",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --no-progress --browsers=ChromeHeadless",
