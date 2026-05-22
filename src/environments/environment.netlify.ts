@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/backend',
-  askAssistantApiBaseUrl: 'http://127.0.0.1:8000',
+  askAssistantApiBaseUrl: '/assistant-api',
   askAssistantApiBaseUrlFallback: '/assistant-api',
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),

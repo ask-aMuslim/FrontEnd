@@ -1,5 +1,5 @@
 const DIRECT_API_BASE_URL = 'https://api.askamuslim.com';
-const DIRECT_ASSISTANT_API_BASE_URL = 'https://jawless-spoken-hardhat.ngrok-free.dev';
+const DIRECT_ASSISTANT_API_BASE_URL = 'https://localhost:8000';
 const DIRECT_ASSISTANT_API_BASE_URL_FALLBACK = 'http://127.0.0.1:8000';
 
 const NETLIFY_API_BASE_URL = '/backend';

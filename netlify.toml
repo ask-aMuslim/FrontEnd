@@ -10,7 +10,7 @@
 
 [[redirects]]
   from = "/assistant-api/*"
-  to = "https://jawless-spoken-hardhat.ngrok-free.dev/:splat"
+  to = "http://localhost:8000/:splat"
   status = 200
   force = true
 
