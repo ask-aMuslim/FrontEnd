@@ -14,12 +14,28 @@
 // 1. HERO SECTION
 // ==========================================
 .mosque-detail-hero {
-  background: linear-gradient(135deg, #f6fbf3 0%, #eef7f1 100%);
+  position: relative;
+  background-color: #fdf9ee;
   padding: 72px 0 56px;
+  overflow: hidden;
   border-bottom: 1px solid #e4efe2;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("/backgrounds/about-resources-hero-background.svg");
+    background-position: center;
+    background-repeat: repeat;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 .mosque-detail-hero__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
