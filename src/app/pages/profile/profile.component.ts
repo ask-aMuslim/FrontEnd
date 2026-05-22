@@ -6,6 +6,7 @@ import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive
 // import { MyLearningComponent } from './my-learning/my-learning.component';
 import { AboutComponent } from './about/about.component';
 import { MyInquiriesComponent } from './my-inquiries/my-inquiries.component';
+import { ChatListComponent } from './chat-list/chat-list.component';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { AuthService } from '../../core/services/auth.service';
@@ -18,6 +19,7 @@ import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
 import type { AboutProfileHeaderUpdate } from './about/about.component';
 
 interface UserProfile {
+  id: string;
   name: string;
   bio: string;
   imageUrl: string;
@@ -50,6 +52,7 @@ interface Verse {
     // MyLearningComponent,
     AboutComponent,
     MyInquiriesComponent,
+    ChatListComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
@@ -67,10 +70,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['About', 'My Inquiries'];
+  tabs = ['About', 'Chats', 'My Inquiries'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {
+    id: '',
     name: '',
     bio: '',
     imageUrl: '',
@@ -296,6 +300,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const nextGender = this.toNonEmptyString(profile.gender) ?? this.userProfile.gender;
 
     this.userProfile = {
+      id: profile.userId || profile.id || '',
       name: fullName ?? this.userProfile.name,
       bio: nextBio,
       imageUrl: nextImageUrl,

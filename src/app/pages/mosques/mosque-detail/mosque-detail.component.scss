@@ -143,7 +143,7 @@
 
 .mosque-detail-image {
   width: 100%;
-  min-height: 320px;
+  height: 400px;
   border-radius: 24px;
   object-fit: cover;
   background: #dceadb;
@@ -304,6 +304,10 @@
   .mosque-detail-grid {
     grid-template-columns: 1fr;
   }
+
+  .mosque-detail-image {
+    height: 320px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -324,6 +328,23 @@
   }
 
   .mosque-detail-image {
-    min-height: 260px;
+    height: 240px;
+    border-radius: 16px;
+  }
+
+  .mosque-detail-image--placeholder {
+    font-size: 64px;
   }
 }
+
+@media (max-width: 480px) {
+  .mosque-detail-image {
+    height: 200px;
+    border-radius: 12px;
+  }
+
+  .mosque-detail-image--placeholder {
+    font-size: 48px;
+  }
+}
+

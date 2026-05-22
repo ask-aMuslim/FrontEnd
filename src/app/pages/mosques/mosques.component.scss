@@ -8,12 +8,28 @@
 }
 
 .mosques-hero {
-  background: linear-gradient(135deg, #f6fbf3 0%, #eef7f1 100%);
+  position: relative;
+  background-color: #fdf9ee;
   padding: 88px 0 64px;
   text-align: center;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("/backgrounds/about-resources-hero-background.svg");
+    background-position: center;
+    background-repeat: repeat;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 .mosques-hero__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -54,7 +70,8 @@
   display: flex;
   flex-direction: column;
   gap: 36px;
-  padding: 72px 0 96px;
+  padding-top: 72px;
+  padding-bottom: 96px;
 }
 
 .mosques-toolbar {
@@ -448,7 +465,7 @@
 
 .mosques-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 }
 
@@ -476,7 +493,7 @@
 
 .mosque-card__image {
   width: 100%;
-  height: 180px;
+  height: 400px;
   object-fit: cover;
   background: #dceadb;
 }
@@ -648,7 +665,8 @@
   }
 
   .mosques-content {
-    padding: 56px 0 80px;
+    padding-top: 56px;
+    padding-bottom: 80px;
   }
 
   .mosques-directory,
@@ -678,4 +696,13 @@
   .mosque-card__actions {
     flex-direction: column;
   }
+
+  .mosques-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mosque-card__image {
+    height: 240px;
+  }
 }
+

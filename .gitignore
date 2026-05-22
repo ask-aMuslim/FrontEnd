@@ -17,7 +17,10 @@
 .env
 .env.*
 !.env.example
-/src/app/environments/environment.development.ts
+/src/environments/environment.ts
+/src/environments/environment.development.ts
+/src/environments/environment.netlify.ts
+/postman_environment.json
 certificates/
 
 # --- IDEs & Editors ---
@@ -49,7 +52,7 @@ PRODUCT.md
 DESIGN.md
 shape.md
 craft.md
-.agents/skills/impeccable/
+.agents/skills/
 skills-lock.json
 
 # --- Metrics ---

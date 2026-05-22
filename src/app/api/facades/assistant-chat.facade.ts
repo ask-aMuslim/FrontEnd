@@ -648,9 +648,18 @@ export class AssistantChatFacade {
     }
 
     if (typeof value === 'string' && value.trim().length > 0) {
-      const normalized = value.includes('T')
+      let normalized = value.includes('T')
         ? value
         : value.replace(' ', 'T');
+        
+      const tIndex = normalized.indexOf('T');
+      const hasTimezone = normalized.includes('Z')
+        || (tIndex !== -1 && (normalized.indexOf('+', tIndex) !== -1 || normalized.indexOf('-', tIndex) !== -1));
+        
+      if (!hasTimezone) {
+        normalized = normalized + 'Z';
+      }
+      
       const parsed = Date.parse(normalized);
       if (Number.isFinite(parsed)) {
         return parsed;

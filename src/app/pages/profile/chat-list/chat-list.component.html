@@ -1,23 +1,101 @@
 <div class="chat-list">
   <div class="chat-list__header">
-    <h2 class="chat-list__title">Chats ({{ chats.length }})</h2>
+    <h2 class="chat-list__title">Chats ({{ threads.length }})</h2>
   </div>
 
-  <div class="chat-list__items">
-    @for (chat of chats; track chat) {
-      <div (click)="selectChat(chat)" class="chat-list__item">
-        <div [inlineSVG]="'/icons/icons-24/ai-talk.svg'" class="chat-list__item-icon"></div>
-        <div class="chat-list__item-content">
-          <div class="chat-list__item-top">
-            <h2 class="chat-list__item-name">{{ chat.name }}</h2>
-            <div
-              [inlineSVG]="'/icons/icons-24/go-for-more.svg'"
-              class="chat-list__item-go-icon"
-            ></div>
+  <!-- Loading Skeletons State -->
+  @if (isLoading) {
+    <div class="chat-list__items">
+      @for (item of [1, 2, 3]; track $index) {
+        <div class="chat-card chat-card--skeleton">
+          <div class="chat-card__left">
+            <div class="chat-card__title-row">
+              <div class="chat-card__skeleton-circle"></div>
+              <div class="chat-card__skeleton-title"></div>
+            </div>
+            <div class="chat-card__skeleton-meta"></div>
           </div>
-          <p class="chat-list__item-meta">Last response: {{ chat.timestamp }}</p>
         </div>
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
+
+  <!-- Error Boundary State -->
+  @else if (errorMessage) {
+    <div class="chat-list__error">
+      <div
+        [inlineSVG]="'/icons/icons-24/info.svg'"
+        class="chat-list__error-icon"
+      ></div>
+      <h3 class="chat-list__error-title">Oops! Something went wrong</h3>
+      <p class="chat-list__error-description">
+        {{ errorMessage }}
+      </p>
+      <button
+        type="button"
+        class="chat-list__error-btn"
+        (click)="loadUserThreads()"
+      >
+        <div
+          [inlineSVG]="'/icons/icons-24/refresh.svg'"
+          style="width: 18px; height: 18px; display: inline-flex;"
+        ></div>
+        <span>Try Again</span>
+      </button>
+    </div>
+  }
+
+  <!-- Gorgeous Empty State -->
+  @else if (threads.length === 0) {
+    <div class="chat-list__empty">
+      <div
+        [inlineSVG]="'/icons/icons-24/ai-talk.svg'"
+        class="chat-list__empty-icon"
+      ></div>
+      <h3 class="chat-list__empty-title">No chats found yet</h3>
+      <p class="chat-list__empty-description">
+        Start a conversation with the Ask A Muslim Islamic Assistant to see your chat history here!
+      </p>
+      <button
+        type="button"
+        class="chat-list__empty-btn"
+        [routerLink]="['/question-and-answer', 'ask-assistant']"
+      >
+        <span>Ask Assistant</span>
+        <div
+          [inlineSVG]="'/icons/icons-16/arrow-right.svg'"
+          style="width: 14px; height: 14px; display: inline-flex;"
+        ></div>
+      </button>
+    </div>
+  }
+
+  <!-- Dynamic Threads List -->
+  @else {
+    <div class="chat-list__items">
+      @for (thread of threads; track thread.threadId) {
+        <div (click)="selectChat(thread)" class="chat-card">
+          <div class="chat-card__left">
+            <div class="chat-card__title-row">
+              <div
+                [inlineSVG]="'/icons/icons-24/ai-talk.svg'"
+                class="chat-card__icon"
+              ></div>
+              <h3 class="chat-card__title">{{ thread.title || "New chat" }}</h3>
+            </div>
+            <div class="chat-card__meta-row">
+              <span class="chat-card__meta-label">Last response:</span>
+              <span class="chat-card__meta-value">{{
+                formatLastResponse(thread.updatedAt)
+              }}</span>
+            </div>
+          </div>
+          <div
+            [inlineSVG]="'/icons/icons-24/go-for-more.svg'"
+            class="chat-card__arrow"
+          ></div>
+        </div>
+      }
+    </div>
+  }
 </div>

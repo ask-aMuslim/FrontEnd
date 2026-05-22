@@ -366,15 +366,13 @@
             ></app-about>
           }
 
-          <!-- My Learning Tab (Commented out to stop all requests) -->
-          <!--
-          @if (activeTabIndex === -1) {
-            <app-my-learning></app-my-learning>
-          }
-          -->
-
-          <!-- My Inquiries Tab (Index adjusted from 2 to 1 as My Learning tab is commented out) -->
+          <!-- Chats Tab -->
           @if (activeTabIndex === 1) {
+            <app-chat-list [userId]="userProfile.id"></app-chat-list>
+          }
+
+          <!-- My Inquiries Tab -->
+          @if (activeTabIndex === 2) {
             <div class="profile-tab-panel profile-tab-panel--hidden">
               <app-my-inquiries></app-my-inquiries>
             </div>

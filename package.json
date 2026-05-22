@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/setup-environments.mjs",
+    "prestart": "node scripts/setup-environments.mjs",
+    "pretest": "node scripts/setup-environments.mjs",
     "ng": "ng",
     "start": "ng serve --watch",
     "build": "ng build",

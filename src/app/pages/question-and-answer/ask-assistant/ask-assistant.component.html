@@ -102,6 +102,7 @@
                           ? 'ask-assistant-page__message-bubble--user'
                           : 'ask-assistant-page__message-bubble--assistant'
                       "
+                      (click)="toggleMessageDate(message.id)"
                     >
                       @if (message.role === 'user') {
                         {{ message.text }}
@@ -113,6 +114,38 @@
                         ></div>
                       }
                     </div>
+
+                    <div class="ask-assistant-page__message-meta">
+                      @if (selectedMessageId() === message.id) {
+                        <div
+                          class="ask-assistant-page__message-date"
+                          [ngClass]="
+                            message.role === 'user'
+                              ? 'ask-assistant-page__message-date--user'
+                              : 'ask-assistant-page__message-date--assistant'
+                          "
+                        >
+                          {{ message.createdAt | date: 'EEEE, MMMM d, y, h:mm a' }}
+                        </div>
+                      }
+
+                      <div class="ask-assistant-page__message-actions">
+                        <button
+                          type="button"
+                          class="ask-assistant-page__action-btn"
+                          [class.ask-assistant-page__action-btn--copied]="copiedMessageId() === message.id"
+                          (click)="copyMessage(message, $event)"
+                          [attr.aria-label]="copiedMessageId() === message.id ? 'Copied to clipboard' : 'Copy message'"
+                        >
+                          @if (copiedMessageId() === message.id) {
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="success-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          } @else {
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="copy-icon"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                          }
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               }

@@ -54,6 +54,9 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   conversationErrorMessage: string | null = null;
   errorMessage: string | null = null;
   isResponding: WritableSignal<boolean> = signal(false);
+  selectedMessageId: WritableSignal<number | null> = signal(null);
+  copiedMessageId: WritableSignal<number | null> = signal(null);
+
 
   private readonly askAssistantService = inject(AskAssistantService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -270,6 +273,38 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   isConversationActive(threadId: string): boolean {
     return this.activeThreadId === threadId;
   }
+
+  toggleMessageDate(messageId: number): void {
+    if (this.selectedMessageId() === messageId) {
+      this.selectedMessageId.set(null);
+    } else {
+      this.selectedMessageId.set(messageId);
+    }
+    this.cdr.markForCheck();
+  }
+
+  copyMessage(message: ChatMessage, event: MouseEvent): void {
+    event.stopPropagation();
+    if (!message.text || !this.isBrowser) {
+      return;
+    }
+
+    globalThis.navigator.clipboard.writeText(message.text)
+      .then(() => {
+        this.copiedMessageId.set(message.id);
+        this.cdr.markForCheck();
+        globalThis.setTimeout(() => {
+          if (this.copiedMessageId() === message.id) {
+            this.copiedMessageId.set(null);
+            this.cdr.markForCheck();
+          }
+        }, 2000);
+      })
+      .catch((err) => {
+        globalThis.console.error('Failed to copy text: ', err);
+      });
+  }
+
 
   get activeChatTitle(): string {
     const selectedConversationTitle = this.activeThreadId
