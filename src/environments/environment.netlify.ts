@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/backend',
-  askAssistantApiBaseUrl: 'http://localhost:8000',
+  askAssistantApiBaseUrl: 'https://speed-preliminary-riding-mariah.trycloudflare.com',
   askAssistantApiBaseUrlFallback: '/assistant-api',
   authWithCredentials: false,
   youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
