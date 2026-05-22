@@ -186,7 +186,11 @@ export class AssistantChatFacade {
       return throwError(() => new Error('No assistant API URL candidates are available.'));
     }
 
-    return this.http.get<unknown>(url, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
+    const cacheBusterUrl = url.includes('?')
+      ? `${url}&t=${Date.now()}`
+      : `${url}?t=${Date.now()}`;
+
+    return this.http.get<unknown>(cacheBusterUrl, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
       catchError((error: unknown) => {
         if (rest.length === 0) {
           return throwError(() => error);

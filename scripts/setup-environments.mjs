@@ -64,9 +64,23 @@ const isCI = process.env.CI === 'true' || process.env.NETLIFY === 'true';
 if (isCI) {
   const redirectsPath = path.join(rootDir, 'netlify', '_redirects');
 
+  let fallbackTunnelUrl = '';
+  if (fs.existsSync(redirectsPath)) {
+    try {
+      const existingContent = fs.readFileSync(redirectsPath, 'utf-8');
+      const match = existingContent.match(/^\/assistant-api\/\*\s+(https?:\/\/[^\s/!]+)/m);
+      if (match) {
+        fallbackTunnelUrl = match[1];
+        console.log(`[setup-environments] Found fallback ASSISTANT_TUNNEL_URL in existing _redirects: ${fallbackTunnelUrl}`);
+      }
+    } catch (err) {
+      console.warn('[setup-environments] Failed to read existing _redirects:', err.message);
+    }
+  }
+
   // The Cloudflare / ngrok tunnel URL is set as a Netlify env variable.
   // Format: https://your-tunnel.trycloudflare.com  (no trailing slash)
-  const tunnelUrl = (process.env.ASSISTANT_TUNNEL_URL || '').replace(/\/+$/, '');
+  const tunnelUrl = (process.env.ASSISTANT_TUNNEL_URL || fallbackTunnelUrl || '').replace(/\/+$/, '');
 
   if (!tunnelUrl) {
     console.warn(
