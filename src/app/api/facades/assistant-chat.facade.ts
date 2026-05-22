@@ -75,7 +75,11 @@ export class AssistantChatFacade {
     environment.askAssistantApiBaseUrl,
     environment.askAssistantApiBaseUrlFallback,
   );
-  private readonly jsonHeaders = new HttpHeaders({ Accept: 'application/json' });
+  private readonly jsonHeaders = new HttpHeaders({
+    'Accept': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+  });
   private readonly jsonContext = new HttpContext().set(SKIP_LOADING, true);
   private readonly streamHeaders = new HttpHeaders({
     Accept: 'application/x-ndjson, text/event-stream, application/json',
