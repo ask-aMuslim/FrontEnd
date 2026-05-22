@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "prebuild": "node scripts/setup-environments.mjs",
+    "prebuild:netlify": "node scripts/setup-environments.mjs",
     "prestart": "node scripts/setup-environments.mjs",
     "pretest": "node scripts/setup-environments.mjs",
     "ng": "ng",
