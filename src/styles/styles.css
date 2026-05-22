@@ -38,7 +38,10 @@ app-root {
 
 * {
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif !important;
+}
+
+body, button, input, select, textarea {
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Scrollbar Styles */

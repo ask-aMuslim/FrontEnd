@@ -23,10 +23,7 @@ const targets = [
   {
     name: 'environment.netlify.ts',
     production: true,
-    useRuntimeEndpoints: false,
-    apiBaseUrl: '/backend',
-    askAssistantApiBaseUrl: '/assistant-api',
-    askAssistantApiBaseUrlFallback: '/assistant-api'
+    useRuntimeEndpoints: true
   }
 ];
 
@@ -60,45 +57,60 @@ export const environment = {
 
 const isCI = process.env.CI === 'true' || process.env.NETLIFY === 'true';
 
-// ── Generate _redirects for Netlify (overrides netlify.toml) ────────────── //
-if (isCI) {
-  const redirectsPath = path.join(rootDir, 'netlify', '_redirects');
-
-  let fallbackTunnelUrl = '';
-  if (fs.existsSync(redirectsPath)) {
-    try {
-      const existingContent = fs.readFileSync(redirectsPath, 'utf-8');
-      const match = existingContent.match(/^\/assistant-api\/\*\s+(https?:\/\/[^\s/!]+)/m);
-      if (match) {
-        fallbackTunnelUrl = match[1];
-        console.log(`[setup-environments] Found fallback ASSISTANT_TUNNEL_URL in existing _redirects: ${fallbackTunnelUrl}`);
-      }
-    } catch (err) {
-      console.warn('[setup-environments] Failed to read existing _redirects:', err.message);
+// ── Extract ASSISTANT_TUNNEL_URL from runtime-endpoints.ts ──────────────── //
+const runtimeEndpointsPath = path.join(envDir, 'runtime-endpoints.ts');
+let fileTunnelUrl = '';
+if (fs.existsSync(runtimeEndpointsPath)) {
+  try {
+    const runtimeEndpointsContent = fs.readFileSync(runtimeEndpointsPath, 'utf-8');
+    const tunnelMatch = runtimeEndpointsContent.match(/export\s+const\s+ASSISTANT_TUNNEL_URL\s*=\s*['"]([^'"]+)['"]/);
+    if (tunnelMatch) {
+      fileTunnelUrl = tunnelMatch[1];
+      console.log(`[setup-environments] Read ASSISTANT_TUNNEL_URL from runtime-endpoints.ts: ${fileTunnelUrl}`);
     }
+  } catch (err) {
+    console.warn('[setup-environments] Failed to read runtime-endpoints.ts:', err.message);
   }
-
-  // The Cloudflare / ngrok tunnel URL is set as a Netlify env variable.
-  // Format: https://your-tunnel.trycloudflare.com  (no trailing slash)
-  const tunnelUrl = (process.env.ASSISTANT_TUNNEL_URL || fallbackTunnelUrl || '').replace(/\/+$/, '');
-
-  if (!tunnelUrl) {
-    console.warn(
-      '[setup-environments] WARNING: ASSISTANT_TUNNEL_URL env var is not set.\n' +
-      '  The /assistant-api/* proxy redirect will NOT be written.\n' +
-      '  Set ASSISTANT_TUNNEL_URL in Netlify Environment Variables to fix this.'
-    );
-  }
-
-  const redirectsContent = [
-    `/backend/* https://api.askamuslim.com/:splat 200!`,
-    tunnelUrl ? `/assistant-api/* ${tunnelUrl}/:splat 200!` : `# /assistant-api/* <ASSISTANT_TUNNEL_URL not set>`,
-    `/* /index.html 200`,
-  ].join('\n') + '\n';
-
-  fs.writeFileSync(redirectsPath, redirectsContent, 'utf-8');
-  console.log(`Generated netlify/_redirects${tunnelUrl ? ` → ${tunnelUrl}` : ' (tunnel URL missing)'}`);
 }
+
+// ── Generate _redirects for Netlify (overrides netlify.toml) ────────────── //
+const redirectsPath = path.join(rootDir, 'netlify', '_redirects');
+
+let fallbackTunnelUrl = '';
+if (fs.existsSync(redirectsPath)) {
+  try {
+    const existingContent = fs.readFileSync(redirectsPath, 'utf-8');
+    const match = existingContent.match(/^\/assistant-api\/\*\s+(https?:\/\/[^\s/!]+)/m);
+    if (match) {
+      fallbackTunnelUrl = match[1];
+      console.log(`[setup-environments] Found fallback ASSISTANT_TUNNEL_URL in existing _redirects: ${fallbackTunnelUrl}`);
+    }
+  } catch (err) {
+    console.warn('[setup-environments] Failed to read existing _redirects:', err.message);
+  }
+}
+
+// The Cloudflare / ngrok tunnel URL is set as a Netlify env variable or read from runtime-endpoints.ts.
+// Format: https://your-tunnel.trycloudflare.com  (no trailing slash)
+const tunnelUrl = (process.env.ASSISTANT_TUNNEL_URL || fileTunnelUrl || fallbackTunnelUrl || '').replace(/\/+$/, '');
+
+if (!tunnelUrl) {
+  console.warn(
+    '[setup-environments] WARNING: ASSISTANT_TUNNEL_URL is not set in env or runtime-endpoints.ts.\n' +
+    '  The /assistant-api/* proxy redirect will NOT be written.\n' +
+    '  Set ASSISTANT_TUNNEL_URL to fix this.'
+  );
+}
+
+const redirectsContent = [
+  `/backend/* https://api.askamuslim.com/:splat 200!`,
+  tunnelUrl ? `/assistant-api/* ${tunnelUrl}/:splat 200!` : `# /assistant-api/* <ASSISTANT_TUNNEL_URL not set>`,
+  `/* /index.html 200`,
+].join('\n') + '\n';
+
+fs.writeFileSync(redirectsPath, redirectsContent, 'utf-8');
+console.log(`Generated netlify/_redirects${tunnelUrl ? ` → ${tunnelUrl}` : ' (tunnel URL missing)'}`);
+
 
 for (const target of targets) {
   const targetPath = path.join(envDir, target.name);

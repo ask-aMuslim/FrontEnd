@@ -128,16 +128,18 @@
       <div class="mosque-detail-layout">
         <!-- Main Content Column (2/3 width) -->
         <div class="mosque-detail-layout__main">
-          <article class="mosque-detail-panel">
-            <h2 class="mosque-detail-panel__title">
-              <i class="fas fa-info-circle mosque-panel-icon" aria-hidden="true"></i> About this mosque
+          <section class="mosque-detail-section">
+            <h2 class="mosque-detail-section__title">
+              <i class="fas fa-info-circle mosque-section-icon" aria-hidden="true"></i> About this mosque
             </h2>
-            <p class="mosque-detail-panel__body">{{ description() }}</p>
-          </article>
+            <p class="mosque-detail-section__body">{{ description() }}</p>
+          </section>
 
-          <article class="mosque-detail-panel">
-            <h2 class="mosque-detail-panel__title">
-              <i class="fas fa-map-marked-alt mosque-panel-icon" aria-hidden="true"></i> Location
+          <hr class="mosque-detail-divider" />
+
+          <section class="mosque-detail-section">
+            <h2 class="mosque-detail-section__title">
+              <i class="fas fa-map-marked-alt mosque-section-icon" aria-hidden="true"></i> Location
             </h2>
             
             <p class="mosque-detail-meta">
@@ -146,159 +148,165 @@
                 <i class="fas fa-map-pin" aria-hidden="true"></i> {{ location() }}
               </span>
             </p>
+          </section>
 
-            @if (coordinates()) {
-              <div class="mosque-detail-map-card">
-                <div class="mosque-detail-map-card__header">
-                  <div class="mosque-detail-map-card__info">
-                    <p class="mosque-detail-map-card__title">Interactive Location Map</p>
-                    <p class="mosque-detail-map-card__subtitle">
-                      Zoom in for the surrounding area or recenter on the mosque.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    class="mosque-detail-map-card__button"
-                    (click)="recenterMap()"
-                  >
-                    <i class="fas fa-crosshairs" aria-hidden="true"></i> Recenter Map
-                  </button>
+          @if (coordinates()) {
+            <div class="mosque-detail-map-card">
+              <div class="mosque-detail-map-card__header">
+                <div class="mosque-detail-map-card__info">
+                  <p class="mosque-detail-map-card__title">Interactive Location Map</p>
+                  <p class="mosque-detail-map-card__subtitle">
+                    Zoom in for the surrounding area or recenter on the mosque.
+                  </p>
                 </div>
 
-                <div
-                  class="mosque-detail-map"
-                  #detailMap
-                  aria-label="Mosque location map"
-                ></div>
+                <button
+                  type="button"
+                  class="mosque-detail-map-card__button"
+                  (click)="recenterMap()"
+                >
+                  <i class="fas fa-crosshairs" aria-hidden="true"></i> Recenter Map
+                </button>
               </div>
-            } @else {
-              <div class="mosque-detail-empty-state">
-                <i class="fas fa-map-signs mosque-empty-icon" aria-hidden="true"></i>
-                <p class="mosque-detail-note">
-                  A map preview is not available because this mosque does not have
-                  coordinates yet.
-                </p>
-              </div>
-            }
-          </article>
+
+              <div
+                class="mosque-detail-map"
+                #detailMap
+                aria-label="Mosque location map"
+              ></div>
+            </div>
+          } @else {
+            <div class="mosque-detail-empty-state">
+              <i class="fas fa-map-signs mosque-empty-icon" aria-hidden="true"></i>
+              <p class="mosque-detail-note">
+                A map preview is not available because this mosque does not have
+                coordinates yet.
+              </p>
+            </div>
+          }
         </div>
 
         <!-- Sidebar Column (1/3 width) -->
         <div class="mosque-detail-layout__sidebar">
-          <article class="mosque-detail-panel">
-            <h2 class="mosque-detail-panel__title">
-              <i class="fas fa-envelope-open-text mosque-panel-icon" aria-hidden="true"></i> Contact
-            </h2>
+          <aside class="mosque-sidebar-card">
+            <!-- Contact Section -->
+            <div class="mosque-sidebar-section">
+              <h3 class="mosque-sidebar-section__title">
+                <i class="fas fa-envelope-open-text mosque-sidebar-icon" aria-hidden="true"></i> Contact Info
+              </h3>
 
-            <div class="mosque-detail-meta-list">
-              @if (mosque.imamName) {
-                <div class="mosque-detail-meta-item">
-                  <span class="mosque-detail-meta__label">Imam</span>
-                  <span class="mosque-detail-meta__value">
-                    <i class="fas fa-user-tie" aria-hidden="true"></i> {{ mosque.imamName }}
-                  </span>
-                </div>
-              }
-
-              @if (mosque.phoneNumber) {
-                <div class="mosque-detail-meta-item">
-                  <span class="mosque-detail-meta__label">Phone</span>
-                  <a
-                    class="mosque-detail-link mosque-detail-meta__value"
-                    [href]="'tel:' + mosque.phoneNumber"
-                  >
-                    <i class="fas fa-phone-alt" aria-hidden="true"></i> {{ mosque.phoneNumber }}
-                  </a>
-                </div>
-              }
-
-              @if (mosque.email) {
-                <div class="mosque-detail-meta-item">
-                  <span class="mosque-detail-meta__label">Email</span>
-                  <a class="mosque-detail-link mosque-detail-meta__value" [href]="'mailto:' + mosque.email">
-                    <i class="fas fa-envelope" aria-hidden="true"></i> {{ mosque.email }}
-                  </a>
-                </div>
-              }
-
-              @if (
-                !mosque.imamName &&
-                !mosque.phoneNumber &&
-                !mosque.email &&
-                !mosque.websiteUrl
-              ) {
-                <div class="mosque-detail-empty-state">
-                  <i class="fas fa-address-book mosque-empty-icon" aria-hidden="true"></i>
-                  <p class="mosque-detail-note">
-                    No contact information has been added for this mosque yet.
-                  </p>
-                </div>
-              }
-            </div>
-          </article>
-
-          <article class="mosque-detail-panel">
-            <h2 class="mosque-detail-panel__title">
-              <i class="fas fa-sliders-h mosque-panel-icon" aria-hidden="true"></i> Highlights & Info
-            </h2>
-
-            <div class="mosque-detail-meta-list">
-              <div class="mosque-detail-meta-item">
-                <span class="mosque-detail-meta__label">Verification</span>
-                <span class="mosque-detail-meta__value">
-                  @if (mosque.isVerified) {
-                    <span class="verification-badge verification-badge--verified">
-                      <i class="fas fa-check-circle" aria-hidden="true"></i> Verified Listing
+              <div class="mosque-detail-meta-list">
+                @if (mosque.imamName) {
+                  <div class="mosque-detail-meta-item">
+                    <span class="mosque-detail-meta__label">Imam</span>
+                    <span class="mosque-detail-meta__value">
+                      <i class="fas fa-user-tie" aria-hidden="true"></i> {{ mosque.imamName }}
                     </span>
-                  } @else {
-                    <span class="verification-badge verification-badge--community">
-                      <i class="fas fa-users" aria-hidden="true"></i> Community Listing
-                    </span>
-                  }
-                </span>
-              </div>
+                  </div>
+                }
 
-              @if (mosque.distanceInKm !== null) {
-                <div class="mosque-detail-meta-item">
-                  <span class="mosque-detail-meta__label">Distance</span>
-                  <span class="mosque-detail-meta__value">
-                    <i class="fas fa-location-arrow" aria-hidden="true"></i> {{ mosque.distanceInKm | number: "1.1-1" }} km away
-                  </span>
-                </div>
-              }
+                @if (mosque.phoneNumber) {
+                  <div class="mosque-detail-meta-item">
+                    <span class="mosque-detail-meta__label">Phone</span>
+                    <a
+                      class="mosque-detail-link mosque-detail-meta__value"
+                      [href]="'tel:' + mosque.phoneNumber"
+                    >
+                      <i class="fas fa-phone-alt" aria-hidden="true"></i> {{ mosque.phoneNumber }}
+                    </a>
+                  </div>
+                }
 
-              <div class="mosque-detail-meta-item">
-                <span class="mosque-detail-meta__label">Women prayer area</span>
-                <span class="mosque-detail-meta__value">
-                  @if (mosque.hasWomenPrayerArea) {
-                    <span class="status-indicator status-indicator--available">
-                      <i class="fas fa-check" aria-hidden="true"></i> Available
-                    </span>
-                  } @else {
-                    <span class="status-indicator status-indicator--unavailable">
-                      <i class="fas fa-times" aria-hidden="true"></i> Not Listed
-                    </span>
-                  }
-                </span>
-              </div>
+                @if (mosque.email) {
+                  <div class="mosque-detail-meta-item">
+                    <span class="mosque-detail-meta__label">Email</span>
+                    <a class="mosque-detail-link mosque-detail-meta__value" [href]="'mailto:' + mosque.email">
+                      <i class="fas fa-envelope" aria-hidden="true"></i> {{ mosque.email }}
+                    </a>
+                  </div>
+                }
 
-              <div class="mosque-detail-meta-item">
-                <span class="mosque-detail-meta__label">Friday khutbah</span>
-                <span class="mosque-detail-meta__value">
-                  @if (mosque.hasFridayKhutbah) {
-                    <span class="status-indicator status-indicator--available">
-                      <i class="fas fa-check" aria-hidden="true"></i> Available
-                    </span>
-                  } @else {
-                    <span class="status-indicator status-indicator--unavailable">
-                      <i class="fas fa-times" aria-hidden="true"></i> Not Listed
-                    </span>
-                  }
-                </span>
+                @if (
+                  !mosque.imamName &&
+                  !mosque.phoneNumber &&
+                  !mosque.email &&
+                  !mosque.websiteUrl
+                ) {
+                  <div class="mosque-detail-empty-state">
+                    <i class="fas fa-address-book mosque-empty-icon" aria-hidden="true"></i>
+                    <p class="mosque-detail-note">
+                      No contact information has been added yet.
+                    </p>
+                  </div>
+                }
               </div>
             </div>
-          </article>
+
+            <hr class="mosque-sidebar-divider" />
+
+            <!-- Highlights & Info Section -->
+            <div class="mosque-sidebar-section">
+              <h3 class="mosque-sidebar-section__title">
+                <i class="fas fa-sliders-h mosque-sidebar-icon" aria-hidden="true"></i> Highlights & Info
+              </h3>
+
+              <div class="mosque-detail-meta-list">
+                <div class="mosque-detail-meta-item">
+                  <span class="mosque-detail-meta__label">Verification</span>
+                  <span class="mosque-detail-meta__value">
+                    @if (mosque.isVerified) {
+                      <span class="verification-badge verification-badge--verified">
+                        <i class="fas fa-check-circle" aria-hidden="true"></i> Verified Listing
+                      </span>
+                    } @else {
+                      <span class="verification-badge verification-badge--community">
+                        <i class="fas fa-users" aria-hidden="true"></i> Community Listing
+                      </span>
+                    }
+                  </span>
+                </div>
+
+                @if (mosque.distanceInKm !== null) {
+                  <div class="mosque-detail-meta-item">
+                    <span class="mosque-detail-meta__label">Distance</span>
+                    <span class="mosque-detail-meta__value">
+                      <i class="fas fa-location-arrow" aria-hidden="true"></i> {{ mosque.distanceInKm | number: "1.1-1" }} km away
+                    </span>
+                  </div>
+                }
+
+                <div class="mosque-detail-meta-item">
+                  <span class="mosque-detail-meta__label">Women prayer area</span>
+                  <span class="mosque-detail-meta__value">
+                    @if (mosque.hasWomenPrayerArea) {
+                      <span class="status-indicator status-indicator--available">
+                        <i class="fas fa-check" aria-hidden="true"></i> Available
+                      </span>
+                    } @else {
+                      <span class="status-indicator status-indicator--unavailable">
+                        <i class="fas fa-times" aria-hidden="true"></i> Not Listed
+                      </span>
+                    }
+                  </span>
+                </div>
+
+                <div class="mosque-detail-meta-item">
+                  <span class="mosque-detail-meta__label">Friday khutbah</span>
+                  <span class="mosque-detail-meta__value">
+                    @if (mosque.hasFridayKhutbah) {
+                      <span class="status-indicator status-indicator--available">
+                        <i class="fas fa-check" aria-hidden="true"></i> Available
+                      </span>
+                    } @else {
+                      <span class="status-indicator status-indicator--unavailable">
+                        <i class="fas fa-times" aria-hidden="true"></i> Not Listed
+                      </span>
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
