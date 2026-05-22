@@ -145,10 +145,8 @@
                       <a
                         *ngIf="isPamphletsTabActive(gallery)"
                         class="resources-button resources-button--outline resources-button--article"
-                        [href]="card.articleUrl"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        [attr.aria-label]="'Read article ' + card.title"
+                        [routerLink]="card.articleId ? ['/question-and-answer/topics/question'] : null"
+                        [queryParams]="card.articleId ? { id: card.articleId } : {}"
                       >
                         Read Article
                       </a>

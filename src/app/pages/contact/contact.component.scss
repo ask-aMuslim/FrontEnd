@@ -268,27 +268,56 @@ textarea {
   font-weight: 600;
   line-height: 1.5;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(21, 107, 64, 0.08);
   transition:
-    background-color 140ms ease,
-    transform 140ms ease,
-    opacity 140ms ease;
+    background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover:not(:disabled),
   &:focus-visible:not(:disabled) {
     background: #0f4f2f;
-    transform: translateY(-1px);
+    border-color: #0f4f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(21, 107, 64, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(21, 107, 64, 0.15);
   }
 
   &:disabled {
-    opacity: 0.65;
+    background: #e9ecef;
+    border-color: #ced4da;
+    color: #adb5bd;
+    opacity: 0.85;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 }
 
 .send-icon {
   width: 24px;
   height: 24px;
+  transition:
+    filter 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  .send-button:disabled & {
+    filter: grayscale(100%) brightness(0.65);
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+
+  .send-button:hover:not(:disabled) & {
+    transform: translateX(2px) translateY(-1px);
+  }
 }
 
 .submit-error {

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, Input } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Router, RouterLink } from '@angular/router';
 import {
   ResourceCard,
   ResourceTab,
@@ -13,7 +14,7 @@ import {
 @Component({
     selector: 'app-resources',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterLink],
     templateUrl: './resources.component.html',
     styleUrl: './resources.component.scss',
 })
@@ -21,6 +22,7 @@ export class ResourcesComponent {
     private readonly itemsPerLoad = 3;
     private static readonly cardThumbnailFallback = '/images/events-image-placeholder.jpg';
     private readonly sanitizer = inject(DomSanitizer);
+    private readonly router = inject(Router);
     private readonly safeDrivePreviewUrlByFileId = new Map<string, SafeResourceUrl>();
     protected readonly hero = {
         eyebrowPrimary: 'About',
@@ -492,12 +494,16 @@ export class ResourcesComponent {
             const thumbnailUrl = thumbnailUrls[0] ?? ResourcesComponent.cardThumbnailFallback;
             const title = this.toDisplayTitle(fileName);
             const subtitle = this.toCardSubtitle(idPrefix);
+            const articleId = idPrefix === 'pamphlet'
+                ? ResourcesComponent.getPamphletArticleId(title)
+                : undefined;
 
             return {
                 id: `${idPrefix}-${index + 1}`,
                 title,
                 articleUrl,
                 subtitle,
+                articleId,
                 downloadUrl,
                 thumbnailUrl,
                 thumbnailUrls,
@@ -505,6 +511,22 @@ export class ResourcesComponent {
                 driveFileId,
             };
         });
+    }
+
+    private static getPamphletArticleId(displayTitle: string): string | undefined {
+        const map: Readonly<Record<string, string>> = {
+            'Truth': '04941fd7-b369-4e8a-d7c4-08de7962a21d',
+            'Science': '4bc0851e-b42d-4416-d7c5-08de7962a21d',
+            'Prophecy': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
+            'Foretold': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
+            'Jesus': '9e35c223-3a9d-45be-ad51-08de6e5d5330',
+            'Prophet Muhammad': '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
+            'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',
+            'Women': 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
+            "Da'wah": '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
+        };
+
+        return map[displayTitle];
     }
 
     private buildDriveViewUrl(fileId: string): string {

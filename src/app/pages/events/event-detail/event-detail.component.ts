@@ -153,6 +153,10 @@ export class EventDetailComponent implements OnInit {
     void this.router.navigate(['/events']);
   }
 
+  isSeparatorVisible(event: EventDetail | null): boolean {
+    return !!(event?.agenda && event.agenda.length > 0);
+  }
+
   registerForEvent(): void {
     if (!this.eventId) {
       return;
@@ -170,6 +174,12 @@ export class EventDetailComponent implements OnInit {
       )
       .subscribe({
         next: (profile) => {
+          // If the email is already added in the profile, bypass the profile completion modal and register directly
+          if (profile?.email && profile.email.trim()) {
+            this.createEventRegistration(this.eventId as string);
+            return;
+          }
+
           if (profile?.isProfileCompleted === false) {
             this.showProfilePopup = true;
             return;

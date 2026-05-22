@@ -19,9 +19,11 @@ app-announcement-bar {
 main {
   flex: 1;
   background: var(--color-background-base);
-  z-index: 0;
+  /* Removed z-index: 0 to prevent creating a stacking context that traps nested fixed/absolute modals below the footer */
 }
 
 app-footer {
   position: relative;
+  /* Stacks below header (100) and modals (200) by defaulting to z-index: auto/relative stacking */
 }
+
