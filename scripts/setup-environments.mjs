@@ -60,6 +60,32 @@ export const environment = {
 
 const isCI = process.env.CI === 'true' || process.env.NETLIFY === 'true';
 
+// ── Generate _redirects for Netlify (overrides netlify.toml) ────────────── //
+if (isCI) {
+  const redirectsPath = path.join(rootDir, 'netlify', '_redirects');
+
+  // The Cloudflare / ngrok tunnel URL is set as a Netlify env variable.
+  // Format: https://your-tunnel.trycloudflare.com  (no trailing slash)
+  const tunnelUrl = (process.env.ASSISTANT_TUNNEL_URL || '').replace(/\/+$/, '');
+
+  if (!tunnelUrl) {
+    console.warn(
+      '[setup-environments] WARNING: ASSISTANT_TUNNEL_URL env var is not set.\n' +
+      '  The /assistant-api/* proxy redirect will NOT be written.\n' +
+      '  Set ASSISTANT_TUNNEL_URL in Netlify Environment Variables to fix this.'
+    );
+  }
+
+  const redirectsContent = [
+    `/backend/* https://api.askamuslim.com/:splat 200!`,
+    tunnelUrl ? `/assistant-api/* ${tunnelUrl}/:splat 200!` : `# /assistant-api/* <ASSISTANT_TUNNEL_URL not set>`,
+    `/* /index.html 200`,
+  ].join('\n') + '\n';
+
+  fs.writeFileSync(redirectsPath, redirectsContent, 'utf-8');
+  console.log(`Generated netlify/_redirects${tunnelUrl ? ` → ${tunnelUrl}` : ' (tunnel URL missing)'}`);
+}
+
 for (const target of targets) {
   const targetPath = path.join(envDir, target.name);
 

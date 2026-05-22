@@ -1,5 +1,5 @@
 const DIRECT_API_BASE_URL = 'https://api.askamuslim.com';
-const DIRECT_ASSISTANT_API_BASE_URL = 'https://localhost:8000';
+const DIRECT_ASSISTANT_API_BASE_URL = 'http://localhost:8000';
 const DIRECT_ASSISTANT_API_BASE_URL_FALLBACK = 'http://127.0.0.1:8000';
 
 const NETLIFY_API_BASE_URL = '/backend';
@@ -11,7 +11,12 @@ function isNetlifyBrowserHost(): boolean {
   }
 
   const hostname = globalThis.location?.hostname?.toLowerCase() ?? '';
-  return hostname.endsWith('.netlify.app') || hostname.endsWith('.netlify.live');
+  return (
+    hostname.endsWith('.netlify.app') ||
+    hostname.endsWith('.netlify.live') ||
+    hostname === 'askamuslim.com' ||
+    hostname.endsWith('.askamuslim.com')
+  );
 }
 
 export function resolveApiBaseUrl(): string {

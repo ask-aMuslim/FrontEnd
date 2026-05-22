@@ -8,11 +8,10 @@
   status = 200
   force = true
 
-[[redirects]]
-  from = "/assistant-api/*"
-  to = "http://localhost:8000/:splat"
-  status = 200
-  force = true
+# NOTE: /assistant-api/* redirect is generated dynamically at build time
+# by scripts/setup-environments.mjs using the ASSISTANT_TUNNEL_URL
+# Netlify environment variable. Set that variable in the Netlify dashboard
+# with your current Cloudflare tunnel URL (e.g. https://xxx.trycloudflare.com).
 
 [[redirects]]
   from = "/*"
