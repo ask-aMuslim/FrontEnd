@@ -1,8 +1,10 @@
-import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
+import { MosquesFacade, MosqueDto } from '../../api/facades/mosques.facade';
 // import { MyLearningComponent } from './my-learning/my-learning.component';
 import { AboutComponent } from './about/about.component';
 import { MyInquiriesComponent } from './my-inquiries/my-inquiries.component';
@@ -94,9 +96,20 @@ export class ProfileComponent implements OnInit, OnDestroy {
   isAvatarOptionsOpen = false;
   isAvatarPreviewOpen = false;
 
+  // Mosque Finder Widget state variables
+  nearestMosque: MosqueDto | null = null;
+  isLocationLoading = false;
+  locationError: string | null = null;
+
+  private readonly mosquesFacade = inject(MosquesFacade);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
   ngOnInit(): void {
     this.loadProfile();
     // this.loadUpcomingEvent();
+    if (this.isBrowser) {
+      this.checkGeolocationPermission();
+    }
   }
 
   ngOnDestroy(): void {
@@ -484,5 +497,92 @@ export class ProfileComponent implements OnInit, OnDestroy {
       minute: '2-digit',
       hour12: true,
     });
+  }
+
+  checkGeolocationPermission(): void {
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((result) => {
+        if (result.state === 'granted') {
+          this.loadNearestMosque();
+        }
+      });
+    }
+  }
+
+  loadNearestMosque(): void {
+    if (!this.isBrowser || !('geolocation' in navigator)) {
+      this.locationError = 'Geolocation is not supported by your browser.';
+      return;
+    }
+
+    this.isLocationLoading = true;
+    this.locationError = null;
+    this.cdr.detectChanges();
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        this.mosquesFacade
+          .getNearbyMosques({
+            latitude: lat,
+            longitude: lng,
+            radiusInKm: 100, // Large radius to make sure we find one if any exists
+            pageSize: 1, // Only need the single nearest mosque!
+          })
+          .pipe(take(1))
+          .subscribe({
+            next: (mosques) => {
+              if (mosques.length > 0) {
+                this.nearestMosque = mosques[0];
+              } else {
+                this.nearestMosque = null;
+                this.locationError = 'No mosques found nearby.';
+              }
+              this.isLocationLoading = false;
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.locationError = 'Failed to load nearest mosque.';
+              this.isLocationLoading = false;
+              this.cdr.detectChanges();
+            },
+          });
+      },
+      (error) => {
+        this.isLocationLoading = false;
+        this.nearestMosque = null;
+        if (error.code === error.PERMISSION_DENIED) {
+          this.locationError = 'Location access denied.';
+        } else {
+          this.locationError = 'Unable to retrieve location.';
+        }
+        this.cdr.detectChanges();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  }
+
+  resolveMosqueLocation(mosque: MosqueDto): string {
+    const parts = [
+      mosque.address,
+      mosque.district,
+      mosque.city,
+      mosque.governorate,
+      mosque.country,
+    ]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .filter((value, index, values) => values.indexOf(value) === index);
+
+    return parts.join(', ');
+  }
+
+  goToMosques(): void {
+    void this.router.navigate(['/mosques']);
   }
 }

@@ -770,8 +770,7 @@
 .profile-tab--hidden,
 .profile-tab-panel--hidden,
 .upcoming-event-widget--hidden,
-.upcoming-event-card__status--hidden,
-.mosque-widget--hidden {
+.upcoming-event-card__status--hidden {
   display: none !important;
 }
 
@@ -934,7 +933,7 @@
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-  display: none;
+  background: var(--color-background-surface);
 
   @media (min-width: 640px) {
     padding: 1.5rem;
@@ -953,37 +952,159 @@
   }
 }
 
-.mosque-widget__selects {
+.mosque-widget__action-wrapper {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.75rem;
+  padding: 0.5rem 0 1rem;
+  text-align: center;
 }
 
-.mosque-widget__select {
+.mosque-widget__description {
+  font-size: 0.875rem;
+  color: var(--color-text-caption);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.mosque-widget__loc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0 1.5rem;
+  height: 3.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-button-primary-normal);
+  background: var(--color-background-white);
+  color: var(--color-button-primary-normal);
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    background: var(--color-button-primary-normal);
+    color: var(--color-background-white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(21, 107, 64, 0.15);
+
+    .mosque-widget__loc-icon :deep(path) {
+      stroke: var(--color-background-white);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.mosque-widget__loc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: stroke 0.25s ease;
+
+  :deep(path) {
+    stroke: var(--color-button-primary-normal);
+    stroke-width: 2;
+  }
+}
+
+.mosque-widget__error {
+  font-size: 0.825rem;
+  color: var(--color-error);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.mosque-widget__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+}
+
+.mosque-widget__loading-spinner {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid rgba(21, 107, 64, 0.15);
+  border-top-color: var(--color-button-primary-normal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.mosque-widget__loading-text {
+  font-size: 0.875rem;
+  color: var(--color-text-caption);
+  font-weight: 500;
+}
+
+.mosque-widget__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background: var(--color-background-white);
+  border: 1px solid var(--color-border-brand-low);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+  margin-bottom: 0.5rem;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.mosque-widget__card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
-  padding: 0 1rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border-light);
-  background: var(--color-background-white);
-  font-size: 0.875rem;
-  color: var(--color-text-placeholder);
+}
 
-  @media (min-width: 640px) {
-    padding: 0 1.5rem;
-    height: 3.5rem;
-    font-size: 1rem;
+.mosque-widget__card-icon {
+  display: inline-flex;
+  align-items: center;
+
+  :deep(path) {
+    stroke: var(--color-button-primary-normal);
+    stroke-width: 2;
   }
 }
 
-.mosque-widget__select-icon {
-  :deep(path) {
-    stroke: var(--color-text-caption);
-  }
+.mosque-widget__card-distance {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-button-primary-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mosque-widget__card-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.mosque-widget__card-address {
+  font-size: 0.85rem;
+  color: var(--color-text-caption);
+  margin: 0;
+  line-height: 1.45;
+}
+
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .mosque-widget__btn {

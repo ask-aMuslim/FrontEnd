@@ -471,30 +471,65 @@
             }
           </div>
 
-          <div class="mosque-widget mosque-widget--hidden">
+          <div class="mosque-widget">
             <h2 class="mosque-widget__title">Looking for a near Mosque?</h2>
-            <div class="mosque-widget__selects">
-              <button class="mosque-widget__select">
-                Select your city
-                <div
-                  [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
-                  class="mosque-widget__select-icon"
-                ></div>
-              </button>
-              <button class="mosque-widget__select">
-                Select your area
-                <div
-                  [inlineSVG]="'/icons/icons-24/arrow-down.svg'"
-                  class="mosque-widget__select-icon"
-                ></div>
-              </button>
-            </div>
-            <button class="mosque-widget__btn">
-              Get on Map
-              <div class="mosque-widget__btn-icon">
-                <div [inlineSVG]="'/icons/icons-24/arrow-right.svg'"></div>
+            
+            <!-- Loading State -->
+            @if (isLocationLoading) {
+              <div class="mosque-widget__loading">
+                <div class="mosque-widget__loading-spinner"></div>
+                <span class="mosque-widget__loading-text">Finding nearest mosque...</span>
               </div>
-            </button>
+            }
+
+            <!-- Nearest Mosque Found State -->
+            @if (!isLocationLoading && nearestMosque) {
+              <div class="mosque-widget__card">
+                <div class="mosque-widget__card-header">
+                  <div [inlineSVG]="'/icons/icons-24/location.svg'" class="mosque-widget__card-icon"></div>
+                  <span class="mosque-widget__card-distance">
+                    @if (nearestMosque.distanceInKm !== null) {
+                      {{ nearestMosque.distanceInKm.toFixed(1) }} km away
+                    } @else {
+                      Nearby
+                    }
+                  </span>
+                </div>
+                <h3 class="mosque-widget__card-name">{{ nearestMosque.name }}</h3>
+                <p class="mosque-widget__card-address">{{ resolveMosqueLocation(nearestMosque) }}</p>
+                
+                <button type="button" class="mosque-widget__btn" (click)="goToMosques()">
+                  Get on Map
+                  <div class="mosque-widget__btn-icon">
+                    <div [inlineSVG]="'/icons/icons-24/arrow-right.svg'"></div>
+                  </div>
+                </button>
+              </div>
+            }
+
+            <!-- Permission / Initial State -->
+            @if (!isLocationLoading && !nearestMosque) {
+              <div class="mosque-widget__action-wrapper">
+                <p class="mosque-widget__description">
+                  Enable location permissions to automatically discover the nearest trusted mosque.
+                </p>
+                <button type="button" class="mosque-widget__loc-btn" (click)="loadNearestMosque()">
+                  <div [inlineSVG]="'/icons/icons-24/location.svg'" class="mosque-widget__loc-icon"></div>
+                  <span>Share Current Location</span>
+                </button>
+                @if (locationError) {
+                  <p class="mosque-widget__error">{{ locationError }}</p>
+                }
+              </div>
+
+              <!-- Get on Map Navigation Button -->
+              <button class="mosque-widget__btn" (click)="goToMosques()">
+                Get on Map
+                <div class="mosque-widget__btn-icon">
+                  <div [inlineSVG]="'/icons/icons-24/arrow-right.svg'"></div>
+                </div>
+              </button>
+            }
           </div>
         </div>
       </div>
