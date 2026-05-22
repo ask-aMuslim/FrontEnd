@@ -260,12 +260,12 @@
 }
 
 .ask-assistant-page__message-stack--user .ask-assistant-page__message-meta {
-  flex-direction: row-reverse;
+  flex-direction: row;
   align-self: flex-end;
 }
 
 .ask-assistant-page__message-stack--assistant .ask-assistant-page__message-meta {
-  flex-direction: row;
+  flex-direction: row-reverse;
   align-self: flex-start;
 }
 
