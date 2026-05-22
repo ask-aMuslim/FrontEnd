@@ -297,7 +297,7 @@
                   class="mosque-card__image mosque-card__image--placeholder"
                   aria-hidden="true"
                 >
-                  {{ mosque.name.charAt(0) }}
+                  <i class="fa-solid fa-mosque mosque-placeholder-icon"></i>
                 </div>
               }
 
@@ -314,7 +314,9 @@
                   }
                 </div>
 
-                <p class="mosque-card__description">{{ mosque.description }}</p>
+                @if (mosque.description) {
+                  <p class="mosque-card__description">{{ mosque.description }}</p>
+                }
 
                 <div class="mosque-card__details">
                   @if (mosque.location) {

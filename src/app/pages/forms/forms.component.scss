@@ -115,7 +115,7 @@
 
 .forms-search__input {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--border-radius-default);
   border: 1px solid var(--color-border-normal-medium, #adb5bd);
   padding: 14px 44px 14px 46px; /* accommodates icon left & clear button right */
   font-size: 15px;
@@ -162,7 +162,7 @@
 
 .forms-search__btn {
   border: none;
-  border-radius: 12px;
+  border-radius: var(--border-radius-default);
   background: var(--color-button-primary-normal, #156b40);
   color: #ffffff;
   font-weight: 600;
@@ -205,7 +205,7 @@
   flex-direction: column;
   justify-content: space-between;
   padding: 28px;
-  border-radius: 12px;
+  border-radius: var(--border-radius-default);
   background: var(--color-card-main, #ffffff);
   border: 1px solid var(--color-border-normal-low, #e9ecef);
   min-height: 220px;
@@ -303,7 +303,7 @@
   justify-content: center;
   gap: 16px;
   padding: 64px 32px;
-  border-radius: 12px;
+  border-radius: var(--border-radius-default);
   background: var(--color-background-base-surface, #f8f9fa);
   border: 1px solid var(--color-border-normal-low, #e9ecef);
   text-align: center;
@@ -372,7 +372,7 @@
 .forms-pagination__button {
   min-height: 40px;
   padding: 0 24px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-default);
   border: 1px solid var(--color-border-normal-medium, #adb5bd);
   background: var(--color-background-base, #ffffff);
   color: var(--color-text-body, #343a40);

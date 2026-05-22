@@ -175,7 +175,7 @@
   flex-direction: column;
   gap: 20px;
   padding: 28px;
-  border-radius: 24px;
+  border-radius: var(--border-radius-default);
   background: #f8fbf8;
   border: 1px solid #e4efe2;
 }
@@ -185,7 +185,7 @@
   flex-direction: column;
   gap: 24px;
   padding: 28px;
-  border-radius: 24px;
+  border-radius: var(--border-radius-default);
   background: #ffffff;
   border: 1px solid #e4efe2;
   box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.22);
@@ -246,7 +246,7 @@
   flex-direction: column;
   gap: 14px;
   padding: 16px;
-  border-radius: 22px;
+  border-radius: var(--border-radius-default);
   background: #ffffff;
   border: 1px solid #e1ece0;
   box-shadow: 0 14px 32px -26px rgba(15, 23, 42, 0.32);
@@ -329,10 +329,11 @@
 .mosques-nearby__map {
   width: 100%;
   min-height: 460px;
-  border-radius: 20px;
+  border-radius: var(--border-radius-default);
   overflow: hidden;
   border: 1px solid #d8e5d6;
   background: #eef5ee;
+  z-index: 0;
 }
 
 .mosques-nearby__legend {
@@ -403,7 +404,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  border-radius: 18px;
+  border-radius: var(--border-radius-default);
   background: #ffffff;
   border: 1px solid #e1ece0;
   box-shadow: 0 10px 24px -24px rgba(16, 24, 16, 0.6);
@@ -473,7 +474,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: var(--border-radius-default);
   background: #f9fbf8;
   border: 1px solid #e4efe2;
   min-height: 100%;
@@ -502,10 +503,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
-  font-weight: 700;
   color: #156b40;
   background: linear-gradient(135deg, #e7f2e8 0%, #dceadb 100%);
+}
+
+.mosque-placeholder-icon {
+  font-size: 56px;
+  filter: drop-shadow(0 4px 6px rgba(21, 107, 64, 0.12));
 }
 
 .mosque-card__body {
@@ -608,7 +612,7 @@
   align-items: center;
   gap: 8px;
   padding: 48px 24px;
-  border-radius: 16px;
+  border-radius: var(--border-radius-default);
   background: #f8faf7;
   border: 1px dashed #d6e4d2;
   text-align: center;

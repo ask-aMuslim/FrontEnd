@@ -13,7 +13,7 @@ import { AcademyProgressService } from '../../core/services/academy-progress.ser
 import { StudentFacade } from '../../api/facades/student.facade';
 import { AuthService } from '../../core/services/auth.service';
 import type { StudentProfile } from '../../api/facades/student.facade';
-// import { EventsService } from '../../core/services/events.service';
+import { EventsService } from '../../core/services/events.service';
 import { asRecord, getValue, toBooleanValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
@@ -67,7 +67,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly academyProgressService = inject(AcademyProgressService);
   private readonly studentFacade = inject(StudentFacade);
-  // private readonly eventsService = inject(EventsService);
+  private readonly eventsService = inject(EventsService);
   private readonly destroy$ = new Subject<void>();
 
   // Only show tabs that have backend API support
@@ -106,7 +106,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadProfile();
-    // this.loadUpcomingEvent();
+    this.loadUpcomingEvent();
     if (this.isBrowser) {
       this.checkGeolocationPermission();
     }
@@ -405,7 +405,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  /*
   private loadUpcomingEvent(): void {
     this.upcomingEvent = null;
 
@@ -434,8 +433,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
             '/images/profile-picture-navbar.png';
           const isRegistered = toBooleanValue(getValue(dataRecord, 'isRegistered', 'IsRegistered'));
 
-          // Only create event if we have valid data from API
-          if (id && (title || speaker || startDate)) {
+          // Parse date and ensure it's in the future
+          const eventDate = new Date(startDate ?? '');
+          const now = new Date();
+          const isFuture = !Number.isNaN(eventDate.getTime()) && eventDate > now;
+
+          // Only create event if we have valid data and it's a future event
+          if (id && (title || speaker || startDate) && isFuture) {
             this.upcomingEvent = {
               id,
               title: title ?? '',
@@ -456,7 +460,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       error: () => void 0,
     });
   }
-  */
+  
 
   private buildDisplayName(firstName?: string, lastName?: string): string | null {
     const first = toStringValue(firstName ?? null);

@@ -58,7 +58,7 @@
   gap: 0.5rem;
   height: 2rem;
   margin-top: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--border-radius-default);
   background: transparent;
   border: none;
   cursor: pointer;

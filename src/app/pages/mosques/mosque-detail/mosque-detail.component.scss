@@ -212,7 +212,7 @@
 .mosque-detail-image {
   width: 100%;
   height: 380px;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
   object-fit: cover;
   background: var(--color-chips-label-surface-primary);
   border: var(--border-width-hairline) solid var(--color-border-brand-low);
@@ -224,7 +224,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
   width: 100%;
   height: 380px;
   overflow: hidden;
@@ -316,7 +316,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-default);
     border: var(--border-width-hairline) solid var(--color-border-brand-low);
   }
 }
@@ -339,7 +339,7 @@
 .mosque-sidebar-card {
   background-color: var(--color-card-main);
   border: var(--border-width-hairline) solid var(--color-border-normal-low);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
   box-shadow: var(--shadows-shadow-md);
   padding: var(--spacing-xl);
   display: flex;
@@ -372,7 +372,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-default);
     border: var(--border-width-hairline) solid var(--color-border-brand-low);
   }
 }
@@ -512,7 +512,7 @@
   text-align: center;
   background: var(--color-background-base-surface);
   border: var(--border-width-hairline) dashed var(--color-border-brand-low);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-default);
   gap: 12px;
 
   .mosque-empty-icon {
@@ -536,7 +536,7 @@
   flex-direction: column;
   gap: 16px;
   padding: var(--spacing-lg);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
   background: var(--color-card-main);
   border: var(--border-width-hairline) solid var(--color-border-normal-low);
   box-shadow: var(--shadows-shadow-md);
@@ -606,7 +606,7 @@
 .mosque-detail-map {
   width: 100%;
   min-height: 340px;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-default);
   overflow: hidden;
   border: var(--border-width-hairline) solid var(--color-border-normal-low);
   z-index: 1;
@@ -669,7 +669,7 @@
   // Leaflet popup design override
   .leaflet-popup-content-wrapper {
     padding: 0;
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-default);
     overflow: hidden;
     box-shadow: var(--shadows-shadow-lg) !important;
     border: var(--border-width-hairline) solid var(--color-border-normal-low);
@@ -734,7 +734,7 @@
     padding: 0 12px;
     background: var(--color-chips-label-surface-primary);
     color: var(--color-button-primary-normal) !important;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-default);
     font-size: 11px;
     font-weight: 700;
     text-decoration: none !important;
@@ -825,7 +825,7 @@
 .skeleton-image {
   width: 100%;
   height: 380px;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
 }
 
 .mosque-detail-skeleton__grid {
@@ -844,7 +844,7 @@
 .skeleton-panel-large {
   width: 100%;
   height: 180px;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
 }
 
 .skeleton-panel-large--map {
@@ -854,7 +854,7 @@
 .skeleton-panel-small {
   width: 100%;
   height: 240px;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-default);
 }
 
 // ==========================================
@@ -910,7 +910,7 @@
   .mosque-detail-image--placeholder,
   .skeleton-image {
     height: 260px;
-    border-radius: var(--border-radius-lg);
+    border-radius: var(--border-radius-default);
   }
 
   .mosque-placeholder-letter {
@@ -922,7 +922,7 @@
 
   .mosque-sidebar-card {
     padding: var(--spacing-lg);
-    border-radius: var(--border-radius-lg);
+    border-radius: var(--border-radius-default);
   }
 }
 
@@ -931,7 +931,7 @@
   .mosque-detail-image--placeholder,
   .skeleton-image {
     height: 200px;
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-default);
   }
 
   .mosque-placeholder-letter {
