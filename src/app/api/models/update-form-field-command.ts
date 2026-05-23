@@ -5,6 +5,7 @@ import { FormFieldType } from '../models/form-field-type';
 import { UpdateFormFieldOptionCommand } from '../models/update-form-field-option-command';
 export interface UpdateFormFieldCommand {
   id?: string | null;
+  isMultiSelect?: boolean;
   isRequired?: boolean;
   label?: string;
   options?: Array<UpdateFormFieldOptionCommand>;

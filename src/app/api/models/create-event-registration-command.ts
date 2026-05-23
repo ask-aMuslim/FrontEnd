@@ -3,6 +3,4 @@
 
 export interface CreateEventRegistrationCommand {
   eventId?: string;
-  questionText?: string | null;
-  userId?: string;
 }

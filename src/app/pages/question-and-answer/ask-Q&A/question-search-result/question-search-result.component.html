@@ -22,7 +22,12 @@
         track trackByQuestionId($index, question);
         let isLast = $last
       ) {
-        <app-qa-card class="topics-search-results__item" [question]="question" />
+        <app-qa-card
+          class="topics-search-results__item"
+          [question]="question"
+          [activeTagId]="activeTagId"
+          (tagClicked)="tagClicked.emit($event)"
+        />
         @if (!isLast) {
           <div class="topics-search-results__divider search-results__divider"></div>
         }

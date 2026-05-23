@@ -7,5 +7,5 @@ export interface CreateMeetingRequestCommand {
   languages?: Array<Language>;
   message?: string;
   scheduledAt?: string;
-  topic?: MeetingInquiryTopic;
+  topic?: MeetingInquiryTopic | null;
 }

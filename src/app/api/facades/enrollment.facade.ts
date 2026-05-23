@@ -20,7 +20,8 @@ export class EnrollmentFacade {
         if (!studentId) {
             return of([]);
         }
-        return extractData(this.api.get<unknown>(`/api/Enrollments/by-student/${studentId}`), []).pipe(map(asArray<EnrollmentReadDto>));
+        // Disabled direct enrollment lookup by student to prevent API calls
+        return of([]);
     }
 
     getEnrollment(id: string): Observable<EnrollmentReadDto | null> {
@@ -32,7 +33,8 @@ export class EnrollmentFacade {
     }
 
     getEnrolledCoursesByStudent(studentId: string): Observable<EnrollmentReadDto[]> {
-        return extractData(this.api.get<unknown>(`/api/Enrollments/by-student/${studentId}`), []).pipe(map(asArray<EnrollmentReadDto>));
+        // Disabled direct enrollment lookup by student to prevent API calls
+        return of([]);
     }
 
     createEnrollment(payload: CreateEnrollmentCommand): Observable<EnrollmentReadDto | null> {

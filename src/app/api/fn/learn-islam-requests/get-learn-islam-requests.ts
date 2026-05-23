@@ -8,14 +8,12 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface GetById3$Params {
-  id: string;
+export interface GetLearnIslamRequests$Params {
 }
 
-export function getById3(http: HttpClient, rootUrl: string, params: GetById3$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, getById3.PATH, 'get');
+export function getLearnIslamRequests(http: HttpClient, rootUrl: string, params?: GetLearnIslamRequests$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, getLearnIslamRequests.PATH, 'get');
   if (params) {
-    rb.path('id', params.id, {});
   }
 
   return http.request(
@@ -28,4 +26,4 @@ export function getById3(http: HttpClient, rootUrl: string, params: GetById3$Par
   );
 }
 
-getById3.PATH = '/api/StudentNotes/{id}';
+getLearnIslamRequests.PATH = '/api/LearnIslamRequests';

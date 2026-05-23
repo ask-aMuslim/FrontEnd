@@ -1,4 +1,4 @@
-export const ASSISTANT_TUNNEL_URL = 'https://preparing-earliest-wells-wool.trycloudflare.com';
+export const ASSISTANT_TUNNEL_URL = 'https://readings-handed-poem-packaging.trycloudflare.com';
 
 const DIRECT_API_BASE_URL = 'https://api.askamuslim.com';
 const DIRECT_ASSISTANT_API_BASE_URL = ASSISTANT_TUNNEL_URL;

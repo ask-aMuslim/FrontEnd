@@ -1,5 +1,10 @@
+
 import { type ResolveFn } from '@angular/router';
 import { of } from 'rxjs';
+
+
+
+
 
 export interface ResourceCard {
   readonly id: string;
@@ -7,6 +12,7 @@ export interface ResourceCard {
   readonly subtitle: string;
   readonly articleUrl: string;
   readonly articleId?: string;
+  readonly tagId?: string;
   readonly downloadUrl: string;
   readonly thumbnailUrl: string;
   readonly thumbnailUrls?: readonly string[];
@@ -259,15 +265,16 @@ const getPamphletArticleId = (displayTitle: string): string | undefined => {
     'Truth': '04941fd7-b369-4e8a-d7c4-08de7962a21d',
     'Science': '4bc0851e-b42d-4416-d7c5-08de7962a21d',
     'Prophecy': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
-    'Foretold': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
-    'Jesus': '9e35c223-3a9d-45be-ad51-08de6e5d5330',
+    'Foretold': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+    'Jesus': '2ac25076-8d77-4c64-d7c8-08de7962a21d',
     'Prophet Muhammad': '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
     'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',
     'Women': 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
     "Da'wah": '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
   };
 
-  return map[displayTitle];
+  const key = displayTitle.replace(/\s*Pamphlet$/i, '').trim();
+  return map[key];
 };
 
 const pamphletCards = buildPdfCards(

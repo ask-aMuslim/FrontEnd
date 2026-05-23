@@ -1,7 +1,8 @@
 <div class="topics-question-page flex flex-col gap-10">
   <div class="topics-question-page__breadcrumb">
     <a
-      routerLink="/question-and-answer/topics"
+      [routerLink]="['/question-and-answer/topics']"
+      [queryParams]="backQueryParams"
       class="topics-question-page__breadcrumb-link text-(--color-text-placeholder) hover:underline cursor-pointer"
       >Topics</a
     >

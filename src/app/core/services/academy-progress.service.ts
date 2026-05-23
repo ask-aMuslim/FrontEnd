@@ -834,6 +834,17 @@ export class AcademyProgressService {
         );
     }
 
+    /**
+     * Fetches a course directly from GET /api/Courses/:id without triggering
+     * any additional requests (no lessons, no quizzes, no stages, no enrollment).
+     * Use this for the course detail page where only the course data is needed.
+     */
+    getCourseByIdDirect(courseId: string): Observable<import('../../api/facades/course.facade').CourseReadByIdDto | null> {
+        return this.courseFacade.getCourseById(courseId).pipe(
+            catchError(() => of(null))
+        );
+    }
+
     private readonly activeLessonsRequests = new Map<string, Observable<AcademyLesson[]>>();
 
     getAcademyLessons(courseId: string, forceRefresh = false): Observable<AcademyLesson[]> {
@@ -879,6 +890,21 @@ export class AcademyProgressService {
 
         return this.formatCourseDurationFromSeconds(totalMediaSeconds);
     }
+
+    /**
+     * Helper to retrieve the matching level name/title for a given course.
+     * Uses cached stages, making it efficient and safe to call anywhere.
+     */
+    getLevelTitleForCourse(course: { levelId?: string; stageId: number }): Observable<string> {
+        return this.getAcademyStages().pipe(
+            map(stages => {
+                const matchedStage = stages.find(s => s.id === course.levelId)
+                    || stages.find(s => s.number === course.stageId);
+                return matchedStage?.title || `Stage ${course.stageId}`;
+            })
+        );
+    }
+
 
     /**
      * Get lessons for a specific course with their progress.
@@ -1181,9 +1207,10 @@ export class AcademyProgressService {
                     ? Math.round((normalizedProgress / 100) * totalCourseItems)
                     : 0;
 
-                const isApiCompleted = normalizedProgress >= 100 || !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
                 const requiresQuizPass = this.courseHasAnyQuiz(course.id);
-                const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
+                const quizPassed = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
+
+                const isApiCompleted = (normalizedProgress >= 100 && (!requiresQuizPass || quizPassed)) || !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
 
                 const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
                 const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
@@ -1194,6 +1221,9 @@ export class AcademyProgressService {
                 if (!hasApiProgress && requiresQuizPass && quizPassed) {
                     completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, totalCourseItems - completedStandaloneQuizCount);
                 }
+                if (requiresQuizPass && !quizPassed) {
+                    completedLessonsBeforeStandaloneQuiz = Math.min(completedLessonsBeforeStandaloneQuiz, totalCourseItems - this.getStandaloneQuizCount(course.id));
+                }
 
                 const completedLessonsCount = totalCourseItems > 0
                     ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
@@ -1203,16 +1233,6 @@ export class AcademyProgressService {
                     ? this.normalizeProgressPercentage((completedLessonsCount / totalCourseItems) * 100)
                     : 0;
 
-                let progressBeforeCompletion = hasApiProgress
-                    ? normalizedProgress
-                    : isApiCompleted
-                        ? 100
-                        : Math.max(normalizedProgress, completionRateFromLessons);
-
-                if (!hasApiProgress && !isApiCompleted && requiresQuizPass && !quizPassed) {
-                    progressBeforeCompletion = completionRateFromLessons;
-                }
-
                 const hasTrackableCourseItems = totalCourseItems > 0;
                 const completedByRule = hasTrackableCourseItems
                     && !hasApiProgress
@@ -1220,6 +1240,16 @@ export class AcademyProgressService {
                     && (!requiresQuizPass || quizPassed);
 
                 const isCourseCompleted = isApiCompleted || completedByRule || isEnrollmentCompleted;
+
+                let progressBeforeCompletion = hasApiProgress
+                    ? normalizedProgress
+                    : isApiCompleted
+                        ? 100
+                        : Math.max(normalizedProgress, completionRateFromLessons);
+
+                if (!isCourseCompleted && requiresQuizPass && !quizPassed) {
+                    progressBeforeCompletion = Math.min(progressBeforeCompletion, completionRateFromLessons);
+                }
 
                 if (isCourseCompleted) {
                     status = 'completed';

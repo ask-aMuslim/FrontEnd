@@ -1,16 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, combineLatest, of } from 'rxjs';
-import { takeUntil, switchMap, catchError, tap, take } from 'rxjs/operators';
-import {
-    AcademyProgressService,
-    CourseEnrollmentState,
-} from '../../../core/services/academy-progress.service';
-import { QuizzesService } from '../../../core/services/quizzes.service';
-import { QuizReadDto } from '../../../api/facades/quiz.facade';
+import { Subject, of } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
+import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { CourseReadByIdDto } from '../../../api/facades/course.facade';
 import {
     AcademyPageShellComponent,
     AcademyBreadcrumbItem,
@@ -19,27 +14,26 @@ import {
     AcademySidebarLessonItem,
 } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
 import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
-import {
-    AcademyCourse,
-    AcademyLesson,
-    AcademyStageApi,
-    CourseProgress,
-    LessonProgress,
-} from '../../../core/models/interfaces/academy-progress.model';
 import { CourseResolvedData } from './course.resolver';
 
 /**
- * Lesson interface for template binding
+ * Lesson interface for template binding — built from the lessons[] array
+ * embedded in GET /api/Courses/:id response.
  */
 interface Lesson {
     id: string;
-    quizLessonId?: string;
     title: string;
     duration: string;
     type: 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';
     isLocked: boolean;
     isCompleted: boolean;
     isCurrent: boolean;
+    isPublished?: boolean;
+    lessonHasQuiz?: boolean;
+    isLessonQuizPassed?: boolean;
+    isLessonCompleted?: boolean;
+    lessonQuizName?: string;
+    quizLessonId?: string;
     isLastCourseLesson?: boolean;
     hasNotification?: boolean;
 }
@@ -49,15 +43,16 @@ interface Lesson {
  */
 interface CourseDetails {
     id: string;
+    levelName: string;
     stageNumber: number;
     stageLabel: string;
+    duration: string;
     title: string;
     intro: string;
-    lessons: string[];
+    lessons: string[];       // lesson titles for the details section
     answers: string[];
     totalLessons: number;
     completedLessons: number;
-    duration: string;
     isLocked: boolean;
     hasUnmetPrerequisites: boolean;
     unmetPrerequisiteNames: string[];
@@ -65,6 +60,18 @@ interface CourseDetails {
     isEnrollmentCompleted: boolean;
     lessonsList: Lesson[];
     prerequisitesList: { id: string; title: string; isCompleted: boolean }[];
+}
+
+/** Maps a numeric lesson type to a string type label */
+function mapLessonType(raw: unknown): Lesson['type'] {
+    // API may return numeric or string type
+    const str = String(raw ?? '').toLowerCase();
+    if (str === '1' || str === 'video') return 'video';
+    if (str === '2' || str === 'article') return 'article';
+    if (str === '3' || str === 'document') return 'document';
+    if (str === '4' || str === 'quiz') return 'quiz';
+    if (str === '5' || str === 'audio') return 'audio';
+    return 'intro';
 }
 
 @Component({
@@ -83,23 +90,19 @@ export class CourseComponent implements OnInit, OnDestroy {
     private readonly router = inject(Router);
     private readonly route = inject(ActivatedRoute);
     private readonly academyProgressService = inject(AcademyProgressService);
-    private readonly quizzesService = inject(QuizzesService);
     private readonly authService = inject(AuthService);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-    // Course data loaded from service
     course: CourseDetails | null = null;
 
-    // Loading and error states
     isLoading = true;
     error: string | null = null;
     showSignInPrompt = false;
     isEnrolling = false;
 
-    backgroundImageUrl =
-        '/backgrounds/course-background.png'; // Default background image for all courses (can be customized per course if needed)
+    backgroundImageUrl = '/backgrounds/course-background.png';
 
     get hasPlayableLesson(): boolean {
         return !!this.course?.lessonsList.some(
@@ -130,245 +133,141 @@ export class CourseComponent implements OnInit, OnDestroy {
     }
 
     get isBeginDisabled(): boolean {
-        if (!this.course) {
-            return true;
-        }
-
-        return (
-            !this.hasPublishedLessons ||
-            !this.hasPlayableLesson
-        );
+        if (!this.course) return true;
+        return !this.hasPublishedLessons || !this.hasPlayableLesson;
     }
 
     private getUnlockedQuizLessonId(): string | null {
         const quizLesson = this.course?.lessonsList.find(
             (lesson) => !lesson.isLocked && lesson.type === 'quiz',
         );
-
-        if (!quizLesson) {
-            return null;
-        }
-
-        if (quizLesson.quizLessonId) {
-            return quizLesson.quizLessonId;
-        }
-
-        if (quizLesson.id.startsWith(CourseComponent.syntheticQuizLessonPrefix)) {
-            return null;
-        }
-
-        return quizLesson?.id ?? null;
+        if (!quizLesson) return null;
+        if (quizLesson.quizLessonId) return quizLesson.quizLessonId;
+        if (quizLesson.id.startsWith(CourseComponent.syntheticQuizLessonPrefix)) return null;
+        return quizLesson.id;
     }
 
     get isUserAuthenticated(): boolean {
         return this.authService.isAuthenticated();
     }
 
-    readonly breadcrumbs: readonly AcademyBreadcrumbItem[] = [
-        { label: 'Academy', link: ['/academy'] },
-    ];
+    get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
+        const list: AcademyBreadcrumbItem[] = [
+            { label: 'Academy', link: ['/academy'] },
+        ];
+        if (this.course?.levelName) {
+            list.push({ label: this.course.levelName, link: ['/academy'] });
+        }
+        return list;
+    }
 
     ngOnInit(): void {
         this.route.data
             .pipe(takeUntil(this.destroy$))
             .subscribe((data) => {
                 const resolved = data['resolvedData'] as CourseResolvedData | null;
-                if (!resolved) {
-                    if (this.isBrowser) {
-                        const courseId = this.route.snapshot.paramMap.get('id') || '';
-                        if (courseId) {
-                            this.loadCourseDataDirectly(courseId);
-                            return;
-                        }
-                    }
-                    this.error = 'This course is unavailable right now.';
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
+                if (resolved?.courseData) {
+                    this.buildFromRawCourse(resolved.courseData);
                     return;
                 }
 
-                this.courseId = resolved.courseData.id;
-                const safeEnrollmentState = resolved.enrollmentState || {
-                    enrollmentId: null,
-                    status: null,
-                    isEnrolled: false,
-                    isCompleted: false,
-                };
+                // Fallback: fetch directly on the client when resolver returned null
+                if (this.isBrowser) {
+                    const courseId = this.route.snapshot.paramMap.get('id') || '';
+                    if (courseId) {
+                        this.fetchCourseDirectly(courseId);
+                        return;
+                    }
+                }
 
-                this.course = this.buildCourseDetails(
-                    resolved.courseData,
-                    resolved.courseProgress,
-                    resolved.lessonsWithProgress,
-                    resolved.stages,
-                    safeEnrollmentState,
-                    resolved.quizzes,
-                    resolved.prerequisitesList
-                );
-                this.error = null;
+                this.error = 'This course is unavailable right now.';
                 this.isLoading = false;
                 this.cdr.detectChanges();
             });
     }
 
-    private loadCourseDataDirectly(courseId: string): void {
+    private fetchCourseDirectly(courseId: string): void {
         this.isLoading = true;
         this.error = null;
 
-        this.academyProgressService.getAcademyCourseById(courseId).pipe(
+        this.academyProgressService.getCourseByIdDirect(courseId).pipe(
             takeUntil(this.destroy$),
-            switchMap((courseData) => {
-                if (!courseData || courseData.id !== courseId) {
-                    this.error = 'This course is unavailable right now.';
-                    this.isLoading = false;
-                    this.cdr.detectChanges();
-                    return of(null);
-                }
-
-                const prerequisites = courseData.prerequisites ?? [];
-                return combineLatest([
-                    of(courseData),
-                    this.academyProgressService.getTargetedCourseProgress(courseId).pipe(take(1), catchError(() => of(undefined))),
-                    this.academyProgressService.getCourseLessonsWithProgress(courseId).pipe(take(1), catchError(() => of([]))),
-                    this.academyProgressService.getAcademyStages().pipe(take(1), catchError(() => of([]))),
-                    this.academyProgressService.getCurrentStudentCourseEnrollment(courseId).pipe(take(1), catchError(() => of(undefined))),
-                    this.quizzesService.getAll({ courseId, pageSize: 200 }).pipe(take(1), catchError(() => of([]))),
-                    this.academyProgressService.getTargetedPrerequisiteDetails(prerequisites).pipe(take(1), catchError(() => of([]))),
-                ]).pipe(
-                    take(1),
-                    tap(([
-                        courseInfo,
-                        courseProgress,
-                        lessonsWithProgress,
-                        stages,
-                        enrollmentState,
-                        quizzes,
-                        prerequisitesList,
-                    ]) => {
-                        const safeEnrollmentState = enrollmentState || {
-                            enrollmentId: null,
-                            status: null,
-                            isEnrolled: false,
-                            isCompleted: false,
-                        };
-
-                        this.course = this.buildCourseDetails(
-                            courseInfo,
-                            courseProgress,
-                            lessonsWithProgress,
-                            stages,
-                            safeEnrollmentState,
-                            quizzes,
-                            prerequisitesList
-                        );
-                        this.error = null;
-                        this.isLoading = false;
-                        this.cdr.detectChanges();
-                    }),
-                    catchError(() => {
-                        this.error = 'This course is unavailable right now.';
-                        this.isLoading = false;
-                        this.cdr.detectChanges();
-                        return of(null);
-                    })
-                );
-            }),
-            catchError(() => {
+            catchError(() => of(null)),
+        ).subscribe((course) => {
+            if (!course) {
                 this.error = 'This course is unavailable right now.';
                 this.isLoading = false;
                 this.cdr.detectChanges();
-                return of(null);
-            })
-        ).subscribe();
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+                return;
+            }
+            this.buildFromRawCourse(course);
+        });
     }
 
     /**
-     * Build CourseDetails from service data
+     * Build CourseDetails from the raw /api/Courses/:id response.
+     * All required data (lessons, level name) comes from this single response.
      */
-    private buildCourseDetails(
-        courseData: AcademyCourse,
-        courseProgress: CourseProgress | undefined,
-        lessonsWithProgress: (AcademyLesson & { progress: LessonProgress })[],
-        stages: AcademyStageApi[],
-        enrollmentState: CourseEnrollmentState,
-        quizzes: QuizReadDto[],
-        prerequisitesList: { id: string, title: string, isCompleted: boolean }[],
-    ): CourseDetails {
-        const matchedStage =
-            stages.find((stage) => stage.id === courseData.levelId)
-            ?? stages.find((stage) => stage.number === courseData.stageId);
+    private buildFromRawCourse(raw: CourseReadByIdDto): void {
+        this.courseId = raw.id ?? '';
 
-        const stageNumber = matchedStage?.number ?? courseData.stageId ?? 1;
+        const rawLessons: any[] = Array.isArray((raw as any).lessons)
+            ? (raw as any).lessons
+            : [];
 
-        const isLocked = this.isUserAuthenticated
-            ? courseProgress?.status === 'locked' && stageNumber > 1
-            : false;
+        const lessonsList: Lesson[] = rawLessons
+            .filter((l: any) => l.isPublished !== false)
+            .map((l: any) => ({
+                id: l.id ?? '',
+                title: l.title ?? '',
+                duration: l.duration ?? '~5min',
+                type: mapLessonType(l.type),
+                isLocked: false,
+                isCompleted: l.isLessonCompleted ?? false,
+                isCurrent: false,
+                isPublished: l.isPublished ?? true,
+                lessonHasQuiz: l.lessonHasQuiz ?? false,
+                isLessonQuizPassed: l.isLessonQuizPassed ?? false,
+                isLessonCompleted: l.isLessonCompleted ?? false,
+                lessonQuizName: l.lessonQuizName ?? undefined,
+            } as Lesson));
 
-        const unmetPrerequisites = prerequisitesList.filter(p => !p.isCompleted);
-        const unmetPrerequisiteNames = unmetPrerequisites.map(p => p.title);
-        const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
-
-        const isEnrolled = this.isUserAuthenticated && enrollmentState.isEnrolled;
-        const isEnrollmentCompleted = this.isUserAuthenticated && enrollmentState.isCompleted;
-
-        const courseLessonIds = new Set(lessonsWithProgress.map((lesson) => lesson.id));
-        const scopedQuizzes = quizzes.filter((quiz) => {
-            const lessonId = typeof quiz.lessonId === 'string' ? quiz.lessonId.trim() : '';
-            return lessonId.length === 0 || courseLessonIds.has(lessonId);
-        });
-
-        const sidebarLessons = this.ensureSidebarHasQuizLesson(
-            lessonsWithProgress.map((lesson) =>
-                this.mapLessonForDisplay(lesson, isLocked || hasUnmetPrerequisites, false, null)
-            ),
-            scopedQuizzes,
-            isLocked || hasUnmetPrerequisites,
-        );
-
-        const aggregatedVideoDuration = this.academyProgressService.calculateCourseVideoDuration(
-            lessonsWithProgress,
-            '0m',
-        );
-
-        let stageLabel = `Stage ${stageNumber}`;
-        if (matchedStage) {
-            stageLabel = `Stage ${matchedStage.number}: ${matchedStage.title}`;
+        // Mark first uncompleted lesson as current
+        const firstPending = lessonsList.findIndex((l) => !l.isCompleted && l.type !== 'quiz');
+        if (firstPending >= 0) {
+            lessonsList[firstPending] = { ...lessonsList[firstPending], isCurrent: true };
         }
 
-        return {
-            id: courseData.id,
-            stageNumber,
-            stageLabel,
-            title: courseData.title,
-            intro:
-                courseData.description ||
-                "In this course, you'll learn comprehensive content designed to guide you step by step through important Islamic teachings.",
-            lessons: lessonsWithProgress
+        this.course = {
+            id: raw.id ?? '',
+            levelName: raw.level ?? '',
+            stageNumber: 1, // TODO: Determine actual stage number from levelId if mapping available
+            stageLabel: raw.level ? raw.level : 'Course',
+            duration: this.calculateCourseDuration(lessonsList),
+            title: raw.title ?? '',
+            intro: raw.description ?? '',
+            lessons: lessonsList
                 .filter((l) => l.type !== 'quiz' && l.type !== 'intro')
                 .map((l) => l.title),
-            answers: this.extractOutcomes(courseData.description),
-            totalLessons: lessonsWithProgress.length,
-            completedLessons: lessonsWithProgress.filter((l) => l.progress.isCompleted).length,
-            duration: aggregatedVideoDuration,
-            isLocked,
-            hasUnmetPrerequisites,
-            unmetPrerequisiteNames,
-            isEnrolled,
-            isEnrollmentCompleted,
-            lessonsList: sidebarLessons,
-            prerequisitesList,
+            answers: this.extractOutcomes(raw.description),
+            totalLessons: lessonsList.length,
+            completedLessons: lessonsList.filter((l) => l.isCompleted).length,
+            isLocked: false,
+            hasUnmetPrerequisites: false,
+            unmetPrerequisiteNames: this.buildUnmetPrerequisiteNames(raw.prerequisites ?? []),
+            isEnrolled: false,
+            isEnrollmentCompleted: false,
+            lessonsList,
+            prerequisitesList: this.buildPrerequisitesList(raw.prerequisites ?? []),
         };
+
+        this.error = null;
+        this.isLoading = false;
+        this.cdr.detectChanges();
     }
 
     private extractOutcomes(description: string | undefined): string[] {
-        if (!description) {
-            return [];
-        }
-
+        if (!description) return [];
         return description
             .split(/[\n•]+/)
             .map((line) => line.trim())
@@ -377,65 +276,68 @@ export class CourseComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Map lesson data for display
+     * Calculate total course duration from lessons
      */
-    private mapLessonForDisplay(
-        lesson: AcademyLesson & { progress: LessonProgress },
-        courseLocked: boolean,
-        allowCurrentLesson: boolean = true,
-        lastContentLessonId: string | null = null,
-    ): Lesson {
-        if (!this.isUserAuthenticated) {
-            return {
-                id: lesson.id,
-                title: lesson.title,
-                duration: lesson.duration,
-                type: lesson.type,
-                isLocked: false,
-                isCompleted: false,
-                isCurrent: false,
-                hasNotification: false,
-            };
+    private calculateCourseDuration(lessons: Lesson[]): string {
+        const totalSeconds = lessons
+            .filter(lesson => lesson.type !== 'quiz')
+            .reduce((total, lesson) => {
+                // Parse duration string like "~5min" or "10 min" to seconds
+                const match = lesson.duration.match(/(\d+)/);
+                const minutes = match ? parseInt(match[1], 10) : 5; // default 5 min
+                return total + (minutes * 60);
+            }, 0);
+
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
         }
-
-        const isLocked = courseLocked || lesson.progress.status === 'locked';
-        const isCompleted = lesson.progress.isCompleted;
-        const isCurrent = allowCurrentLesson && lesson.progress.status === 'current';
-
-        return {
-            id: lesson.id,
-            quizLessonId: lesson.type === 'quiz' ? lesson.id : undefined,
-            title: lesson.title,
-            duration: lesson.duration,
-            type: lesson.type,
-            isLocked,
-            isCompleted,
-            isCurrent,
-            isLastCourseLesson:
-                allowCurrentLesson
-                && isCurrent
-                && !!lastContentLessonId
-                && lesson.id === lastContentLessonId,
-            hasNotification: isCurrent,
-        };
+        return `${minutes}m`;
     }
 
     /**
-     * Navigate to first lesson (Begin button)
+     * Build prerequisites list for display
      */
+    private buildPrerequisitesList(prerequisites: any[]): { id: string; title: string; isCompleted: boolean }[] {
+        if (!prerequisites || !Array.isArray(prerequisites)) {
+            return [];
+        }
+        
+        return prerequisites.map((prereq: any) => ({
+            id: prereq.id ?? '',
+            title: prereq.title ?? 'Unknown Course',
+            isCompleted: prereq.isCompleted ?? false
+        }));
+    }
+
+    /**
+     * Build unmet prerequisite names array
+     */
+    private buildUnmetPrerequisiteNames(prerequisites: any[]): string[] {
+        if (!prerequisites || !Array.isArray(prerequisites)) {
+            return [];
+        }
+        
+        return prerequisites
+            .filter((prereq: any) => !(prereq.isCompleted ?? false))
+            .map((prereq: any) => prereq.title ?? 'Unknown Course');
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     onBeginClick(): void {
         if (!this.authService.isAuthenticated()) {
             this.showSignInPrompt = true;
             return;
         }
 
-        if (!this.course || this.course.isLocked || this.course.hasUnmetPrerequisites || this.isBeginDisabled) {
-            return;
-        }
-
-        if (!this.hasPlayableLesson || this.isEnrolling) {
-            return;
-        }
+        if (!this.course || this.course.isLocked || this.isBeginDisabled) return;
+        if (!this.hasPlayableLesson || this.isEnrolling) return;
 
         if (this.hasCourseEnrollment) {
             this.navigateToPrimaryActionLesson(true);
@@ -447,17 +349,13 @@ export class CourseComponent implements OnInit, OnDestroy {
     }
 
     private navigateToPrimaryActionLesson(preferNextUncompleted: boolean): void {
-        if (!this.course) {
-            return;
-        }
+        if (!this.course) return;
 
         const unlockedNonQuizLessons = this.course.lessonsList.filter(
             (lesson) => !lesson.isLocked && lesson.type !== 'quiz',
         );
 
-        if (unlockedNonQuizLessons.length === 0) {
-            return;
-        }
+        if (unlockedNonQuizLessons.length === 0) return;
 
         const nextUncompletedLesson = unlockedNonQuizLessons.find((lesson) => !lesson.isCompleted);
         const targetLesson = preferNextUncompleted
@@ -474,14 +372,10 @@ export class CourseComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (isEnrolled) => {
-                    if (!isEnrolled || this.course?.id !== courseId) {
-                        return;
-                    }
-
+                    if (!isEnrolled || this.course?.id !== courseId) return;
                     this.course = {
                         ...this.course,
                         isEnrolled: true,
-                        isEnrollmentCompleted: this.course.isEnrollmentCompleted,
                     };
                     this.cdr.detectChanges();
                 },
@@ -489,19 +383,14 @@ export class CourseComponent implements OnInit, OnDestroy {
             });
     }
 
-    /**
-     * Navigate to quiz lesson (Take Quiz button)
-     */
     onTakeQuizClick(): void {
         if (!this.authService.isAuthenticated()) {
             this.showSignInPrompt = true;
             return;
         }
 
-        if (this.course && !this.course.isLocked && !this.course.hasUnmetPrerequisites) {
-            if (!this.hasQuizLesson) {
-                return;
-            }
+        if (this.course && !this.course.isLocked) {
+            if (!this.hasQuizLesson) return;
 
             const quizLessonId = this.getUnlockedQuizLessonId();
             if (quizLessonId) {
@@ -513,9 +402,6 @@ export class CourseComponent implements OnInit, OnDestroy {
         }
     }
 
-    /**
-     * Navigate to specific lesson
-     */
     onLessonClick(lesson: AcademySidebarLessonItem): void {
         if (!this.authService.isAuthenticated()) {
             this.showSignInPrompt = true;
@@ -533,66 +419,9 @@ export class CourseComponent implements OnInit, OnDestroy {
                     this.router.navigate(['quiz'], { relativeTo: this.route });
                 }
             } else {
-                // Updated path from academy routes
                 this.router.navigate(['lesson', lesson.id], { relativeTo: this.route });
             }
         }
-    }
-
-    private ensureSidebarHasQuizLesson(
-        lessons: Lesson[],
-        quizzes: QuizReadDto[],
-        isLocked: boolean,
-    ): Lesson[] {
-        // First, look for a course quiz (quiz without a specific lessonId)
-        const courseQuiz = quizzes.find(
-            (quiz) => !quiz.lessonId || (typeof quiz.lessonId === 'string' && quiz.lessonId.trim().length === 0),
-        );
-
-        const quizLesson = lessons.find(
-            (lesson) => lesson.type === 'quiz' && !lesson.id.startsWith(CourseComponent.syntheticQuizLessonPrefix),
-        );
-
-        // Determine which quiz to use as fallback
-        let fallbackCourseQuiz = courseQuiz;
-        if (!fallbackCourseQuiz && quizLesson) {
-            fallbackCourseQuiz = quizzes.find((quiz) => quiz.lessonId === quizLesson.id);
-        }
-        fallbackCourseQuiz ??= quizzes.find((quiz) => typeof quiz.title === 'string' && quiz.title.trim().length > 0);
-
-        // Determine quizLessonId: use quiz lesson if we have one, else undefined
-        const quizLessonId = quizLesson?.id ?? undefined;
-
-        const quizTitle = fallbackCourseQuiz?.title?.trim() || 'Quiz';
-
-        const lessonsWithQuizTitle = lessons.map((lesson) =>
-            lesson.type === 'quiz'
-                ? {
-                    ...lesson,
-                    title: quizTitle,
-                    duration: 'Assessment',
-                }
-                : lesson
-        );
-
-        if (lessonsWithQuizTitle.some((lesson) => lesson.type === 'quiz') || quizzes.length === 0) {
-            return lessonsWithQuizTitle;
-        }
-
-        return [
-            ...lessonsWithQuizTitle,
-            {
-                id: `${CourseComponent.syntheticQuizLessonPrefix}${quizLessonId ?? this.courseId}`,
-                quizLessonId,
-                title: quizTitle,
-                duration: 'Assessment',
-                type: 'quiz',
-                isLocked,
-                isCompleted: false,
-                isCurrent: false,
-                hasNotification: false,
-            },
-        ];
     }
 
     closeSignInPrompt(): void {

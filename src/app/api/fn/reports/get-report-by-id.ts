@@ -7,18 +7,15 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { UpdateMeetingRequestStatusCommand } from '../../models/update-meeting-request-status-command';
 
-export interface UpdateStatus2$Params {
+export interface GetReportById$Params {
   id: string;
-      body: UpdateMeetingRequestStatusCommand
 }
 
-export function updateStatus2(http: HttpClient, rootUrl: string, params: UpdateStatus2$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, updateStatus2.PATH, 'put');
+export function getReportById(http: HttpClient, rootUrl: string, params: GetReportById$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, getReportById.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});
-    rb.body(params.body, 'application/json');
   }
 
   return http.request(
@@ -31,4 +28,4 @@ export function updateStatus2(http: HttpClient, rootUrl: string, params: UpdateS
   );
 }
 
-updateStatus2.PATH = '/api/MeetingRequests/{id}/status';
+getReportById.PATH = '/api/Reports/{id}';

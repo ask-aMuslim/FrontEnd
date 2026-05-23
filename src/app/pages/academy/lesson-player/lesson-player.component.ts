@@ -123,6 +123,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     feedbackSubmissionMessage: string | null = null;
     feedbackSubmissionStatus: 'success' | 'error' | null = null;
     isSubmittingFeedback = false;
+    levelName = '';
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
@@ -175,13 +176,20 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
-        return [
-            ...this.breadcrumbsBase,
-            {
-                label: this.currentCourse?.title || 'Course',
-                link: ['/academy/course', this.courseId],
-            },
+        const list: AcademyBreadcrumbItem[] = [
+            ...this.breadcrumbsBase
         ];
+        if (this.levelName) {
+            list.push({
+                label: this.levelName,
+                link: ['/academy'],
+            });
+        }
+        list.push({
+            label: this.currentCourse?.title || 'Course',
+            link: ['/academy/course', this.courseId],
+        });
+        return list;
     }
 
     get currentBreadcrumb(): string {
@@ -251,6 +259,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ...course,
             duration: aggregatedVideoDuration,
         };
+        this.academyProgressService.getLevelTitleForCourse(course)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((title) => {
+                this.levelName = title;
+                this.cdr.detectChanges();
+            });
         this.hasCourseQuiz = scopedQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
         this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, scopedQuizzes);
         this.courseQuizTitle = this.resolveCourseQuizTitle(lessonsWithProgress, scopedQuizzes);

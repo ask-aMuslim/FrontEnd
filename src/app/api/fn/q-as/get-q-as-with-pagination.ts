@@ -10,21 +10,23 @@ import { RequestBuilder } from '../../request-builder';
 import { Language } from '../../models/language';
 
 export interface GetQAsWithPagination$Params {
-  PageNumber?: number | null;
-  PageSize?: number | null;
-  SearchTerm?: string | null;
-  IsPublished?: boolean | null;
-  Language?: Language | null;
+  pageNumber?: number | null;
+  pageSize?: number | null;
+  searchTerm?: string | null;
+  isPublished?: boolean | null;
+  language?: Language | null;
+  tagIds?: Array<string> | null;
 }
 
 export function getQAsWithPagination(http: HttpClient, rootUrl: string, params?: GetQAsWithPagination$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, getQAsWithPagination.PATH, 'get');
   if (params) {
-    rb.query('PageNumber', params.PageNumber, {});
-    rb.query('PageSize', params.PageSize, {});
-    rb.query('SearchTerm', params.SearchTerm, {});
-    rb.query('IsPublished', params.IsPublished, {});
-    rb.query('Language', params.Language, {});
+    rb.query('pageNumber', params.pageNumber, {});
+    rb.query('pageSize', params.pageSize, {});
+    rb.query('searchTerm', params.searchTerm, {});
+    rb.query('isPublished', params.isPublished, {});
+    rb.query('language', params.language, {});
+    rb.query('tagIds', params.tagIds, {"style":"form","explode":true});
   }
 
   return http.request(

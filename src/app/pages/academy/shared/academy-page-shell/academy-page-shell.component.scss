@@ -171,19 +171,19 @@
     @media (min-width: 768px) {
       padding: 40px 2.5rem 48px;
       max-width: min(1248px, 100% - 5rem);
-      gap: 3rem;
+      gap: 8rem;
     }
 
     @media (min-width: 1024px) {
       padding: 40px 3rem 48px;
       max-width: min(1248px, 100% - 6rem);
-      gap: 4rem;
+      gap: 10rem;
     }
 
     @media (min-width: 1280px) {
       padding: 40px 4rem 48px;
       max-width: 1248px;
-      gap: 6rem;
+      gap: 12rem;
     }
 
     @media (min-width: 1400px) {

@@ -8,14 +8,12 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface GetById4$Params {
-  id: string;
+export interface GetLanguages$Params {
 }
 
-export function getById4(http: HttpClient, rootUrl: string, params: GetById4$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, getById4.PATH, 'get');
+export function getLanguages(http: HttpClient, rootUrl: string, params?: GetLanguages$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, getLanguages.PATH, 'get');
   if (params) {
-    rb.path('id', params.id, {});
   }
 
   return http.request(
@@ -28,4 +26,4 @@ export function getById4(http: HttpClient, rootUrl: string, params: GetById4$Par
   );
 }
 
-getById4.PATH = '/api/StudentQuestions/{id}';
+getLanguages.PATH = '/api/Languages';
