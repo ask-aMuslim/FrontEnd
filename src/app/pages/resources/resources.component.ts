@@ -4,12 +4,12 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 
 import {
-  ResourceCard,
-  ResourceTab,
-  ResourceGalleryId,
-  ResourceGallery,
-  NewMuslimCard,
-  ResourcesResolvedData
+    ResourceCard,
+    ResourceTab,
+    ResourceGalleryId,
+    ResourceGallery,
+    NewMuslimCard,
+    ResourcesResolvedData
 } from './resources.resolver';
 
 @Component({
@@ -24,9 +24,9 @@ export class ResourcesComponent {
     private static readonly cardThumbnailFallback = '/images/events-image-placeholder.jpg';
     private readonly sanitizer = inject(DomSanitizer);
     private readonly router = inject(Router);
-    
+
     private readonly safeDrivePreviewUrlByFileId = new Map<string, SafeResourceUrl>();
-    
+
 
     constructor() {
         // No API calls needed for resources page
@@ -43,7 +43,7 @@ export class ResourcesComponent {
         // Pamphlets
         "resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Da'wah%20Pamphlet.pdf":
             '1bSeiFM4Bbl7sYIxprDF__s0QHpvu6PLd',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Foretold%20Pamphlet.pdf':
+        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Bible%20Pamphlet.pdf':
             '1vmRjYvUJUc-9Dmy-3knRxUTKA8HYKV6y',
         'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Jesus%20Pamphlet.pdf':
             '1wzV8c_yBcQiwGnEMDo-IkV7QprZeQSqU',
@@ -125,7 +125,7 @@ export class ResourcesComponent {
         'Finalized 289x214mm AAM Truth Pamphlet.pdf',
         'Finalized 289x214mm AAM Science Pamphlet.pdf',
         'Finalized 289x214mm AAM Prophecy Pamphlet.pdf',
-        'Finalized 289x214mm AAM Foretold Pamphlet.pdf',
+        'Finalized 289x214mm AAM Bible Pamphlet.pdf',
         'Finalized 289x214mm AAM Jesus Pamphlet.pdf',
         'Finalized 289x214mm AAM Prophet Muhammad Pamphlet.pdf',
         'Finalized 289x214mm AAM Misconceptions Pamphlet.pdf',
@@ -499,7 +499,7 @@ export class ResourcesComponent {
             'Truth': '04941fd7-b369-4e8a-d7c4-08de7962a21d',
             'Science': '4bc0851e-b42d-4416-d7c5-08de7962a21d',
             'Prophecy': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
-            'Foretold': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+            'Bible': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
             'Jesus': '2ac25076-8d77-4c64-d7c8-08de7962a21d',
             'Prophet Muhammad': '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
             'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',

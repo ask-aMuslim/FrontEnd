@@ -8,7 +8,13 @@ export class QasService {
 
   constructor(private api: ApiService) { }
 
-  getAll(params?: { pageNumber?: number; pageSize?: number; tags?: string; tagIds?: string | string[] }): Observable<unknown> {
+  getAll(params?: {
+    pageNumber?: number;
+    pageSize?: number;
+    tags?: string | string[];
+    tagIds?: string | string[];
+    isPublished?: boolean;
+  }): Observable<unknown> {
     const query = this.buildQueryString(params);
     const url = query ? `${QasService.QAS_PATH}?${query}` : QasService.QAS_PATH;
     return this.api.get<unknown>(url);
@@ -30,12 +36,28 @@ export class QasService {
     return this.api.delete<unknown>(`${QasService.QAS_PATH}/${id}`);
   }
 
-  private buildQueryString(params?: { pageNumber?: number; pageSize?: number; tags?: string; tagIds?: string | string[] }): string {
+  private buildQueryString(params?: {
+    pageNumber?: number;
+    pageSize?: number;
+    tags?: string | string[];
+    tagIds?: string | string[];
+    isPublished?: boolean;
+  }): string {
     if (!params) return '';
     const parts: string[] = [];
     if (params.pageNumber !== undefined) parts.push(`pageNumber=${params.pageNumber}`);
     if (params.pageSize !== undefined) parts.push(`pageSize=${params.pageSize}`);
-    if (params.tags !== undefined) parts.push(`tags=${encodeURIComponent(params.tags)}`);
+    if (params.isPublished !== undefined) parts.push(`isPublished=${params.isPublished}`);
+
+    if (params.tags !== undefined) {
+      if (Array.isArray(params.tags)) {
+        for (const tag of params.tags) {
+          parts.push(`tags=${encodeURIComponent(tag)}`);
+        }
+      } else {
+        parts.push(`tags=${encodeURIComponent(params.tags)}`);
+      }
+    }
 
     if (params.tagIds !== undefined) {
       if (Array.isArray(params.tagIds)) {

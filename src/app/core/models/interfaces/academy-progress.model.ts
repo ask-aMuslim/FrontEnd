@@ -57,6 +57,7 @@ export interface AcademyCourse {
     description?: string;
     order?: number;
     prerequisites?: Id[];
+    stageLabel?: string;
 }
 
 /**

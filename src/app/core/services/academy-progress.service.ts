@@ -833,6 +833,9 @@ export class AcademyProgressService {
             )
         );
     }
+    
+    private readonly courseDirectCache = new Map<string, import('../../api/facades/course.facade').CourseReadByIdDto>();
+    private readonly courseQuizzesCache = new Map<string, import('../../api/facades/quiz.facade').QuizReadDto[]>();
 
     /**
      * Fetches a course directly from GET /api/Courses/:id without triggering
@@ -840,8 +843,38 @@ export class AcademyProgressService {
      * Use this for the course detail page where only the course data is needed.
      */
     getCourseByIdDirect(courseId: string): Observable<import('../../api/facades/course.facade').CourseReadByIdDto | null> {
+        const cached = this.courseDirectCache.get(courseId);
+        if (cached) {
+            return of(cached);
+        }
         return this.courseFacade.getCourseById(courseId).pipe(
+            tap((course) => {
+                if (course) {
+                    this.courseDirectCache.set(courseId, course);
+                }
+            }),
             catchError(() => of(null))
+        );
+    }
+
+    /**
+     * Fetches and caches quizzes for a specific course.
+     */
+    getCourseQuizzesDirect(courseId: string): Observable<import('../../api/facades/quiz.facade').QuizReadDto[]> {
+        const cached = this.courseQuizzesCache.get(courseId);
+        if (cached) {
+            return of(cached);
+        }
+        return this.quizFacade.getAllQuizzes({
+            courseId: courseId,
+            targetType: 2 // Course target type
+        }).pipe(
+            tap((quizzes) => {
+                if (quizzes) {
+                    this.courseQuizzesCache.set(courseId, quizzes);
+                }
+            }),
+            catchError(() => of([]))
         );
     }
 
@@ -857,11 +890,15 @@ export class AcademyProgressService {
             return this.activeLessonsRequests.get(courseId)!;
         }
 
-        const request$ = this.lessonFacade.getCourseLessons(courseId).pipe(
-            map(lessons => lessons
-                .filter((lesson) => lesson.isPublished !== false)
-                .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))
-            ),
+        const request$ = this.courseFacade.getCourseById(courseId).pipe(
+            map(course => {
+                const rawLessons = course && Array.isArray((course as any).lessons)
+                    ? (course as any).lessons as LessonReadDto[]
+                    : [];
+                return rawLessons
+                    .filter((lesson) => lesson.isPublished !== false)
+                    .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index));
+            }),
             switchMap((lessons) => this.hydrateVideoDurations(lessons)),
             tap(lessons => {
                 this.lessonsCache.set(courseId, lessons);
@@ -2270,13 +2307,13 @@ export class AcademyProgressService {
         return `${hours}h ${minutes}m`;
     }
 
-    private resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
+    public resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
         if (type === 'quiz') {
             return 'Assessment';
         }
 
         if (type === 'article' || type === 'document') {
-            return '~5 min';
+            return '~5min';
         }
 
         const supportsPlaybackDuration = type === 'video' || type === 'audio';
@@ -2688,11 +2725,7 @@ export class AcademyProgressService {
                 return forkJoin({
                     enrollmentsByCourseId: this.getEnrollmentRecordsByCourseId(studentId).pipe(take(1)),
                     lessons: this.getAcademyLessons(courseId).pipe(take(1)),
-                    quizzes: this.quizFacade.getAllQuizzes({
-                        courseId,
-                        pageNumber: 1,
-                        pageSize: 200,
-                    }).pipe(catchError(() => of([] as QuizReadDto[]))),
+                    quizzes: this.getCourseQuizzesDirect(courseId).pipe(take(1), catchError(() => of([] as QuizReadDto[]))),
                 }).pipe(
                     switchMap(({ enrollmentsByCourseId, lessons, quizzes }) => {
                         const enrollment = enrollmentsByCourseId.get(courseId);

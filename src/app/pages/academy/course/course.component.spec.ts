@@ -39,6 +39,7 @@ describe('CourseComponent', () => {
         isEnrollmentCompleted: false,
         lessonsList,
         prerequisitesList: [],
+        quizzesList: [],
     });
 
     beforeEach(async () => {

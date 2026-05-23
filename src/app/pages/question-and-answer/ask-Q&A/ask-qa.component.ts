@@ -47,6 +47,8 @@ export class AskQaComponent implements OnInit {
   private static readonly fallbackIdPrefix = 'Q-';
   private static readonly idOffset = 1;
   private static readonly defaultPageSize = 10;
+  // Holds an error message when Q&A API fails
+  errorMessage: string | null = null;
   private static readonly tagFetchPageSize = 100;
   private static readonly minimumTotalPages = 1;
 
@@ -179,19 +181,35 @@ export class AskQaComponent implements OnInit {
     return option?.id ?? null;
   }
 
-  onSearch(): void {
-    const query = this.searchQuery.trim();
-    if (!query) {
-      this.clearSearch();
-      return;
-    }
+   onSearch(): void {
+     const query = this.searchQuery.trim();
+     if (!query) {
+       this.clearSearch();
+       return;
+     }
 
-    const normalizedQuery = query.toLowerCase();
-    this.searchResults = this.questions.filter((question) =>
-      this.matchesQuery(question, normalizedQuery),
-    );
-    this.hasSearched = true;
-  }
+     const normalizedQuery = query.toLowerCase();
+     this.searchResults = this.questions
+       .filter((question) =>
+         this.matchesQuery(question, normalizedQuery),
+       )
+       .sort((a, b) => {
+         const aTitleMatch = a.title.toLowerCase().includes(normalizedQuery);
+         const bTitleMatch = b.title.toLowerCase().includes(normalizedQuery);
+
+         if (aTitleMatch && !bTitleMatch) return -1;
+         if (!aTitleMatch && bTitleMatch) return 1;
+
+         const aDescMatch = a.description.toLowerCase().includes(normalizedQuery);
+         const bDescMatch = b.description.toLowerCase().includes(normalizedQuery);
+
+         if (aDescMatch && !bDescMatch) return -1;
+         if (!aDescMatch && bDescMatch) return 1;
+
+         return 0;
+       });
+     this.hasSearched = true;
+   }
 
   clearSearch(): void {
     this.searchQuery = '';
@@ -314,6 +332,7 @@ export class AskQaComponent implements OnInit {
     const params: any = {
       pageNumber: this.currentPage,
       pageSize: pageSize,
+      isPublished: true,
     };
     if (selectedTagId) {
       params.tagIds = selectedTagId;
@@ -328,8 +347,14 @@ export class AskQaComponent implements OnInit {
           pagination,
         };
       }),
-      catchError(() => of({ questions: [], pagination: { totalPages: 1, totalCount: 0 } }))
+      catchError((error) => {
+        console.error('Failed to load Q&As', error);
+        this.errorMessage = 'Unable to load questions at this time. Please try again later.';
+        return of({ questions: [], pagination: { totalPages: 1, totalCount: 0 } });
+      })
     ).subscribe(({ questions, pagination }) => {
+      // Clear any previous error on successful load
+      this.errorMessage = null;
       this.loadedTagId = selectedTagId || 'all';
       this.questions = questions;
       this.totalCount = pagination.totalCount;

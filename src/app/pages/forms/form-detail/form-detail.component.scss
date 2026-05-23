@@ -220,21 +220,27 @@
 }
 
 // ==========================================
+// 3B. LAYOUT GRID
+// ==========================================
+.form-detail__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  gap: 32px;
+  align-items: start;
+}
+
+// ==========================================
 // 4. FORM PANEL
 // ==========================================
 .form-detail-panel {
   background: var(--color-card-main);
   border: var(--border-width-hairline) solid var(--color-border-normal-low);
   border-radius: var(--border-radius-default);
-  box-shadow: var(--shadows-shadow-md);
+  box-shadow: var(--shadows-shadow-xs);
   padding: 36px 40px;
-  max-width: 780px;
-  width: 100%;
-  margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: 28px;
-  animation: form-panel-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 // Panel header
@@ -304,7 +310,6 @@
   border-bottom: 1px solid var(--color-border-normal-low);
   position: relative;
   z-index: 0;
-  animation: form-field-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 
   &:last-child {
     border-bottom: none;
@@ -318,30 +323,6 @@
   &:focus-within {
     z-index: 20;
   }
-}
-
-.form-field:nth-child(2) {
-  animation-delay: 0.04s;
-}
-
-.form-field:nth-child(3) {
-  animation-delay: 0.08s;
-}
-
-.form-field:nth-child(4) {
-  animation-delay: 0.12s;
-}
-
-.form-field:nth-child(5) {
-  animation-delay: 0.16s;
-}
-
-.form-field:nth-child(6) {
-  animation-delay: 0.20s;
-}
-
-.form-field:nth-child(7) {
-  animation-delay: 0.24s;
 }
 
 .form-field__label {
@@ -372,11 +353,11 @@ textarea {
     border-color 160ms ease,
     box-shadow 160ms ease;
 
-  &:focus-visible {
-    outline: none;
-    border-color: var(--color-button-primary-normal);
-    box-shadow: 0 0 0 3px rgba(21, 107, 64, 0.15);
-  }
+   &:focus-visible {
+     outline: none;
+     border-color: var(--color-button-primary-normal);
+     box-shadow: 0 0 0 3px var(--color-button-primary-soft-30);
+   }
 }
 
 .form-field__input--error {
@@ -541,10 +522,10 @@ textarea {
   color: var(--color-background-base);
 }
 
-.form-field__checkbox input:focus-visible+.form-field__checkbox-icon {
-  border-color: var(--color-button-primary-normal);
-  box-shadow: 0 0 0 3px rgba(21, 107, 64, 0.15);
-}
+ .form-field__checkbox input:focus-visible+.form-field__checkbox-icon {
+   border-color: var(--color-button-primary-normal);
+   box-shadow: 0 0 0 3px var(--color-button-primary-soft-30);
+ }
 
 .form-field__checkbox-label {
   display: inline-flex;
@@ -651,14 +632,109 @@ input[type="file"]::-webkit-file-upload-button {
 // ==========================================
 .form-detail-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: flex-end;
-}
+   flex-wrap: wrap;
+   gap: 12px;
+   justify-content: flex-end;
+ }
 
-// ==========================================
-// 8. STATE SCREENS (loading, error, unavailable)
-// ==========================================
+ // ==========================================
+ // 8B. SIDEBAR CARD
+ // ==========================================
+ .form-sidebar-card {
+   background: var(--color-card-main);
+   border: var(--border-width-hairline) solid var(--color-border-normal-low);
+   border-radius: var(--border-radius-default);
+   box-shadow: var(--shadows-shadow-md);
+   padding: 28px;
+   display: flex;
+   flex-direction: column;
+   gap: 0;
+   position: sticky;
+   top: 24px;
+ }
+
+ .form-sidebar-section {
+   display: flex;
+   flex-direction: column;
+   gap: 14px;
+   padding: 20px 0;
+
+   &:first-child {
+     padding-top: 0;
+   }
+
+   &:last-child {
+     padding-bottom: 0;
+   }
+ }
+
+ .form-sidebar-section__title {
+   margin: 0;
+   font-size: 14px;
+   font-weight: 700;
+   color: var(--color-text-title);
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   text-transform: uppercase;
+   letter-spacing: 0.04em;
+ }
+
+ .form-sidebar-icon {
+   width: 32px;
+   height: 32px;
+   border-radius: var(--border-radius-default);
+   background: var(--color-card-surface-primary);
+   border: var(--border-width-hairline) solid var(--color-border-brand-low);
+   color: var(--color-button-primary-normal);
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 13px;
+   flex-shrink: 0;
+ }
+
+ .form-sidebar-divider {
+   margin: 0;
+   border: none;
+   border-top: var(--border-width-hairline) dashed var(--color-border-brand-low);
+ }
+
+ .form-sidebar-stat {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 8px;
+ }
+
+ .form-sidebar-stat__label {
+   font-size: 13px;
+   color: var(--color-text-caption);
+   font-weight: 500;
+ }
+
+ .form-sidebar-stat__value {
+   font-size: 13px;
+   font-weight: 700;
+   color: var(--color-button-primary-normal);
+   background: var(--color-card-surface-primary);
+   border: var(--border-width-hairline) solid var(--color-border-brand-low);
+   border-radius: 9999px;
+   padding: 2px 12px;
+   min-width: 32px;
+   text-align: center;
+ }
+
+ .form-sidebar-text {
+   margin: 0;
+   font-size: 13px;
+   line-height: 1.7;
+   color: var(--color-text-body);
+ }
+
+ // ==========================================
+ // 8. STATE SCREENS (loading, error, unavailable)
+ // ==========================================
 .form-detail-state,
 .form-success {
   display: flex;
@@ -717,10 +793,9 @@ input[type="file"]::-webkit-file-upload-button {
 
 // ── Success state ──
 .form-success {
-  background: var(--color-chips-label-surface-primary);
-  border: var(--border-width-hairline) solid var(--color-border-brand-low);
-  animation: form-panel-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+   background: var(--color-chips-label-surface-primary);
+   border: var(--border-width-hairline) solid var(--color-border-brand-low);
+ }
 
 .form-success__icon {
   width: 60px;
@@ -809,33 +884,19 @@ input[type="file"]::-webkit-file-upload-button {
   }
 }
 
-@keyframes form-panel-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes form-field-rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 // ==========================================
 // 11. RESPONSIVE
 // ==========================================
+@media (max-width: 1024px) {
+  .form-detail__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .form-sidebar-card {
+    position: static;
+  }
+}
+
 @media (max-width: 768px) {
   .form-detail-hero {
     padding: 56px 0 40px;

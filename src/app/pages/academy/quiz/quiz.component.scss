@@ -24,6 +24,7 @@
   margin-left: 5px;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: var(--shadow-15);
 
   @media (min-width: 1024px) {
     max-width: 888px; // Exact Figma
@@ -107,6 +108,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -909,6 +911,59 @@
       color: #343a40;
     }
 
+    .quiz-review-stats {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+
+      @media (max-width: 640px) {
+        flex-direction: column;
+      }
+    }
+
+    .quiz-stat-card {
+      flex: 1;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid transparent;
+
+      &--correct {
+        background: var(--colors-system-sys-green-10);
+        border-color: var(--colors-green-30);
+
+        .quiz-stat-count {
+          color: var(--colors-system-sys-green-200);
+        }
+      }
+
+      &--incorrect {
+        background: var(--colors-system-sys-red-10);
+        border-color: var(--colors-system-sys-red-30);
+
+        .quiz-stat-count {
+          color: var(--colors-system-sys-red-100);
+        }
+      }
+    }
+
+    .quiz-stat-label {
+      display: block;
+      font-family: "Poppins", sans-serif;
+      font-size: 0.875rem;
+      font-weight: 400;
+      color: var(--colors-rare-grays-60);
+      margin-bottom: 0.25rem;
+    }
+
+    .quiz-stat-count {
+      display: block;
+      font-family: "Poppins", sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
     .answer-hint {
       font-family: "Poppins", sans-serif;
       font-size: 14px;
@@ -1305,6 +1360,7 @@
     opacity: 0;
     transform: scale(0.5);
   }
+
   to {
     opacity: 1;
     transform: scale(1);

@@ -147,11 +147,20 @@ export class QuestionComponent implements OnDestroy {
           (firstTranslation ? getValue(firstTranslation, 'answerTextJson', 'AnswerTextJson') : undefined) ??
           getValue(data, 'answerTextJson', 'AnswerTextJson');
 
+        const normalizedAnswerJsonValue = this.normalizeJsonMediaSources(mappedAnswerJsonValue);
+
         let mappedAnswerJson: string | null = null;
         if (typeof mappedAnswerJsonValue === 'string') {
           mappedAnswerJson = mappedAnswerJsonValue;
         } else if (mappedAnswerJsonValue !== null && mappedAnswerJsonValue !== undefined) {
           mappedAnswerJson = JSON.stringify(mappedAnswerJsonValue);
+        }
+
+        let normalizedAnswerJson: string | null = null;
+        if (typeof normalizedAnswerJsonValue === 'string') {
+          normalizedAnswerJson = normalizedAnswerJsonValue;
+        } else if (normalizedAnswerJsonValue !== null && normalizedAnswerJsonValue !== undefined) {
+          normalizedAnswerJson = JSON.stringify(normalizedAnswerJsonValue);
         }
 
         const mappedImage = toApiMediaUrl(
@@ -170,11 +179,11 @@ export class QuestionComponent implements OnDestroy {
         }
 
         const renderedTitle = this.resolveRichHtml(mappedTitle, mappedTitleJson);
-        const renderedAnswer = this.resolveRichHtml(mappedAnswer, mappedAnswerJson);
+        const renderedAnswer = this.resolveRichHtml(mappedAnswer, normalizedAnswerJson ?? mappedAnswerJson);
 
         this.questionHtml = renderedTitle ? this.toSafeHtml(renderedTitle) : null;
         this.answerHtmlRaw = renderedAnswer;
-        this.answerViewerContent = mappedAnswerJsonValue ?? renderedAnswer ?? mappedAnswer ?? null;
+        this.answerViewerContent = (normalizedAnswerJsonValue ?? mappedAnswerJsonValue) ?? renderedAnswer ?? mappedAnswer ?? null;
 
         this.title = this.extractTextFromHtml(renderedTitle ?? mappedTitle ?? this.title) || this.title;
         this.answer = this.extractTextFromHtml(renderedAnswer ?? mappedAnswer ?? this.answer) || this.answer;
@@ -526,79 +535,79 @@ export class QuestionComponent implements OnDestroy {
     const titleText = this.title || 'Question';
     const answerHtml = this.getRenderedAnswerHtmlForPdf() ?? this.prepareAnswerHtmlForPdf();
     const richTextStyles = this.getPdfRichTextStyles();
-    let exportContainer: HTMLDivElement | null = null;
 
-    try {
-      const jsPDF = (await import('jspdf')).jsPDF;
-      const html2canvas = (await import('html2canvas')).default;
-      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    this.openPrintWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
+  }
 
-      exportContainer = globalThis.document.createElement('div');
-      exportContainer.style.position = 'fixed';
-      exportContainer.style.left = '-10000px';
-      exportContainer.style.top = '0';
-      exportContainer.style.width = '794px';
-      exportContainer.style.background = '#ffffff';
-      exportContainer.style.color = '#111827';
-      exportContainer.style.padding = '32px';
-      exportContainer.style.fontFamily = 'Arial, sans-serif';
-      exportContainer.style.lineHeight = '1.65';
-
-      const questionImage = this.imageUrl
-        ? `<img src="${this.escapeHtml(this.imageUrl)}" alt="${this.escapeHtml(titleText)}" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0 20px;" />`
-        : '';
-
-      exportContainer.innerHTML = `
-        <style>${richTextStyles}</style>
-        <div class="pdf-export-root">
-          <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
-          ${questionImage}
-          <div class="pdf-export-content">${answerHtml}</div>
-        </div>
-      `;
-
-      globalThis.document.body.appendChild(exportContainer);
-      const imageReport = await this.inlineContainerImages(exportContainer);
-      await this.waitForImages(exportContainer);
-
-      if (imageReport.unresolvedCrossOrigin > 0) {
-        this.openPrintFallbackWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
-        return;
-      }
-
-      const canvas = await html2canvas(exportContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const imageHeight = (canvas.height * pageWidth) / canvas.width;
-
-      let heightLeft = imageHeight;
-      let position = 0;
-
-      doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imageHeight;
-        doc.addPage();
-        doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
-        heightLeft -= pageHeight;
-      }
-
-      const safeTitle = titleText.replaceAll(/[^a-z0-9-]/gi, '_').slice(0, 60);
-      doc.save(`${safeTitle || 'question'}.pdf`);
-    } catch {
-      this.openPrintFallbackWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
-    } finally {
-      exportContainer?.remove();
+  private openPrintWindow(
+    titleText: string,
+    contentHtml: string,
+    richTextStyles: string,
+    imageUrl: string | null,
+  ): void {    const safeTitle = this.escapeHtml(titleText);
+    const printWindow = globalThis.open('', '_blank');
+    if (!printWindow) {
+      return;
     }
+
+    const printDocument = printWindow.document;
+    printDocument.title = safeTitle;
+
+    const titleEl = printDocument.createElement('title');
+    titleEl.textContent = safeTitle;
+    printDocument.head.appendChild(titleEl);
+
+    while (printDocument.body.firstChild) {
+      printDocument.body.firstChild.remove();
+    }
+
+    const style = printDocument.createElement('style');
+    style.textContent = `
+      @page { size: A4; margin: 20mm 15mm; }
+      body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; margin: 0; padding: 0; }
+      h1 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; color: #111827; }
+      h2, h3 { margin-top: 16px; margin-bottom: 8px; }
+      p { margin-bottom: 8px; }
+      img { max-width: 100%; height: auto; display: block; margin: 12px 0; }
+      .print-content { font-size: 15px; line-height: 1.75; }
+      .print-content img { max-width: 100%; height: auto; display: block; margin: 12px 0; border-radius: 4px; }
+      ${richTextStyles}
+    `;
+    printDocument.head.appendChild(style);
+
+    const title = printDocument.createElement('h1');
+    title.textContent = titleText;
+    printDocument.body.appendChild(title);
+
+    if (imageUrl) {
+      const image = printDocument.createElement('img');
+      image.setAttribute('crossorigin', 'anonymous');
+      image.src = imageUrl;
+      image.alt = titleText;
+      printDocument.body.appendChild(image);
+    }
+
+    const content = printDocument.createElement('div');
+    content.className = 'print-content';
+    content.innerHTML = contentHtml;
+    printDocument.body.appendChild(content);
+
+    const images = Array.from(content.querySelectorAll('img'));
+    for (const img of images) {
+      img.setAttribute('crossorigin', 'anonymous');
+      const src = img.getAttribute('src') ?? '';
+      if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
+        const resolved = toApiMediaUrl(src);
+        if (resolved) {
+          img.src = resolved;
+        }
+      }
+    }
+
+    printWindow.focus();
+    globalThis.setTimeout(() => {
+      printWindow.print();
+    }, 500);
   }
 
   private prepareAnswerHtmlForPdf(): string {
@@ -688,6 +697,37 @@ export class QuestionComponent implements OnDestroy {
         border-radius: 8px;
       }
     `;
+  }
+
+  private normalizeJsonMediaSources(content: unknown): unknown {
+    if (!content || typeof content !== 'object') {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      return content.map(item => this.normalizeJsonMediaSources(item));
+    }
+
+    const record = content as Record<string, unknown>;
+    const normalized: Record<string, unknown> = { ...record };
+
+    if (record['attrs'] && typeof record['attrs'] === 'object') {
+      const attrs = record['attrs'] as Record<string, unknown>;
+      const normalizedAttrs: Record<string, unknown> = { ...attrs };
+
+      if (record['type'] === 'image' && typeof attrs['src'] === 'string') {
+        const normalizedSrc = toApiMediaUrl(attrs['src']) ?? attrs['src'];
+        normalizedAttrs['src'] = normalizedSrc;
+      }
+
+      normalized['attrs'] = normalizedAttrs;
+    }
+
+    if (record['content'] !== undefined) {
+      normalized['content'] = this.normalizeJsonMediaSources(record['content']);
+    }
+
+    return normalized;
   }
 
   private normalizeHtmlMediaSources(html: string): string {
@@ -835,68 +875,6 @@ export class QuestionComponent implements OnDestroy {
     }
   }
 
-  private openPrintFallbackWindow(
-    titleText: string,
-    contentHtml: string,
-    richTextStyles: string,
-    imageUrl: string | null,
-  ): void {
-    const printWindow = globalThis.open('', '_blank');
-    if (!printWindow) {
-      return;
-    }
-
-    const printDocument = printWindow.document;
-    printDocument.title = this.escapeHtml(titleText);
-
-    while (printDocument.head.firstChild) {
-      printDocument.head.firstChild.remove();
-    }
-
-    while (printDocument.body.firstChild) {
-      printDocument.body.firstChild.remove();
-    }
-
-    const style = printDocument.createElement('style');
-    style.textContent = `
-      @page { size: A4; margin: 16mm; }
-      body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; }
-      .pdf-export-content { font-size: 16px; line-height: 1.75; }
-      ${richTextStyles}
-    `;
-    printDocument.head.appendChild(style);
-
-    const title = printDocument.createElement('h1');
-    title.style.fontSize = '28px';
-    title.style.lineHeight = '1.3';
-    title.style.margin = '0 0 16px';
-    title.style.color = '#111827';
-    title.textContent = titleText;
-    printDocument.body.appendChild(title);
-
-    if (imageUrl) {
-      const image = printDocument.createElement('img');
-      image.src = imageUrl;
-      image.alt = titleText;
-      image.style.maxWidth = '100%';
-      image.style.height = 'auto';
-      image.style.display = 'block';
-      image.style.margin = '12px 0 20px';
-      image.style.borderRadius = '8px';
-      printDocument.body.appendChild(image);
-    }
-
-    const content = printDocument.createElement('div');
-    content.className = 'pdf-export-content';
-    content.innerHTML = contentHtml;
-    printDocument.body.appendChild(content);
-
-    printWindow.focus();
-    globalThis.setTimeout(() => {
-      printWindow.print();
-    }, 350);
-  }
-
   private isInlineImageSource(value: string): boolean {
     return value.startsWith('data:') || value.startsWith('blob:');
   }
@@ -925,6 +903,8 @@ export class QuestionComponent implements OnDestroy {
       return;
     }
 
+    const timeout = 10000;
+
     await Promise.all(
       images.map(
         (image) =>
@@ -934,8 +914,9 @@ export class QuestionComponent implements OnDestroy {
               return;
             }
 
-            image.addEventListener('load', () => resolve(), { once: true });
-            image.addEventListener('error', () => resolve(), { once: true });
+            const timer = globalThis.setTimeout(() => resolve(), timeout);
+            image.addEventListener('load', () => { globalThis.clearTimeout(timer); resolve(); }, { once: true });
+            image.addEventListener('error', () => { globalThis.clearTimeout(timer); resolve(); }, { once: true });
           }),
       ),
     );

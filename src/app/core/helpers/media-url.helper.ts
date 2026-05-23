@@ -4,6 +4,11 @@ const localAssetPrefixes = ['/images/', '/icons/', '/academy-assets/', '/backgro
 const legacyAcademyAssetPrefix = '/academy/';
 const academyAssetPrefix = '/academy-assets/';
 
+const legacyApiHosts = [
+  'https://aam-api.ask-a-muslim.com',
+  'http://aam-api.ask-a-muslim.com',
+];
+
 export function toApiMediaUrl(value: string | null): string | null {
   if (!value) {
     return null;
@@ -18,7 +23,19 @@ export function toApiMediaUrl(value: string | null): string | null {
     return `${academyAssetPrefix}${trimmed.slice(legacyAcademyAssetPrefix.length)}`;
   }
 
-  if (isAbsoluteUrl(trimmed) || isLocalAssetPath(trimmed)) {
+  if (isLocalAssetPath(trimmed)) {
+    return trimmed;
+  }
+
+  for (const legacyHost of legacyApiHosts) {
+    if (trimmed.startsWith(legacyHost)) {
+      const path = trimmed.slice(legacyHost.length);
+      const mediaPath = path.startsWith('/') ? path : `/${path}`;
+      return `${resolveApiHostUrl()}${mediaPath}`;
+    }
+  }
+
+  if (isAbsoluteUrl(trimmed)) {
     return trimmed;
   }
 

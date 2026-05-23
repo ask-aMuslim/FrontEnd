@@ -113,6 +113,10 @@ export class QuizComponent implements OnInit, OnDestroy {
     readonly showHint = signal(false);
     readonly selectedOptionId = signal<string | null>(null);
 
+    // Attempts count for retake button
+    readonly attemptsCount = signal(0);
+    readonly nextAttemptLabel = computed(() => `(${this.attemptsCount() + 1})`);
+
     // Results state (when quiz was previously completed)
     readonly previousScore = signal<number>(0);
     readonly previousCompletionTime = signal<number>(0);
@@ -433,6 +437,19 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.questions.set(data.questions);
         this.initializeAnswers(data.questions);
         this.restoreQuizResultFromStorage(data.questions);
+        this.refreshAttemptsCount();
+    }
+
+    private refreshAttemptsCount(): void {
+        const quizId = this.activeQuizId();
+        if (!quizId) {
+            this.attemptsCount.set(0);
+            return;
+        }
+        this.quizAttemptsService.getByQuiz(quizId).pipe(takeUntil(this.destroy$)).subscribe({
+            next: (attempts) => this.attemptsCount.set(attempts.length),
+            error: () => this.attemptsCount.set(0),
+        });
     }
 
     private initializeAnswers(questions: QuizQuestion[]): void {
@@ -632,9 +649,9 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
         this.showHint.set(false);
-        // Scroll to top when starting to retake quiz
         this.scrollService.scrollToTop();
         this.startQuiz();
+        setTimeout(() => this.refreshAttemptsCount(), 1000);
     }
 
     onPassedNextActionClick(): void {

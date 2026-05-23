@@ -253,6 +253,7 @@ export class StudentFacade {
     this.profileCache$.next(null);
     this.profileLoading = false;
     this.profileFetched = false;
+    this.profileService.clearCache();
   }
 
   /**

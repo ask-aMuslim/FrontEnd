@@ -5,7 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, combineLatest, of } from 'rxjs';
-import { takeUntil, catchError } from 'rxjs/operators';
+import { takeUntil, catchError, take } from 'rxjs/operators';
 import { LessonContentService, LessonNoteItem } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { VideoProgressService } from '../../../core/services/video-progress.service';
@@ -15,7 +15,6 @@ import {
     YouTubePlayerService,
     YouTubePlayerState,
 } from '../../../core/services/youtube-player.service';
-import { QuizzesService } from '../../../core/services/quizzes.service';
 import { TokenService } from '../../../core/auth/token.service';
 import { QuizReadDto } from '../../../api/facades/quiz.facade';
 import { toApiMediaUrl } from '../../../core/helpers/media-url.helper';
@@ -85,6 +84,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     nextAcademyLesson: AcademyLesson | undefined;
     previousAcademyLesson: AcademyLesson | undefined;
     courseLessons: Array<AcademyLesson & { progress: LessonProgress }> = [];
+    courseQuizzes: QuizReadDto[] = [];
 
     lessonData: LessonData | null = null;
     lessonContent: LessonContent | null = null;
@@ -132,6 +132,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     readonly mediaContainer = viewChild<ElementRef<HTMLElement>>('lessonMediaContainer');
     readonly audioElementRef = viewChild<ElementRef<HTMLAudioElement>>('audioElement');
 
+    private currentLoadedLessonId: string | null = null;
+    private currentLoadedCourseId: string | null = null;
+
     private readonly destroy$ = new Subject<void>();
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -151,7 +154,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         private readonly academyProgressService: AcademyProgressService,
         private readonly youtubePlayerService: YouTubePlayerService,
         private readonly videoProgressService: VideoProgressService,
-        private readonly quizzesService: QuizzesService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
 
@@ -209,19 +211,37 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         combineLatest([this.route.paramMap, this.route.queryParamMap, this.route.data])
             .pipe(takeUntil(this.destroy$))
             .subscribe(([params, queryParams, routeData]) => {
-                this.courseId = params.get('courseId') || '';
-                this.lessonId = params.get('lessonId') || '';
+                const newCourseId = params.get('courseId') || '';
+                const newLessonId = params.get('lessonId') || '';
 
-                if (this.courseId && this.lessonId) {
+                if (newCourseId && newLessonId) {
                     const requestedTab = queryParams.get('tab') === 'notes' ? 'notes' : 'overview';
                     const requestedSeekSeconds = this.parseSeekQueryParam(queryParams.get('seek'));
-                    this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
 
-                    const resolved = routeData['resolvedData'] as LessonPlayerResolvedData | null;
-                    if (resolved?.lessonData.content.id === this.lessonId) {
-                        this.applyResolvedLessonData(resolved);
+                    const isSameLesson = newLessonId === this.currentLoadedLessonId && newCourseId === this.currentLoadedCourseId;
+
+                    if (!isSameLesson) {
+                        this.courseId = newCourseId;
+                        this.lessonId = newLessonId;
+                        this.currentLoadedCourseId = newCourseId;
+                        this.currentLoadedLessonId = newLessonId;
+
+                        this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
+
+                        const resolved = routeData['resolvedData'] as LessonPlayerResolvedData | null;
+                        if (resolved?.lessonData.content.id === this.lessonId) {
+                            this.applyResolvedLessonData(resolved);
+                        } else {
+                            this.loadLessonData();
+                        }
                     } else {
-                        this.loadLessonData();
+                        if (requestedTab !== this.activeTab) {
+                            this.setActiveTab(requestedTab);
+                        }
+                        if (requestedSeekSeconds !== null && requestedSeekSeconds !== this.pendingSeekSeconds) {
+                            this.pendingSeekSeconds = requestedSeekSeconds;
+                            this.applyPendingPlaybackSeek();
+                        }
                     }
                 }
             });
@@ -242,6 +262,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return lessonId.length === 0 || courseLessonIds.has(lessonId);
         });
 
+        this.courseQuizzes = scopedQuizzes;
+
         if (!currentLesson) {
             this.error = 'Lesson not found';
             this.isLoading = false;
@@ -259,12 +281,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ...course,
             duration: aggregatedVideoDuration,
         };
-        this.academyProgressService.getLevelTitleForCourse(course)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((title) => {
-                this.levelName = title;
-                this.cdr.detectChanges();
-            });
+        this.levelName = course.stageLabel || '';
         this.hasCourseQuiz = scopedQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
         this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, scopedQuizzes);
         this.courseQuizTitle = this.resolveCourseQuizTitle(lessonsWithProgress, scopedQuizzes);
@@ -310,19 +327,86 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.error = null;
 
         combineLatest([
-            this.academyProgressService.getAcademyCourseById(this.courseId),
-            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
-            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
+            this.academyProgressService.getCourseByIdDirect(this.courseId),
+            this.academyProgressService.getCourseQuizzesDirect(this.courseId),
             this.lessonContentService.getLesson(this.lessonId),
             this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([])))
         ])
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                take(1),
+                takeUntil(this.destroy$)
+            )
             .subscribe({
-                next: ([course, lessonsWithProgress, quizzes, lessonData, notes]) => {
+                next: ([rawCourse, quizzes, lessonData, notes]) => {
+                    if (!rawCourse || !lessonData) {
+                        this.error = 'Unable to load this lesson right now. Please try again.';
+                        this.isLoading = false;
+                        this.isContentLoading = false;
+                        this.cdr.detectChanges();
+                        return;
+                    }
+
+                    // Map AcademyCourse
+                    const category = (rawCourse.category as any) || 'social-topics';
+                    const course: AcademyCourse = {
+                        id: rawCourse.id ?? '',
+                        stageId: 1,
+                        levelId: rawCourse.levelId ?? '',
+                        title: rawCourse.title ?? 'Untitled Course',
+                        category,
+                        categoryLabel: rawCourse.category ? String(rawCourse.category).toUpperCase() : 'Social Topics',
+                        lessons: Array.isArray(rawCourse.lessons) ? rawCourse.lessons.length : 0,
+                        duration: '0m',
+                        thumbnailUrl: rawCourse.thumbnailUrl,
+                        description: rawCourse.description,
+                        stageLabel: rawCourse.level ?? 'Course',
+                    };
+
+                    // Map lessonsWithProgress
+                    const rawLessons = Array.isArray(rawCourse.lessons) ? rawCourse.lessons : [];
+                    const parseLessonType = (raw: unknown): 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio' => {
+                        const str = String(raw ?? '').toLowerCase();
+                        if (str === '1' || str === 'video') return 'video';
+                        if (str === '2' || str === 'article') return 'article';
+                        if (str === '3' || str === 'document') return 'document';
+                        if (str === '4' || str === 'audio') return 'audio';
+                        if (str === '5' || str === 'quiz') return 'quiz';
+                        return 'intro';
+                    };
+
+                    const lessonsWithProgress = rawLessons
+                        .filter((l: any) => l.isPublished !== false)
+                        .map((l: any, index: number) => {
+                            const lId = l.lessonId ?? l.id ?? '';
+                            const lessonType = parseLessonType(l.lessonType ?? l.type);
+                            const isCompleted = !!(l.isLessonCompleted ?? l.isCompleted);
+
+                            const academyLesson: AcademyLesson = {
+                                id: lId,
+                                courseId: this.courseId,
+                                title: l.lessonName ?? l.title ?? '',
+                                duration: l.lessonDuration ?? l.duration ?? '~5min',
+                                type: lessonType,
+                                order: index + 1,
+                            };
+
+                            const progress: LessonProgress = {
+                                lessonId: lId,
+                                courseId: this.courseId,
+                                status: lId === this.lessonId ? 'current' : (isCompleted ? 'completed' : 'available'),
+                                isCompleted,
+                            };
+
+                            return {
+                                ...academyLesson,
+                                progress,
+                            };
+                        });
+
                     this.applyResolvedLessonData({
                         course,
                         lessonsWithProgress,
-                        quizzes,
+                        quizzes: quizzes || [],
                         lessonData,
                         notes,
                     });
@@ -880,9 +964,23 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
+    private isQuizCompleted(quizId: string): boolean {
+        if (!this.isBrowser) return false;
+        const key = `quiz_${this.courseId}_${quizId}`;
+        const data = this.document.defaultView?.localStorage.getItem(key);
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                return !!parsed?.completed && !!parsed?.passed;
+            } catch {
+                return false;
+            }
+        }
+        return false;
+    }
+
     get sidebarLessons(): AcademySidebarLessonItem[] {
         const lastContentLessonId = this.getLastContentLessonId();
-        const isViewingLastCourseLesson = !!lastContentLessonId && this.lessonId === lastContentLessonId;
 
         const mappedLessons = this.courseLessons.map((lesson) => ({
             id: lesson.id,
@@ -892,20 +990,31 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             quizLessonId: lesson.type === 'quiz' ? lesson.id : undefined,
             isCompleted: this.isLessonCompleted(lesson),
             isCurrent: this.isLessonCurrent(lesson),
-            isLastCourseLesson:
-                isViewingLastCourseLesson
-                && !!lastContentLessonId
-                && lesson.id === lastContentLessonId,
+            isLastCourseLesson: false,
             isLocked: this.isLessonPending(lesson),
         }));
 
-        if (mappedLessons.some((lesson) => lesson.type === 'quiz') || !this.hasCourseQuiz) {
-            return mappedLessons;
+        const nonQuiz = mappedLessons.filter((l) => l.type !== 'quiz');
+
+        if (nonQuiz.length > 0) {
+            nonQuiz.forEach(l => l.isLastCourseLesson = false);
+            nonQuiz[nonQuiz.length - 1].isLastCourseLesson = true;
         }
 
-        return [
-            ...mappedLessons,
-            {
+        const courseQuizItems = this.courseQuizzes.map((q, idx) => ({
+            id: `${LessonPlayerComponent.syntheticQuizSidebarIdPrefix}${q.id || this.courseId}`,
+            quizLessonId: q.id ?? undefined,
+            title: q.title || `Quiz ${idx + 1}`,
+            duration: 'Assessment',
+            type: 'quiz',
+            isCompleted: this.isQuizCompleted(q.id || ''),
+            isCurrent: false,
+            isLastCourseLesson: false,
+            isLocked: false,
+        }));
+
+        if (courseQuizItems.length === 0 && this.hasCourseQuiz) {
+            courseQuizItems.push({
                 id: `${LessonPlayerComponent.syntheticQuizSidebarIdPrefix}${this.courseId}`,
                 quizLessonId: this.courseQuizLessonId ?? undefined,
                 title: this.courseQuizTitle,
@@ -913,9 +1022,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                 type: 'quiz',
                 isCompleted: false,
                 isCurrent: false,
+                isLastCourseLesson: false,
                 isLocked: false,
-            },
-        ];
+            });
+        }
+
+        return [...nonQuiz, ...courseQuizItems];
     }
 
     private getLastContentLessonId(): string | null {

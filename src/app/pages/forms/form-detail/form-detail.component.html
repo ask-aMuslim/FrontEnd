@@ -51,50 +51,52 @@
     </div>
   </section>
 
-  <!-- ── CONTENT ───────────────────────────────────────── -->
-  @if (!isLoading() && !loadError()) {
-    <section class="section-block form-detail-content">
+   <!-- ── CONTENT ───────────────────────────────────────── -->
+   @if (!isLoading() && !loadError()) {
+     <section class="section-block form-detail-content">
 
-      @if (!isPublished()) {
-        <div class="form-detail-state" role="alert">
-          <i class="fas fa-lock form-detail-state__icon" aria-hidden="true"></i>
-          <p class="form-detail-state__title">This form is not available</p>
-          <p class="form-detail-state__subtitle">Please choose another form or check back later.</p>
-          <button type="button" class="form-detail-action form-detail-action--primary" (click)="goBack()">
-            Browse forms
-          </button>
-        </div>
-      } @else if (submissionId(); as submittedId) {
-        <div class="form-success" role="status">
-          <div class="form-success__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M20 7L10 17L5 12"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 class="form-success__title">Form submitted</h2>
-          <p class="form-success__subtitle">Your response has been recorded.</p>
-          <button
-            type="button"
-            class="form-detail-action form-detail-action--primary"
-            (click)="submitAnother()"
-          >
-            Submit another response
-          </button>
-        </div>
-      } @else if (formGroup(); as activeForm) {
+       @if (!isPublished()) {
+         <div class="form-detail-state" role="alert">
+           <i class="fas fa-lock form-detail-state__icon" aria-hidden="true"></i>
+           <p class="form-detail-state__title">This form is not available</p>
+           <p class="form-detail-state__subtitle">Please choose another form or check back later.</p>
+           <button type="button" class="form-detail-action form-detail-action--primary" (click)="goBack()">
+             Browse forms
+           </button>
+         </div>
+       } @else if (submissionId(); as submittedId) {
+         <div class="form-success" role="status">
+           <div class="form-success__icon" aria-hidden="true">
+             <svg viewBox="0 0 24 24" fill="none">
+               <path
+                 d="M20 7L10 17L5 12"
+                 stroke="currentColor"
+                 stroke-width="2.5"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+               />
+             </svg>
+           </div>
+           <h2 class="form-success__title">Form submitted</h2>
+           <p class="form-success__subtitle">Your response has been recorded.</p>
+           <button
+             type="button"
+             class="form-detail-action form-detail-action--primary"
+             (click)="submitAnother()"
+           >
+             Submit another response
+           </button>
+         </div>
+       } @else if (formGroup(); as activeForm) {
 
-        <form
-          class="form-detail-panel"
-          [formGroup]="activeForm"
-          (ngSubmit)="submitForm()"
-          novalidate
-        >
+         <div class="form-detail__layout">
+
+         <form
+           class="form-detail-panel"
+           [formGroup]="activeForm"
+           (ngSubmit)="submitForm()"
+           novalidate
+         >
           <!-- Section heading -->
           <div class="form-panel-header">
             <h2 class="form-panel-title">
@@ -297,9 +299,9 @@
             </div>
           }
 
-          <hr class="form-divider" />
+           <hr class="form-divider" />
 
-          <div class="form-detail-actions">
+           <div class="form-detail-actions">
             <button type="button" class="form-detail-action form-detail-action--secondary" (click)="goBack()">
               Cancel
             </button>
@@ -315,10 +317,45 @@
               }
             </button>
           </div>
-        </form>
-      }
+         </form>
 
-    </section>
-  }
+         <aside class="form-detail__aside">
+           <div class="form-sidebar-card">
+             <div class="form-sidebar-section">
+               <h4 class="form-sidebar-section__title">
+                 <span class="form-sidebar-icon"><i class="fa-solid fa-circle-question"></i></span>
+                 Form Details
+               </h4>
+               <div class="form-sidebar-stat">
+                 <span class="form-sidebar-stat__label">Fields</span>
+                 <span class="form-sidebar-stat__value">{{ fieldCount() }}</span>
+               </div>
+               <div class="form-sidebar-stat">
+                 <span class="form-sidebar-stat__label">Required</span>
+                 <span class="form-sidebar-stat__value">{{ requiredCount() }}</span>
+               </div>
+               <div class="form-sidebar-stat">
+                 <span class="form-sidebar-stat__label">Optional</span>
+                 <span class="form-sidebar-stat__value">{{ optionalCount() }}</span>
+               </div>
+             </div>
+
+             <hr class="form-sidebar-divider" />
+
+             <div class="form-sidebar-section">
+               <h4 class="form-sidebar-section__title">
+                 <span class="form-sidebar-icon"><i class="fa-solid fa-circle-info"></i></span>
+                 Before You Submit
+               </h4>
+               <p class="form-sidebar-text">Required fields are marked with an asterisk (*). Your response is saved once you submit the form.</p>
+             </div>
+           </div>
+         </aside>
+
+         </div>
+       }
+
+     </section>
+   }
 
 </section>
