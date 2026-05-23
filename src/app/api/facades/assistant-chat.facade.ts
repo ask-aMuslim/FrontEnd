@@ -75,7 +75,11 @@ export class AssistantChatFacade {
     environment.askAssistantApiBaseUrl,
     environment.askAssistantApiBaseUrlFallback,
   );
-  private readonly jsonHeaders = new HttpHeaders({ Accept: 'application/json' });
+  private readonly jsonHeaders = new HttpHeaders({
+    'Accept': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+  });
   private readonly jsonContext = new HttpContext().set(SKIP_LOADING, true);
   private readonly streamHeaders = new HttpHeaders({
     Accept: 'application/x-ndjson, text/event-stream, application/json',
@@ -182,7 +186,11 @@ export class AssistantChatFacade {
       return throwError(() => new Error('No assistant API URL candidates are available.'));
     }
 
-    return this.http.get<unknown>(url, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
+    const cacheBusterUrl = url.includes('?')
+      ? `${url}&t=${Date.now()}`
+      : `${url}?t=${Date.now()}`;
+
+    return this.http.get<unknown>(cacheBusterUrl, { headers: this.jsonHeaders, context: this.jsonContext }).pipe(
       catchError((error: unknown) => {
         if (rest.length === 0) {
           return throwError(() => error);
@@ -648,9 +656,18 @@ export class AssistantChatFacade {
     }
 
     if (typeof value === 'string' && value.trim().length > 0) {
-      const normalized = value.includes('T')
+      let normalized = value.includes('T')
         ? value
         : value.replace(' ', 'T');
+        
+      const tIndex = normalized.indexOf('T');
+      const hasTimezone = normalized.includes('Z')
+        || (tIndex !== -1 && (normalized.indexOf('+', tIndex) !== -1 || normalized.indexOf('-', tIndex) !== -1));
+        
+      if (!hasTimezone) {
+        normalized = normalized + 'Z';
+      }
+      
       const parsed = Date.parse(normalized);
       if (Number.isFinite(parsed)) {
         return parsed;

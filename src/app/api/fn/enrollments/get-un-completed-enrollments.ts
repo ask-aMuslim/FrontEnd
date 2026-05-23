@@ -8,16 +8,12 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface GetCourseDetailById$Params {
-  id: string;
-  studentId?: string | null;
+export interface GetUnCompletedEnrollments$Params {
 }
 
-export function getCourseDetailById(http: HttpClient, rootUrl: string, params: GetCourseDetailById$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, getCourseDetailById.PATH, 'get');
+export function getUnCompletedEnrollments(http: HttpClient, rootUrl: string, params?: GetUnCompletedEnrollments$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, getUnCompletedEnrollments.PATH, 'get');
   if (params) {
-    rb.path('id', params.id, {});
-    rb.query('studentId', params.studentId, {});
   }
 
   return http.request(
@@ -30,4 +26,4 @@ export function getCourseDetailById(http: HttpClient, rootUrl: string, params: G
   );
 }
 
-getCourseDetailById.PATH = '/api/Courses/{id}/detail';
+getUnCompletedEnrollments.PATH = '/api/Enrollments/uncompleted';

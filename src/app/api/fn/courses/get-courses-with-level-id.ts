@@ -7,6 +7,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { Language } from '../../models/language';
 
 export interface GetCoursesWithLevelId$Params {
   LevelId?: string | null;
@@ -14,6 +15,7 @@ export interface GetCoursesWithLevelId$Params {
   PageSize?: number | null;
   SearchTerm?: string | null;
   IsPublished?: boolean | null;
+  Language?: Language | null;
 }
 
 export function getCoursesWithLevelId(http: HttpClient, rootUrl: string, params?: GetCoursesWithLevelId$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -24,6 +26,7 @@ export function getCoursesWithLevelId(http: HttpClient, rootUrl: string, params?
     rb.query('PageSize', params.PageSize, {});
     rb.query('SearchTerm', params.SearchTerm, {});
     rb.query('IsPublished', params.IsPublished, {});
+    rb.query('Language', params.Language, {});
   }
 
   return http.request(

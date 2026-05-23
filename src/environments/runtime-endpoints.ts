@@ -1,6 +1,8 @@
+export const ASSISTANT_TUNNEL_URL = 'https://readings-handed-poem-packaging.trycloudflare.com';
+
 const DIRECT_API_BASE_URL = 'https://api.askamuslim.com';
-const DIRECT_ASSISTANT_API_BASE_URL = 'https://jawless-spoken-hardhat.ngrok-free.dev';
-const DIRECT_ASSISTANT_API_BASE_URL_FALLBACK = 'http://127.0.0.1:8000';
+const DIRECT_ASSISTANT_API_BASE_URL = ASSISTANT_TUNNEL_URL;
+const DIRECT_ASSISTANT_API_BASE_URL_FALLBACK = 'http://localhost:8000';
 
 const NETLIFY_API_BASE_URL = '/backend';
 const NETLIFY_ASSISTANT_API_BASE_URL = '/assistant-api';
@@ -11,7 +13,12 @@ function isNetlifyBrowserHost(): boolean {
   }
 
   const hostname = globalThis.location?.hostname?.toLowerCase() ?? '';
-  return hostname.endsWith('.netlify.app') || hostname.endsWith('.netlify.live');
+  return (
+    hostname.endsWith('.netlify.app') ||
+    hostname.endsWith('.netlify.live') ||
+    hostname === 'askamuslim.com' ||
+    hostname.endsWith('.askamuslim.com')
+  );
 }
 
 export function resolveApiBaseUrl(): string {

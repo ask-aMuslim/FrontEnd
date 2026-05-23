@@ -7,15 +7,16 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { SendContactUsMessageCommand } from '../../models/send-contact-us-message-command';
 
-export interface GetByLesson2$Params {
-  lessonId: string;
+export interface SendMessage$Params {
+      body: SendContactUsMessageCommand
 }
 
-export function getByLesson2(http: HttpClient, rootUrl: string, params: GetByLesson2$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, getByLesson2.PATH, 'get');
+export function sendMessage(http: HttpClient, rootUrl: string, params: SendMessage$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, sendMessage.PATH, 'post');
   if (params) {
-    rb.path('lessonId', params.lessonId, {});
+    rb.body(params.body, 'application/json');
   }
 
   return http.request(
@@ -28,4 +29,4 @@ export function getByLesson2(http: HttpClient, rootUrl: string, params: GetByLes
   );
 }
 
-getByLesson2.PATH = '/api/StudentQuestions/by-lesson/{lessonId}';
+sendMessage.PATH = '/api/ContactUs';

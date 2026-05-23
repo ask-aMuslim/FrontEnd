@@ -60,7 +60,6 @@ export class AskQaComponent implements OnInit {
   private lastScrolledCategoryContainerWidth: number | null = null;
   private selectedCategoryScrollTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
   private tagFilterOptions: TagFilterOption[] = [];
-  private allFilteredQuestions: QuestionCard[] = [];
   private loadedTagId: string | null = null;
   categories: string[] = [...QA_CATEGORIES];
   selectedCategory = 0;
@@ -88,16 +87,12 @@ export class AskQaComponent implements OnInit {
     if (data) {
       this.tagFilterOptions = data.categories;
       this.categories = ['All', ...data.categories.map((tag) => tag.name)];
-      this.allFilteredQuestions = data.initialQuestions;
-      this.totalCount = data.initialQuestions.length;
-      this.totalPages = Math.max(
-        AskQaComponent.minimumTotalPages,
-        Math.ceil(this.totalCount / this.itemsPerPage),
-      );
+      this.questions = data.initialQuestions;
+      this.totalCount = data.totalCount;
+      this.totalPages = data.totalPages;
       this.selectedCategory = data.initialSelectedCategoryIndex;
       this.loadedTagId = this.selectedCategoryTagId || 'all';
       this.currentPage = PAGINATION.DEFAULT_PAGE;
-      this.questions = this.getTagPaginatedQuestions();
 
       const initialQuery = this.route.snapshot.queryParamMap.get('question');
       if (initialQuery) {
@@ -123,7 +118,7 @@ export class AskQaComponent implements OnInit {
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
-      if (this.allFilteredQuestions.length > 0) {
+      if (this.questions.length > 0) {
         this.onSearch();
       }
     }
@@ -155,7 +150,7 @@ export class AskQaComponent implements OnInit {
   }
 
   get paginatedFilteredQuestions(): QuestionCard[] {
-    return this.selectedCategory === 0 ? this.questions : this.getTagPaginatedQuestions();
+    return this.questions;
   }
 
   get pages(): number[] {
@@ -175,7 +170,7 @@ export class AskQaComponent implements OnInit {
     return this.categories[this.selectedCategory] ?? '';
   }
 
-  private get selectedCategoryTagId(): string | null {
+  get selectedCategoryTagId(): string | null {
     if (this.selectedCategory === 0) {
       return null;
     }
@@ -192,8 +187,7 @@ export class AskQaComponent implements OnInit {
     }
 
     const normalizedQuery = query.toLowerCase();
-    // Always use allFilteredQuestions which now contains the full dataset for the active category (Tag or All)
-    this.searchResults = this.allFilteredQuestions.filter((question) =>
+    this.searchResults = this.questions.filter((question) =>
       this.matchesQuery(question, normalizedQuery),
     );
     this.hasSearched = true;
@@ -217,6 +211,26 @@ export class AskQaComponent implements OnInit {
     this.loadQuestions();
     this.cdr.markForCheck();
     this.queueSelectedCategoryScroll();
+
+    const selectedTag = index === 0 ? null : this.categories[index];
+    const selectedTagId = this.selectedCategoryTagId;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        tag: selectedTag,
+        tagId: selectedTagId,
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  onTagClicked(tagName: string): void {
+    const matchedIndex = this.categories.findIndex(
+      (category) => category.trim().toLowerCase() === tagName.trim().toLowerCase()
+    );
+    if (matchedIndex >= 0) {
+      this.selectCategory(matchedIndex);
+    }
   }
 
   goToPage(page: number): void {
@@ -265,10 +279,14 @@ export class AskQaComponent implements OnInit {
   }
 
   openSearchPreviewQuestion(question: QuestionCard): void {
-    const queryParams = {
+    const queryParams: any = {
       id: question.id,
       categories: JSON.stringify(question.categories ?? []),
     };
+    const tagId = this.selectedCategoryTagId;
+    if (tagId) {
+      queryParams.tagId = tagId;
+    }
     void this.router.navigate(['/question-and-answer/topics/question'], { queryParams });
   }
 
@@ -290,90 +308,43 @@ export class AskQaComponent implements OnInit {
 
   private loadQuestions(): void {
     const selectedTagId = this.selectedCategoryTagId;
-    const categoryKey = this.selectedCategory === 0 ? 'all' : selectedTagId;
+    const pageSize = this.itemsPerPage;
 
-    if (categoryKey && this.loadedTagId === categoryKey && this.allFilteredQuestions.length > 0) {
-      this.questions = this.getTagPaginatedQuestions();
-      this.cdr.markForCheck();
-      if (this.searchQuery) {
-        this.onSearch();
-      }
-      return;
-    }
-
-    this.loadAllCategoryQuestions(selectedTagId);
-  }
-
-  private loadAllCategoryQuestions(tagId: string | null): void {
-    this.allFilteredQuestions = [];
-    const pageSize = AskQaComponent.tagFetchPageSize;
-    const params: any = { pageNumber: 1, pageSize };
-    if (tagId) {
-      params.tagIds = tagId;
+    this.questions = [];
+    const params: any = {
+      pageNumber: this.currentPage,
+      pageSize: pageSize,
+    };
+    if (selectedTagId) {
+      params.tagIds = selectedTagId;
     }
 
     this.qasService.getAll(params).pipe(
-      switchMap((firstResponse) => {
-        const firstPageQuestions = this.mapQuestions(firstResponse);
-        const pagination = this.extractPagination(firstResponse, firstPageQuestions.length);
-        const totalPages = pagination.totalPages;
-
-        if (totalPages <= AskQaComponent.minimumTotalPages) {
-          return of({
-            allQuestions: firstPageQuestions,
-          });
-        }
-
-        const remainingPageRequests: Observable<QuestionCard[]>[] = Array.from(
-          { length: totalPages - 1 },
-          (_item, index) => {
-            const p: any = { pageNumber: index + 2, pageSize };
-            if (tagId) p.tagIds = tagId;
-            return this.qasService
-              .getAll(p)
-              .pipe(map((response) => this.mapQuestions(response)));
-          }
-        );
-
-        return forkJoin(remainingPageRequests).pipe(
-          map((remainingPages) => {
-            const allQuestions = [
-              ...firstPageQuestions,
-              ...remainingPages.flat(),
-            ];
-            return {
-              allQuestions,
-            };
-          }),
-        );
+      map((response) => {
+        const questions = this.mapQuestions(response);
+        const pagination = this.extractPagination(response, questions.length);
+        return {
+          questions,
+          pagination,
+        };
       }),
-      catchError(() => of({ allQuestions: [] })),
-    ).subscribe(({ allQuestions }) => {
-      this.loadedTagId = tagId || 'all';
-      this.allFilteredQuestions = allQuestions;
-      this.totalCount = allQuestions.length;
-      this.totalPages = Math.max(
-        AskQaComponent.minimumTotalPages,
-        Math.ceil(this.totalCount / this.itemsPerPage),
-      );
+      catchError(() => of({ questions: [], pagination: { totalPages: 1, totalCount: 0 } }))
+    ).subscribe(({ questions, pagination }) => {
+      this.loadedTagId = selectedTagId || 'all';
+      this.questions = questions;
+      this.totalCount = pagination.totalCount;
+      this.totalPages = pagination.totalPages;
 
       if (this.currentPage > this.totalPages) {
         this.currentPage = this.totalPages;
       }
 
-      this.questions = this.getTagPaginatedQuestions();
       this.cdr.markForCheck();
 
       if (this.searchQuery) {
         this.onSearch();
       }
     });
-  }
-
-  private getTagPaginatedQuestions(): QuestionCard[] {
-    const start = (this.currentPage - PAGINATION.DEFAULT_PAGE) * this.itemsPerPage;
-    const end = start + this.itemsPerPage;
-    return this.allFilteredQuestions.slice(start, end);
   }
 
   private extractPagination(response: unknown, fallbackCount: number): { totalPages: number; totalCount: number } {

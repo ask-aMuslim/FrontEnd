@@ -53,7 +53,7 @@
 .edit-form__input,
 .edit-form__textarea {
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--border-radius-default);
   border: 1px solid var(--color-border-medium);
   font-size: 1rem;
   font-weight: 500;
@@ -84,7 +84,7 @@
 
 .edit-form__btn {
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--border-radius-default);
   cursor: pointer;
   width: 100%;
 

@@ -4,6 +4,7 @@
 import { CreateFormFieldOptionCommand } from '../models/create-form-field-option-command';
 import { FormFieldType } from '../models/form-field-type';
 export interface CreateFormFieldCommand {
+  isMultiSelect?: boolean;
   isRequired?: boolean;
   label?: string;
   options?: Array<CreateFormFieldOptionCommand>;

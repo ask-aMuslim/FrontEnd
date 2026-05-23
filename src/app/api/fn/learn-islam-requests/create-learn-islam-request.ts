@@ -7,14 +7,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { CreateMeetingRequestCommand } from '../../models/create-meeting-request-command';
+import { CreateLearnIslamRequestCommand } from '../../models/create-learn-islam-request-command';
 
-export interface Create2$Params {
-      body: CreateMeetingRequestCommand
+export interface CreateLearnIslamRequest$Params {
+      body: CreateLearnIslamRequestCommand
 }
 
-export function create2(http: HttpClient, rootUrl: string, params: Create2$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, create2.PATH, 'post');
+export function createLearnIslamRequest(http: HttpClient, rootUrl: string, params: CreateLearnIslamRequest$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, createLearnIslamRequest.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/json');
   }
@@ -29,4 +29,4 @@ export function create2(http: HttpClient, rootUrl: string, params: Create2$Param
   );
 }
 
-create2.PATH = '/api/MeetingRequests';
+createLearnIslamRequest.PATH = '/api/LearnIslamRequests';

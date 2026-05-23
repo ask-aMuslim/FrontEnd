@@ -114,7 +114,7 @@ describe('QuizComponent', () => {
 
         (component as unknown as { finishQuiz: () => void }).finishQuiz();
 
-        expect(component['quizState']()).toBe('results');
+        expect(component['quizState']()).toBe('review');
         expect(academyProgressServiceSpy.markLessonCompleted).toHaveBeenCalledWith('quiz-1', 'course-1');
         expect(academyProgressServiceSpy.markCourseQuizPassed).not.toHaveBeenCalled();
         expect(component.courseLessons()[0].progress.isCompleted).toBeTrue();
@@ -129,7 +129,7 @@ describe('QuizComponent', () => {
 
         (component as unknown as { finishQuiz: () => void }).finishQuiz();
 
-        expect(component['quizState']()).toBe('results');
+        expect(component['quizState']()).toBe('review');
         expect(academyProgressServiceSpy.markLessonCompleted).toHaveBeenCalledWith('quiz-1', 'course-1');
         expect(academyProgressServiceSpy.markCourseQuizPassed).toHaveBeenCalledWith('course-1');
         expect(routerSpy.navigate).not.toHaveBeenCalled();

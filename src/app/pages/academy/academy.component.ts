@@ -159,11 +159,24 @@ export class AcademyComponent implements OnInit {
         courses: AcademyCourse[],
     ): RecentLesson {
         const matchedCourse = courses.find((course) => course.id === info.courseId);
-        const totalLessons = Math.max(0, info.totalLessons, matchedCourse?.lessons ?? 0);
+        const totalLessons = matchedCourse ? matchedCourse.lessons : info.totalLessons;
         const completedLessons = Math.min(totalLessons, Math.max(0, info.completedLessons));
         const totalQuizzes = 0;
         const completedQuizzes = 0;
-        const normalizedProgress = Math.max(0, Math.min(100, info.progress));
+
+        const progressDenominator = info.totalLessons > 0 ? info.totalLessons : totalLessons;
+        const calculatedProgress = progressDenominator > 0
+            ? Math.round((Math.min(progressDenominator, info.completedLessons) / progressDenominator) * 100)
+            : 0;
+
+        const requiresQuizPass = matchedCourse ? (info.totalLessons > matchedCourse.lessons) : false;
+        let normalizedProgress: number;
+        if (!requiresQuizPass) {
+            normalizedProgress = calculatedProgress;
+        } else {
+            normalizedProgress = info.progress > 0 ? Math.max(0, Math.min(100, info.progress)) : calculatedProgress;
+        }
+
         let mediaType: 'video' | 'audio' | null = null;
         if (info.lessonType === 'video' || info.lessonType === 'audio') {
             mediaType = info.lessonType;

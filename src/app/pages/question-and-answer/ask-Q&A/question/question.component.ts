@@ -41,6 +41,7 @@ export class QuestionComponent implements OnDestroy {
   categories: string[] = [];
   imageUrl: string | null = null;
   isSaved = false;
+  backQueryParams: Record<string, string | null> = {};
 
   readonly saveIcon = '/icons/icons-24/save.svg';
   readonly savedIcon = '/icons/icons-24/saved.svg';
@@ -66,6 +67,16 @@ export class QuestionComponent implements OnDestroy {
       const categoriesParam = params.get('categories');
       this.categories = categoriesParam ? this.parseCategories(categoriesParam) : [];
 
+      const tagId = params.get('tagId');
+      const tag = params.get('tag');
+      this.backQueryParams = {};
+      if (tagId) {
+        this.backQueryParams['tagId'] = tagId;
+      }
+      if (tag) {
+        this.backQueryParams['tag'] = tag;
+      }
+
       if (this.id) {
         this.loadQuestionById(this.id);
       }
@@ -78,7 +89,7 @@ export class QuestionComponent implements OnDestroy {
   }
 
   back(): void {
-    void this.router.navigate(['/question-and-answer/topics']);
+    void this.router.navigate(['/question-and-answer/topics'], { queryParams: this.backQueryParams });
   }
 
   toggleSave(): void {
@@ -167,7 +178,16 @@ export class QuestionComponent implements OnDestroy {
 
         this.title = this.extractTextFromHtml(renderedTitle ?? mappedTitle ?? this.title) || this.title;
         this.answer = this.extractTextFromHtml(renderedAnswer ?? mappedAnswer ?? this.answer) || this.answer;
-        this.categories = toStringArray(getValue(data, 'categories', 'Categories', 'tags', 'Tags')) ?? this.categories;
+        const apiCategories = toStringArray(getValue(data, 'categories', 'Categories', 'tags', 'Tags'));
+        const queryTag = this.route.snapshot.queryParamMap.get('tag');
+        if (queryTag) {
+          this.categories = [
+            queryTag,
+            ...(apiCategories ?? []).filter((c) => c.toLowerCase() !== queryTag.toLowerCase())
+          ];
+        } else {
+          this.categories = apiCategories ?? this.categories;
+        }
         this.imageUrl = mappedImage ?? null;
         this.changeDetectorRef.markForCheck();
       },

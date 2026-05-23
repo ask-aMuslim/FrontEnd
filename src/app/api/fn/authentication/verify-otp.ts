@@ -7,14 +7,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { Result } from '../../models/result';
+import { ResultOfString } from '../../models/result-of-string';
 import { VerifyOtpCommand } from '../../models/verify-otp-command';
 
 export interface VerifyOtp$Params {
       body: VerifyOtpCommand
 }
 
-export function verifyOtp(http: HttpClient, rootUrl: string, params: VerifyOtp$Params, context?: HttpContext): Observable<StrictHttpResponse<Result>> {
+export function verifyOtp(http: HttpClient, rootUrl: string, params: VerifyOtp$Params, context?: HttpContext): Observable<StrictHttpResponse<ResultOfString>> {
   const rb = new RequestBuilder(rootUrl, verifyOtp.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/json');
@@ -25,7 +25,7 @@ export function verifyOtp(http: HttpClient, rootUrl: string, params: VerifyOtp$P
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Result>;
+      return r as StrictHttpResponse<ResultOfString>;
     })
   );
 }

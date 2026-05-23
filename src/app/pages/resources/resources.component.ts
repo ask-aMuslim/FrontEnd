@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, Input } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Router, RouterLink } from '@angular/router';
+
 import {
   ResourceCard,
   ResourceTab,
@@ -13,7 +15,7 @@ import {
 @Component({
     selector: 'app-resources',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterLink],
     templateUrl: './resources.component.html',
     styleUrl: './resources.component.scss',
 })
@@ -21,7 +23,14 @@ export class ResourcesComponent {
     private readonly itemsPerLoad = 3;
     private static readonly cardThumbnailFallback = '/images/events-image-placeholder.jpg';
     private readonly sanitizer = inject(DomSanitizer);
+    private readonly router = inject(Router);
+    
     private readonly safeDrivePreviewUrlByFileId = new Map<string, SafeResourceUrl>();
+    
+
+    constructor() {
+        // No API calls needed for resources page
+    }
     protected readonly hero = {
         eyebrowPrimary: 'About',
         eyebrowSecondary: 'Guidance',
@@ -399,7 +408,7 @@ export class ResourcesComponent {
     }
 
     protected shouldUsePdfPreview(card: ResourceCard): boolean {
-        return Boolean(card.driveFileId) && Boolean(this.usePdfPreviewByCardId()[card.id]);
+        return false;
     }
 
     protected isThumbnailLoading(card: ResourceCard): boolean {
@@ -408,23 +417,6 @@ export class ResourcesComponent {
 
     protected onCardImageLoad(card: ResourceCard): void {
         this.setThumbnailLoading(card.id, false);
-    }
-
-    protected onCardPreviewLoad(card: ResourceCard): void {
-        this.setThumbnailLoading(card.id, false);
-    }
-
-    protected getDrivePreviewUrl(fileId: string): SafeResourceUrl {
-        const cachedUrl = this.safeDrivePreviewUrlByFileId.get(fileId);
-        if (cachedUrl) {
-            return cachedUrl;
-        }
-
-        const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-            `https://drive.google.com/file/d/${fileId}/preview`,
-        );
-        this.safeDrivePreviewUrlByFileId.set(fileId, safeUrl);
-        return safeUrl;
     }
 
     protected onCardImageError(card: ResourceCard, event: Event): void {
@@ -444,15 +436,6 @@ export class ResourcesComponent {
             this.thumbnailAttemptByCardId.update((current) => ({
                 ...current,
                 [card.id]: nextAttempt,
-            }));
-            return;
-        }
-
-        if (card.driveFileId) {
-            this.setThumbnailLoading(card.id, true);
-            this.usePdfPreviewByCardId.update((current) => ({
-                ...current,
-                [card.id]: true,
             }));
             return;
         }
@@ -492,12 +475,16 @@ export class ResourcesComponent {
             const thumbnailUrl = thumbnailUrls[0] ?? ResourcesComponent.cardThumbnailFallback;
             const title = this.toDisplayTitle(fileName);
             const subtitle = this.toCardSubtitle(idPrefix);
+            const articleId = idPrefix === 'pamphlet'
+                ? ResourcesComponent.getPamphletArticleId(title)
+                : undefined;
 
             return {
                 id: `${idPrefix}-${index + 1}`,
                 title,
                 articleUrl,
                 subtitle,
+                articleId,
                 downloadUrl,
                 thumbnailUrl,
                 thumbnailUrls,
@@ -505,6 +492,23 @@ export class ResourcesComponent {
                 driveFileId,
             };
         });
+    }
+
+    private static getPamphletArticleId(displayTitle: string): string | undefined {
+        const map: Readonly<Record<string, string>> = {
+            'Truth': '04941fd7-b369-4e8a-d7c4-08de7962a21d',
+            'Science': '4bc0851e-b42d-4416-d7c5-08de7962a21d',
+            'Prophecy': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
+            'Foretold': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+            'Jesus': '2ac25076-8d77-4c64-d7c8-08de7962a21d',
+            'Prophet Muhammad': '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
+            'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',
+            'Women': 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
+            "Da'wah": '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
+        };
+
+        const key = displayTitle.replace(/\s*Pamphlet$/i, '').trim();
+        return map[key];
     }
 
     private buildDriveViewUrl(fileId: string): string {

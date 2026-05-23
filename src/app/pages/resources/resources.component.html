@@ -102,33 +102,14 @@
                         <span class="resource-card__spinner"></span>
                       </div>
 
-                      <ng-container
-                        *ngIf="
-                          !shouldUsePdfPreview(card) || !card.driveFileId;
-                          else drivePdfPreview
-                        "
-                      >
-                        <img
-                          [src]="getCardThumbnailUrl(card)"
-                          [alt]="card.thumbnailAlt"
-                          loading="lazy"
-                          referrerpolicy="no-referrer"
-                          (load)="onCardImageLoad(card)"
-                          (error)="onCardImageError(card, $event)"
-                        />
-                      </ng-container>
-
-                      <ng-template #drivePdfPreview>
-                        <iframe
-                          class="resource-card__pdf-preview"
-                          [src]="getDrivePreviewUrl(card.driveFileId!)"
-                          [title]="card.title + ' preview'"
-                          loading="lazy"
-                          tabindex="-1"
-                          aria-hidden="true"
-                          (load)="onCardPreviewLoad(card)"
-                        ></iframe>
-                      </ng-template>
+                      <img
+                        [src]="getCardThumbnailUrl(card)"
+                        [alt]="card.thumbnailAlt"
+                        loading="lazy"
+                        referrerpolicy="no-referrer"
+                        (load)="onCardImageLoad(card)"
+                        (error)="onCardImageError(card, $event)"
+                      />
                     </div>
                   </a>
 
@@ -145,10 +126,8 @@
                       <a
                         *ngIf="isPamphletsTabActive(gallery)"
                         class="resources-button resources-button--outline resources-button--article"
-                        [href]="card.articleUrl"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        [attr.aria-label]="'Read article ' + card.title"
+                        [routerLink]="card.articleId ? ['/question-and-answer/topics/question'] : null"
+                        [queryParams]="card.articleId ? { id: card.articleId, tag: 'Essentials', tagId: card.tagId } : {}"
                       >
                         Read Article
                       </a>

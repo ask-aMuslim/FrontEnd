@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--border-radius-default);
   font-size: 0.875rem;
   animation: fadeIn 0.3s ease-out;
 
@@ -142,7 +142,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--border-radius-default);
   transition:
     background 0.2s ease-in-out,
     transform 0.2s ease-in-out;

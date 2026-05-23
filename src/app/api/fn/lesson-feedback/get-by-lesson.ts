@@ -28,4 +28,4 @@ export function getByLesson(http: HttpClient, rootUrl: string, params: GetByLess
   );
 }
 
-getByLesson.PATH = '/api/StudentNotes/by-lesson/{lessonId}';
+getByLesson.PATH = '/api/LessonFeedback/by-lesson/{lessonId}';

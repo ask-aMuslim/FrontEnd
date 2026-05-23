@@ -7,15 +7,18 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { UpdateStudentNoteCommand } from '../../models/update-student-note-command';
 
-export interface GetById2$Params {
+export interface UpdateNote$Params {
   id: string;
+      body: UpdateStudentNoteCommand
 }
 
-export function getById2(http: HttpClient, rootUrl: string, params: GetById2$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, getById2.PATH, 'get');
+export function updateNote(http: HttpClient, rootUrl: string, params: UpdateNote$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, updateNote.PATH, 'put');
   if (params) {
     rb.path('id', params.id, {});
+    rb.body(params.body, 'application/json');
   }
 
   return http.request(
@@ -28,4 +31,4 @@ export function getById2(http: HttpClient, rootUrl: string, params: GetById2$Par
   );
 }
 
-getById2.PATH = '/api/MeetingRequests/{id}';
+updateNote.PATH = '/api/StudentNotes/{id}';

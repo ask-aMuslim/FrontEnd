@@ -44,9 +44,6 @@ import html2canvas from 'html2canvas';
             <a [href]="cert.jpegUrl" [download]="getFileName(cert, 'jpeg')" class="action-btn download-btn">
               <img src="/icons/icons-24/video-file.svg" alt="" class="btn-icon brand-green"> JPEG
             </a>
-            <a [href]="cert.svgUrl" [download]="getFileName(cert, 'svg')" class="action-btn download-btn">
-              <img src="/icons/icons-24/expand.svg" alt="" class="btn-icon brand-green"> SVG
-            </a>
             <button (click)="downloadAsPDF()" class="action-btn pdf-btn" [disabled]="isGeneratingPdf">
               <img [src]="isGeneratingPdf ? '/icons/icons-24/wait.svg' : '/icons/icons-24/file-download.svg'" 
                    alt="" 

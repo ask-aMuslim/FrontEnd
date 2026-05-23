@@ -88,6 +88,7 @@ export class QuizComponent implements OnInit, OnDestroy {
 
         { label: 'Academy', link: ['/academy'] },
     ];
+    readonly levelName = signal<string>('');
 
     // Course info
     readonly courseInfo = signal<CourseInfo>({
@@ -262,16 +263,22 @@ export class QuizComponent implements OnInit, OnDestroy {
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
         const courseTitle = this.courseInfo().title.trim();
-
-        return courseTitle.length > 0
-            ? [
-                ...this.breadcrumbsBase,
-                {
-                    label: courseTitle,
-                    link: ['/academy/course', this.courseId],
-                },
-            ]
-            : [...this.breadcrumbsBase];
+        const list: AcademyBreadcrumbItem[] = [
+            ...this.breadcrumbsBase
+        ];
+        if (this.levelName()) {
+            list.push({
+                label: this.levelName(),
+                link: ['/academy'],
+            });
+        }
+        if (courseTitle.length > 0) {
+            list.push({
+                label: courseTitle,
+                link: ['/academy/course', this.courseId],
+            });
+        }
+        return list;
     }
 
     get currentBreadcrumb(): string {
@@ -365,6 +372,12 @@ export class QuizComponent implements OnInit, OnDestroy {
             currentLesson: data.course.lessons,
             duration: data.course.duration
         });
+
+        this.academyProgressService.getLevelTitleForCourse(data.course)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((title) => {
+                this.levelName.set(title);
+            });
 
         // 2. Lessons
         this.courseLessons.set(data.lessonsWithProgress);

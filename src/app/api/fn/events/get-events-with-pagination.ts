@@ -7,9 +7,11 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { EventStatus } from '../../models/event-status';
 
 export interface GetEventsWithPagination$Params {
   IsPublished?: boolean | null;
+  EventStatus?: EventStatus | null;
   From?: string | null;
   To?: string | null;
   PageNumber?: number | null;
@@ -21,6 +23,7 @@ export function getEventsWithPagination(http: HttpClient, rootUrl: string, param
   const rb = new RequestBuilder(rootUrl, getEventsWithPagination.PATH, 'get');
   if (params) {
     rb.query('IsPublished', params.IsPublished, {});
+    rb.query('EventStatus', params.EventStatus, {});
     rb.query('From', params.From, {});
     rb.query('To', params.To, {});
     rb.query('PageNumber', params.PageNumber, {});

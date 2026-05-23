@@ -64,7 +64,9 @@
                 }
               </div>
 
-              <div class="event-detail-page__separator"></div>
+              @if (isSeparatorVisible(event)) {
+                <div class="event-detail-page__separator"></div>
+              }
 
               @if (event.agenda && event.agenda.length > 0) {
                 <section class="event-detail-page__agenda">
@@ -88,9 +90,8 @@
                 </section>
               }
 
-              <div class="event-detail-page__separator"></div>
-
               @if (event.outcomes && event.outcomes.length > 0) {
+                <div class="event-detail-page__separator"></div>
                 <section class="event-detail-page__outcomes">
                   <h3 class="event-detail-page__section-title">
                     At the end, you will find the answers of:
@@ -176,8 +177,9 @@
               <div class="event-detail-page__question-form">
                 <input
                   type="text"
-                  placeholder="Type your question here"
+                  [placeholder]="isRegistered ? 'Type your question here' : 'Register for the event to ask a question'"
                   [(ngModel)]="questionText"
+                  [disabled]="!isRegistered"
                   class="event-detail-page__question-input"
                 />
 
@@ -190,6 +192,12 @@
                   Send
                 </button>
               </div>
+
+              @if (!isRegistered) {
+                <p class="event-detail-page__question-helper">
+                  Please register for this event to submit your questions to the speaker.
+                </p>
+              }
             </section>
           }
         </div>

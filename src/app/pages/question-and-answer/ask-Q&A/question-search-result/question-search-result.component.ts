@@ -13,8 +13,10 @@ import { QaCardComponent, QuestionCard } from '../qa-card/qa-card.component';
 export class QuestionSearchResultComponent {
   @Input() query = '';
   @Input() results: QuestionCard[] = [];
+  @Input() activeTagId: string | null = null;
   @Output() clearSearch = new EventEmitter<void>();
   @Output() askAI = new EventEmitter<string>();
+  @Output() tagClicked = new EventEmitter<string>();
 
   get hasResults(): boolean {
     return (this.results?.length ?? 0) > 0;

@@ -5,12 +5,12 @@ import {
 } from './runtime-endpoints';
 
 export const environment = {
-  production: true,
+  production: false,
   apiBaseUrl: resolveApiBaseUrl(),
   askAssistantApiBaseUrl: resolveAssistantApiBaseUrl(),
   askAssistantApiBaseUrlFallback: resolveAssistantApiFallbackBaseUrl(),
   authWithCredentials: false,
-  youtubeDataApiKey: ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join(''),
-  googleClientId: '859661315178-6fi4qmdnmgsuqhdjpdp9kdioi58g9uds.apps.googleusercontent.com',
+  youtubeDataApiKey: 'YOUR_YOUTUBE_DATA_API_KEY',
+  googleClientId: 'YOUR_GOOGLE_CLIENT_ID',
   facebookAppId: 'YOUR_FACEBOOK_APP_ID',
-} as const;
+};

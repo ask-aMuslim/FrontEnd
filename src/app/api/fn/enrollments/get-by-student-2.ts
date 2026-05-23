@@ -9,13 +9,11 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface GetByStudent2$Params {
-  studentId: string;
 }
 
-export function getByStudent2(http: HttpClient, rootUrl: string, params: GetByStudent2$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function getByStudent2(http: HttpClient, rootUrl: string, params?: GetByStudent2$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, getByStudent2.PATH, 'get');
   if (params) {
-    rb.path('studentId', params.studentId, {});
   }
 
   return http.request(
@@ -28,4 +26,4 @@ export function getByStudent2(http: HttpClient, rootUrl: string, params: GetBySt
   );
 }
 
-getByStudent2.PATH = '/api/Enrollments/by-student/{studentId}';
+getByStudent2.PATH = '/api/Enrollments/my';

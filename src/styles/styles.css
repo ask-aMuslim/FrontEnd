@@ -38,7 +38,10 @@ app-root {
 
 * {
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif !important;
+}
+
+body, button, input, select, textarea {
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Scrollbar Styles */
@@ -380,3 +383,28 @@ img.aam-late-image.aam-late-image--loaded {
   background: #def0e1;
   color: #0f5a34;
 }
+
+/* ==========================================================================
+   GLOBAL MODALS & POPUPS Z-INDEX COMPLIANCE
+   Ensure all modals, popups, dialogs, backdrops, and overlays on the website
+   stack cleanly above the sticky header (100) and the footer.
+   ========================================================================== */
+[role="dialog"],
+[aria-modal="true"],
+dialog,
+.modal,
+.modal-backdrop,
+[class*="-modal"],
+[class*="-popup"],
+app-profile-popup > div,
+app-share-popup > div,
+.fixed.inset-0.z-50,
+.fixed.inset-0,
+.notes__modal-backdrop,
+.notes__modal,
+.sign-in-modal,
+.sign-in-modal__backdrop,
+.sign-in-modal__card {
+  z-index: 200 !important;
+}
+

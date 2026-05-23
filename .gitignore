@@ -17,7 +17,9 @@
 .env
 .env.*
 !.env.example
-/src/app/environments/environment.development.ts
+/src/environments/environment.ts
+/src/environments/environment.development.ts
+/postman_environment.json
 certificates/
 
 # --- IDEs & Editors ---
@@ -44,12 +46,14 @@ yarn-error.log*
 # --- Project Specific ---
 .builder/config/data.json
 
+/specs/
+
 # --- Impeccable & Agents ---
 PRODUCT.md
 DESIGN.md
 shape.md
 craft.md
-.agents/skills/impeccable/
+.agents/skills/
 skills-lock.json
 
 # --- Metrics ---
