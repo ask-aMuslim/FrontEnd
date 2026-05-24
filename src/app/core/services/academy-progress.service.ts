@@ -1193,10 +1193,8 @@ export class AcademyProgressService {
             coursesByStage.set(c.stageId, list);
         });
 
-        const unlockedStageIds = new Set<number>();
-        if (sortedStageIds.length > 0) {
-            unlockedStageIds.add(sortedStageIds[0]); // Stage 1 is always unlocked
-        }
+        // Unlock all stages by default so progress doesn't depend on the previous stage quiz for now
+        const unlockedStageIds = new Set<number>(sortedStageIds);
 
         const allCourseProgress: CourseProgress[] = [];
         let isCurrentStageUnlocked = true;
@@ -2306,6 +2304,46 @@ export class AcademyProgressService {
         return `${hours}h ${minutes}m`;
     }
 
+    private formatPrettyDuration(rawDuration: string, type: AcademyLesson['type']): string {
+        const normalized = rawDuration.trim().toLowerCase();
+        if (!normalized || normalized === '0:00' || normalized === '00:00:00') {
+            return type === 'article' || type === 'document' ? '~5min' : '5 min';
+        }
+        
+        // If it's already a clean duration like '~5min' or '5 min' or contains 'min' or 'm', return it
+        if (normalized.includes('min') || normalized.endsWith('m') || normalized.includes('hr')) {
+            return rawDuration;
+        }
+
+        // Parse HH:MM:SS or MM:SS
+        const parts = normalized.split(':').map(Number);
+        if (parts.every(p => !Number.isNaN(p))) {
+            let totalSeconds = 0;
+            if (parts.length === 3) {
+                totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else if (parts.length === 2) {
+                totalSeconds = parts[0] * 60 + parts[1];
+            } else if (parts.length === 1) {
+                totalSeconds = parts[0];
+            }
+
+            if (totalSeconds > 0) {
+                const totalMinutes = Math.round(totalSeconds / 60);
+                if (totalMinutes < 1) {
+                    return `${totalSeconds}s`;
+                }
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m`;
+                }
+                return `${minutes} min`;
+            }
+        }
+
+        return rawDuration;
+    }
+
     public resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
         if (type === 'quiz') {
             return 'Assessment';
@@ -2324,26 +2362,28 @@ export class AcademyProgressService {
 
         const durationFromSeconds = this.readNumericDurationLabel(
             rawLesson,
-            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds'],
+            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds', 'lessonDurationInSeconds'],
             1,
         );
         if (durationFromSeconds) {
-            return durationFromSeconds;
+            return this.formatPrettyDuration(durationFromSeconds, type);
         }
 
         const durationFromMinutes = this.readNumericDurationLabel(
             rawLesson,
-            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes'],
+            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes', 'lessonDurationInMinutes'],
             60,
         );
         if (durationFromMinutes) {
-            return durationFromMinutes;
+            return this.formatPrettyDuration(durationFromMinutes, type);
         }
 
-        return this.readStringDurationLabel(
+        const stringDuration = this.readStringDurationLabel(
             rawLesson,
-            ['duration', 'videoDuration', 'durationLabel', 'length'],
+            ['lessonDuration', 'duration', 'videoDuration', 'durationLabel', 'length'],
         ) ?? '0:00';
+
+        return this.formatPrettyDuration(stringDuration, type);
     }
 
     private readNumericDurationLabel(

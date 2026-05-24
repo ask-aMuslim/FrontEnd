@@ -87,6 +87,17 @@ export class CourseTreeComponent {
   courseClick = output<CourseNode>();
   retryAction = output<void>();
 
+  readonly hasNoPrerequisites = computed<boolean>(() => {
+    const nodeList = this.nodes();
+    if (nodeList.length === 0) {
+      return false;
+    }
+    return nodeList.every(node => {
+      const prereqs = node.prerequisiteIds ?? node.prerequisites ?? [];
+      return prereqs.length === 0;
+    });
+  });
+
   readonly connectorPaths = signal<readonly ConnectorPath[]>([]);
   readonly connectorCanvasWidth = signal(0);
   readonly connectorCanvasHeight = signal(0);
@@ -224,10 +235,6 @@ export class CourseTreeComponent {
 
   // Node Click Handler
   onNodeClick(node: CourseNode) {
-    if (node.status === 'locked') {
-      return;
-    }
-
     this.courseClick.emit(node);
   }
 
@@ -265,7 +272,7 @@ export class CourseTreeComponent {
   }
 
   private getRenderableTreeContainer(): HTMLElement | null {
-    if (!this.isBrowser || this.loading() || !!this.error() || this.nodes().length === 0) {
+    if (!this.isBrowser || this.loading() || !!this.error() || this.nodes().length === 0 || this.hasNoPrerequisites()) {
       return null;
     }
 

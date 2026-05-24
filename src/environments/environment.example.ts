@@ -13,4 +13,5 @@ export const environment = {
   youtubeDataApiKey: 'YOUR_YOUTUBE_DATA_API_KEY',
   googleClientId: 'YOUR_GOOGLE_CLIENT_ID',
   facebookAppId: 'YOUR_FACEBOOK_APP_ID',
+  recaptchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
 };

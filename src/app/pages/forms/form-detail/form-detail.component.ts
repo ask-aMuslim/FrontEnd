@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
@@ -74,7 +74,7 @@ declare const grecaptcha: {
   styleUrls: ['./form-detail.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FormDetailComponent implements OnInit {
+export class FormDetailComponent implements OnInit, OnDestroy {
   private static readonly loadFailureMessage = 'Unable to load this form right now.';
   private static readonly submitFailureMessage = 'Unable to submit your form right now.';
   private static readonly textAreaRows = 6;
@@ -165,6 +165,10 @@ export class FormDetailComponent implements OnInit {
     if (environment.recaptchaSiteKey) {
       this.loadRecaptchaScript();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.toggleRecaptchaBadge(false);
   }
 
   goBack(): void {
@@ -780,6 +784,7 @@ export class FormDetailComponent implements OnInit {
 
   private loadRecaptchaScript(): void {
     if (this.recaptchaPromise) {
+      this.toggleRecaptchaBadge(true);
       return;
     }
     if (typeof document === 'undefined') {
@@ -790,14 +795,18 @@ export class FormDetailComponent implements OnInit {
       script.src = `https://www.google.com/recaptcha/api.js?render=${environment.recaptchaSiteKey}`;
       script.async = true;
       script.defer = true;
-      script.onload = () => resolve();
+      script.onload = () => {
+        this.toggleRecaptchaBadge(true);
+        setTimeout(() => this.toggleRecaptchaBadge(true), 200);
+        resolve();
+      };
       script.onerror = () => reject(new Error('Failed to load reCAPTCHA'));
       document.head.appendChild(script);
     });
   }
 
   private getRecaptchaToken(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
+    const executeToken = (resolve: (value: string) => void, reject: (reason?: any) => void) => {
       if (typeof grecaptcha === 'undefined') {
         reject(new Error('reCAPTCHA not ready'));
         return;
@@ -807,7 +816,27 @@ export class FormDetailComponent implements OnInit {
           .then((token: string) => resolve(token))
           .catch((e: unknown) => reject(e));
       });
+    };
+
+    return new Promise<string>((resolve, reject) => {
+      if (this.recaptchaPromise) {
+        this.recaptchaPromise
+          .then(() => executeToken(resolve, reject))
+          .catch((err) => reject(err));
+      } else {
+        executeToken(resolve, reject);
+      }
     });
+  }
+
+  private toggleRecaptchaBadge(show: boolean): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null;
+    if (badge) {
+      badge.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
+    }
   }
 
   private buildFormDataPayload(): FormData {

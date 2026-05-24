@@ -123,6 +123,17 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     feedbackSubmissionMessage: string | null = null;
     feedbackSubmissionStatus: 'success' | 'error' | null = null;
     isSubmittingFeedback = false;
+    localFeedbackSubmissions = new Set<string>();
+
+    get hasSubmittedFeedback(): boolean {
+        if (this.lessonId && this.localFeedbackSubmissions.has(this.lessonId)) {
+            return true;
+        }
+        if (!this.isBrowser || !this.lessonId) {
+            return false;
+        }
+        return this.document.defaultView?.localStorage.getItem(`lesson_feedback_${this.lessonId}`) === 'true';
+    }
     levelName = '';
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
@@ -385,7 +396,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                                 id: lId,
                                 courseId: this.courseId,
                                 title: l.lessonName ?? l.title ?? '',
-                                duration: l.lessonDuration ?? l.duration ?? '~5min',
+                                duration: this.academyProgressService.resolveLessonDurationFromDto(l, lessonType),
                                 type: lessonType,
                                 order: index + 1,
                             };
@@ -870,6 +881,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.isSubmittingFeedback = false;
 
                     if (submitted) {
+                        if (this.lessonId) {
+                            this.localFeedbackSubmissions.add(this.lessonId);
+                            if (this.isBrowser) {
+                                try {
+                                    this.document.defaultView?.localStorage.setItem(`lesson_feedback_${this.lessonId}`, 'true');
+                                } catch (e) {
+                                    // Ignore localStorage storage exceptions (e.g. privacy mode)
+                                }
+                            }
+                        }
                         this.lessonRating = 0;
                         this.feedbackText = '';
                         this.feedbackSubmissionMessage = 'Thank you for your feedback!';

@@ -1,8 +1,8 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, of, Observable } from 'rxjs';
-import { takeUntil, catchError, map } from 'rxjs/operators';
+import { Subject, of, Observable, forkJoin } from 'rxjs';
+import { takeUntil, catchError, map, take } from 'rxjs/operators';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CourseReadByIdDto } from '../../../api/facades/course.facade';
@@ -217,14 +217,44 @@ export class CourseComponent implements OnInit, OnDestroy {
 
             this.courseId = course.id ?? '';
 
-            this.fetchCourseQuizzes(this.courseId).subscribe((quizzes) => {
+            forkJoin({
+                quizzes: this.fetchCourseQuizzes(this.courseId).pipe(take(1)),
+                stages: this.academyProgressService.getAcademyStages().pipe(take(1)),
+                studentProgress: this.academyProgressService.getStudentProgress().pipe(take(1)),
+            }).pipe(
+                takeUntil(this.destroy$)
+            ).subscribe(({ quizzes, stages, studentProgress }) => {
                 const rawLessonsList = this.extractLessonsFromRawCourse(course);
-                const processedLessons = this.prepareSidebarLessons(rawLessonsList, quizzes);
+
+                const matchedStage = stages.find(s => s.id === course.levelId);
+                const stageNumber = matchedStage?.number ?? 1;
+
+                const stageProgressRecord = studentProgress.stageProgress.find(sp => sp.stageNumber === stageNumber);
+                const isLocked = !stageProgressRecord?.isUnlocked;
+
+                const prerequisitesList = (course.prerequisites ?? []).map((prereq: any) => {
+                    const prereqProgress = studentProgress.courseProgress.find(cp => cp.courseId === prereq.id);
+                    return {
+                        id: prereq.id ?? '',
+                        title: prereq.title ?? 'Unknown Course',
+                        isCompleted: prereqProgress?.status === 'completed'
+                    };
+                });
+
+                const unmetPrerequisiteNames = prerequisitesList
+                    .filter(p => !p.isCompleted)
+                    .map(p => p.title);
+
+                const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+
+                const isEnrolled = (course['courseProgress'] !== undefined && course['courseProgress'] !== null) || !!course['isCompleted'];
+
+                const processedLessons = this.prepareSidebarLessons(rawLessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
 
                 this.course = {
                     id: course.id ?? '',
                     levelName: course.level ?? '',
-                    stageNumber: 1, // TODO: Determine actual stage number from levelId if mapping available
+                    stageNumber: stageNumber,
                     stageLabel: course.level ? course.level : 'Course',
                     duration: this.calculateCourseDuration(rawLessonsList),
                     title: course.title ?? '',
@@ -235,14 +265,14 @@ export class CourseComponent implements OnInit, OnDestroy {
                     answers: this.extractOutcomes(course.description),
                     totalLessons: processedLessons.length,
                     completedLessons: processedLessons.filter((l) => l.isCompleted).length,
-                    isLocked: false,
-                    hasUnmetPrerequisites: false,
-                    unmetPrerequisiteNames: this.buildUnmetPrerequisiteNames(course.prerequisites ?? []),
-                    isEnrolled: (course['courseProgress'] !== undefined && course['courseProgress'] !== null) || !!course['isCompleted'],
+                    isLocked: isLocked,
+                    hasUnmetPrerequisites: hasUnmetPrerequisites,
+                    unmetPrerequisiteNames: unmetPrerequisiteNames,
+                    isEnrolled: isEnrolled,
                     isEnrollmentCompleted: !!course['isCompleted'],
                     lessonsList: processedLessons,
                     quizzesList: quizzes,
-                    prerequisitesList: this.buildPrerequisitesList(course.prerequisites ?? []),
+                    prerequisitesList: prerequisitesList,
                 };
 
                 this.academyProgressService.getLevelTitleForCourse({
@@ -270,7 +300,13 @@ export class CourseComponent implements OnInit, OnDestroy {
     private buildFromRawCourse(raw: CourseReadByIdDto): void {
         this.courseId = raw.id ?? '';
 
-        this.fetchCourseQuizzes(this.courseId).subscribe((quizzes) => {
+        forkJoin({
+            quizzes: this.fetchCourseQuizzes(this.courseId).pipe(take(1)),
+            stages: this.academyProgressService.getAcademyStages().pipe(take(1)),
+            studentProgress: this.academyProgressService.getStudentProgress().pipe(take(1)),
+        }).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(({ quizzes, stages, studentProgress }) => {
             const lessonsList = this.extractLessonsFromRawCourse(raw);
 
             // Mark first uncompleted lesson as current
@@ -279,12 +315,35 @@ export class CourseComponent implements OnInit, OnDestroy {
                 lessonsList[firstPending] = { ...lessonsList[firstPending], isCurrent: true };
             }
 
-            const processedLessons = this.prepareSidebarLessons(lessonsList, quizzes);
+            const matchedStage = stages.find(s => s.id === raw.levelId);
+            const stageNumber = matchedStage?.number ?? 1;
+
+            const stageProgressRecord = studentProgress.stageProgress.find(sp => sp.stageNumber === stageNumber);
+            const isLocked = !stageProgressRecord?.isUnlocked;
+
+            const prerequisitesList = (raw.prerequisites ?? []).map((prereq: any) => {
+                const prereqProgress = studentProgress.courseProgress.find(cp => cp.courseId === prereq.id);
+                return {
+                    id: prereq.id ?? '',
+                    title: prereq.title ?? 'Unknown Course',
+                    isCompleted: prereqProgress?.status === 'completed'
+                };
+            });
+
+            const unmetPrerequisiteNames = prerequisitesList
+                .filter(p => !p.isCompleted)
+                .map(p => p.title);
+
+            const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+
+            const isEnrolled = (raw['courseProgress'] !== undefined && raw['courseProgress'] !== null) || !!raw['isCompleted'];
+
+            const processedLessons = this.prepareSidebarLessons(lessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
 
             this.course = {
                 id: raw.id ?? '',
                 levelName: raw.level ?? '',
-                stageNumber: 1, // TODO: Determine actual stage number from levelId if mapping available
+                stageNumber: stageNumber,
                 stageLabel: raw.level ? raw.level : 'Course',
                 duration: this.calculateCourseDuration(lessonsList),
                 title: raw.title ?? '',
@@ -295,14 +354,14 @@ export class CourseComponent implements OnInit, OnDestroy {
                 answers: this.extractOutcomes(raw.description),
                 totalLessons: processedLessons.length,
                 completedLessons: processedLessons.filter((l) => l.isCompleted).length,
-                isLocked: false,
-                hasUnmetPrerequisites: false,
-                unmetPrerequisiteNames: this.buildUnmetPrerequisiteNames(raw.prerequisites ?? []),
-                isEnrolled: (raw['courseProgress'] !== undefined && raw['courseProgress'] !== null) || !!raw['isCompleted'],
+                isLocked: isLocked,
+                hasUnmetPrerequisites: hasUnmetPrerequisites,
+                unmetPrerequisiteNames: unmetPrerequisiteNames,
+                isEnrolled: isEnrolled,
                 isEnrollmentCompleted: !!raw['isCompleted'],
                 lessonsList: processedLessons,
                 quizzesList: quizzes,
-                prerequisitesList: this.buildPrerequisitesList(raw.prerequisites ?? []),
+                prerequisitesList: prerequisitesList,
             };
 
             this.academyProgressService.getLevelTitleForCourse({
@@ -351,11 +410,15 @@ export class CourseComponent implements OnInit, OnDestroy {
         return false;
     }
 
-    private prepareSidebarLessons(lessons: Lesson[], quizzes: Quiz[]): Lesson[] {
+    private prepareSidebarLessons(lessons: Lesson[], quizzes: Quiz[], isLocked: boolean, isEnrolled: boolean): Lesson[] {
         const nonQuiz = lessons.filter(l => l.type !== 'quiz');
+        const isCourseLockedOrNotEnrolled = isLocked || !isEnrolled;
 
         if (nonQuiz.length > 0) {
-            nonQuiz.forEach(l => l.isLastCourseLesson = false);
+            nonQuiz.forEach(l => {
+                l.isLastCourseLesson = false;
+                l.isLocked = isCourseLockedOrNotEnrolled;
+            });
             nonQuiz[nonQuiz.length - 1].isLastCourseLesson = true;
         }
 
@@ -364,7 +427,7 @@ export class CourseComponent implements OnInit, OnDestroy {
             title: q.title || `Quiz ${idx + 1}`,
             duration: 'Assessment',
             type: 'quiz' as const,
-            isLocked: false,
+            isLocked: isCourseLockedOrNotEnrolled,
             isCompleted: this.isQuizCompleted(q.id || this.courseId),
             isCurrent: false,
             quizLessonId: q.id || undefined,
@@ -429,33 +492,6 @@ export class CourseComponent implements OnInit, OnDestroy {
         return this.academyProgressService.calculateCourseVideoDuration(lessons, '0m');
     }
 
-    /**
-     * Build prerequisites list for display
-     */
-    private buildPrerequisitesList(prerequisites: any[]): { id: string; title: string; isCompleted: boolean }[] {
-        if (!prerequisites || !Array.isArray(prerequisites)) {
-            return [];
-        }
-        
-        return prerequisites.map((prereq: any) => ({
-            id: prereq.id ?? '',
-            title: prereq.title ?? 'Unknown Course',
-            isCompleted: prereq.isCompleted ?? false
-        }));
-    }
-
-    /**
-     * Build unmet prerequisite names array
-     */
-    private buildUnmetPrerequisiteNames(prerequisites: any[]): string[] {
-        if (!prerequisites || !Array.isArray(prerequisites)) {
-            return [];
-        }
-        
-        return prerequisites
-            .filter((prereq: any) => !(prereq.isCompleted ?? false))
-            .map((prereq: any) => prereq.title ?? 'Unknown Course');
-    }
 
     /**
      * Handle quiz click - navigate to quiz page

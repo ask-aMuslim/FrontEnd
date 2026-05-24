@@ -49,6 +49,7 @@ export const environment = {
   youtubeDataApiKey: 'YOUR_YOUTUBE_DATA_API_KEY',
   googleClientId: 'YOUR_GOOGLE_CLIENT_ID',
   facebookAppId: 'YOUR_FACEBOOK_APP_ID',
+  recaptchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
 };
 `;
   fs.writeFileSync(templateFile, defaultTemplate, 'utf-8');
@@ -127,6 +128,7 @@ for (const target of targets) {
   const youtubeKey = process.env.YOUTUBE_DATA_API_KEY || ['AIzaSyCg61hoO-kIWxZwu6zP1oq8', 'AvV5jCbRE3E'].join('');
   const googleClientId = process.env.GOOGLE_CLIENT_ID || '859661315178-6fi4qmdnmgsuqhdjpdp9kdioi58g9uds.apps.googleusercontent.com';
   const facebookAppId = process.env.FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID';
+  const recaptchaSiteKey = process.env.RECAPTCHA_SITE_KEY || '6Ldo5fosAAAAADcGCgqD2Oo4BIwMXodOxrcbwS2R';
 
   let content = '';
 
@@ -146,6 +148,7 @@ export const environment = {
   youtubeDataApiKey: '${youtubeKey}',
   googleClientId: '${googleClientId}',
   facebookAppId: '${facebookAppId}',
+  recaptchaSiteKey: '${recaptchaSiteKey}',
 }${target.production ? ' as const;' : ';'}\n`;
   } else {
     // Netlify specific
@@ -162,6 +165,7 @@ export const environment = {
   youtubeDataApiKey: '${youtubeKey}',
   googleClientId: '${googleClientId}',
   facebookAppId: '${facebookAppId}',
+  recaptchaSiteKey: '${recaptchaSiteKey}',
 } as const;\n`;
   }
 
