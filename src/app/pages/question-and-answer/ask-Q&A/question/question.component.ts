@@ -536,78 +536,82 @@ export class QuestionComponent implements OnDestroy {
     const answerHtml = this.getRenderedAnswerHtmlForPdf() ?? this.prepareAnswerHtmlForPdf();
     const richTextStyles = this.getPdfRichTextStyles();
 
-    this.openPrintWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
+    await this.openPrintWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
   }
 
-  private openPrintWindow(
+  private async openPrintWindow(
     titleText: string,
     contentHtml: string,
     richTextStyles: string,
     imageUrl: string | null,
-  ): void {    const safeTitle = this.escapeHtml(titleText);
+  ): Promise<void> {
+    const safeTitle = this.escapeHtml(titleText);
     const printWindow = globalThis.open('', '_blank');
     if (!printWindow) {
       return;
     }
 
-    const printDocument = printWindow.document;
-    printDocument.title = safeTitle;
+    const inlinedHtml = await this.inlineImagesToDataUrls(contentHtml);
+    const inlinedMainImage = imageUrl ? await this.fetchAsDataUrl(imageUrl) : null;
 
-    const titleEl = printDocument.createElement('title');
-    titleEl.textContent = safeTitle;
-    printDocument.head.appendChild(titleEl);
-
-    while (printDocument.body.firstChild) {
-      printDocument.body.firstChild.remove();
-    }
-
-    const style = printDocument.createElement('style');
-    style.textContent = `
-      @page { size: A4; margin: 20mm 15mm; }
-      body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; margin: 0; padding: 0; }
-      h1 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; color: #111827; }
-      h2, h3 { margin-top: 16px; margin-bottom: 8px; }
-      p { margin-bottom: 8px; }
-      img { max-width: 100%; height: auto; display: block; margin: 12px 0; }
-      .print-content { font-size: 15px; line-height: 1.75; }
-      .print-content img { max-width: 100%; height: auto; display: block; margin: 12px 0; border-radius: 4px; }
-      ${richTextStyles}
-    `;
-    printDocument.head.appendChild(style);
-
-    const title = printDocument.createElement('h1');
-    title.textContent = titleText;
-    printDocument.body.appendChild(title);
-
-    if (imageUrl) {
-      const image = printDocument.createElement('img');
-      image.setAttribute('crossorigin', 'anonymous');
-      image.src = imageUrl;
-      image.alt = titleText;
-      printDocument.body.appendChild(image);
-    }
-
-    const content = printDocument.createElement('div');
-    content.className = 'print-content';
-    content.innerHTML = contentHtml;
-    printDocument.body.appendChild(content);
-
-    const images = Array.from(content.querySelectorAll('img'));
-    for (const img of images) {
-      img.setAttribute('crossorigin', 'anonymous');
-      const src = img.getAttribute('src') ?? '';
-      if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
-        const resolved = toApiMediaUrl(src);
-        if (resolved) {
-          img.src = resolved;
-        }
-      }
-    }
-
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${safeTitle}</title>
+  <style>
+    @page { size: A4; margin: 20mm 15mm; }
+    body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; margin: 0; padding: 0; }
+    h1 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; color: #111827; }
+    h2, h3 { margin-top: 16px; margin-bottom: 8px; }
+    p { margin-bottom: 8px; }
+    img { max-width: 100%; height: auto; display: block; margin: 12px 0; }
+    .print-content { font-size: 15px; line-height: 1.75; }
+    .print-content img { max-width: 100%; height: auto; display: block; margin: 16px 0; border-radius: 4px; page-break-inside: avoid; }
+    ${richTextStyles}
+  </style>
+</head>
+<body>
+  <h1>${safeTitle}</h1>
+  ${inlinedMainImage ? `<img src="${inlinedMainImage}" alt="${safeTitle}" style="max-width:100%;height:auto;display:block;margin:12px 0 20px;border-radius:8px;" />` : ''}
+  <div class="print-content">${inlinedHtml}</div>
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 300);
+    });
+  </script>
+</body>
+</html>`);
+    printWindow.document.close();
     printWindow.focus();
-    globalThis.setTimeout(() => {
-      printWindow.print();
-    }, 500);
+  }
+
+  private async inlineImagesToDataUrls(html: string): Promise<string> {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+    const container = doc.body.firstElementChild as HTMLElement | null;
+    if (!container) return html;
+
+    const images = Array.from(container.querySelectorAll('img'));
+    await Promise.all(
+      images.map(async (img) => {
+        const src = (img.getAttribute('src') ?? '').trim();
+        if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
+
+        const normalizedSrc = toApiMediaUrl(src) ?? src;
+        const dataUrl = await this.resolveImageDataUrl(normalizedSrc);
+        if (dataUrl) {
+          img.setAttribute('src', dataUrl);
+        }
+      }),
+    );
+
+    return container.innerHTML;
+  }
+
+  private async fetchAsDataUrl(url: string): Promise<string | null> {
+    const resolved = toApiMediaUrl(url) ?? url;
+    return this.resolveImageDataUrl(resolved);
   }
 
   private prepareAnswerHtmlForPdf(): string {
@@ -842,15 +846,14 @@ export class QuestionComponent implements OnDestroy {
 
     for (const options of requestOptions) {
       try {
-        const response = await globalThis.fetch(source, options);
-        if (!response.ok) {
-          continue;
-        }
+        const controller = new AbortController();
+        const timer = globalThis.setTimeout(() => controller.abort(), 8000);
+        const response = await globalThis.fetch(source, { ...options, signal: controller.signal });
+        globalThis.clearTimeout(timer);
+        if (!response.ok) continue;
 
         const blob = await response.blob();
-        if (blob.size === 0) {
-          continue;
-        }
+        if (blob.size === 0) continue;
 
         return await this.convertBlobToDataUrl(blob);
       } catch {

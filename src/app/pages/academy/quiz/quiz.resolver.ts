@@ -79,6 +79,8 @@ function resolveRouteQuizzes(
             if (matched.length > 0) {
                 return of(matched);
             }
+            // Fallback to any quiz in cachedQuizzes if no lesson-specific quiz is found
+            return of(cachedQuizzes);
         } else {
             return of(cachedQuizzes);
         }
@@ -91,25 +93,40 @@ function resolveRouteQuizzes(
     return quizzesService.getAll(query).pipe(
         take(1),
         switchMap((routeQuizzes) => {
-            const hasQuizzes = routeQuizzes.length > 0;
-            const canFallbackToQuizLesson = !hasQuizzes && !lessonId && !!courseId;
-
-            if (!canFallbackToQuizLesson) {
+            if (routeQuizzes.length > 0) {
                 return of(routeQuizzes);
             }
 
-            return academyProgressService.getAcademyLessons(courseId).pipe(
-                take(1),
-                map((lessons) => lessons.find((l) => l.type === 'quiz')?.id ?? null),
-                switchMap((quizLessonId) => {
-                    if (!quizLessonId) {
-                        return of(routeQuizzes);
-                    }
+            // Fallback to course-level quizzes if query by lessonId returned nothing
+            if (lessonId && courseId) {
+                return quizzesService.getAll({ courseId, pageNumber: 1, pageSize: 200 }).pipe(
+                    take(1),
+                    switchMap((courseQuizzes) => {
+                        if (courseQuizzes.length > 0) {
+                            return of(courseQuizzes);
+                        }
+                        return fallbackToQuizLessonId();
+                    }),
+                    catchError(() => fallbackToQuizLessonId())
+                );
+            }
 
-                    return quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 }).pipe(take(1));
-                }),
-                catchError(() => of(routeQuizzes)),
-            );
+            return fallbackToQuizLessonId();
+
+            function fallbackToQuizLessonId(): Observable<QuizReadDto[]> {
+                return academyProgressService.getAcademyLessons(courseId).pipe(
+                    take(1),
+                    map((lessons) => lessons.find((l) => l.type === 'quiz')?.id ?? null),
+                    switchMap((quizLessonId) => {
+                        if (!quizLessonId) {
+                            return of(routeQuizzes);
+                        }
+
+                        return quizzesService.getAll({ lessonId: quizLessonId, pageNumber: 1, pageSize: 200 }).pipe(take(1));
+                    }),
+                    catchError(() => of(routeQuizzes)),
+                );
+            }
         }),
     );
 }
