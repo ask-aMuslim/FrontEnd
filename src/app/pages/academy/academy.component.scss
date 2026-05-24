@@ -308,10 +308,6 @@
   margin-bottom: var(--spacing-2xl);
   transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-  &.expanded {
-    background: var(--colors-rare-grays-20);
-  }
-
   .note-text {
     width: 100%;
     box-sizing: border-box;
@@ -677,7 +673,6 @@
 
     .note-text {
       font-size: 13px;
-      padding-right: 36px;
     }
 
     .toggle-button {

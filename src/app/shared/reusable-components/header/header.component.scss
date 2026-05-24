@@ -268,7 +268,7 @@
 
   &--signin {
     color: var(--color-button-primary-normal);
-    border: 1.5px solid var(--color-button-primary-normal);
+    // border: 1.5px solid var(--color-button-primary-normal);
     background: transparent;
 
     &:hover {
@@ -294,7 +294,7 @@
 }
 
 .support-btn {
-  box-shadow: 0 2px 8px rgba(0, 128, 0, 0.15);
+  // box-shadow: 0 2px 8px rgba(0, 128, 0, 0.15);
 
   &:hover {
     background: var(--color-button-primary-normal);
