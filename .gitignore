@@ -47,6 +47,7 @@ yarn-error.log*
 .builder/config/data.json
 
 /specs/
+.playwright-mcp/
 
 # --- Impeccable & Agents ---
 PRODUCT.md

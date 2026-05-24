@@ -188,9 +188,36 @@ img.aam-late-image.aam-late-image--loaded {
   border: 0 !important;
 }
 
-.google-btn-wrapper iframe .qJTHM>#container-div {
+.google-btn-wrapper {
   width: 100% !important;
-  padding: 2px 0px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+/* Ensure our custom Google Sign-In button container stretches to match custom width and centers correctly */
+.google-custom-btn-container {
+  display: block !important;
+  width: 100% !important;
+  max-width: 380px !important;
+  margin: 0 auto !important;
+}
+
+/* Force Google's outer wrapper divs to stretch to full width (overriding Google GSI inline styles) without breaking inner flex buttons */
+.google-custom-btn-container,
+.google-custom-btn-container > div,
+.google-custom-btn-container > div > div {
+  width: 100% !important;
+  max-width: 380px !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+/* Ensure the GSI standard button element itself can stretch to its parent block container */
+.google-custom-btn-container div[role="button"] {
+  width: 100% !important;
+  max-width: 380px !important;
 }
 
 /* Leaflet needs its own image sizing so Tailwind/base resets do not hide tiles and markers. */

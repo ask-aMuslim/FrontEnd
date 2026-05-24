@@ -313,10 +313,10 @@ export class CourseTreeComponent {
     containerRect: DOMRect,
   ): ConnectorPath[] {
     const nextPaths: ConnectorPath[] = [];
-    const minimumParentDrop = 22;
-    const minimumChildClearance = 14;
-    const laneGap = 10;
-    const incomingLaneInset = 24;
+    const minimumParentDrop = 26;
+    const minimumChildClearance = 20;
+    const laneGap = 16;
+    const incomingLaneInset = 32;
 
     const edgeGeometries: EdgeGeometry[] = [];
     for (const edge of this.connectorEdges()) {
@@ -354,13 +354,11 @@ export class CourseTreeComponent {
       }
     }
 
+    const targetEndXByEdgeId = new Map<string, number>();
     for (const incomingEdges of incomingByChild.values()) {
       incomingEdges.sort((leftEdge, rightEdge) => leftEdge.startX - rightEdge.startX);
 
       const edgeCount = incomingEdges.length;
-      const sharedEndY = incomingEdges[0]?.endY ?? 0;
-
-      const targetEndXByEdgeId = new Map<string, number>();
       if (edgeCount === 1) {
         targetEndXByEdgeId.set(incomingEdges[0].edge.id, incomingEdges[0].endX);
       } else {
@@ -396,31 +394,117 @@ export class CourseTreeComponent {
           );
         }
       }
+    }
 
-      for (let index = 0; index < incomingEdges.length; index += 1) {
-        const geometry = incomingEdges[index];
-        const targetEndX = targetEndXByEdgeId.get(geometry.edge.id) ?? geometry.endX;
-        const centerOffset = targetEndX - geometry.endX;
+    const outgoingByParent = new Map<string, EdgeGeometry[]>();
+    for (const geometry of edgeGeometries) {
+      const list = outgoingByParent.get(geometry.edge.parentId);
+      if (list) {
+        list.push(geometry);
+      } else {
+        outgoingByParent.set(geometry.edge.parentId, [geometry]);
+      }
+    }
 
-        let elbowY = Math.min(
-          geometry.startY + minimumParentDrop + Math.abs(centerOffset),
-          sharedEndY - minimumChildClearance,
-        );
-        elbowY = this.clamp(elbowY, geometry.startY + 4, sharedEndY - 4);
+    const parentGroups = Array.from(outgoingByParent.values());
+    parentGroups.sort((a, b) => a[0].startX - b[0].startX);
+
+    const parentGroupsCount = parentGroups.length;
+    for (let groupIndex = 0; groupIndex < parentGroupsCount; groupIndex += 1) {
+      const outgoingEdges = parentGroups[groupIndex];
+      const firstEdge = outgoingEdges[0];
+      const startX = firstEdge.startX;
+      const startY = firstEdge.startY;
+
+      const allSameLevel = outgoingEdges.every(
+        (g) => Math.abs(g.endY - firstEdge.endY) < 1.0
+      );
+
+      // Alternating Y-track offset (padding) sorted right-to-left.
+      // Rightmost parents get higher split bars (smaller Y) and leftmost get lower split bars (larger Y)
+      // to mathematically prevent leftmost vertical trunk lines from crossing rightmost horizontal split lines.
+      const parentOffset = parentGroupsCount > 1 
+        ? ((parentGroupsCount - 1 - groupIndex) % 3 - 1) * 16 
+        : 0;
+
+      if (outgoingEdges.length > 1 && allSameLevel) {
+        const sharedEndY = firstEdge.endY;
+        let elbowY = startY + (sharedEndY - startY) * 0.5 + parentOffset;
+        elbowY = this.clamp(elbowY, startY + 6, sharedEndY - 6);
         elbowY = this.roundCoordinate(elbowY);
 
-        if (elbowY <= geometry.startY || elbowY >= sharedEndY) {
+        for (const geometry of outgoingEdges) {
+          const targetEndX = targetEndXByEdgeId.get(geometry.edge.id) ?? geometry.endX;
           nextPaths.push({
             id: geometry.edge.id,
-            d: `M ${geometry.startX} ${geometry.startY} L ${targetEndX} ${sharedEndY}`,
+            d: `M ${startX} ${startY} L ${startX} ${elbowY} L ${targetEndX} ${elbowY} L ${targetEndX} ${sharedEndY}`,
           });
-          continue;
         }
+      } else {
+        const minEndY = Math.min(...outgoingEdges.map(g => g.endY));
+        let splitterY = startY + (minEndY - startY) * 0.5 + parentOffset;
+        splitterY = this.clamp(splitterY, startY + 6, minEndY - 6);
+        splitterY = this.roundCoordinate(splitterY);
 
-        nextPaths.push({
-          id: geometry.edge.id,
-          d: `M ${geometry.startX} ${geometry.startY} L ${geometry.startX} ${elbowY} L ${targetEndX} ${elbowY} L ${targetEndX} ${sharedEndY}`,
-        });
+        for (const geometry of outgoingEdges) {
+          const endY = geometry.endY;
+          const targetEndX = targetEndXByEdgeId.get(geometry.edge.id) ?? geometry.endX;
+
+          // Check if the straight drop at targetEndX is blocked by any card in the middle
+          let blockerRect: DOMRect | null = null;
+          for (const [nodeId, rect] of elementRects.entries()) {
+            if (nodeId === geometry.edge.parentId || nodeId === geometry.edge.childId) {
+              continue;
+            }
+            const left = rect.left - containerRect.left;
+            const right = rect.right - containerRect.left;
+            const top = rect.top - containerRect.top;
+            const bottom = rect.bottom - containerRect.top;
+
+            // Blocker matches if it overlaps horizontally with targetEndX and sits between splitterY and endY
+            const overlapsHorizontally = targetEndX >= left - 8 && targetEndX <= right + 8;
+            const overlapsVertically = bottom >= splitterY && top <= endY;
+
+            if (overlapsHorizontally && overlapsVertically) {
+              blockerRect = rect;
+              break;
+            }
+          }
+
+          if (blockerRect) {
+            const blockerLeft = blockerRect.left - containerRect.left;
+            const blockerRight = blockerRect.right - containerRect.left;
+            const blockerBottom = blockerRect.bottom - containerRect.top;
+
+            // Route through a gap: left or right of the blocker card
+            const gapLeftX = blockerLeft - 24;
+            const gapRightX = blockerRight + 24;
+
+            // Choose the gap closer to the parent startX
+            const gapX = Math.abs(gapLeftX - startX) <= Math.abs(gapRightX - startX) ? gapLeftX : gapRightX;
+            let belowBlockerY = blockerBottom + 20;
+            belowBlockerY = this.clamp(belowBlockerY, blockerBottom + 6, endY - 6);
+            belowBlockerY = this.roundCoordinate(belowBlockerY);
+
+            nextPaths.push({
+              id: geometry.edge.id,
+              d: `M ${startX} ${startY} L ${startX} ${splitterY} L ${gapX} ${splitterY} L ${gapX} ${belowBlockerY} L ${targetEndX} ${belowBlockerY} L ${targetEndX} ${endY}`,
+            });
+          } else {
+            // Standard elbow path (no blocking card)
+            if (splitterY <= startY || splitterY >= endY) {
+              nextPaths.push({
+                id: geometry.edge.id,
+                d: `M ${startX} ${startY} L ${targetEndX} ${endY}`,
+              });
+            } else {
+              nextPaths.push({
+                id: geometry.edge.id,
+                d: `M ${startX} ${startY} L ${startX} ${splitterY} L ${targetEndX} ${splitterY} L ${targetEndX} ${endY}`,
+              });
+            }
+          }
+        }
       }
     }
 
@@ -570,11 +654,89 @@ export class CourseTreeComponent {
       layers[depth].push(node);
     }
 
-    for (const layer of layers) {
-      layer.sort((leftNode, rightNode) =>
+    if (layers.length > 0) {
+      layers[0].sort((leftNode, rightNode) =>
         this.getNodeOrder(leftNode.id, nodeOrderById)
         - this.getNodeOrder(rightNode.id, nodeOrderById),
       );
+    }
+
+    for (let d = 1; d < layers.length; d++) {
+      const prevLayer = layers[d - 1];
+      const parentIndexMap = new Map<string, number>();
+      prevLayer.forEach((node, index) => {
+        parentIndexMap.set(node.id, index);
+      });
+
+      // 1. Sort using standard barycenter first to get a clean baseline order
+      layers[d].sort((leftNode, rightNode) => {
+        const getBarycenter = (node: CourseNode): number => {
+          const parentIds = parentIdsByChildId.get(node.id) ?? [];
+          const indices = parentIds
+            .map(id => parentIndexMap.get(id))
+            .filter((idx): idx is number => idx !== undefined);
+
+          if (indices.length > 0) {
+            return indices.reduce((a, b) => a + b, 0) / indices.length;
+          }
+          return this.getNodeOrder(node.id, nodeOrderById) / 10000;
+        };
+
+        const leftBary = getBarycenter(leftNode);
+        const rightBary = getBarycenter(rightNode);
+
+        if (Math.abs(leftBary - rightBary) > 0.0001) {
+          return leftBary - rightBary;
+        }
+
+        return this.getNodeOrder(leftNode.id, nodeOrderById)
+          - this.getNodeOrder(rightNode.id, nodeOrderById);
+      });
+
+      // 2. If parent layer has multiple parents and current layer wraps (more than 3 nodes),
+      // optimize slot alignment to put right-leaning nodes in Column 2 (index % 3 === 2)
+      if (prevLayer.length > 1 && layers[d].length > 3) {
+        const sortedNodes = [...layers[d]];
+        const N = sortedNodes.length;
+
+        // Identify if a node is connected to any parent at index > 0 (right-leaning)
+        const isRightLeaning = (node: CourseNode): boolean => {
+          const parentIds = parentIdsByChildId.get(node.id) ?? [];
+          return parentIds.some(id => {
+            const idx = parentIndexMap.get(id);
+            return idx !== undefined && idx > 0;
+          });
+        };
+
+        const rightLeaning = sortedNodes.filter(node => isRightLeaning(node));
+        const leftLeaning = sortedNodes.filter(node => !isRightLeaning(node));
+
+        const result = new Array<CourseNode | null>(N).fill(null);
+
+        // Pre-allocate right-leaning nodes to Column 2 slots (index % 3 === 2)
+        let rightIdx = 0;
+        for (let i = 0; i < N; i++) {
+          if (i % 3 === 2 && rightIdx < rightLeaning.length) {
+            result[i] = rightLeaning[rightIdx++];
+          }
+        }
+
+        // Place any remaining right-leaning nodes that didn't fit in Column 2 slots
+        // into leftLeaning / fallback to be distributed in other slots
+        const remainingRightLeaning = rightLeaning.slice(rightIdx);
+        const remainingNodesToDistribute = [...leftLeaning, ...remainingRightLeaning];
+
+        // Fill all remaining empty slots in order
+        let distIdx = 0;
+        for (let i = 0; i < N; i++) {
+          if (result[i] === null && distIdx < remainingNodesToDistribute.length) {
+            result[i] = remainingNodesToDistribute[distIdx++];
+          }
+        }
+
+        // Filter out any nulls just in case, and assign back to layers[d]
+        layers[d] = result.filter((node): node is CourseNode => node !== null);
+      }
     }
 
     return layers;

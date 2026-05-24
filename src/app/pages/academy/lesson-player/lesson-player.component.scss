@@ -91,6 +91,11 @@
       background 0.2s,
       transform 0.15s;
 
+    @media (max-width: 1024px) {
+      inline-size: 4rem;
+      block-size: 4rem;
+    }
+
     &:hover {
       background: var(--colors-green-200, #0c4e2d);
     }
@@ -189,25 +194,27 @@
   .audio-progress-group {
     position: relative;
     inline-size: 100%;
-    block-size: 1rem;
+    block-size: 1.5rem;
     min-inline-size: 12rem;
     max-inline-size: 31.6875rem;
     flex: 1 1 31.6875rem;
+    display: flex;
+    align-items: center;
   }
 
    .audio-progress-track {
      inline-size: 100%;
-     block-size: 8px;
+     block-size: 12px;
      border-radius: 999px;
      overflow: hidden;
-     background: var(--colors-rare-grays-20, #e9ecef);
+     background: #ffffff;
    }
 
    .audio-progress-fill {
      block-size: 100%;
      inline-size: 0;
      border-radius: 999px;
-     background: var(--colors-system-sys-green-100, #4caf50);
+     background: var(--colors-green-100, #156b40);
    }
 
   .audio-progress-input {
@@ -231,7 +238,7 @@
     white-space: nowrap;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1200px) {
     .audio-controls-panel {
       align-items: flex-start;
       flex-direction: column;

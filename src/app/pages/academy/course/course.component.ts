@@ -425,26 +425,8 @@ export class CourseComponent implements OnInit, OnDestroy {
         return 'intro';
     }
 
-    /**
-     * Calculate total course duration from lessons
-     */
     private calculateCourseDuration(lessons: Lesson[]): string {
-        const totalSeconds = lessons
-            .filter(lesson => lesson.type !== 'quiz')
-            .reduce((total, lesson) => {
-                // Parse duration string like "~5min" or "10 min" to seconds
-                const match = lesson.duration.match(/(\d+)/);
-                const minutes = match ? parseInt(match[1], 10) : 5; // default 5 min
-                return total + (minutes * 60);
-            }, 0);
-
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        }
-        return `${minutes}m`;
+        return this.academyProgressService.calculateCourseVideoDuration(lessons, '0m');
     }
 
     /**

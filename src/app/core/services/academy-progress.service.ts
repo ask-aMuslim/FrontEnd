@@ -866,8 +866,7 @@ export class AcademyProgressService {
             return of(cached);
         }
         return this.quizFacade.getAllQuizzes({
-            courseId: courseId,
-            targetType: 2 // Course target type
+            courseId: courseId
         }).pipe(
             tap((quizzes) => {
                 if (quizzes) {

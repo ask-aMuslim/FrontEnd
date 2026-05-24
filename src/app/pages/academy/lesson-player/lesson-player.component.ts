@@ -1439,6 +1439,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ? 100
             : Math.max(0, Math.min(100, rawProgress));
 
+        this.audioProgressPercent = progressPercentage;
         this.lessonProgressLabel = `${this.formatPlaybackClock(boundedCurrent)} / ${this.formatPlaybackClock(duration)}`;
 
         const payload = this.buildMediaProgressPayload(progressPercentage);

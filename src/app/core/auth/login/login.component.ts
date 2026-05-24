@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, PLATFORM_ID, inject, ElementRef, ViewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,13 +6,14 @@ import { IdentityFacade } from '../../../api/facades/identity.facade';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 import { environment } from '../../../../environments/environment';
 import { SocialAuthenticationService } from '../../services/social-auth.service';
+import { take } from 'rxjs';
 
-import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
+import { SocialAuthService } from '@abacritt/angularx-social-login';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, GoogleSigninButtonModule],
+  imports: [RouterLink, ReactiveFormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
@@ -34,6 +35,15 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected submitSuccess = false;
   protected fieldFocused: Record<string, boolean> = {};
   protected fieldTouched: Record<string, boolean> = {};
+
+  private _googleBtnContainer?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('googleBtnContainer', { static: false }) set googleBtnContainer(content: ElementRef<HTMLDivElement> | undefined) {
+    if (content) {
+      this._googleBtnContainer = content;
+      this.renderGoogleButton();
+    }
+  }
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -87,7 +97,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   protected isFieldInvalid(fieldName: string): boolean {
     const field = this.loginForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched || this.fieldTouched[fieldName]));
+    return !!(field && field.invalid && this.fieldFocused[fieldName]);
   }
 
   protected getFieldError(fieldName: string): string {
@@ -158,6 +168,27 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.submitSuccess = false;
         console.error(`${provider} login failed`, error);
       },
+    });
+  }
+
+  private renderGoogleButton(): void {
+    if (!this.isBrowser) return;
+
+    this.abacrittAuthService.initState.pipe(take(1)).subscribe(() => {
+      setTimeout(() => {
+        const google = (window as any).google;
+        if (google?.accounts?.id && this._googleBtnContainer?.nativeElement) {
+          google.accounts.id.renderButton(this._googleBtnContainer.nativeElement, {
+            type: 'standard',
+            size: 'large',
+            theme: 'outline',
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 380
+          });
+        }
+      }, 50);
     });
   }
 

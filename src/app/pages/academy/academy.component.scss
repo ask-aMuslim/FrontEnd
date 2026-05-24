@@ -287,6 +287,7 @@
     transform: translateY(-2px);
   }
 }
+
 .important-note .section-block {
   width: 100%;
   box-sizing: border-box;
@@ -295,13 +296,12 @@
   justify-content: space-between;
   gap: var(--spacing-md);
 }
+
 .important-note-content {
+  position: relative;
   width: 100%;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
+  display: block;
   padding: 16px 20px;
   background: var(--colors-rare-grays-10);
   border-radius: 8px;
@@ -313,7 +313,8 @@
   }
 
   .note-text {
-    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
     color: var(--colors-rare-grays-80);
     font-size: 20px;
     font-weight: 500;
@@ -336,9 +337,11 @@
   }
 
   .toggle-button {
+    position: absolute;
+    top: 16px;
+    right: 20px;
     width: 40px;
     height: 40px;
-    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -362,6 +365,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
+
+  .section-block {
+    padding: 0;
+  }
 }
 
 .stage-wrapper {
@@ -468,9 +475,11 @@
   &.in-progress {
     background: var(--colors-orange-10);
   }
+
   &.completed {
     background: var(--colors-system-sys-green-10);
   }
+
   &.locked {
     background: var(--colors-system-sys-green-10);
     cursor: not-allowed;
@@ -582,6 +591,7 @@
   align-items: center;
   justify-content: center;
   margin: var(--spacing-lg) auto;
+
   .connector-line {
     position: absolute;
     top: 0;
@@ -626,21 +636,61 @@
   .academy-content {
     padding: var(--spacing-lg) var(--spacing-md);
   }
+
   .stage-container {
     padding: var(--spacing-lg) var(--spacing-md);
   }
+
   .course-meta {
     flex-direction: column;
     gap: var(--spacing-xs) !important;
   }
+
   .stage-title {
-    font-size: 24px;
+    font-size: 18px;
   }
+
   .course-name {
     font-size: 16px !important;
   }
+
   .course-card {
     min-height: 150px;
+  }
+
+  .stage-connector {
+    height: 40px;
+    margin: 12px auto;
+
+    .connector-line {
+      border-left: 3px dashed var(--colors-rare-grays-50);
+    }
+
+    .lock-icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .important-note-content {
+    padding: 12px 16px;
+
+    .note-text {
+      font-size: 13px;
+      padding-right: 36px;
+    }
+
+    .toggle-button {
+      top: 12px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
   }
 }
 
@@ -667,9 +717,11 @@
   0% {
     transform: translateX(0) scaleX(0);
   }
+
   40% {
     transform: translateX(0) scaleX(0.4);
   }
+
   100% {
     transform: translateX(100%) scaleX(0.5);
   }

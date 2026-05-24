@@ -47,7 +47,7 @@
                 groupLayers[layerIndex + 1]?.length ?? 0
               "
             >
-              @for (node of layer; track node.id) {
+              @for (node of layer; track node.id; let nodeIndex = $index) {
                 <a
                   class="course-card"
                   [attr.data-course-node-id]="node.id"
@@ -57,6 +57,7 @@
                   "
                   [class.course-card--completed]="node.status === 'completed'"
                   [class.course-card--locked]="node.status === 'locked'"
+                  [class.course-card--shift-to-gap]="layerIndex > 0 && layer.length === 4 && nodeIndex === 3"
                   [attr.aria-disabled]="node.status === 'locked'"
                   [routerLink]="node.status !== 'locked' ? ['/academy/course', node.id] : null"
                   (click)="onNodeClick(node); $event.preventDefault()"
