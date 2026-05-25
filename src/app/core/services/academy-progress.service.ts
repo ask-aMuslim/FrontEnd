@@ -1941,7 +1941,7 @@ export class AcademyProgressService {
             category,
             categoryLabel: this.buildCategoryLabel(course.category),
             lessons,
-            duration: this.buildDurationText(lessons),
+            duration: this.formatDurationToHrsMins(course['duration'] ?? course['courseDuration'] ?? course['totalDuration'], lessons),
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
             order: course.order,
@@ -1962,16 +1962,7 @@ export class AcademyProgressService {
         const isPublished = typeof course['isPublished'] === 'boolean' ? course['isPublished'] : undefined;
 
         const rawDuration = course['duration'] ?? course['courseDuration'] ?? course['totalDuration'];
-        let duration: string;
-        if (typeof rawDuration === 'string' && rawDuration.trim().length > 0) {
-            duration = rawDuration.trim();
-        } else if (typeof rawDuration === 'number' && Number.isFinite(rawDuration) && rawDuration > 0) {
-            const hours = Math.floor(rawDuration / 60);
-            const minutes = Math.round(rawDuration % 60);
-            duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-        } else {
-            duration = this.buildDurationText(lessons);
-        }
+        const duration = this.formatDurationToHrsMins(rawDuration, lessons);
 
         return {
             id,
@@ -2090,7 +2081,13 @@ export class AcademyProgressService {
     }
 
     private resolveLessonCount(source: Record<string, unknown>): number {
-        const numberOfLessons = source['numberOfLessons'] ?? source['lessonsCount'] ?? source['totalLessons'];
+        const numberOfLessons = source['numberOfLessons']
+            ?? source['lessonsCount']
+            ?? source['totalLessons']
+            ?? source['lessons']
+            ?? source['lessons_count']
+            ?? source['number_of_lessons'];
+
         if (typeof numberOfLessons === 'number' && Number.isFinite(numberOfLessons)) {
             return Math.max(0, numberOfLessons);
         }
@@ -2108,6 +2105,71 @@ export class AcademyProgressService {
         }
 
         return 0;
+    }
+
+    private formatDurationToHrsMins(rawDuration: unknown, fallbackLessons = 0): string {
+        if (rawDuration === undefined || rawDuration === null) {
+            return this.buildHrsMinsText(fallbackLessons * 10);
+        }
+
+        let totalMinutes = 0;
+
+        if (typeof rawDuration === 'number') {
+            if (Number.isFinite(rawDuration) && rawDuration > 0) {
+                totalMinutes = rawDuration;
+            }
+        } else if (typeof rawDuration === 'string') {
+            const trimmed = rawDuration.trim().toLowerCase();
+            if (trimmed.length > 0) {
+                // Check if it's HH:MM:SS or MM:SS
+                if (trimmed.includes(':')) {
+                    const parts = trimmed.split(':').map(Number);
+                    if (parts.every(p => !Number.isNaN(p))) {
+                        if (parts.length === 3) {
+                            totalMinutes = parts[0] * 60 + parts[1] + Math.round(parts[2] / 60);
+                        } else if (parts.length === 2) {
+                            totalMinutes = parts[0] + Math.round(parts[1] / 60);
+                        }
+                    }
+                } else {
+                    // Try parsing as a clean number (e.g. "30")
+                    const parsedNum = parseInt(trimmed, 10);
+                    if (trimmed.match(/^\d+$/) && !Number.isNaN(parsedNum) && parsedNum > 0) {
+                        totalMinutes = parsedNum;
+                    } else {
+                        // Extract hours and minutes from strings like "2h 30m" or "30m" or "30 mins"
+                        const hoursMatch = trimmed.match(/(\d+)\s*(h|hr|hour|hrs)/);
+                        const minsMatch = trimmed.match(/(\d+)\s*(m|min|minute|mins)/);
+                        const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+                        const mins = minsMatch ? parseInt(minsMatch[1], 10) : 0;
+                        totalMinutes = hours * 60 + mins;
+                    }
+                }
+            }
+        }
+
+        if (totalMinutes <= 0) {
+            return this.buildHrsMinsText(fallbackLessons * 10);
+        }
+
+        return this.buildHrsMinsText(totalMinutes);
+    }
+
+    private buildHrsMinsText(totalMinutes: number): string {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.round(totalMinutes % 60);
+
+        const hrsLabel = hours === 1 ? 'hr' : 'hrs';
+        const minsLabel = minutes === 1 ? 'min' : 'mins';
+
+        if (hours === 0) {
+            return `${minutes} ${minsLabel}`;
+        }
+        if (minutes === 0) {
+            return `${hours} ${hrsLabel}`;
+        }
+
+        return `${hours} ${hrsLabel} ${minutes} ${minsLabel}`;
     }
 
     private mapLessonDtoToAcademyLesson(
@@ -2267,8 +2329,8 @@ export class AcademyProgressService {
 
                 return {
                     ...course,
-                    lessons: lessonCount,
-                    duration: this.calculateCourseVideoDuration(publishedLessons, fallbackDuration),
+                    lessons: (course.lessons !== undefined && course.lessons > 0) ? course.lessons : lessonCount,
+                    duration: (course.duration && course.duration !== '0m' && course.duration !== '0h 0m') ? course.duration : this.calculateCourseVideoDuration(publishedLessons, fallbackDuration),
                 };
             }),
             catchError(() => of(course)),
@@ -2316,16 +2378,7 @@ export class AcademyProgressService {
     }
 
     private buildDurationText(lessonCount: number): string {
-        const estimatedMinutesPerLesson = 10;
-        const totalMinutes = lessonCount * estimatedMinutesPerLesson;
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-
-        if (hours === 0) {
-            return `${minutes}m`;
-        }
-
-        return `${hours}h ${minutes}m`;
+        return this.buildHrsMinsText(lessonCount * 10);
     }
 
     private formatPrettyDuration(rawDuration: string, type: AcademyLesson['type']): string {

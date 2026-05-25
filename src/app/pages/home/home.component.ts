@@ -275,13 +275,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     // heroBubbles is pre-fetched by route resolver
     this.seoService.setMetaTags({
       title: 'Learn About Islam, Ask Questions & Locate Mosques',
-      description: 'AskAMuslim is your premier digital platform to seek authentic Islamic knowledge, ask questions directly to scholars, find nearby mosques with prayer times, and learn in the Academy.',
-      keywords: ['Islam', 'AskAMuslim', 'Find Mosques', 'Prayer Timings', 'Islamic Q&A', 'Islamic Scholars', 'Academy', 'Learn Islam'],
+      description: 'Ask A Muslim is your premier digital platform to seek authentic Islamic knowledge, ask questions directly to scholars, find nearby mosques with prayer times, and learn in the Academy.',
+      keywords: ['Islam', 'Ask A Muslim', 'AskAMuslim', 'Find Mosques', 'Prayer Timings', 'Islamic Q&A', 'Islamic Scholars', 'Academy', 'Learn Islam'],
       schemas: [
         this.seoService.generateOrganizationSchema(),
         this.seoService.generateWebsiteSchema()
       ]
     });
+
   }
 
   protected isSvgIcon(feature: FeatureCard): boolean {

@@ -22,10 +22,10 @@ export class SeoService {
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
 
-  private readonly defaultTitle = 'AskAMuslim - Learn About Islam, Ask Questions & Locate Mosques';
+  private readonly defaultTitle = 'Ask A Muslim - Learn About Islam, Ask Questions & Locate Mosques';
   private readonly defaultDesc = 'Your modern, welcoming platform to learn about Islam, ask questions, find nearby mosques, and connect with scholars. Reliable and credible Islamic knowledge.';
   private readonly defaultKeywords = ['Islam', 'Ask A Muslim', 'Islamic knowledge', 'find mosque', 'prayer times', 'Islamic Q&A', 'learn Islam'];
-  private readonly defaultAuthor = 'AskAMuslim';
+  private readonly defaultAuthor = 'Ask A Muslim';
   private readonly baseSiteUrl = 'https://askamuslim.com';
   private readonly defaultOgImage = 'https://askamuslim.com/ask-a-muslim-logo.png';
 
@@ -33,7 +33,7 @@ export class SeoService {
    * Set metadata and schema tags dynamically for the current page
    */
   setMetaTags(config: SeoConfig): void {
-    const title = config.title ? `${config.title} | AskAMuslim` : this.defaultTitle;
+    const title = config.title ? `${config.title} | Ask A Muslim` : this.defaultTitle;
     const description = config.description || this.defaultDesc;
     const keywords = config.keywords || this.defaultKeywords;
     const author = config.author || this.defaultAuthor;
@@ -63,7 +63,7 @@ export class SeoService {
     this.metaService.updateTag({ property: 'og:image', content: ogImage });
     this.metaService.updateTag({ property: 'og:url', content: canonical });
     this.metaService.updateTag({ property: 'og:type', content: ogType });
-    this.metaService.updateTag({ property: 'og:site_name', content: 'AskAMuslim' });
+    this.metaService.updateTag({ property: 'og:site_name', content: 'Ask A Muslim' });
 
     // 4. Set Twitter Card Tags
     this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
@@ -138,7 +138,8 @@ export class SeoService {
     return {
       '@type': 'Organization',
       '@id': `${this.baseSiteUrl}/#organization`,
-      name: 'AskAMuslim',
+      name: 'Ask A Muslim',
+      alternateName: ['AskAMuslim', 'Ask A Muslim Platform', 'Ask A Muslim Portal'],
       url: this.baseSiteUrl,
       logo: {
         '@type': 'ImageObject',
@@ -163,7 +164,8 @@ export class SeoService {
       '@type': 'WebSite',
       '@id': `${this.baseSiteUrl}/#website`,
       url: this.baseSiteUrl,
-      name: 'AskAMuslim',
+      name: 'Ask A Muslim',
+      alternateName: ['AskAMuslim'],
       description: 'Learn About Islam, Ask Questions & Locate Mosques',
       publisher: {
         '@id': `${this.baseSiteUrl}/#organization`,
