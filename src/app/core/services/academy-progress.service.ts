@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, BehaviorSubject, of, forkJoin, from } from 'rxjs';
-import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, forkJoin, from, combineLatest } from 'rxjs';
+import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize, timeout } from 'rxjs/operators';
 import {
     StudentProgress,
     StageProgress,
@@ -406,8 +406,14 @@ export class AcademyProgressService {
      * Fetch progress for a single course directly without triggering global student progress state.
      */
     getTargetedCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
+        const currentProgress = this.progressSubject.value;
+        if (currentProgress) {
+            return of(currentProgress.courseProgress.find((c) => c.courseId === courseId));
+        }
+
         return this.getCourseProgress(courseId).pipe(
             take(1),
+            timeout(1000),
             catchError(() => of(undefined))
         );
     }
@@ -889,12 +895,10 @@ export class AcademyProgressService {
             return this.activeLessonsRequests.get(courseId)!;
         }
 
-        const request$ = this.courseFacade.getCourseById(courseId).pipe(
-            map(course => {
-                const rawLessons = course && Array.isArray((course as any).lessons)
-                    ? (course as any).lessons as LessonReadDto[]
-                    : [];
-                return rawLessons
+        const request$ = this.lessonFacade.getCourseLessons(courseId).pipe(
+            map(rawLessons => {
+                const lessons = Array.isArray(rawLessons) ? rawLessons : [];
+                return lessons
                     .filter((lesson) => lesson.isPublished !== false)
                     .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index));
             }),
@@ -947,10 +951,11 @@ export class AcademyProgressService {
      * Uses API lessons and derives an initial progress projection.
      */
     getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
-        return forkJoin({
-            apiLessons: this.getAcademyLessons(courseId),
+        return combineLatest({
+            apiLessons: this.getAcademyLessons(courseId).pipe(take(1)),
             courseProgress: this.getTargetedCourseProgress(courseId).pipe(catchError(() => of(null))),
         }).pipe(
+            take(1),
             map(({ apiLessons, courseProgress }) => {
                 const sortedLessons = [...apiLessons].sort((a, b) => a.order - b.order);
                 const completedByApi = Math.max(
@@ -2552,11 +2557,7 @@ export class AcademyProgressService {
         mediaUrl: string,
         mediaType: 'video' | 'audio',
     ): Observable<number> {
-        if (!this.isBrowser) {
-            return of(0);
-        }
-
-        return this.measureHtmlMediaDurationSeconds(mediaUrl, mediaType);
+        return of(0);
     }
 
     private measureHtmlMediaDurationSeconds(

@@ -341,14 +341,18 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             this.academyProgressService.getCourseByIdDirect(this.courseId),
             this.academyProgressService.getCourseQuizzesDirect(this.courseId),
             this.lessonContentService.getLesson(this.lessonId),
-            this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([])))
+            this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([]))),
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(
+                take(1),
+                catchError(() => of([]))
+            )
         ])
             .pipe(
                 take(1),
                 takeUntil(this.destroy$)
             )
             .subscribe({
-                next: ([rawCourse, quizzes, lessonData, notes]) => {
+                next: ([rawCourse, quizzes, lessonData, notes, lessonsWithProgress]) => {
                     if (!rawCourse || !lessonData) {
                         this.error = 'Unable to load this lesson right now. Please try again.';
                         this.isLoading = false;
@@ -373,50 +377,60 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                         stageLabel: rawCourse.level ?? 'Course',
                     };
 
-                    // Map lessonsWithProgress
-                    const rawLessons = Array.isArray(rawCourse.lessons) ? rawCourse.lessons : [];
-                    const parseLessonType = (raw: unknown): 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio' => {
-                        const str = String(raw ?? '').toLowerCase();
-                        if (str === '1' || str === 'video') return 'video';
-                        if (str === '2' || str === 'article') return 'article';
-                        if (str === '3' || str === 'document') return 'document';
-                        if (str === '4' || str === 'audio') return 'audio';
-                        if (str === '5' || str === 'quiz') return 'quiz';
-                        return 'intro';
-                    };
+                    let finalLessons = lessonsWithProgress;
+                    if (!finalLessons || finalLessons.length === 0) {
+                        const rawLessons = Array.isArray(rawCourse.lessons) ? rawCourse.lessons : [];
+                        const parseLessonType = (raw: unknown): 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio' => {
+                            const str = String(raw ?? '').toLowerCase();
+                            if (str === '1' || str === 'video') return 'video';
+                            if (str === '2' || str === 'article') return 'article';
+                            if (str === '3' || str === 'document') return 'document';
+                            if (str === '4' || str === 'audio') return 'audio';
+                            if (str === '5' || str === 'quiz') return 'quiz';
+                            return 'intro';
+                        };
 
-                    const lessonsWithProgress = rawLessons
-                        .filter((l: any) => l.isPublished !== false)
-                        .map((l: any, index: number) => {
-                            const lId = l.lessonId ?? l.id ?? '';
-                            const lessonType = parseLessonType(l.lessonType ?? l.type);
-                            const isCompleted = !!(l.isLessonCompleted ?? l.isCompleted);
+                        finalLessons = rawLessons
+                            .filter((l: any) => l.isPublished !== false)
+                            .map((l: any, index: number) => {
+                                const lId = l.lessonId ?? l.id ?? '';
+                                const lessonType = parseLessonType(l.lessonType ?? l.type);
+                                const isCompleted = !!(l.isLessonCompleted ?? l.isCompleted);
 
-                            const academyLesson: AcademyLesson = {
-                                id: lId,
-                                courseId: this.courseId,
-                                title: l.lessonName ?? l.title ?? '',
-                                duration: this.academyProgressService.resolveLessonDurationFromDto(l, lessonType),
-                                type: lessonType,
-                                order: index + 1,
-                            };
+                                const academyLesson: AcademyLesson = {
+                                    id: lId,
+                                    courseId: this.courseId,
+                                    title: l.lessonName ?? l.title ?? '',
+                                    duration: this.academyProgressService.resolveLessonDurationFromDto(l, lessonType),
+                                    type: lessonType,
+                                    order: index + 1,
+                                };
 
-                            const progress: LessonProgress = {
-                                lessonId: lId,
-                                courseId: this.courseId,
-                                status: lId === this.lessonId ? 'current' : (isCompleted ? 'completed' : 'available'),
-                                isCompleted,
-                            };
+                                const progress: LessonProgress = {
+                                    lessonId: lId,
+                                    courseId: this.courseId,
+                                    status: lId === this.lessonId ? 'current' : (isCompleted ? 'completed' : 'available'),
+                                    isCompleted,
+                                };
 
-                            return {
-                                ...academyLesson,
-                                progress,
-                            };
-                        });
+                                return {
+                                    ...academyLesson,
+                                    progress,
+                                };
+                            });
+                    }
+
+                    const lessonsWithProgressEnriched = finalLessons.map((lesson) => ({
+                        ...lesson,
+                        progress: {
+                            ...lesson.progress,
+                            status: lesson.id === this.lessonId ? 'current' : lesson.progress.status
+                        }
+                    }));
 
                     this.applyResolvedLessonData({
                         course,
-                        lessonsWithProgress,
+                        lessonsWithProgress: lessonsWithProgressEnriched,
                         quizzes: quizzes || [],
                         lessonData,
                         notes,
@@ -760,7 +774,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
     }
 
-    isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'completed'; }
+    isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean {
+        return lesson.progress.status === 'completed' || lesson.progress.isCompleted;
+    }
     isLessonCurrent(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.id === this.lessonId; }
     isLessonPending(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'locked'; }
     canClickLesson(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status !== 'locked'; }

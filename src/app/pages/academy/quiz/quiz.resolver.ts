@@ -237,9 +237,10 @@ export const quizResolver: ResolveFn<QuizResolvedData | null> = (route) => {
     return combineLatest([
         academyProgressService.getCourseByIdDirect(courseId).pipe(take(1)),
         academyProgressService.getCourseQuizzesDirect(courseId).pipe(take(1)),
+        academyProgressService.getCourseLessonsWithProgress(courseId).pipe(take(1), catchError(() => of([]))),
     ]).pipe(
         take(1),
-        switchMap(([rawCourse, quizzes]) => {
+        switchMap(([rawCourse, quizzes, lessonsWithProgress]) => {
             if (!rawCourse) {
                 return of(null);
             }
@@ -260,52 +261,62 @@ export const quizResolver: ResolveFn<QuizResolvedData | null> = (route) => {
                 stageLabel: (rawCourse['levelName'] as string) ?? (rawCourse['levelname'] as string) ?? (rawCourse['level_name'] as string) ?? rawCourse.level ?? 'Course',
             };
 
-            // Map lessonsWithProgress
-            const rawLessons = Array.isArray(rawCourse.lessons) ? rawCourse.lessons : [];
-            const parseLessonType = (raw: unknown): 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio' => {
-                const str = String(raw ?? '').toLowerCase();
-                if (str === '1' || str === 'video') return 'video';
-                if (str === '2' || str === 'article') return 'article';
-                if (str === '3' || str === 'document') return 'document';
-                if (str === '4' || str === 'audio') return 'audio';
-                if (str === '5' || str === 'quiz') return 'quiz';
-                return 'intro';
-            };
+            let finalLessons = lessonsWithProgress;
+            if (!finalLessons || finalLessons.length === 0) {
+                const rawLessons = Array.isArray(rawCourse.lessons) ? rawCourse.lessons : [];
+                const parseLessonType = (raw: unknown): 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio' => {
+                    const str = String(raw ?? '').toLowerCase();
+                    if (str === '1' || str === 'video') return 'video';
+                    if (str === '2' || str === 'article') return 'article';
+                    if (str === '3' || str === 'document') return 'document';
+                    if (str === '4' || str === 'audio') return 'audio';
+                    if (str === '5' || str === 'quiz') return 'quiz';
+                    return 'intro';
+                };
 
-            const lessonsWithProgress = rawLessons
-                .filter((l: any) => l.isPublished !== false)
-                .map((l: any, index: number) => {
-                    const lId = l.lessonId ?? l.id ?? '';
-                    const lessonType = parseLessonType(l.lessonType ?? l.type);
-                    const isCompleted = !!(l.isLessonCompleted ?? l.isCompleted);
+                finalLessons = rawLessons
+                    .filter((l: any) => l.isPublished !== false)
+                    .map((l: any, index: number) => {
+                        const lId = l.lessonId ?? l.id ?? '';
+                        const lessonType = parseLessonType(l.lessonType ?? l.type);
+                        const isCompleted = !!(l.isLessonCompleted ?? l.isCompleted);
 
-                    const academyLesson: AcademyLesson = {
-                        id: lId,
-                        courseId: courseId,
-                        title: l.lessonName ?? l.title ?? '',
-                        duration: academyProgressService.resolveLessonDurationFromDto(l, lessonType),
-                        type: lessonType,
-                        order: index + 1,
-                    };
+                        const academyLesson: AcademyLesson = {
+                            id: lId,
+                            courseId: courseId,
+                            title: l.lessonName ?? l.title ?? '',
+                            duration: academyProgressService.resolveLessonDurationFromDto(l, lessonType),
+                            type: lessonType,
+                            order: index + 1,
+                        };
 
-                    const progress: LessonProgress = {
-                        lessonId: lId,
-                        courseId: courseId,
-                        status: lId === lessonId ? 'current' : (isCompleted ? 'completed' : 'available'),
-                        isCompleted,
-                    };
+                        const progress: LessonProgress = {
+                            lessonId: lId,
+                            courseId: courseId,
+                            status: lId === lessonId ? 'current' : (isCompleted ? 'completed' : 'available'),
+                            isCompleted,
+                        };
 
-                    return {
-                        ...academyLesson,
-                        progress,
-                    };
-                });
+                        return {
+                            ...academyLesson,
+                            progress,
+                        };
+                    });
+            }
+
+            const lessonsWithProgressEnriched = finalLessons.map((lesson) => ({
+                ...lesson,
+                progress: {
+                    ...lesson.progress,
+                    status: lesson.id === lessonId ? 'current' : lesson.progress.status
+                }
+            }));
 
             return resolveRouteQuizzes(academyProgressService, quizzesService, courseId, lessonId, quizzes || []).pipe(
                 switchMap((routeQuizzes) =>
                     buildQuizResolvedData(
                         course,
-                        lessonsWithProgress,
+                        lessonsWithProgressEnriched,
                         quizzes || [],
                         routeQuizzes,
                         questionsService,
@@ -314,7 +325,7 @@ export const quizResolver: ResolveFn<QuizResolvedData | null> = (route) => {
                 ),
                 catchError(() => of<QuizResolvedData>({
                     course,
-                    lessonsWithProgress,
+                    lessonsWithProgress: lessonsWithProgressEnriched,
                     quizzes: quizzes || [],
                     activeQuiz: null,
                     questions: [],

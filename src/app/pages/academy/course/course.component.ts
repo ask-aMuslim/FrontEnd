@@ -221,10 +221,22 @@ export class CourseComponent implements OnInit, OnDestroy {
                 quizzes: this.fetchCourseQuizzes(this.courseId).pipe(take(1)),
                 stages: this.academyProgressService.getAcademyStages().pipe(take(1)),
                 studentProgress: this.academyProgressService.getStudentProgress().pipe(take(1)),
+                lessonsWithProgress: this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(take(1)),
             }).pipe(
                 takeUntil(this.destroy$)
-            ).subscribe(({ quizzes, stages, studentProgress }) => {
-                const rawLessonsList = this.extractLessonsFromRawCourse(course);
+            ).subscribe(({ quizzes, stages, studentProgress, lessonsWithProgress }) => {
+                let rawLessonsList: Lesson[] = this.extractLessonsFromRawCourse(course);
+                if (rawLessonsList.length === 0 && lessonsWithProgress && lessonsWithProgress.length > 0) {
+                    rawLessonsList = lessonsWithProgress.map((l) => ({
+                        id: l.id,
+                        title: l.title,
+                        duration: l.duration,
+                        type: l.type,
+                        isLocked: l.progress.status === 'locked',
+                        isCompleted: l.progress.isCompleted,
+                        isCurrent: l.progress.status === 'current',
+                    }));
+                }
 
                 const matchedStage = stages.find(s => s.id === course.levelId);
                 const stageNumber = matchedStage?.number ?? 1;
@@ -249,17 +261,35 @@ export class CourseComponent implements OnInit, OnDestroy {
 
                 const isEnrolled = (course['courseProgress'] !== undefined && course['courseProgress'] !== null) || !!course['isCompleted'];
 
-                const processedLessons = this.prepareSidebarLessons(rawLessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
+                const enrichedLessonsList = rawLessonsList.map((lesson) => {
+                    const match = lessonsWithProgress.find((l) => l.id === lesson.id);
+                    return {
+                        ...lesson,
+                        isCompleted: match ? match.progress.isCompleted : lesson.isCompleted,
+                        isLocked: match ? match.progress.status === 'locked' : lesson.isLocked,
+                        isCurrent: match ? match.progress.status === 'current' : lesson.isCurrent,
+                    };
+                });
+
+                const hasCurrent = enrichedLessonsList.some((l) => l.isCurrent);
+                if (!hasCurrent) {
+                    const firstPending = enrichedLessonsList.findIndex((l) => !l.isCompleted && l.type !== 'quiz');
+                    if (firstPending >= 0) {
+                        enrichedLessonsList[firstPending] = { ...enrichedLessonsList[firstPending], isCurrent: true };
+                    }
+                }
+
+                const processedLessons = this.prepareSidebarLessons(enrichedLessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
 
                 this.course = {
                     id: course.id ?? '',
                     levelName: course.level ?? '',
                     stageNumber: stageNumber,
                     stageLabel: course.level ? course.level : 'Course',
-                    duration: this.calculateCourseDuration(rawLessonsList),
+                    duration: this.calculateCourseDuration(enrichedLessonsList),
                     title: course.title ?? '',
                     intro: course.description ?? '',
-                    lessons: rawLessonsList
+                    lessons: enrichedLessonsList
                         .filter((l) => l.type !== 'quiz' && l.type !== 'intro')
                         .map((l) => l.title),
                     answers: this.extractOutcomes(course.description),
@@ -304,15 +334,21 @@ export class CourseComponent implements OnInit, OnDestroy {
             quizzes: this.fetchCourseQuizzes(this.courseId).pipe(take(1)),
             stages: this.academyProgressService.getAcademyStages().pipe(take(1)),
             studentProgress: this.academyProgressService.getStudentProgress().pipe(take(1)),
+            lessonsWithProgress: this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(take(1)),
         }).pipe(
             takeUntil(this.destroy$)
-        ).subscribe(({ quizzes, stages, studentProgress }) => {
-            const lessonsList = this.extractLessonsFromRawCourse(raw);
-
-            // Mark first uncompleted lesson as current
-            const firstPending = lessonsList.findIndex((l) => !l.isCompleted && l.type !== 'quiz');
-            if (firstPending >= 0) {
-                lessonsList[firstPending] = { ...lessonsList[firstPending], isCurrent: true };
+        ).subscribe(({ quizzes, stages, studentProgress, lessonsWithProgress }) => {
+            let lessonsList: Lesson[] = this.extractLessonsFromRawCourse(raw);
+            if (lessonsList.length === 0 && lessonsWithProgress && lessonsWithProgress.length > 0) {
+                lessonsList = lessonsWithProgress.map((l) => ({
+                    id: l.id,
+                    title: l.title,
+                    duration: l.duration,
+                    type: l.type,
+                    isLocked: l.progress.status === 'locked',
+                    isCompleted: l.progress.isCompleted,
+                    isCurrent: l.progress.status === 'current',
+                }));
             }
 
             const matchedStage = stages.find(s => s.id === raw.levelId);
@@ -338,17 +374,35 @@ export class CourseComponent implements OnInit, OnDestroy {
 
             const isEnrolled = (raw['courseProgress'] !== undefined && raw['courseProgress'] !== null) || !!raw['isCompleted'];
 
-            const processedLessons = this.prepareSidebarLessons(lessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
+            const enrichedLessonsList = lessonsList.map((lesson) => {
+                const match = lessonsWithProgress.find((l) => l.id === lesson.id);
+                return {
+                    ...lesson,
+                    isCompleted: match ? match.progress.isCompleted : lesson.isCompleted,
+                    isLocked: match ? match.progress.status === 'locked' : lesson.isLocked,
+                    isCurrent: match ? match.progress.status === 'current' : lesson.isCurrent,
+                };
+            });
+
+            const hasCurrent = enrichedLessonsList.some((l) => l.isCurrent);
+            if (!hasCurrent) {
+                const firstPending = enrichedLessonsList.findIndex((l) => !l.isCompleted && l.type !== 'quiz');
+                if (firstPending >= 0) {
+                    enrichedLessonsList[firstPending] = { ...enrichedLessonsList[firstPending], isCurrent: true };
+                }
+            }
+
+            const processedLessons = this.prepareSidebarLessons(enrichedLessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
 
             this.course = {
                 id: raw.id ?? '',
                 levelName: raw.level ?? '',
                 stageNumber: stageNumber,
                 stageLabel: raw.level ? raw.level : 'Course',
-                duration: this.calculateCourseDuration(lessonsList),
+                duration: this.calculateCourseDuration(enrichedLessonsList),
                 title: raw.title ?? '',
                 intro: raw.description ?? '',
-                lessons: lessonsList
+                lessons: enrichedLessonsList
                     .filter((l) => l.type !== 'quiz' && l.type !== 'intro')
                     .map((l) => l.title),
                 answers: this.extractOutcomes(raw.description),

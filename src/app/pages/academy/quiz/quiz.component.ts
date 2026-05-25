@@ -419,7 +419,7 @@ export class QuizComponent implements OnInit, OnDestroy {
                 title: lessonType === 'quiz' ? this.courseQuizTitle : lesson.title,
                 duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
                 type: lessonType,
-                isCompleted: lesson.progress.status === 'completed',
+                isCompleted: lesson.progress.status === 'completed' || lesson.progress.isCompleted,
                 isLocked: lesson.progress.status === 'locked',
                 isCurrent: lessonType === 'quiz',
                 hasNotification: false
