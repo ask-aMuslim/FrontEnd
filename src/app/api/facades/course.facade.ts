@@ -95,7 +95,6 @@ export class CourseFacade {
         }
         if (isPublished !== undefined) {
             params['isPublished'] = String(isPublished);
-            params['IsPublished'] = String(isPublished);
         }
 
         const request$ = extractData(
