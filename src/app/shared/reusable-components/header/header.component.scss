@@ -294,28 +294,31 @@
 }
 
 .support-btn {
-  // box-shadow: 0 2px 8px rgba(0, 128, 0, 0.15);
+  border: 1.5px solid var(--color-button-primary-normal);
+  color: var(--color-button-primary-normal);
+  background: transparent;
+  box-shadow: 0 2px 8px rgba(0, 128, 0, 0.15);
 
   &:hover {
-    background: var(--color-button-primary-normal);
-    border-color: var(--color-button-primary-normal);
-    color: #ffffff;
+    background: var(--color-chips-selected-data-surface);
+    border-color: var(--color-button-primary-hovering);
+    color: var(--color-button-primary-hovering);
     box-shadow: 0 4px 12px rgba(0, 128, 0, 0.25);
     transform: translateY(-1px);
   }
 
   &:active {
-    background: color-mix(in srgb, var(--color-button-primary-normal) 82%, white);
-    border-color: color-mix(in srgb, var(--color-button-primary-normal) 82%, white);
-    color: #ffffff;
+    background: var(--color-chips-selected-data-surface);
+    border-color: var(--color-button-primary-normal);
+    color: var(--color-button-primary-normal);
+    transform: translateY(0);
   }
 }
 
 .support-btn--active {
-  background: var(--color-button-primary-normal);
-  border-color: var(--color-button-primary-normal);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 128, 0, 0.15);
+  background: var(--color-chips-selected-data-surface);
+  border-color: var(--color-button-primary-hovering);
+  color: var(--color-button-primary-hovering);
 }
 
 .sr-only {
@@ -411,9 +414,11 @@
   .header-right .user-card {
     display: none;
   }
+
   .header-right .user-popup {
     display: none;
   }
+
   .header-right .auth-buttons {
     display: none;
   }

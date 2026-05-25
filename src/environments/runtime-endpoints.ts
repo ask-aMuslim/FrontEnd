@@ -26,12 +26,18 @@ export function resolveApiBaseUrl(): string {
 }
 
 export function resolveAssistantApiBaseUrl(): string {
+  if (typeof process !== 'undefined' && process.env?.['ASSISTANT_TUNNEL_URL']) {
+    return process.env['ASSISTANT_TUNNEL_URL'];
+  }
   return isNetlifyBrowserHost()
     ? NETLIFY_ASSISTANT_API_BASE_URL
     : DIRECT_ASSISTANT_API_BASE_URL;
 }
 
 export function resolveAssistantApiFallbackBaseUrl(): string {
+  if (typeof process !== 'undefined' && process.env?.['ASSISTANT_TUNNEL_URL']) {
+    return process.env['ASSISTANT_TUNNEL_URL'];
+  }
   return isNetlifyBrowserHost()
     ? NETLIFY_ASSISTANT_API_BASE_URL
     : DIRECT_ASSISTANT_API_BASE_URL_FALLBACK;

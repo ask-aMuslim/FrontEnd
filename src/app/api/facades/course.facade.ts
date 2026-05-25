@@ -38,6 +38,10 @@ export interface RoadmapCourseDto {
     prerequisites?: RoadmapCourseDto[];
     prerequisiteIds?: string[];
     levelId?: string;
+    numberOfLessons?: number;
+    lessonsCount?: number;
+    lessons?: unknown[];
+    duration?: string;
     [key: string]: unknown;
 }
 
@@ -81,13 +85,17 @@ export class CourseFacade {
         return request$;
     }
 
-    getRoadmap(levelId: string, studentId?: string): Observable<RoadmapCourseDto[]> {
-        const cacheKey = `roadmap_${levelId}_${studentId || ''}`;
+    getRoadmap(levelId: string, studentId?: string, isPublished?: boolean): Observable<RoadmapCourseDto[]> {
+        const cacheKey = `roadmap_${levelId}_${studentId || ''}_${isPublished !== undefined ? isPublished : ''}`;
         if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
 
         const params: Record<string, string> = {};
         if (studentId) {
             params['studentId'] = studentId;
+        }
+        if (isPublished !== undefined) {
+            params['isPublished'] = String(isPublished);
+            params['IsPublished'] = String(isPublished);
         }
 
         const request$ = extractData(
