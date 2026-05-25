@@ -112,8 +112,9 @@ export class AskQaComponent implements OnInit {
     if (this.categories.length === QA_CATEGORIES.length && this.categories.every((c, i) => c === QA_CATEGORIES[i])) {
       this.initialCategoryQuery = this.route.snapshot.queryParamMap.get('category')
         ?? this.route.snapshot.queryParamMap.get('tag');
+      const tagIdQuery = this.route.snapshot.queryParamMap.get('tagId');
       this.loadCategories();
-      if (!this.initialCategoryQuery) {
+      if (!this.initialCategoryQuery && !tagIdQuery) {
         this.loadQuestions();
       }
     }
@@ -412,6 +413,15 @@ export class AskQaComponent implements OnInit {
           this.categories = ['All', ...ordered.map((tag) => tag.name)];
         }
 
+        const tagIdQuery = this.route.snapshot.queryParamMap.get('tagId');
+        if (tagIdQuery) {
+          const matchedIndex = this.tagFilterOptions.findIndex((t) => t.id === tagIdQuery);
+          if (matchedIndex >= 0) {
+            this.selectCategory(matchedIndex + 1);
+            return;
+          }
+        }
+
         if (this.initialCategoryQuery) {
           this.applyCategoryQuery(this.initialCategoryQuery);
           return;
@@ -420,7 +430,8 @@ export class AskQaComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        if (this.initialCategoryQuery) {
+        const tagIdQuery = this.route.snapshot.queryParamMap.get('tagId');
+        if (this.initialCategoryQuery || tagIdQuery) {
           this.loadQuestions();
           return;
         }

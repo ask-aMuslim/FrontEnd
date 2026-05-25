@@ -16,6 +16,7 @@ import {
 } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
 import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import { CourseResolvedData } from './course.resolver';
+import { SeoService } from '../../../core/services/seo.service';
 
 /**
  * Quiz interface for template binding
@@ -94,6 +95,7 @@ export class CourseComponent implements OnInit, OnDestroy {
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly platformId = inject(PLATFORM_ID);
     private readonly isBrowser = isPlatformBrowser(this.platformId);
+    private readonly seoService = inject(SeoService);
 
     course: CourseDetails | null = null;
 
@@ -305,6 +307,15 @@ export class CourseComponent implements OnInit, OnDestroy {
                     prerequisitesList: prerequisitesList,
                 };
 
+                if (this.course) {
+                    this.seoService.setMetaTags({
+                        title: `${this.course.title} - Academy Course`,
+                        description: this.course.intro || `Learn ${this.course.title} step-by-step on the AskAMuslim Academy. Free structured online lessons and quizzes.`,
+                        keywords: [this.course.title, 'islamic course', 'academy', 'learn islam', 'AskAMuslim'],
+                        schemas: [this.seoService.generateCourseSchema(this.course)]
+                    });
+                }
+
                 this.academyProgressService.getLevelTitleForCourse({
                     levelId: course.levelId ?? undefined,
                     stageId: 1
@@ -417,6 +428,15 @@ export class CourseComponent implements OnInit, OnDestroy {
                 quizzesList: quizzes,
                 prerequisitesList: prerequisitesList,
             };
+
+            if (this.course) {
+                this.seoService.setMetaTags({
+                    title: `${this.course.title} - Academy Course`,
+                    description: this.course.intro || `Learn ${this.course.title} step-by-step on the AskAMuslim Academy. Free structured online lessons and quizzes.`,
+                    keywords: [this.course.title, 'islamic course', 'academy', 'learn islam', 'AskAMuslim'],
+                    schemas: [this.seoService.generateCourseSchema(this.course)]
+                });
+            }
 
             this.academyProgressService.getLevelTitleForCourse({
                 levelId: raw.levelId ?? undefined,

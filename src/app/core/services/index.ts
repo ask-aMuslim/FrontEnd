@@ -14,3 +14,4 @@ export * from './questions.service';
 export * from './quiz-attempts.service';
 export * from './quizzes.service';
 export * from './students.service';
+export * from './seo.service';

@@ -20,9 +20,9 @@ import {
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-// import { EventsService } from '../../core/services/events.service';
 import { AuthService } from '../../core/services/auth.service';
 import { QasService } from '../../core/services/qas.service';
+import { SeoService } from '../../core/services/seo.service';
 // import { EventCardComponent, type EventCard as SharedEventCard } from '../events/event-card/event-card.component';
 import { HeroSearchInputComponent } from '../../shared/reusable-components/hero-search-input/hero-search-input.component';
 import {
@@ -240,6 +240,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  private readonly seoService = inject(SeoService);
   private cleanupFns: (() => void)[] = [];
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
@@ -272,6 +273,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     // heroBubbles is pre-fetched by route resolver
+    this.seoService.setMetaTags({
+      title: 'Learn About Islam, Ask Questions & Locate Mosques',
+      description: 'AskAMuslim is your premier digital platform to seek authentic Islamic knowledge, ask questions directly to scholars, find nearby mosques with prayer times, and learn in the Academy.',
+      keywords: ['Islam', 'AskAMuslim', 'Find Mosques', 'Prayer Timings', 'Islamic Q&A', 'Islamic Scholars', 'Academy', 'Learn Islam'],
+      schemas: [
+        this.seoService.generateOrganizationSchema(),
+        this.seoService.generateWebsiteSchema()
+      ]
+    });
   }
 
   protected isSvgIcon(feature: FeatureCard): boolean {

@@ -1,2 +1,20 @@
 User-agent: *
 Allow: /
+
+# Allow AI search engines for GEO discoverability
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: https://askamuslim.com/sitemap.xml

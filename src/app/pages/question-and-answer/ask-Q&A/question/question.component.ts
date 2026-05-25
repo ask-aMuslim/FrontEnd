@@ -8,6 +8,7 @@ import { takeUntil } from 'rxjs/operators';
 import DOMPurify from 'dompurify';
 import { QasService } from '../../../../core/services/qas.service';
 import { TokenService } from '../../../../core/auth/token.service';
+import { SeoService } from '../../../../core/services/seo.service';
 import { asRecord, extractArray, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../../../core/helpers/media-url.helper';
 import { TiptapViewerComponent } from '../../../../shared/components/tiptap-viewer/tiptap-viewer.component';
@@ -31,6 +32,7 @@ export class QuestionComponent implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly isBrowser: boolean;
   private readonly tokenService: TokenService;
+  private readonly seoService: SeoService;
 
   id = '';
   title = '';
@@ -58,9 +60,11 @@ export class QuestionComponent implements OnDestroy {
     private readonly sanitizer: DomSanitizer,
     private readonly changeDetectorRef: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object,
+    seoService: SeoService,
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
     this.tokenService = tokenService;
+    this.seoService = seoService;
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.id = params.get('id') ?? '';
@@ -199,6 +203,16 @@ export class QuestionComponent implements OnDestroy {
         }
         this.imageUrl = mappedImage ?? null;
         this.changeDetectorRef.markForCheck();
+
+        if (this.title && this.answer) {
+          this.seoService.setMetaTags({
+            title: `${this.title} - Islamic Q&A`,
+            description: this.answer.length > 160 ? `${this.answer.substring(0, 157)}...` : this.answer,
+            keywords: [...(this.categories || []), 'islamic Q&A', 'ask scholar', 'AskAMuslim'],
+            ogImage: this.imageUrl ?? undefined,
+            schemas: [this.seoService.generateFAQSchema([{ question: this.title, answer: this.answer }])]
+          });
+        }
       },
       error: () => {
         this.changeDetectorRef.markForCheck();
