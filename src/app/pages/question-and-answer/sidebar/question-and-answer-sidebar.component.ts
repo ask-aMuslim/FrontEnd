@@ -21,12 +21,7 @@ export class QuestionAndAnswerSidebarComponent {
       href: '/question-and-answer/topics',
       icon: '/icons/icons-24/found.svg',
     },
-    {
-      key: 'ask-assistant',
-      label: 'Ask Assistant',
-      href: '/question-and-answer/ask-assistant',
-      icon: '/icons/icons-24/ai-talk.svg',
-    },
+
     {
       key: 'meet-scholar',
       label: 'Meet Scholar',
