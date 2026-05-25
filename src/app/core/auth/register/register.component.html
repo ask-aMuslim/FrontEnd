@@ -33,10 +33,7 @@
 
       <div class="social-buttons">
         <div class="google-btn-wrapper">
-          <asl-google-signin-button
-            type="standard"
-            size="large"
-          ></asl-google-signin-button>
+          <div #googleBtnContainer class="google-custom-btn-container"></div>
         </div>
         <button
           type="button"
@@ -110,19 +107,19 @@
           [class.form-group--error]="isFieldInvalid('fullName')"
           [class.form-group--focused]="fieldFocused['fullName']"
         >
-          <label for="fullName" class="form-label">Full Name</label>
           <div class="input-wrapper">
             <input
               type="text"
               id="fullName"
               name="fullName"
               formControlName="fullName"
-              placeholder="Full Name"
+              placeholder=" "
               class="form-input"
               (focus)="onFieldFocus('fullName')"
               (blur)="onFieldBlur('fullName')"
               autocomplete="name"
             />
+            <label for="fullName" class="form-label">Full Name</label>
             @if (isFieldInvalid("fullName")) {
               <span class="form-error-tooltip">
                 {{ getFieldError("fullName") }}
@@ -136,19 +133,19 @@
           [class.form-group--error]="isFieldInvalid('email')"
           [class.form-group--focused]="fieldFocused['email']"
         >
-          <label for="email" class="form-label">Email Address</label>
           <div class="input-wrapper">
             <input
               type="email"
               id="email"
               name="email"
               formControlName="email"
-              placeholder="email@example.com"
+              placeholder=" "
               class="form-input"
               (focus)="onFieldFocus('email')"
               (blur)="onFieldBlur('email')"
               autocomplete="email"
             />
+            <label for="email" class="form-label">Email Address</label>
             @if (isFieldInvalid("email")) {
               <span class="form-error-tooltip">
                 {{ getFieldError("email") }}
@@ -162,7 +159,6 @@
           [class.form-group--error]="isFieldInvalid('password')"
           [class.form-group--focused]="fieldFocused['password']"
         >
-          <label for="password" class="form-label">Password</label>
           <div class="input-wrapper">
             <div class="password-wrapper">
               <input
@@ -170,12 +166,13 @@
                 id="password"
                 name="password"
                 formControlName="password"
-                placeholder="Password"
+                placeholder=" "
                 class="form-input"
                 (focus)="onFieldFocus('password')"
                 (blur)="onFieldBlur('password')"
                 [attr.autocomplete]="showPassword ? 'off' : 'new-password'"
               />
+              <label for="password" class="form-label">Password</label>
               <button
                 type="button"
                 class="password-toggle"

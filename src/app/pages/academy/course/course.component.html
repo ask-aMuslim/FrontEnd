@@ -23,146 +23,150 @@
       [breadcrumbs]="breadcrumbs"
       [currentBreadcrumb]="course.title"
     >
-      <div academy-page-main>
-        <div class="course-details">
-          <div class="details-card">
-            <h1 class="course-title">{{ course.title }}</h1>
-            @if (course.prerequisitesList.length > 0) {
-              <div class="course-prerequisites-overview">
-                <h2 class="section-title">Course prerequisites</h2>
-                <div class="prerequisites-list" role="list">
-                  @for (prereq of course.prerequisitesList; track prereq.id) {
-                    <div
-                      class="prereq-item"
-                      role="listitem"
-                      [class.completed]="prereq.isCompleted"
-                    >
-                      <span class="status-dot" aria-hidden="true"></span>
-                      <span class="prereq-title">{{ prereq.title }}</span>
-                      <span
-                        class="prereq-state"
-                        [class.completed]="prereq.isCompleted"
-                      >
-                        {{ prereq.isCompleted ? "Completed" : "Required" }}
-                      </span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-            <!-- Intro Section -->
-            <div class="course-section">
-              <h2 class="section-title">Intro:</h2>
-              <p class="section-text">{{ course.intro }}</p>
-            </div>
-            <!-- Lessons Section -->
-            <div class="course-section">
-              <h2
-                class="section-title"
-                [style.display]="course.lessons.length === 0 ? 'none' : null"
-              >
-                Lessons:
-              </h2>
-              <p
-                class="section-text"
-                [style.display]="course.lessons.length === 0 ? 'none' : null"
-              >
-                @for (
-                  lesson of course.lessons;
-                  track lesson;
-                  let last = $last
-                ) {
-                  {{ lesson }}
-                  @if (!last) {
-                    <br />
-                  }
-                }
-              </p>
-            </div>
-          </div>
-          <!-- Action Buttons -->
-          <div class="course-actions">
-            <div
-              class="unlocked-state"
-              style="
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-                justify-content: flex-end;
-              "
-            >
-              @if (
-                !isUserAuthenticated ||
-                course.isLocked ||
-                course.hasUnmetPrerequisites
-              ) {
-                <span
-                  class="restriction-msg"
-                  style="
-                    color: var(--color-text-info);
-                    border: none;
-                    background: transparent;
-                    padding: 0;
-                    font-size: 0.875rem;
-                  "
-                >
-                  @if (!isUserAuthenticated) {
-                    Please sign in to enroll in this course.
-                  } @else if (course.isLocked) {
-                    You must finish the quizzes of all previous stages to unlock
-                    this course.
-                  } @else if (course.hasUnmetPrerequisites) {
-                    You must complete:
-                    {{ course.unmetPrerequisiteNames.join(", ") }}
-                  }
-                </span>
-                <button class="btn btn-disabled" disabled>
-                  <span>{{ primaryActionLabel }}</span>
-                </button>
-              } @else {
-                <!-- Available State -->
-                @if (canTakeQuiz) {
-                  <button
-                    type="button"
-                    (click)="onTakeQuizClick()"
-                    class="btn btn-ghost"
-                  >
-                    <span>Take the Quiz</span>
-                  </button>
-                }
-                @if (isBeginDisabled) {
-                  <button type="button" class="btn btn-disabled" disabled>
-                    <span>{{ primaryActionLabel }}</span>
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    (click)="onBeginClick()"
-                    class="btn btn-primary"
-                    [disabled]="isEnrolling"
-                  >
-                    <span>{{
-                      isEnrolling ? "Enrolling..." : primaryActionLabel
-                    }}</span>
-                  </button>
-                }
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-      <div academy-page-sidebar>
-        <app-academy-sidebar-host
-          [stageLabelOverride]="course.stageLabel"
-          [stageNumber]="course.stageNumber"
-          [title]="course.title"
-          [totalLessons]="course.totalLessons"
-          [duration]="course.duration"
-          [lessons]="course.lessonsList"
-          [showReadyDividerBeforeQuiz]="true"
-          (lessonSelect)="onLessonClick($event)"
-        />
-      </div>
+       <div academy-page-main>
+         <div class="course-details">
+           <div class="details-card">
+             <h1 class="course-title">{{ course.title }}</h1>
+             @if (course.prerequisitesList.length > 0) {
+               <div class="course-prerequisites-overview">
+                 <h2 class="section-title">Course prerequisites</h2>
+                 <div class="prerequisites-list" role="list">
+                   @for (prereq of course.prerequisitesList; track prereq.id) {
+                     <div
+                       class="prereq-item"
+                       role="listitem"
+                       [class.completed]="prereq.isCompleted"
+                     >
+                       <span class="status-dot" aria-hidden="true"></span>
+                       <span class="prereq-title">{{ prereq.title }}</span>
+                       <span
+                         class="prereq-state"
+                         [class.completed]="prereq.isCompleted"
+                       >
+                         {{ prereq.isCompleted ? "Completed" : "Required" }}
+                       </span>
+                     </div>
+                   }
+                 </div>
+               </div>
+             }
+             <!-- Intro Section -->
+             <div class="course-section">
+               <h2 class="section-title">Intro:</h2>
+               <p class="section-text">{{ course.intro }}</p>
+             </div>
+             <!-- Lessons Section -->
+             <div class="course-section">
+               <h2
+                 class="section-title"
+                 [style.display]="course.lessons.length === 0 ? 'none' : null"
+               >
+               Lessons:
+               </h2>
+               <div
+                 class="lessons-list"
+                 [style.display]="course.lessons.length === 0 ? 'none' : null"
+               >
+                 @for (
+                   lesson of contentLessonsOnly;
+                   track lesson.id;
+                   let last = $last
+                 ) {
+                   <div class="lesson-item">
+                     <div class="lesson-info">
+                       <span class="lesson-title">{{ lesson.title }}</span>
+                     </div>
+                   </div>
+                   @if (!last) {
+                     <div class="lesson-divider"></div>
+                   }
+                 }
+               </div>
+             </div>
+           </div>
+           <!-- Action Buttons -->
+           <div class="course-actions">
+             <div
+               class="unlocked-state"
+               style="
+                 display: flex;
+                 align-items: center;
+                 gap: 1rem;
+                 justify-content: flex-end;
+               "
+             >
+               @if (
+                 !isUserAuthenticated ||
+                 course.isLocked ||
+                 course.hasUnmetPrerequisites
+               ) {
+                 <span
+                   class="restriction-msg"
+                   style="
+                     color: var(--color-text-info);
+                     border: none;
+                     background: transparent;
+                     padding: 0;
+                     font-size: 0.875rem;
+                   "
+                 >
+                   @if (!isUserAuthenticated) {
+                     Please sign in to enroll in this course.
+                   } @else if (course.isLocked) {
+                     You must finish the quizzes of all previous stages to unlock
+                     this course.
+                   } @else if (course.hasUnmetPrerequisites) {
+                     You must complete:
+                     {{ course.unmetPrerequisiteNames.join(", ") }}
+                   }
+                 </span>
+                 <button class="btn btn-disabled" disabled>
+                   <span>{{ primaryActionLabel }}</span>
+                 </button>
+               } @else {
+                 <!-- Available State -->
+                 @if (canTakeQuiz) {
+                   <button
+                     type="button"
+                     (click)="onTakeQuizClick()"
+                     class="btn btn-ghost"
+                   >
+                     <span>Take the Quiz</span>
+                   </button>
+                 }
+                 @if (isBeginDisabled) {
+                   <button type="button" class="btn btn-disabled" disabled>
+                     <span>{{ primaryActionLabel }}</span>
+                   </button>
+                 } @else {
+                   <button
+                     type="button"
+                     (click)="onBeginClick()"
+                     class="btn btn-primary"
+                     [disabled]="isEnrolling"
+                   >
+                     <span>{{
+                       isEnrolling ? "Enrolling..." : primaryActionLabel
+                     }}</span>
+                   </button>
+                 }
+               }
+             </div>
+           </div>
+         </div>
+       </div>
+       <div academy-page-sidebar>
+         <app-academy-sidebar-host
+           [stageLabelOverride]="course.stageLabel"
+           [stageNumber]="course.stageNumber"
+           [title]="course.title"
+           [totalLessons]="course.totalLessons"
+           [duration]="course.duration"
+           [lessons]="course.lessonsList"
+           [showReadyDividerBeforeQuiz]="true"
+           (lessonSelect)="onLessonClick($event)"
+         />
+       </div>
     </app-academy-page-shell>
 
     @if (showSignInPrompt) {

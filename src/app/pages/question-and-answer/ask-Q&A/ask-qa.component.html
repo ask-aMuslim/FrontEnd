@@ -126,7 +126,12 @@
     </div>
   </div>
 
-  @if (isShowingResults) {
+  @if (errorMessage) {
+  <div class="topics-page__error-message text-red-600 text-center mb-4">
+    {{ errorMessage }}
+  </div>
+}
+@if (isShowingResults) {
     <app-question-search-result
       class="topics-page__search-results w-full"
       [query]="searchQuery"

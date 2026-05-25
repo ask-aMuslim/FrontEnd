@@ -163,6 +163,8 @@
   --color-success-light: rgba(16, 185, 129, 0.1);
   --color-success-base: var(--color-semantic-success-base);
   --warning: var(--color-semantic-warning-base);
+  --colors-rare-grays-10: #f8f9fa;
+  --colors-rare-grays-20: #e9ecef;
 
   /* Opacity Values */
   --opacity-disabled: 0.5;

@@ -114,8 +114,7 @@
     overflow-y: auto;
 
     scrollbar-width: thin;
-    scrollbar-color: var(--colors-rare-grays-40, #ced4da)
-      var(--colors-rare-grays-10, #f8f9fa);
+    scrollbar-color: var(--colors-rare-grays-40, #ced4da) var(--colors-rare-grays-10, #f8f9fa);
 
     &::-webkit-scrollbar {
       width: 0.375rem;
@@ -189,7 +188,7 @@
   }
 
   &:hover:not(:disabled) {
-    background: var(--colors-rare-grays-10, #f8f9fa);
+    background: var(--colors-rare-grays-20, #e9ecef);
   }
 
   &:focus-visible {

@@ -1,8 +1,8 @@
 import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { Subject, forkJoin, of } from 'rxjs';
+import { take, takeUntil, catchError } from 'rxjs/operators';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
 import { MosquesFacade, MosqueDto } from '../../api/facades/mosques.facade';
 // import { MyLearningComponent } from './my-learning/my-learning.component';
@@ -105,11 +105,41 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   ngOnInit(): void {
-    this.loadProfile();
-    this.loadUpcomingEvent();
     if (this.isBrowser) {
       this.checkGeolocationPermission();
     }
+
+    // Run profile fetch and next event query in parallel using forkJoin
+    forkJoin({
+      profile: this.studentFacade.getMyProfileFromApi().pipe(catchError(() => of(null))),
+      event: this.eventsService.getNext().pipe(catchError(() => of(null)))
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: ({ profile, event }) => {
+        if (profile) {
+          this.updateUserProfile(profile);
+        }
+        if (event) {
+          this.handleEventResponse(event);
+        }
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Reactive subscription to keep profile updated from active cache changes
+    this.studentFacade.me().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (profile) => {
+        if (profile) {
+          globalThis.setTimeout(() => {
+            if (!this.destroy$.closed) {
+              this.updateUserProfile(profile);
+              this.cdr.detectChanges();
+            }
+          }, 0);
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -282,20 +312,45 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadProfile(): void {
-    this.studentFacade.me().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (profile) => {
-        if (profile) {
-          globalThis.setTimeout(() => {
-            if (!this.destroy$.closed) {
-              this.updateUserProfile(profile);
-              this.cdr.detectChanges();
-            }
-          }, 0);
-        }
-      },
-      error: () => void 0,
-    });
+  private handleEventResponse(response: unknown): void {
+    const responseRecord = asRecord(response);
+    const dataRecord = asRecord(getValue(responseRecord, 'data', 'Data'));
+
+    if (!dataRecord || !toBooleanValue(getValue(dataRecord, 'isPublished', 'IsPublished'))) {
+      this.upcomingEvent = null;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const id = toStringValue(getValue(dataRecord, 'id', 'Id'));
+    const title = toStringValue(getValue(dataRecord, 'title', 'Title'));
+    const speaker = toStringValue(getValue(dataRecord, 'speakerName', 'SpeakerName'));
+    const startDate = toStringValue(getValue(dataRecord, 'startDateTime', 'StartDateTime'));
+    const speakerImage =
+      toApiMediaUrl(toStringValue(getValue(dataRecord, 'imageUrl', 'ImageUrl'))) ??
+      '/images/profile-picture-navbar.png';
+    const isRegistered = toBooleanValue(getValue(dataRecord, 'isRegistered', 'IsRegistered'));
+
+    // Parse date and ensure it's in the future
+    const eventDate = new Date(startDate ?? '');
+    const now = new Date();
+    const isFuture = !Number.isNaN(eventDate.getTime()) && eventDate > now;
+
+    // Only create event if we have valid data and it's a future event
+    if (id && (title || speaker || startDate) && isFuture) {
+      this.upcomingEvent = {
+        id,
+        title: title ?? '',
+        speaker: speaker ?? '',
+        date: this.formatDate(startDate) ?? '',
+        time: this.formatTime(startDate) ?? '',
+        speakerRole: 'Guest Speaker',
+        speakerImage: speakerImage,
+        isRegistered,
+      };
+    } else {
+      this.upcomingEvent = null;
+    }
   }
 
   /**
@@ -405,61 +460,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadUpcomingEvent(): void {
-    this.upcomingEvent = null;
 
-    this.eventsService.getNext().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (response) => {
-        globalThis.setTimeout(() => {
-          if (this.destroy$.closed) {
-            return;
-          }
-
-          const responseRecord = asRecord(response);
-          const dataRecord = asRecord(getValue(responseRecord, 'data', 'Data'));
-
-          if (!dataRecord || !toBooleanValue(getValue(dataRecord, 'isPublished', 'IsPublished'))) {
-            this.upcomingEvent = null;
-            this.cdr.detectChanges();
-            return;
-          }
-
-          const id = toStringValue(getValue(dataRecord, 'id', 'Id'));
-          const title = toStringValue(getValue(dataRecord, 'title', 'Title'));
-          const speaker = toStringValue(getValue(dataRecord, 'speakerName', 'SpeakerName'));
-          const startDate = toStringValue(getValue(dataRecord, 'startDateTime', 'StartDateTime'));
-          const speakerImage =
-            toApiMediaUrl(toStringValue(getValue(dataRecord, 'imageUrl', 'ImageUrl'))) ??
-            '/images/profile-picture-navbar.png';
-          const isRegistered = toBooleanValue(getValue(dataRecord, 'isRegistered', 'IsRegistered'));
-
-          // Parse date and ensure it's in the future
-          const eventDate = new Date(startDate ?? '');
-          const now = new Date();
-          const isFuture = !Number.isNaN(eventDate.getTime()) && eventDate > now;
-
-          // Only create event if we have valid data and it's a future event
-          if (id && (title || speaker || startDate) && isFuture) {
-            this.upcomingEvent = {
-              id,
-              title: title ?? '',
-              speaker: speaker ?? '',
-              date: this.formatDate(startDate) ?? '',
-              time: this.formatTime(startDate) ?? '',
-              speakerRole: 'Guest Speaker',
-              speakerImage: speakerImage,
-              isRegistered,
-            };
-          } else {
-            this.upcomingEvent = null;
-          }
-
-          this.cdr.detectChanges();
-        }, 0);
-      },
-      error: () => void 0,
-    });
-  }
   
 
   private buildDisplayName(firstName?: string, lastName?: string): string | null {

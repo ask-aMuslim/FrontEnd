@@ -113,6 +113,10 @@ export class QuizComponent implements OnInit, OnDestroy {
     readonly showHint = signal(false);
     readonly selectedOptionId = signal<string | null>(null);
 
+    // Attempts count for retake button
+    readonly attemptsCount = signal(0);
+    readonly nextAttemptLabel = computed(() => `(${this.attemptsCount() + 1})`);
+
     // Results state (when quiz was previously completed)
     readonly previousScore = signal<number>(0);
     readonly previousCompletionTime = signal<number>(0);
@@ -415,7 +419,7 @@ export class QuizComponent implements OnInit, OnDestroy {
                 title: lessonType === 'quiz' ? this.courseQuizTitle : lesson.title,
                 duration: lessonType === 'quiz' ? 'Assessment' : lesson.duration,
                 type: lessonType,
-                isCompleted: lesson.progress.status === 'completed',
+                isCompleted: lesson.progress.status === 'completed' || lesson.progress.isCompleted,
                 isLocked: lesson.progress.status === 'locked',
                 isCurrent: lessonType === 'quiz',
                 hasNotification: false
@@ -427,12 +431,30 @@ export class QuizComponent implements OnInit, OnDestroy {
             this.activeQuizId.set(data.activeQuiz.id ?? null);
             this.syncSidebarQuizLesson(data.activeQuiz);
         } else {
+            this.activeQuizId.set(this.courseId + '-quiz');
             this.syncSidebarQuizLesson(null);
         }
 
-        this.questions.set(data.questions);
-        this.initializeAnswers(data.questions);
-        this.restoreQuizResultFromStorage(data.questions);
+        const resolvedQuestions = data.questions && data.questions.length > 0
+            ? data.questions
+            : this.generateMockQuestions(data.course.title);
+
+        this.questions.set(resolvedQuestions);
+        this.initializeAnswers(resolvedQuestions);
+        this.restoreQuizResultFromStorage(resolvedQuestions);
+        this.refreshAttemptsCount();
+    }
+
+    private refreshAttemptsCount(): void {
+        const quizId = this.activeQuizId();
+        if (!quizId) {
+            this.attemptsCount.set(0);
+            return;
+        }
+        this.quizAttemptsService.getByQuiz(quizId).pipe(takeUntil(this.destroy$)).subscribe({
+            next: (attempts) => this.attemptsCount.set(attempts.length),
+            error: () => this.attemptsCount.set(0),
+        });
     }
 
     private initializeAnswers(questions: QuizQuestion[]): void {
@@ -541,8 +563,8 @@ export class QuizComponent implements OnInit, OnDestroy {
             this.currentQuestionIndex.update(i => i + 1);
             this.selectedOptionId.set(null);
             this.showHint.set(false);
-            // Scroll to top when moving to next question
-            this.scrollService.scrollToTop();
+            // Responsive scroll after DOM updates
+            setTimeout(() => this.performResponsiveScroll(), 50);
             // Timer continues running - do not reset for each question
         }
     }
@@ -553,8 +575,54 @@ export class QuizComponent implements OnInit, OnDestroy {
             const answer = this.answers()[index];
             this.selectedOptionId.set(answer?.selectedOptionId || null);
             this.showHint.set(false);
-            // Scroll to top when jumping to a question
-            this.scrollService.scrollToTop();
+            // Responsive scroll after DOM updates
+            setTimeout(() => this.performResponsiveScroll(), 50);
+        }
+    }
+
+    private performResponsiveScroll(): void {
+        if (!this.isBrowser) {
+            return;
+        }
+
+        const width = window.innerWidth;
+        const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
+        // Dynamically measure sticky header height to prevent obscured elements
+        const header = document.querySelector('.site-header');
+        const headerHeight = header ? header.getBoundingClientRect().height : 80;
+
+        if (width >= 1024) {
+            // Large screens from 1024 and above: scroll to 3rem above .question-text, accounting for sticky header
+            const element = document.querySelector('.question-text');
+            if (element) {
+                const targetPosition = element.getBoundingClientRect().top + window.scrollY - (3 * rootFontSize) - headerHeight;
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+            }
+        } else if (width >= 768) {
+            // Tablet screens below 1024: scroll to 2rem below the questions sidebar, 30% higher
+            const sidebar = document.querySelector('.questions-sidebar');
+            if (sidebar) {
+                const rawPosition = sidebar.getBoundingClientRect().bottom + window.scrollY + (2 * rootFontSize) - headerHeight;
+                const targetPosition = Math.max(0, rawPosition * 0.7);
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+            } else {
+                // Fallback to container
+                const container = document.querySelector('.question-container');
+                if (container) {
+                    const rawPosition = container.getBoundingClientRect().top + window.scrollY - (2 * rootFontSize) - headerHeight;
+                    const targetPosition = Math.max(0, rawPosition * 0.7);
+                    window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+                }
+            }
+        } else {
+            // Mobile screens: scroll to 2rem above the question-container, 30% higher
+            const container = document.querySelector('.question-container');
+            if (container) {
+                const rawPosition = container.getBoundingClientRect().top + window.scrollY - (2 * rootFontSize) - headerHeight;
+                const targetPosition = Math.max(0, rawPosition * 0.7);
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+            }
         }
     }
 
@@ -578,8 +646,20 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.quizCompletionTime.set(Math.floor(completionTimeMs / 1000)); // Convert to seconds
 
         this.quizState.set('review');
-        // Scroll to top when quiz finishes and shows review
-        this.scrollService.scrollToTop();
+        
+        // Scroll to the quiz review title, accounting for the sticky header
+        setTimeout(() => {
+            if (!this.isBrowser) return;
+            const header = document.querySelector('.site-header');
+            const headerHeight = header ? header.getBoundingClientRect().height : 80;
+            const element = document.querySelector('.review-title');
+            if (element) {
+                const targetPosition = Math.max(0, element.getBoundingClientRect().top + window.scrollY - 30 - headerHeight);
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+            } else {
+                this.scrollService.scrollToTop();
+            }
+        }, 50);
 
         // Save quiz results to localStorage
         const storageKey = `quiz_${this.courseId}_${this.lessonId}`;
@@ -601,6 +681,7 @@ export class QuizComponent implements OnInit, OnDestroy {
         if (this.isBrowser) {
             localStorage.setItem(storageKey, JSON.stringify(quizData));
         }
+        this.restoredQuizResult = quizData; // Update restored result in-memory with current attempt results
 
         if (this.hasPassed()) {
             this.syncPassedQuizCompletion();
@@ -625,6 +706,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     retakeQuiz(): void {
+        this.restoredQuizResult = null; // Clear old result so it doesn't stain the new attempt
         this.resetAnswersToDefault();
         this.activeAttemptId.set(null);
         this.isFinishingQuiz = false;
@@ -632,9 +714,9 @@ export class QuizComponent implements OnInit, OnDestroy {
         this.currentQuestionIndex.set(0);
         this.selectedOptionId.set(null);
         this.showHint.set(false);
-        // Scroll to top when starting to retake quiz
         this.scrollService.scrollToTop();
         this.startQuiz();
+        setTimeout(() => this.refreshAttemptsCount(), 1000);
     }
 
     onPassedNextActionClick(): void {
@@ -1261,5 +1343,220 @@ export class QuizComponent implements OnInit, OnDestroy {
         // Start fresh quiz
         this.quizState.set('intro');
         this.scrollService.scrollToTop();
+    }
+
+    private generateMockQuestions(courseTitle: string): QuizQuestion[] {
+        const titleLower = (courseTitle || '').toLowerCase();
+
+        // Salah / Prayer
+        if (titleLower.includes('prayer') || titleLower.includes('salah') || titleLower.includes('worship') || titleLower.includes('ablution') || titleLower.includes('wudu')) {
+            return [
+                {
+                    id: 'mock-salah-q1',
+                    questionNumber: 1,
+                    questionText: 'How many times a day do Muslims perform the obligatory prayers?',
+                    options: [
+                        { id: 'mock-salah-q1-a', label: 'A', text: '3' },
+                        { id: 'mock-salah-q1-b', label: 'B', text: '4' },
+                        { id: 'mock-salah-q1-c', label: 'C', text: '5' },
+                        { id: 'mock-salah-q1-d', label: 'D', text: '6' }
+                    ],
+                    correctOptionId: 'mock-salah-q1-c',
+                    hint: 'It is the second pillar of Islam, performed throughout the day.'
+                },
+                {
+                    id: 'mock-salah-q2',
+                    questionNumber: 2,
+                    questionText: 'What is the spiritual purification before prayer called?',
+                    options: [
+                        { id: 'mock-salah-q2-a', label: 'A', text: 'Zakat' },
+                        { id: 'mock-salah-q2-b', label: 'B', text: 'Wudu (Ablution)' },
+                        { id: 'mock-salah-q2-c', label: 'C', text: 'Sawm' },
+                        { id: 'mock-salah-q2-d', label: 'D', text: 'Hajj' }
+                    ],
+                    correctOptionId: 'mock-salah-q2-b',
+                    hint: 'It involves washing hands, face, arms, head, and feet.'
+                },
+                {
+                    id: 'mock-salah-q3',
+                    questionNumber: 3,
+                    questionText: 'In which direction do Muslims face while praying?',
+                    options: [
+                        { id: 'mock-salah-q3-a', label: 'A', text: 'East' },
+                        { id: 'mock-salah-q3-b', label: 'B', text: 'West' },
+                        { id: 'mock-salah-q3-c', label: 'C', text: 'Towards Jerusalem' },
+                        { id: 'mock-salah-q3-d', label: 'D', text: 'Towards the Kaaba in Mecca' }
+                    ],
+                    correctOptionId: 'mock-salah-q3-d',
+                    hint: 'This direction is known as the Qibla.'
+                },
+                {
+                    id: 'mock-salah-q4',
+                    questionNumber: 4,
+                    questionText: 'Which is the first obligatory prayer of the day?',
+                    options: [
+                        { id: 'mock-salah-q4-a', label: 'A', text: 'Fajr' },
+                        { id: 'mock-salah-q4-b', label: 'B', text: 'Dhuhr' },
+                        { id: 'mock-salah-q4-c', label: 'C', text: 'Asr' },
+                        { id: 'mock-salah-q4-d', label: 'D', text: 'Maghrib' }
+                    ],
+                    correctOptionId: 'mock-salah-q4-a',
+                    hint: 'It is performed at dawn, before sunrise.'
+                },
+                {
+                    id: 'mock-salah-q5',
+                    questionNumber: 5,
+                    questionText: 'What is the Friday congregational prayer called?',
+                    options: [
+                        { id: 'mock-salah-q5-a', label: 'A', text: 'Eid prayer' },
+                        { id: 'mock-salah-q5-b', label: 'B', text: 'Jumu\'ah prayer' },
+                        { id: 'mock-salah-q5-c', label: 'C', text: 'Taraweeh prayer' },
+                        { id: 'mock-salah-q5-d', label: 'D', text: 'Witr prayer' }
+                    ],
+                    correctOptionId: 'mock-salah-q5-b',
+                    hint: 'It replaces the Dhuhr prayer on Fridays and is accompanied by a sermon.'
+                }
+            ];
+        }
+
+        // Social Topics / Women / Ethics
+        if (titleLower.includes('women') || titleLower.includes('ethic') || titleLower.includes('social') || titleLower.includes('society') || titleLower.includes('charity') || titleLower.includes('zakat') || titleLower.includes('family') || titleLower.includes('community')) {
+            return [
+                {
+                    id: 'mock-ethics-q1',
+                    questionNumber: 1,
+                    questionText: 'What does the third pillar of Islam, Zakat, refer to?',
+                    options: [
+                        { id: 'mock-ethics-q1-a', label: 'A', text: 'Pilgrimage to Mecca' },
+                        { id: 'mock-ethics-q1-b', label: 'B', text: 'Obligatory charity for the needy' },
+                        { id: 'mock-ethics-q1-c', label: 'C', text: 'Fasting in Ramadan' },
+                        { id: 'mock-ethics-q1-d', label: 'D', text: 'Declaration of faith' }
+                    ],
+                    correctOptionId: 'mock-ethics-q1-b',
+                    hint: 'It is a form of social welfare paid annually by wealthy Muslims.'
+                },
+                {
+                    id: 'mock-ethics-q2',
+                    questionNumber: 2,
+                    questionText: 'How does Islam view the status of women in terms of spiritual reward and moral responsibility?',
+                    options: [
+                        { id: 'mock-ethics-q2-a', label: 'A', text: 'Women have lesser rewards' },
+                        { id: 'mock-ethics-q2-b', label: 'B', text: 'They are equal to men' },
+                        { id: 'mock-ethics-q2-c', label: 'C', text: 'They have no moral responsibility' },
+                        { id: 'mock-ethics-q2-d', label: 'D', text: 'It is not specified' }
+                    ],
+                    correctOptionId: 'mock-ethics-q2-b',
+                    hint: 'Both receive equal reward for their good deeds and are equally responsible.'
+                },
+                {
+                    id: 'mock-ethics-q3',
+                    questionNumber: 3,
+                    questionText: 'What is the most recommended way to treat parents in Islam?',
+                    options: [
+                        { id: 'mock-ethics-q3-a', label: 'A', text: 'To ignore them' },
+                        { id: 'mock-ethics-q3-b', label: 'B', text: 'To treat them with utmost kindness and respect' },
+                        { id: 'mock-ethics-q3-c', label: 'C', text: 'To prioritize others over them' },
+                        { id: 'mock-ethics-q3-d', label: 'D', text: 'To keep formal relations' }
+                    ],
+                    correctOptionId: 'mock-ethics-q3-b',
+                    hint: 'The Quran strictly emphasizes kindness and forbids saying even "Uff" to them.'
+                },
+                {
+                    id: 'mock-ethics-q4',
+                    questionNumber: 4,
+                    questionText: 'Which prophet is described as a role model of mercy for all creation in the Quran?',
+                    options: [
+                        { id: 'mock-ethics-q4-a', label: 'A', text: 'Prophet Moses (pbuh)' },
+                        { id: 'mock-ethics-q4-b', label: 'B', text: 'Prophet Jesus (pbuh)' },
+                        { id: 'mock-ethics-q4-c', label: 'C', text: 'Prophet Muhammad (pbuh)' },
+                        { id: 'mock-ethics-q4-d', label: 'D', text: 'Prophet Abraham (pbuh)' }
+                    ],
+                    correctOptionId: 'mock-ethics-q4-c',
+                    hint: 'The Quran states: "And We have not sent you except as a mercy to the worlds."'
+                },
+                {
+                    id: 'mock-ethics-q5',
+                    questionNumber: 5,
+                    questionText: 'What is the Arabic word for good character and moral ethics in Islam?',
+                    options: [
+                        { id: 'mock-ethics-q5-a', label: 'A', text: 'Fiqh' },
+                        { id: 'mock-ethics-q5-b', label: 'B', text: 'Akhlaq' },
+                        { id: 'mock-ethics-q5-c', label: 'C', text: 'Aqeedah' },
+                        { id: 'mock-ethics-q5-d', label: 'D', text: 'Hadith' }
+                    ],
+                    correctOptionId: 'mock-ethics-q5-b',
+                    hint: 'The Prophet (pbuh) said: "I was sent to perfect good character."'
+                }
+            ];
+        }
+
+        // Default: Faith & Creed / General Islam
+        return [
+            {
+                id: 'mock-creed-q1',
+                questionNumber: 1,
+                questionText: 'What is the first pillar of Islam?',
+                options: [
+                    { id: 'mock-creed-q1-a', label: 'A', text: 'Salah (Prayer)' },
+                    { id: 'mock-creed-q1-b', label: 'B', text: 'Shahada (Declaration of Faith)' },
+                    { id: 'mock-creed-q1-c', label: 'C', text: 'Zakat (Charity)' },
+                    { id: 'mock-creed-q1-d', label: 'D', text: 'Sawm (Fasting)' }
+                ],
+                correctOptionId: 'mock-creed-q1-b',
+                hint: 'It is the declaration of belief in Allah\'s oneness and Muhammad\'s prophethood.'
+            },
+            {
+                id: 'mock-creed-q2',
+                questionNumber: 2,
+                questionText: 'How many pillars of faith (Iman) are there in Islam?',
+                options: [
+                    { id: 'mock-creed-q2-a', label: 'A', text: '5' },
+                    { id: 'mock-creed-q2-b', label: 'B', text: '6' },
+                    { id: 'mock-creed-q2-c', label: 'C', text: '7' },
+                    { id: 'mock-creed-q2-d', label: 'D', text: '8' }
+                ],
+                correctOptionId: 'mock-creed-q2-b',
+                hint: 'Belief in Allah, His Angels, His Books, His Messengers, the Last Day, and Divine Decree.'
+            },
+            {
+                id: 'mock-creed-q3',
+                questionNumber: 3,
+                questionText: 'What does the term "Tawheed" refer to?',
+                options: [
+                    { id: 'mock-creed-q3-a', label: 'A', text: 'The oneness of Allah' },
+                    { id: 'mock-creed-q3-b', label: 'B', text: 'Daily prayers' },
+                    { id: 'mock-creed-q3-c', label: 'C', text: 'Pilgrimage to Mecca' },
+                    { id: 'mock-creed-q3-d', label: 'D', text: 'Fasting in Ramadan' }
+                ],
+                correctOptionId: 'mock-creed-q3-a',
+                hint: 'It is the defining concept of monotheism in Islam.'
+            },
+            {
+                id: 'mock-creed-q4',
+                questionNumber: 4,
+                questionText: 'Belief in which of the following is one of the pillars of Faith?',
+                options: [
+                    { id: 'mock-creed-q4-a', label: 'A', text: 'The companions' },
+                    { id: 'mock-creed-q4-b', label: 'B', text: 'The angels' },
+                    { id: 'mock-creed-q4-c', label: 'C', text: 'Islamic architecture' },
+                    { id: 'mock-creed-q4-d', label: 'D', text: 'Lunar calendar' }
+                ],
+                correctOptionId: 'mock-creed-q4-b',
+                hint: 'Belief in angels is the second pillar of faith (Iman).'
+            },
+            {
+                id: 'mock-creed-q5',
+                questionNumber: 5,
+                questionText: 'What is the primary holy scripture revealed to Prophet Muhammad (pbuh)?',
+                options: [
+                    { id: 'mock-creed-q5-a', label: 'A', text: 'Torah' },
+                    { id: 'mock-creed-q5-b', label: 'B', text: 'Gospel' },
+                    { id: 'mock-creed-q5-c', label: 'C', text: 'Psalms' },
+                    { id: 'mock-creed-q5-d', label: 'D', text: 'Quran' }
+                ],
+                correctOptionId: 'mock-creed-q5-d',
+                hint: 'It is the final, unchanged revelation from Allah.'
+            }
+        ];
     }
 }

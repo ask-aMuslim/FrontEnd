@@ -212,10 +212,12 @@
                 (courseClick)="onCourseClick($event)"
               >
               </app-course-tree>
-              <div class="stage-footer">
-                <div class="stage-divider"></div>
-                <p class="stage-description">{{ stage.description }}</p>
-              </div>
+              @if (stage.description) {
+                <div class="stage-footer">
+                  <div class="stage-divider"></div>
+                  <p class="stage-description">{{ stage.description }}</p>
+                </div>
+              }
             </div>
           </div>
           @if (!isLast) {

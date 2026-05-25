@@ -109,7 +109,7 @@ export const routes: Routes = [
             (m) => m.HomeComponent,
           ),
         title: 'Home',
-        resolve: { heroBubbles: homeResolver },
+        resolve: { homeData: homeResolver },
       },
       {
         path: 'certificates',
@@ -158,14 +158,14 @@ export const routes: Routes = [
           import('./pages/mosques/mosques.component').then((m) => m.MosquesComponent),
         title: 'Mosques',
       },
-      {
-        path: 'donation',
-        loadComponent: () =>
-          import('./pages/donation/donation.component').then(
-            (m) => m.DonationComponent,
-          ),
-        title: 'Donate to Change Lives',
-      },
+       {
+         path: 'donate',
+         loadComponent: () =>
+           import('./pages/donation/donation.component').then(
+             (m) => m.DonationComponent,
+           ),
+         title: 'Donate to Change Lives',
+       },
       {
         path: 'question-and-answer',
         loadComponent: () =>

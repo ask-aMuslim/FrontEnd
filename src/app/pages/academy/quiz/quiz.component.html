@@ -382,6 +382,16 @@
                     </div>
                   }
                   <div class="review-divider"></div>
+                  <div class="quiz-review-stats">
+                    <div class="quiz-stat-card quiz-stat-card--correct">
+                      <span class="quiz-stat-label">Correct</span>
+                      <strong class="quiz-stat-count">{{ effectiveCorrectAnswersCount() }}</strong>
+                    </div>
+                    <div class="quiz-stat-card quiz-stat-card--incorrect">
+                      <span class="quiz-stat-label">Incorrect</span>
+                      <strong class="quiz-stat-count">{{ wrongAnswersCount() }}</strong>
+                    </div>
+                  </div>
                   <div class="questions-review">
                     @for (
                       question of questions();
@@ -508,7 +518,7 @@
                   class="btn btn-primary"
                   (click)="retakeQuiz()"
                 >
-                  Retake Quiz
+                  Retake Quiz {{ nextAttemptLabel() }}
                 </button>
 
                 @if (hasSuccessfulDegree()) {
@@ -699,7 +709,7 @@
                   class="btn btn-primary"
                   (click)="retakeQuizFromResults()"
                 >
-                  Retake Quiz
+                  Retake Quiz {{ nextAttemptLabel() }}
                 </button>
 
                 @if (hasSuccessfulDegree()) {

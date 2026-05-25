@@ -182,7 +182,7 @@ export const askQaResolver: ResolveFn<AskQaResolvedData | null> = (route: Activa
 
       // Fetch all questions for the determined category
       const pageSize = 10;
-      const params: any = { pageNumber: 1, pageSize };
+      const params: any = { pageNumber: 1, pageSize, isPublished: true };
       if (selectedTagId) {
         params.tagIds = selectedTagId;
       }

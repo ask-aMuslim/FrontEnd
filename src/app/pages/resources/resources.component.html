@@ -170,25 +170,6 @@
             </div>
           </div>
 
-          <div
-            class="resources-gallery__drive-cta"
-            *ngIf="isDawahGallery(gallery)"
-          >
-            <a
-              class="resources-button resources-button--outline resources-button--drive"
-              [href]="dawahDriveUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="AAM Google Drive"
-            >
-              <span>AAM Google Drive</span>
-              <span
-                class="resources-button__link-icon"
-                aria-hidden="true"
-              ></span>
-            </a>
-          </div>
-
           <div class="resources-gallery__footer" *ngIf="canLoadMore(gallery)">
             <button
               type="button"

@@ -7,7 +7,7 @@ import { SKIP_LOADING } from '../../core/http/context-tokens';
 export interface LessonProgressPayload {
     courseId: string;
     lessonId: string;
-    progressPercentage?: number;
+    progressPercentage?: number | null;
     markAsRead?: boolean;
     /**
      * Backward-compatible alias used by older callers while the new API shape is rolled out.
@@ -46,14 +46,7 @@ export class LessonProgressFacade {
     }
 
     private normalizePayload(payload: LessonProgressPayload): LessonProgressPayload {
-        if (payload.markAsRead) {
-            return {
-                courseId: payload.courseId,
-                lessonId: payload.lessonId,
-                markAsRead: true,
-            };
-        }
-
+        const markAsRead = !!payload.markAsRead;
         const percentage = this.normalizePercentage(
             payload.progressPercentage ?? payload.videoProgressPercentage ?? 0,
         );
@@ -61,7 +54,8 @@ export class LessonProgressFacade {
         return {
             courseId: payload.courseId,
             lessonId: payload.lessonId,
-            progressPercentage: percentage,
+            markAsRead,
+            progressPercentage: markAsRead ? null : percentage,
         };
     }
 

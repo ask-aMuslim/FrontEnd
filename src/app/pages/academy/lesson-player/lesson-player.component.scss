@@ -91,6 +91,11 @@
       background 0.2s,
       transform 0.15s;
 
+    @media (max-width: 1024px) {
+      inline-size: 4rem;
+      block-size: 4rem;
+    }
+
     &:hover {
       background: var(--colors-green-200, #0c4e2d);
     }
@@ -189,26 +194,28 @@
   .audio-progress-group {
     position: relative;
     inline-size: 100%;
-    block-size: 1rem;
+    block-size: 1.5rem;
     min-inline-size: 12rem;
     max-inline-size: 31.6875rem;
     flex: 1 1 31.6875rem;
+    display: flex;
+    align-items: center;
   }
 
-  .audio-progress-track {
-    inline-size: 100%;
-    block-size: 1rem;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #eafbf2;
-  }
+   .audio-progress-track {
+     inline-size: 100%;
+     block-size: 12px;
+     border-radius: 999px;
+     overflow: hidden;
+     background: #ffffff;
+   }
 
-  .audio-progress-fill {
-    block-size: 100%;
-    inline-size: 0;
-    border-radius: 999px;
-    background: var(--colors-green-100, #156b40);
-  }
+   .audio-progress-fill {
+     block-size: 100%;
+     inline-size: 0;
+     border-radius: 999px;
+     background: var(--colors-green-100, #156b40);
+   }
 
   .audio-progress-input {
     position: absolute;
@@ -231,7 +238,7 @@
     white-space: nowrap;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1200px) {
     .audio-controls-panel {
       align-items: flex-start;
       flex-direction: column;
@@ -936,6 +943,63 @@
 
 .feedback-submission-message--error {
   color: var(--color-critical, #f44336);
+}
+
+.feedback-success-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--color-card-surface-primary, #e8f5e8);
+  border: 1px solid rgba(21, 107, 64, 0.15);
+  border-radius: 1rem;
+  gap: 1.25rem;
+  animation: fadeIn 0.4s ease-out;
+
+  .success-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    background: #fff;
+    border-radius: 50%;
+    color: var(--colors-green-100, #156b40);
+    box-shadow: 0 4px 12px rgba(21, 107, 64, 0.1);
+    
+    svg {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+  }
+
+  .success-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--colors-rare-grays-100, #1a1a1a);
+    margin: 0;
+  }
+
+  .success-description {
+    font-size: 0.938rem;
+    line-height: 1.6;
+    color: var(--colors-rare-grays-80, #343a40);
+    max-width: 28rem;
+    margin: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 // ─── Article Sections ───

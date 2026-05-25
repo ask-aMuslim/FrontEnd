@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, catchError, switchMap } from 'rxjs/operators';
+import { CourseFacade } from '../../api/facades/course.facade';
 import { LessonType } from '../models/interfaces/enums.model';
 import {
   LessonContent,
@@ -33,6 +34,7 @@ export interface LessonNoteItem {
   providedIn: 'root'
 })
 export class LessonContentService {
+  private readonly courseFacade = inject(CourseFacade);
 
   constructor(
     private readonly lessonsService: LessonsService
@@ -110,9 +112,12 @@ export class LessonContentService {
    * Get all lessons in a course for sidebar display
    */
   getCourseLessons(courseId: Id): Observable<LessonMetadata[]> {
-    return this.lessonsService.getByCourseId(courseId).pipe(
-      map(lessons => {
-        const withOrder = lessons
+    return this.courseFacade.getCourseById(String(courseId)).pipe(
+      map(course => {
+        const rawLessons = course && Array.isArray((course as any).lessons)
+            ? (course as any).lessons as LessonReadDto[]
+            : [];
+        const withOrder = rawLessons
           .filter((lesson) => lesson.isPublished !== false) as (LessonReadDto & { order?: number })[];
         const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         return sortedLessons.map((lesson, index) => this.mapLessonDtoToMetadata(lesson, index + 1));

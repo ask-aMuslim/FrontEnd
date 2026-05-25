@@ -48,7 +48,7 @@
     [class.lessons-list--scrollable]="shouldEnableScroll"
   >
     @for (lesson of lessons; track trackByLessonId($index, lesson)) {
-      @if (showReadyDividerBeforeQuiz && lesson.type === "quiz") {
+      @if (showReadyDividerBeforeQuiz && lesson.type === "quiz" && lessons[$index - 1]?.type !== "quiz") {
         <div
           class="ready-divider"
           [class.ready-divider--highlight]="

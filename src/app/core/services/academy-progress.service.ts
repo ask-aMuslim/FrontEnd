@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, BehaviorSubject, of, forkJoin, from } from 'rxjs';
-import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, forkJoin, from, combineLatest } from 'rxjs';
+import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize, timeout } from 'rxjs/operators';
 import {
     StudentProgress,
     StageProgress,
@@ -406,8 +406,14 @@ export class AcademyProgressService {
      * Fetch progress for a single course directly without triggering global student progress state.
      */
     getTargetedCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
+        const currentProgress = this.progressSubject.value;
+        if (currentProgress) {
+            return of(currentProgress.courseProgress.find((c) => c.courseId === courseId));
+        }
+
         return this.getCourseProgress(courseId).pipe(
             take(1),
+            timeout(1000),
             catchError(() => of(undefined))
         );
     }
@@ -833,6 +839,9 @@ export class AcademyProgressService {
             )
         );
     }
+    
+    private readonly courseDirectCache = new Map<string, import('../../api/facades/course.facade').CourseReadByIdDto>();
+    private readonly courseQuizzesCache = new Map<string, import('../../api/facades/quiz.facade').QuizReadDto[]>();
 
     /**
      * Fetches a course directly from GET /api/Courses/:id without triggering
@@ -840,8 +849,37 @@ export class AcademyProgressService {
      * Use this for the course detail page where only the course data is needed.
      */
     getCourseByIdDirect(courseId: string): Observable<import('../../api/facades/course.facade').CourseReadByIdDto | null> {
+        const cached = this.courseDirectCache.get(courseId);
+        if (cached) {
+            return of(cached);
+        }
         return this.courseFacade.getCourseById(courseId).pipe(
+            tap((course) => {
+                if (course) {
+                    this.courseDirectCache.set(courseId, course);
+                }
+            }),
             catchError(() => of(null))
+        );
+    }
+
+    /**
+     * Fetches and caches quizzes for a specific course.
+     */
+    getCourseQuizzesDirect(courseId: string): Observable<import('../../api/facades/quiz.facade').QuizReadDto[]> {
+        const cached = this.courseQuizzesCache.get(courseId);
+        if (cached) {
+            return of(cached);
+        }
+        return this.quizFacade.getAllQuizzes({
+            courseId: courseId
+        }).pipe(
+            tap((quizzes) => {
+                if (quizzes) {
+                    this.courseQuizzesCache.set(courseId, quizzes);
+                }
+            }),
+            catchError(() => of([]))
         );
     }
 
@@ -858,10 +896,12 @@ export class AcademyProgressService {
         }
 
         const request$ = this.lessonFacade.getCourseLessons(courseId).pipe(
-            map(lessons => lessons
-                .filter((lesson) => lesson.isPublished !== false)
-                .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))
-            ),
+            map(rawLessons => {
+                const lessons = Array.isArray(rawLessons) ? rawLessons : [];
+                return lessons
+                    .filter((lesson) => lesson.isPublished !== false)
+                    .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index));
+            }),
             switchMap((lessons) => this.hydrateVideoDurations(lessons)),
             tap(lessons => {
                 this.lessonsCache.set(courseId, lessons);
@@ -911,10 +951,11 @@ export class AcademyProgressService {
      * Uses API lessons and derives an initial progress projection.
      */
     getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
-        return forkJoin({
-            apiLessons: this.getAcademyLessons(courseId),
+        return combineLatest({
+            apiLessons: this.getAcademyLessons(courseId).pipe(take(1)),
             courseProgress: this.getTargetedCourseProgress(courseId).pipe(catchError(() => of(null))),
         }).pipe(
+            take(1),
             map(({ apiLessons, courseProgress }) => {
                 const sortedLessons = [...apiLessons].sort((a, b) => a.order - b.order);
                 const completedByApi = Math.max(
@@ -1157,10 +1198,8 @@ export class AcademyProgressService {
             coursesByStage.set(c.stageId, list);
         });
 
-        const unlockedStageIds = new Set<number>();
-        if (sortedStageIds.length > 0) {
-            unlockedStageIds.add(sortedStageIds[0]); // Stage 1 is always unlocked
-        }
+        // Unlock all stages by default so progress doesn't depend on the previous stage quiz for now
+        const unlockedStageIds = new Set<number>(sortedStageIds);
 
         const allCourseProgress: CourseProgress[] = [];
         let isCurrentStageUnlocked = true;
@@ -2270,13 +2309,53 @@ export class AcademyProgressService {
         return `${hours}h ${minutes}m`;
     }
 
-    private resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
+    private formatPrettyDuration(rawDuration: string, type: AcademyLesson['type']): string {
+        const normalized = rawDuration.trim().toLowerCase();
+        if (!normalized || normalized === '0:00' || normalized === '00:00:00') {
+            return type === 'article' || type === 'document' ? '~5min' : '5 min';
+        }
+        
+        // If it's already a clean duration like '~5min' or '5 min' or contains 'min' or 'm', return it
+        if (normalized.includes('min') || normalized.endsWith('m') || normalized.includes('hr')) {
+            return rawDuration;
+        }
+
+        // Parse HH:MM:SS or MM:SS
+        const parts = normalized.split(':').map(Number);
+        if (parts.every(p => !Number.isNaN(p))) {
+            let totalSeconds = 0;
+            if (parts.length === 3) {
+                totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else if (parts.length === 2) {
+                totalSeconds = parts[0] * 60 + parts[1];
+            } else if (parts.length === 1) {
+                totalSeconds = parts[0];
+            }
+
+            if (totalSeconds > 0) {
+                const totalMinutes = Math.round(totalSeconds / 60);
+                if (totalMinutes < 1) {
+                    return `${totalSeconds}s`;
+                }
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m`;
+                }
+                return `${minutes} min`;
+            }
+        }
+
+        return rawDuration;
+    }
+
+    public resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
         if (type === 'quiz') {
             return 'Assessment';
         }
 
         if (type === 'article' || type === 'document') {
-            return '~5 min';
+            return '~5min';
         }
 
         const supportsPlaybackDuration = type === 'video' || type === 'audio';
@@ -2288,26 +2367,28 @@ export class AcademyProgressService {
 
         const durationFromSeconds = this.readNumericDurationLabel(
             rawLesson,
-            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds'],
+            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds', 'lessonDurationInSeconds'],
             1,
         );
         if (durationFromSeconds) {
-            return durationFromSeconds;
+            return this.formatPrettyDuration(durationFromSeconds, type);
         }
 
         const durationFromMinutes = this.readNumericDurationLabel(
             rawLesson,
-            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes'],
+            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes', 'lessonDurationInMinutes'],
             60,
         );
         if (durationFromMinutes) {
-            return durationFromMinutes;
+            return this.formatPrettyDuration(durationFromMinutes, type);
         }
 
-        return this.readStringDurationLabel(
+        const stringDuration = this.readStringDurationLabel(
             rawLesson,
-            ['duration', 'videoDuration', 'durationLabel', 'length'],
+            ['lessonDuration', 'duration', 'videoDuration', 'durationLabel', 'length'],
         ) ?? '0:00';
+
+        return this.formatPrettyDuration(stringDuration, type);
     }
 
     private readNumericDurationLabel(
@@ -2476,11 +2557,7 @@ export class AcademyProgressService {
         mediaUrl: string,
         mediaType: 'video' | 'audio',
     ): Observable<number> {
-        if (!this.isBrowser) {
-            return of(0);
-        }
-
-        return this.measureHtmlMediaDurationSeconds(mediaUrl, mediaType);
+        return of(0);
     }
 
     private measureHtmlMediaDurationSeconds(
@@ -2688,11 +2765,7 @@ export class AcademyProgressService {
                 return forkJoin({
                     enrollmentsByCourseId: this.getEnrollmentRecordsByCourseId(studentId).pipe(take(1)),
                     lessons: this.getAcademyLessons(courseId).pipe(take(1)),
-                    quizzes: this.quizFacade.getAllQuizzes({
-                        courseId,
-                        pageNumber: 1,
-                        pageSize: 200,
-                    }).pipe(catchError(() => of([] as QuizReadDto[]))),
+                    quizzes: this.getCourseQuizzesDirect(courseId).pipe(take(1), catchError(() => of([] as QuizReadDto[]))),
                 }).pipe(
                     switchMap(({ enrollmentsByCourseId, lessons, quizzes }) => {
                         const enrollment = enrollmentsByCourseId.get(courseId);

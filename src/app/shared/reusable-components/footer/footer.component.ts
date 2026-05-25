@@ -131,14 +131,14 @@ export class FooterComponent {
     {
       label: 'App Store',
       icon: '/icons/icons-social-apps/apple.svg',
-      text: 'Download on App Store',
+      text: 'Soon on App Store',
       href: '#app-store',
       qrCode: '/footer/qr-code.svg',
     },
     {
       label: 'Google Play',
       icon: '/icons/icons-social-apps/google-play.svg',
-      text: 'Get our App from Google Play',
+      text: 'Soon on Play Store',
       href: '#google-play',
       qrCode: '/footer/qr-code.svg',
     },

@@ -31,6 +31,15 @@ export class HeaderComponent {
     { initialValue: this.isQnaSectionUrl(this.router.url) },
   );
 
+  protected readonly isDonatePage = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => this.isDonateUrl(event.urlAfterRedirects)),
+      startWith(this.isDonateUrl(this.router.url)),
+    ),
+    { initialValue: this.isDonateUrl(this.router.url) },
+  );
+
   protected readonly navLinks: NavLink[] = [
     { label: 'Home', path: '/home' },
     { label: 'About', path: '/about' },
@@ -91,5 +100,9 @@ export class HeaderComponent {
 
   isQnaSectionUrl(url: string): boolean {
     return url.startsWith('/question-and-answer');
+  }
+
+  isDonateUrl(url: string): boolean {
+    return url.startsWith('/donate');
   }
 }

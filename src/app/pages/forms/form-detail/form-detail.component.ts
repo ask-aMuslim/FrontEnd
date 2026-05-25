@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
@@ -31,6 +31,8 @@ import {
   extractE164,
 } from './phone-number.formatter';
 
+import { environment } from '../../../../environments/environment';
+
 interface FormFieldOptionView extends FormFieldOptionDto {
   inputId: string;
 }
@@ -59,6 +61,11 @@ interface FormFieldView {
   phoneSearchQuery?: string;
 }
 
+declare const grecaptcha: {
+  ready: (callback: () => void) => void;
+  execute: (siteKey: string, options?: { action?: string }) => Promise<string>;
+} | undefined;
+
 @Component({
   selector: 'app-form-detail',
   standalone: true,
@@ -67,7 +74,7 @@ interface FormFieldView {
   styleUrls: ['./form-detail.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FormDetailComponent implements OnInit {
+export class FormDetailComponent implements OnInit, OnDestroy {
   private static readonly loadFailureMessage = 'Unable to load this form right now.';
   private static readonly submitFailureMessage = 'Unable to submit your form right now.';
   private static readonly textAreaRows = 6;
@@ -103,6 +110,12 @@ export class FormDetailComponent implements OnInit {
   readonly isSubmitting = signal(false);
   readonly submitError = signal<string | null>(null);
   readonly submissionId = signal<string | null>(null);
+
+   private recaptchaPromise: Promise<void> | null = null;
+
+  get recaptchaSiteKey(): string {
+    return environment.recaptchaSiteKey ?? '';
+  }
 
   readonly form = signal<FormDto | null>(null);
   readonly formGroup = signal<FormGroup | null>(null);
@@ -148,6 +161,14 @@ export class FormDetailComponent implements OnInit {
 
       this.loadForm(id);
     });
+
+    if (environment.recaptchaSiteKey) {
+      this.loadRecaptchaScript();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.toggleRecaptchaBadge(false);
   }
 
   goBack(): void {
@@ -172,8 +193,27 @@ export class FormDetailComponent implements OnInit {
     // Build FormData with answersJson and files
     const formData = this.buildFormDataPayload();
 
+    if (environment.recaptchaSiteKey) {
+      this.getRecaptchaToken().then((token: string) => {
+        if (!token || token.trim() === '') {
+          this.submitError.set('Please complete the security verification.');
+          this.isSubmitting.set(false);
+          return;
+        }
+        formData.append('recaptchaToken', token);
+        this.submitFormWithPayload(form.id, formData);
+       }).catch(() => {
+         this.submitError.set('Security verification failed. Please try again.');
+         this.isSubmitting.set(false);
+       });
+    } else {
+      this.submitFormWithPayload(form.id, formData);
+    }
+  }
+
+  private submitFormWithPayload(formId: string, formData: FormData): void {
     this.isSubmitting.set(true);
-    this.formsFacade.submitFormWithFiles(form.id, formData).subscribe({
+    this.formsFacade.submitFormWithFiles(formId, formData).subscribe({
       next: (submissionId) => {
         this.submissionId.set(submissionId ?? null);
         this.isSubmitting.set(false);
@@ -740,6 +780,63 @@ export class FormDetailComponent implements OnInit {
     }
 
     return [];
+  }
+
+  private loadRecaptchaScript(): void {
+    if (this.recaptchaPromise) {
+      this.toggleRecaptchaBadge(true);
+      return;
+    }
+    if (typeof document === 'undefined') {
+      return;
+    }
+    this.recaptchaPromise = new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://www.google.com/recaptcha/api.js?render=${environment.recaptchaSiteKey}`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        this.toggleRecaptchaBadge(true);
+        setTimeout(() => this.toggleRecaptchaBadge(true), 200);
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Failed to load reCAPTCHA'));
+      document.head.appendChild(script);
+    });
+  }
+
+  private getRecaptchaToken(): Promise<string> {
+    const executeToken = (resolve: (value: string) => void, reject: (reason?: any) => void) => {
+      if (typeof grecaptcha === 'undefined') {
+        reject(new Error('reCAPTCHA not ready'));
+        return;
+      }
+      grecaptcha.ready(() => {
+        grecaptcha.execute(environment.recaptchaSiteKey, { action: 'submit_form' })
+          .then((token: string) => resolve(token))
+          .catch((e: unknown) => reject(e));
+      });
+    };
+
+    return new Promise<string>((resolve, reject) => {
+      if (this.recaptchaPromise) {
+        this.recaptchaPromise
+          .then(() => executeToken(resolve, reject))
+          .catch((err) => reject(err));
+      } else {
+        executeToken(resolve, reject);
+      }
+    });
+  }
+
+  private toggleRecaptchaBadge(show: boolean): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null;
+    if (badge) {
+      badge.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
+    }
   }
 
   private buildFormDataPayload(): FormData {

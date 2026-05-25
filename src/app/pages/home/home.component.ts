@@ -81,7 +81,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     { value: '250+', label: 'Scholars & Teachers', icon: 'scholars' },
   ];
 
-  @Input() heroBubbles: string[] = [];
+  @Input() homeData!: {
+    heroBubbles: string[];
+    faithPillarQuestionIds: Record<string, string>;
+    islamPillarQuestionIds: Record<string, string>;
+  };
+
+  protected get heroBubbles(): string[] {
+    return this.homeData?.heroBubbles ?? [];
+  }
 
   protected readonly featureCards: FeatureCard[] = [
     {
@@ -193,19 +201,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly faithPillarTag = '6 Pillars of Faith';
   protected readonly islamPillarTag = '5 Pillars of Islam';
 
-  private readonly islamPillarQuestionIds: Record<string, string> = {
-    'Shahada': '019e2fcd-6e95-7cbf-83f8-fb2da9f4c8df',
-    'Salah': '019e2fcd-d029-76c4-93a0-db33b9c07436',
-    'Zakat': '019e2fcf-33c2-741c-9dfb-2588fb1706a5',
-    'Sawm': '019e2fcf-a5f8-7017-9d44-1851a15821c6',
-    'Hajj': '019e2fd0-6564-76bd-b09d-308d62caa379',
-  };
-
   protected getPillarQuestionQueryParams(pillarName: string): { id: string; categories: string } {
-    const questionId = this.islamPillarQuestionIds[pillarName] ?? '';
+    const questionId = this.homeData?.islamPillarQuestionIds?.[pillarName] ?? '';
     return {
       id: questionId,
       categories: JSON.stringify([this.islamPillarTag]),
+    };
+  }
+
+  protected getFaithPillarQueryParams(pillarName: string): { id: string; categories: string } {
+    const questionId = this.homeData?.faithPillarQuestionIds?.[pillarName] ?? '';
+    return {
+      id: questionId,
+      categories: JSON.stringify([this.faithPillarTag]),
     };
   }
 

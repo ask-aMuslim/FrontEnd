@@ -199,11 +199,12 @@ export class VideoProgressService {
             return existingState;
         }
 
+        const savedProgress = this.getSavedProgressPercentage(lessonId);
         const initialState: LessonSyncState = {
-            lastSyncedPercentage: 0,
-            lastSyncedAt: 0,
+            lastSyncedPercentage: savedProgress,
+            lastSyncedAt: Date.now(),
             inFlight: false,
-            completionSynced: false,
+            completionSynced: this.isLessonCompleted(lessonId),
             pendingSnapshot: null,
         };
 
