@@ -1,0 +1,19 @@
+# AskAMuslim
+> An authoritative, respectful, and modern digital platform for seeking Islamic answers and locating local mosque resources.
+
+## Main sections
+- [Home](https://askamuslim.com/home): Landing page highlighting main features, faith and Islam pillars, targeted audience selectors (e.g., seekers, born Muslims, new Muslims) and interactive suggestion bubbles.
+- [Mosques](https://askamuslim.com/mosques): Find local mosques, daily prayer timings, Friday sermon details, women's prayer area availability, verified badges, and mapping features.
+- [Question & Answer](https://askamuslim.com/question-and-answer/topics): An extensive library of Islamic Q&As, categorized by topic, searchable, and verified by scholars.
+- [Academy](https://askamuslim.com/academy): Structured Islamic courses, quizzes, progression maps, and Certificates of Achievement for learners.
+- [Events](https://askamuslim.com/events): Online and offline scholarly sessions, seminars, and lectures with details and recordings.
+- [Resources](https://askamuslim.com/resources): Articles, blogs, guides, and real story collections.
+- [Donate](https://askamuslim.com/donate): Charitable donation gateway supporting Islamic educational and community services.
+- [About](https://askamuslim.com/about): Information about the AskAMuslim mission, values, scholars, and team.
+- [Contact](https://askamuslim.com/contact): Secure contact form for inquiries and scholar consultation requests.
+
+## Key facts
+- Strict compliance with authentic Islamic knowledge sources (Quran and Sunnah).
+- Built with Poppins & IBM Plex Sans Arabic modern typography, forest green (#156b40) and islamic gold (#ecc140) color palette.
+- Accessible directory of local mosques with precise geographical coordinates, verified badges, and facilities mapping.
+- Dynamically rendered metadata & structured schema JSON-LD supporting search & generative engines (GEO).

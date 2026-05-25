@@ -17,6 +17,7 @@ import { take } from 'rxjs';
 import type { LayerGroup, Map as LeafletMap } from 'leaflet';
 import { MosqueDto, MosquesFacade } from '../../../api/facades/mosques.facade';
 import { toApiMediaUrl } from '../../../core/helpers/media-url.helper';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-mosque-detail',
@@ -34,6 +35,7 @@ export class MosqueDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly mosquesFacade = inject(MosquesFacade);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly seoService = inject(SeoService);
 
   readonly mosque = signal<MosqueDto | null>(null);
   readonly isLoading = signal(true);
@@ -110,6 +112,17 @@ export class MosqueDetailComponent implements OnInit, OnDestroy {
           this.mosque.set(mosque);
           this.loadError.set(mosque ? null : MosqueDetailComponent.notFoundMessage);
           this.isLoading.set(false);
+
+          if (mosque) {
+            const locStr = this.resolveLocation(mosque);
+            this.seoService.setMetaTags({
+              title: `${mosque.name} - Mosque Details & Location`,
+              description: mosque.description || `Get geographical location, facilities, and daily prayer information for ${mosque.name} in ${locStr}.`,
+              keywords: [mosque.name, 'mosque', 'local mosque', mosque.city || '', mosque.district || '', 'AskAMuslim'],
+              ogImage: mosque.mainImageUrl ? (toApiMediaUrl(mosque.mainImageUrl) ?? undefined) : undefined,
+              schemas: [this.seoService.generateMosqueSchema(mosque)]
+            });
+          }
         },
         error: (error: unknown) => {
           this.mosque.set(null);
