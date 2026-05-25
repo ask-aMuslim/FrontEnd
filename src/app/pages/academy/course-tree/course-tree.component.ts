@@ -476,9 +476,9 @@ export class CourseTreeComponent {
     elementRects: ReadonlyMap<string, DOMRect>,
     containerRect: DOMRect,
   ): ConnectorPath[] {
-    // Mobile side-routing is strictly for narrow mobile devices (<= 510px).
-    // Larger screens (tablets >= 511px and desktops) use bottom-to-top elbow connector paths.
-    const isMobile = this.isBrowser && window.innerWidth <= 510;
+    // Mobile side-routing is strictly for narrow mobile devices (<= 576px).
+    // Larger screens (tablets >= 577px and desktops) use bottom-to-top elbow connector paths.
+    const isMobile = this.isBrowser && window.innerWidth <= 576;
     if (isMobile) {
       return this.buildMobileConnectorPaths(elementRects, containerRect);
     }

@@ -328,7 +328,7 @@
   }
 }
 
-@media (max-width: 510px) {
+@media (max-width: 576px) {
   .course-tree-wrapper {
     --course-tree-column-gap: 20px;
     --course-tree-card-width: auto;
@@ -423,7 +423,7 @@
   }
 }
 
-@media (min-width: 511px) {
+@media (min-width: 577px) {
   .course-card--shift-to-gap {
     transform: translateX(calc(-0.5 * (100% + var(--course-tree-column-gap))));
 
