@@ -156,8 +156,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       title: 'AI Assistant',
       description:
         'Available 24/7 to answer initial questions and direct users to verified scholarly sources.',
-      cta: 'Ask AI',
-      href: '/question-and-answer/ask-assistant',
+      cta: 'Soon ..',
+      status: 'soon',
     },
     {
       icon: `
