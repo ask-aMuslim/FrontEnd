@@ -101,6 +101,7 @@ export class CourseTreeComponent {
   readonly connectorPaths = signal<readonly ConnectorPath[]>([]);
   readonly connectorCanvasWidth = signal(0);
   readonly connectorCanvasHeight = signal(0);
+  private readonly viewportWidth = signal<number>(this.isBrowser ? window.innerWidth : 1200);
 
   readonly groupedLayers = computed<readonly CourseNode[][][]>(() => {
     const nodeList = this.nodes();
@@ -224,6 +225,7 @@ export class CourseTreeComponent {
   @HostListener('window:resize')
   onWindowResize(): void {
     if (this.isBrowser) {
+      this.viewportWidth.set(window.innerWidth);
       this.computeConnectorPaths();
     }
   }
@@ -315,10 +317,172 @@ export class CourseTreeComponent {
     return elementRects;
   }
 
+  private buildMobileConnectorPaths(
+    elementRects: ReadonlyMap<string, DOMRect>,
+    containerRect: DOMRect,
+  ): ConnectorPath[] {
+    const nextPaths: ConnectorPath[] = [];
+    const edgeGeometries: {
+      edge: ConnectorEdge;
+      startX: number;
+      startY: number;
+      endX: number;
+      endY: number;
+      routeSide: 'left' | 'right';
+    }[] = [];
+
+    // Collect all parents in the entire tree, sorted by their DOM/visual position (top-to-bottom, left-to-right)
+    const allParentIds = Array.from(new Set(this.connectorEdges().map(e => e.parentId)));
+    const sortedParents = allParentIds.map(parentId => {
+      const rect = elementRects.get(parentId);
+      const startY = rect ? rect.top : 0;
+      const startX = rect ? rect.left : 0;
+      return { parentId, startY, startX };
+    })
+    .sort((a, b) => {
+      if (Math.abs(a.startY - b.startY) > 5) {
+        return a.startY - b.startY;
+      }
+      return a.startX - b.startX;
+    })
+    .map(p => p.parentId);
+
+    const containerCenterX = containerRect.width / 2;
+
+    for (const edge of this.connectorEdges()) {
+      const parentRect = elementRects.get(edge.parentId);
+      const childRect = elementRects.get(edge.childId);
+      if (!parentRect || !childRect) {
+        continue;
+      }
+
+      // Determine which side to route: left or right
+      // If there are exactly two parents, the first parent goes to the left and the second parent goes to the right
+      let routeSide: 'left' | 'right';
+      if (sortedParents.length === 2) {
+        routeSide = edge.parentId === sortedParents[0] ? 'left' : 'right';
+      } else {
+        const childCenterX = childRect.left + childRect.width / 2 - containerRect.left;
+        routeSide = childCenterX < containerCenterX ? 'left' : 'right';
+      }
+
+      let startX = 0;
+      let startY = this.roundCoordinate(parentRect.top + parentRect.height / 2 - containerRect.top);
+      let endX = 0;
+      let endY = this.roundCoordinate(childRect.top + childRect.height / 2 - containerRect.top);
+
+      if (routeSide === 'left') {
+        startX = this.roundCoordinate(parentRect.left - containerRect.left);
+        endX = this.roundCoordinate(childRect.left - containerRect.left);
+      } else {
+        startX = this.roundCoordinate(parentRect.right - containerRect.left);
+        endX = this.roundCoordinate(childRect.right - containerRect.left);
+      }
+
+      edgeGeometries.push({
+        edge,
+        startX,
+        startY,
+        endX,
+        endY,
+        routeSide,
+      });
+    }
+
+    // Group by side to assign lane indexes and avoid line overlaps
+    const leftEdges = edgeGeometries.filter(g => g.routeSide === 'left');
+    const rightEdges = edgeGeometries.filter(g => g.routeSide === 'right');
+
+    // For Left Side: group lanes by parent to follow the same lane
+    // Sort parents by startY in ascending order (top to bottom)
+    const leftParents = Array.from(new Set(leftEdges.map(g => g.edge.parentId)))
+      .map(parentId => {
+        const firstGeom = leftEdges.find(g => g.edge.parentId === parentId)!;
+        return { parentId, startY: firstGeom.startY };
+      })
+      .sort((a, b) => a.startY - b.startY)
+      .map(p => p.parentId);
+
+    const leftParentMinVals = new Map<string, number>();
+    for (const parentId of leftParents) {
+      const parentGeometries = leftEdges.filter(g => g.edge.parentId === parentId);
+      const minVal = Math.min(...parentGeometries.map(g => Math.min(g.startX, g.endX)));
+      leftParentMinVals.set(parentId, minVal);
+    }
+
+    leftEdges.forEach((geometry) => {
+      const startX = geometry.startX;
+      const startY = geometry.startY;
+      const endX = geometry.endX;
+      const endY = geometry.endY;
+
+      const parentId = geometry.edge.parentId;
+      // High parents (smaller index in leftParents) get outer lane (larger offset),
+      // low parents (larger index in leftParents) get inner lane (smaller offset).
+      const parentIndex = leftParents.length - 1 - leftParents.indexOf(parentId);
+      const minVal = leftParentMinVals.get(parentId)!;
+
+      // Left highway goes further left. Offset each parent lane by 10px
+      const highwayX = this.roundCoordinate(minVal - 24 - (parentIndex * 10));
+
+      nextPaths.push({
+        id: geometry.edge.id,
+        d: `M ${startX} ${startY} H ${highwayX} V ${endY} H ${endX}`,
+      });
+    });
+
+    // For Right Side: group lanes by parent to follow the same lane
+    // Sort parents by startY in ascending order (top to bottom)
+    const rightParents = Array.from(new Set(rightEdges.map(g => g.edge.parentId)))
+      .map(parentId => {
+        const firstGeom = rightEdges.find(g => g.edge.parentId === parentId)!;
+        return { parentId, startY: firstGeom.startY };
+      })
+      .sort((a, b) => a.startY - b.startY)
+      .map(p => p.parentId);
+
+    const rightParentMaxVals = new Map<string, number>();
+    for (const parentId of rightParents) {
+      const parentGeometries = rightEdges.filter(g => g.edge.parentId === parentId);
+      const maxVal = Math.max(...parentGeometries.map(g => Math.max(g.startX, g.endX)));
+      rightParentMaxVals.set(parentId, maxVal);
+    }
+
+    rightEdges.forEach((geometry) => {
+      const startX = geometry.startX;
+      const startY = geometry.startY;
+      const endX = geometry.endX;
+      const endY = geometry.endY;
+
+      const parentId = geometry.edge.parentId;
+      // High parents (smaller index in rightParents) get outer lane (larger offset),
+      // low parents (larger index in rightParents) get inner lane (smaller offset).
+      const parentIndex = rightParents.length - 1 - rightParents.indexOf(parentId);
+      const maxVal = rightParentMaxVals.get(parentId)!;
+
+      // Right highway goes further right. Offset each parent lane by 10px
+      const highwayX = this.roundCoordinate(maxVal + 24 + (parentIndex * 10));
+
+      nextPaths.push({
+        id: geometry.edge.id,
+        d: `M ${startX} ${startY} H ${highwayX} V ${endY} H ${endX}`,
+      });
+    });
+
+    return nextPaths;
+  }
+
   private buildConnectorPaths(
     elementRects: ReadonlyMap<string, DOMRect>,
     containerRect: DOMRect,
   ): ConnectorPath[] {
+    // Mobile side-routing is strictly for narrow mobile devices (<= 510px).
+    // Larger screens (tablets >= 511px and desktops) use bottom-to-top elbow connector paths.
+    const isMobile = this.isBrowser && window.innerWidth <= 510;
+    if (isMobile) {
+      return this.buildMobileConnectorPaths(elementRects, containerRect);
+    }
+
     const nextPaths: ConnectorPath[] = [];
     const minimumParentDrop = 26;
     const minimumChildClearance = 20;
@@ -482,13 +646,54 @@ export class CourseTreeComponent {
             const blockerLeft = blockerRect.left - containerRect.left;
             const blockerRight = blockerRect.right - containerRect.left;
             const blockerBottom = blockerRect.bottom - containerRect.top;
+            const blockerTop = blockerRect.top - containerRect.top;
 
-            // Route through a gap: left or right of the blocker card
-            const gapLeftX = blockerLeft - 24;
-            const gapRightX = blockerRight + 24;
+            // Find neighboring cards in the same row (vertical overlap) to route the line safely in the middle of the gap
+            let leftNeighborRect: DOMRect | null = null;
+            let rightNeighborRect: DOMRect | null = null;
 
-            // Choose the gap closer to the parent startX
-            const gapX = Math.abs(gapLeftX - startX) <= Math.abs(gapRightX - startX) ? gapLeftX : gapRightX;
+            for (const [nodeId, rect] of elementRects.entries()) {
+              if (nodeId === geometry.edge.parentId || nodeId === geometry.edge.childId || rect === blockerRect) {
+                continue;
+              }
+              const rectTop = rect.top - containerRect.top;
+              const rectBottom = rect.bottom - containerRect.top;
+
+              const sameRow = rectBottom >= blockerTop && rectTop <= blockerBottom;
+              if (sameRow) {
+                if (rect.right <= blockerRect.left) {
+                  if (!leftNeighborRect || rect.right > leftNeighborRect.right) {
+                    leftNeighborRect = rect;
+                  }
+                } else if (rect.left >= blockerRect.right) {
+                  if (!rightNeighborRect || rect.left < rightNeighborRect.left) {
+                    rightNeighborRect = rect;
+                  }
+                }
+              }
+            }
+
+            // Calculate safe gap X coordinates
+            let gapLeftX = 0;
+            if (leftNeighborRect) {
+              const neighborRight = leftNeighborRect.right - containerRect.left;
+              gapLeftX = this.roundCoordinate(neighborRight + (blockerLeft - neighborRight) / 2);
+            } else {
+              gapLeftX = this.roundCoordinate(blockerLeft - 24);
+            }
+
+            let gapRightX = 0;
+            if (rightNeighborRect) {
+              const neighborLeft = rightNeighborRect.left - containerRect.left;
+              gapRightX = this.roundCoordinate(blockerRight + (neighborLeft - blockerRight) / 2);
+            } else {
+              gapRightX = this.roundCoordinate(blockerRight + 24);
+            }
+
+            // Choose the outside gap to keep center gaps clear of vertical blocker bypasses
+            const containerCenterX = containerRect.width / 2;
+            const blockerCenterX = blockerRect.left + blockerRect.width / 2 - containerRect.left;
+            const gapX = blockerCenterX < containerCenterX ? gapLeftX : gapRightX;
             let belowBlockerY = blockerBottom + 20;
             belowBlockerY = this.clamp(belowBlockerY, blockerBottom + 6, endY - 6);
             belowBlockerY = this.roundCoordinate(belowBlockerY);
@@ -700,9 +905,12 @@ export class CourseTreeComponent {
           - this.getNodeOrder(rightNode.id, nodeOrderById);
       });
 
-      // 2. If parent layer has multiple parents and current layer wraps (more than 3 nodes),
-      // optimize slot alignment to put right-leaning nodes in Column 2 (index % 3 === 2)
-      if (prevLayer.length > 1 && layers[d].length > 3) {
+      // 2. If parent layer has multiple parents and current layer wraps (more than cols nodes),
+      // optimize slot alignment to put right-leaning nodes in the rightmost column (index % cols === cols - 1)
+      const width = this.viewportWidth();
+      const cols = width >= 950 ? 3 : 2;
+
+      if (prevLayer.length > 1 && layers[d].length > cols) {
         const sortedNodes = [...layers[d]];
         const N = sortedNodes.length;
 
@@ -720,15 +928,15 @@ export class CourseTreeComponent {
 
         const result = new Array<CourseNode | null>(N).fill(null);
 
-        // Pre-allocate right-leaning nodes to Column 2 slots (index % 3 === 2)
+        // Pre-allocate right-leaning nodes to rightmost column slots (index % cols === cols - 1)
         let rightIdx = 0;
         for (let i = 0; i < N; i++) {
-          if (i % 3 === 2 && rightIdx < rightLeaning.length) {
+          if (i % cols === cols - 1 && rightIdx < rightLeaning.length) {
             result[i] = rightLeaning[rightIdx++];
           }
         }
 
-        // Place any remaining right-leaning nodes that didn't fit in Column 2 slots
+        // Place any remaining right-leaning nodes that didn't fit in rightmost column slots
         // into leftLeaning / fallback to be distributed in other slots
         const remainingRightLeaning = rightLeaning.slice(rightIdx);
         const remainingNodesToDistribute = [...leftLeaning, ...remainingRightLeaning];

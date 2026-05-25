@@ -18,13 +18,6 @@
   --academy-recent-lesson-width: min(100%, 72rem);
   --academy-important-note-width: min(100%, 64rem);
 
-  @media (min-width: 768px) {
-    padding: var(--spacing-2xl) var(--spacing-3xl);
-  }
-
-  @media (min-width: 1024px) {
-    padding: var(--spacing-2xl) 96px;
-  }
 }
 
 .section-title {
@@ -362,11 +355,15 @@
   flex-direction: column;
   gap: var(--spacing-2xl);
 
-  @media screen and (max-width: 767px) {
-    .section-block {
-      padding: 0;
-    }
+
+  .section-block {
+    margin: 0;
+    max-width: fit-content;
+    align-self: center;
+    padding: 0;
   }
+
+
 }
 
 .stage-wrapper {
@@ -390,9 +387,6 @@
     box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.15);
   }
 
-  @media (min-width: 768px) {
-    padding: var(--spacing-2xl) 56px;
-  }
 }
 
 .stage-footer {

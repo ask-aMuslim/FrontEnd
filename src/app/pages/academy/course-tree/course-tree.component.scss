@@ -6,9 +6,8 @@
 }
 
 .course-tree-wrapper {
-  --course-tree-column-gap: calc(var(--spacing-md) + 36px);
-  --course-tree-card-width: min(320px,
-      max(240px, calc((100% - (2 * var(--course-tree-column-gap))) / 3)));
+  --course-tree-column-gap: 28px;
+  --course-tree-card-width: auto;
   width: 100%;
   overflow-x: auto;
   overflow-y: visible;
@@ -56,26 +55,29 @@
 .course-tree {
   position: relative;
   isolation: isolate;
-  width: max-content;
+  width: 100%;
+  max-width: 100%;
   min-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: calc(var(--spacing-lg) + 28px);
+  gap: 36px;
+  padding: 0 48px;
+  box-sizing: border-box;
 }
 
 .course-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
-  gap: calc(var(--spacing-md) + 20px);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 280px));
+  gap: 1.5rem;
   width: 100%;
   max-width: 1200px;
-  margin: 2rem auto;
+  margin: 1.5rem auto;
   justify-content: center;
   align-items: stretch;
 
   .course-card {
-    max-width: 320px;
+    max-width: 280px;
     width: 100%;
     margin: 0;
     flex: 1 1 auto;
@@ -86,13 +88,13 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: calc(var(--spacing-md) + 16px);
+  gap: 24px;
   position: relative;
   z-index: 1;
 
   &+.course-tree__group {
-    margin-top: calc(var(--spacing-lg) + 16px);
-    padding-top: calc(var(--spacing-md) + 12px);
+    margin-top: 32px;
+    padding-top: 20px;
     border-top: 1px solid rgba(15, 23, 42, 0.14);
   }
 }
@@ -121,11 +123,11 @@
   z-index: 1;
   width: 100%;
   display: flex;
-  flex-wrap: nowrap;
-  margin-top: 3rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
   justify-content: center;
   align-items: stretch;
-  gap: calc(var(--spacing-md) + 20px) var(--course-tree-column-gap);
+  gap: 24px var(--course-tree-column-gap);
   min-width: 100%;
 }
 
@@ -139,18 +141,18 @@
 
 .course-card {
   width: auto;
-  min-width: 180px;
-  max-width: 320px;
+  min-width: 160px;
+  max-width: 250px;
   flex: 0 0 auto;
   border: 1px solid var(--colors-rare-grays-20);
-  border-radius: 12px;
-  padding: var(--spacing-lg);
+  border-radius: 10px;
+  padding: var(--spacing-md);
   position: relative;
   z-index: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   text-align: left;
   text-decoration: none;
   color: inherit;
@@ -225,10 +227,10 @@
 
 .course-card__locked-badge {
   position: absolute;
-  top: -0.5rem;
-  left: -0.5rem;
-  width: 2rem;
-  height: 2rem;
+  top: -0.4rem;
+  left: -0.4rem;
+  width: 1.85rem;
+  height: 1.85rem;
   border-radius: 0.625rem;
   background: rgba(2, 6, 23, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -240,15 +242,15 @@
 }
 
 .course-card__locked-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
   filter: brightness(0) invert(1);
 }
 
 .course-card__title {
   margin: 0;
   color: var(--colors-rare-grays-80);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -256,16 +258,16 @@
 .course-card__description {
   margin: 0;
   color: var(--colors-rare-grays-60);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .course-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 16px;
+  gap: 8px 12px;
   color: var(--colors-rare-grays-60);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -281,21 +283,21 @@
 }
 
 .course-card__meta-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   opacity: 0.8;
 }
 
 .course-card__progress {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-top: 2px;
 }
 
 .course-card__progress-track {
   flex: 1;
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.12);
   overflow: hidden;
@@ -312,7 +314,7 @@
 
 .course-card__progress-text {
   color: var(--colors-rare-grays-80);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -326,98 +328,7 @@
   }
 }
 
-@media (max-width: 1024px) {
-  .course-tree-wrapper {
-    --course-tree-column-gap: 28px;
-    --course-tree-card-width: auto;
-  }
-
-  .course-tree {
-    width: 100%;
-    max-width: 100%;
-    gap: 36px;
-  }
-
-  .course-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 280px));
-    gap: 1.5rem;
-    margin: 1.5rem auto;
-
-    .course-card {
-      max-width: 280px;
-    }
-  }
-
-  .course-tree__layer {
-    margin-top: 2rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 24px var(--course-tree-column-gap);
-  }
-
-  .course-tree__group {
-    gap: 24px;
-
-    &+.course-tree__group {
-      margin-top: 32px;
-      padding-top: 20px;
-    }
-  }
-
-  .course-card {
-    width: auto;
-    min-width: 160px;
-    max-width: 250px;
-    padding: var(--spacing-md);
-    border-radius: 10px;
-    gap: var(--spacing-xs);
-  }
-
-  .course-card__locked-badge {
-    width: 1.85rem;
-    height: 1.85rem;
-    top: -0.4rem;
-    left: -0.4rem;
-  }
-
-  .course-card__locked-icon {
-    width: 0.9rem;
-    height: 0.9rem;
-  }
-
-  .course-card__title {
-    font-size: 16px;
-  }
-
-  .course-card__description {
-    font-size: 13px;
-    line-height: 1.4;
-  }
-
-  .course-card__meta {
-    font-size: 12px;
-    gap: 8px 12px;
-  }
-
-  .course-card__meta-icon {
-    width: 14px;
-    height: 14px;
-  }
-
-  .course-card__progress {
-    gap: 8px;
-  }
-
-  .course-card__progress-track {
-    height: 8px;
-  }
-
-  .course-card__progress-text {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 767px) {
+@media (max-width: 510px) {
   .course-tree-wrapper {
     --course-tree-column-gap: 20px;
     --course-tree-card-width: auto;
@@ -427,6 +338,8 @@
     width: 100%;
     max-width: 100%;
     gap: 28px;
+    padding: 0 48px;
+    box-sizing: border-box;
   }
 
   .course-grid {
@@ -443,8 +356,8 @@
 
   .course-tree__layer {
     margin-top: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     gap: 20px var(--course-tree-column-gap);
   }
 
@@ -510,7 +423,7 @@
   }
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 511px) {
   .course-card--shift-to-gap {
     transform: translateX(calc(-0.5 * (100% + var(--course-tree-column-gap))));
 
