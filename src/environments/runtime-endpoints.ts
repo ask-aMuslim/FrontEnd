@@ -15,9 +15,7 @@ function isNetlifyBrowserHost(): boolean {
   const hostname = globalThis.location?.hostname?.toLowerCase() ?? '';
   return (
     hostname.endsWith('.netlify.app') ||
-    hostname.endsWith('.netlify.live') ||
-    hostname === 'askamuslim.com' ||
-    hostname.endsWith('.askamuslim.com')
+    hostname.endsWith('.netlify.live')
   );
 }
 
