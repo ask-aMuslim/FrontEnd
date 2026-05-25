@@ -772,7 +772,7 @@ export class AcademyProgressService {
             return cachedRequest;
         }
 
-        const request$ = this.courseFacade.getRoadmap(trimmedLevelId).pipe(
+        const request$ = this.courseFacade.getRoadmap(trimmedLevelId, undefined, true).pipe(
             catchError(() => of([] as RoadmapCourseDto[])),
             shareReplay(1),
         );
@@ -1961,6 +1961,18 @@ export class AcademyProgressService {
         const prerequisites = this.extractPrerequisiteIds(course).filter((prerequisiteId) => prerequisiteId !== id);
         const isPublished = typeof course['isPublished'] === 'boolean' ? course['isPublished'] : undefined;
 
+        const rawDuration = course['duration'] ?? course['courseDuration'] ?? course['totalDuration'];
+        let duration: string;
+        if (typeof rawDuration === 'string' && rawDuration.trim().length > 0) {
+            duration = rawDuration.trim();
+        } else if (typeof rawDuration === 'number' && Number.isFinite(rawDuration) && rawDuration > 0) {
+            const hours = Math.floor(rawDuration / 60);
+            const minutes = Math.round(rawDuration % 60);
+            duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        } else {
+            duration = this.buildDurationText(lessons);
+        }
+
         return {
             id,
             stageId: stageNumber,
@@ -1970,7 +1982,7 @@ export class AcademyProgressService {
             category,
             categoryLabel: this.buildCategoryLabel(course['category']),
             lessons,
-            duration: this.buildDurationText(lessons),
+            duration,
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
             order: course.order,
@@ -2078,9 +2090,16 @@ export class AcademyProgressService {
     }
 
     private resolveLessonCount(source: Record<string, unknown>): number {
-        const numberOfLessons = source['numberOfLessons'];
+        const numberOfLessons = source['numberOfLessons'] ?? source['lessonsCount'] ?? source['totalLessons'];
         if (typeof numberOfLessons === 'number' && Number.isFinite(numberOfLessons)) {
             return Math.max(0, numberOfLessons);
+        }
+
+        if (typeof numberOfLessons === 'string') {
+            const parsed = parseInt(numberOfLessons, 10);
+            if (Number.isFinite(parsed)) {
+                return Math.max(0, parsed);
+            }
         }
 
         const lessons = source['lessons'];
