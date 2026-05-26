@@ -14,6 +14,7 @@ export class QasService {
     tags?: string | string[];
     tagIds?: string | string[];
     isPublished?: boolean;
+    searchTerm?: string;
   }): Observable<unknown> {
     const query = this.buildQueryString(params);
     const url = query ? `${QasService.QAS_PATH}?${query}` : QasService.QAS_PATH;
@@ -42,12 +43,16 @@ export class QasService {
     tags?: string | string[];
     tagIds?: string | string[];
     isPublished?: boolean;
+    searchTerm?: string;
   }): string {
     if (!params) return '';
     const parts: string[] = [];
     if (params.pageNumber !== undefined) parts.push(`pageNumber=${params.pageNumber}`);
     if (params.pageSize !== undefined) parts.push(`pageSize=${params.pageSize}`);
     if (params.isPublished !== undefined) parts.push(`isPublished=${params.isPublished}`);
+    if (params.searchTerm !== undefined && params.searchTerm !== null) {
+      parts.push(`searchTerm=${encodeURIComponent(params.searchTerm)}`);
+    }
 
     if (params.tags !== undefined) {
       if (Array.isArray(params.tags)) {
