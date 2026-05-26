@@ -1,9 +1,9 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, of, Observable, forkJoin } from 'rxjs';
-import { takeUntil, catchError, map, take } from 'rxjs/operators';
-import { AcademyProgressService } from '../../../core/services/academy-progress.service';
+import { Subject, of, Observable, forkJoin, from } from 'rxjs';
+import { takeUntil, catchError, map, take, switchMap } from 'rxjs/operators';
+import { AcademyProgressService, CourseEnrollmentState } from '../../../core/services/academy-progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CourseReadByIdDto } from '../../../api/facades/course.facade';
 import { QuizFacade, QuizReadDto } from '../../../api/facades/quiz.facade';
@@ -13,8 +13,8 @@ import {
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
     AcademySidebarLessonItem,
-} from '../shared/academy-course-sidebar/academy-course-sidebar.component';
-import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
+    AcademySidebarHostComponent,
+} from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import { CourseResolvedData } from './course.resolver';
 import { SeoService } from '../../../core/services/seo.service';
 
@@ -108,7 +108,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     get hasPlayableLesson(): boolean {
         return !!this.course?.lessonsList.some(
-            (lesson) => !lesson.isLocked && lesson.type !== 'quiz',
+            (lesson) => lesson.type !== 'quiz',
         );
     }
 
@@ -221,55 +221,41 @@ export class CourseComponent implements OnInit, OnDestroy {
 
             forkJoin({
                 quizzes: this.fetchCourseQuizzes(this.courseId).pipe(take(1)),
-                stages: this.academyProgressService.getAcademyStages().pipe(take(1)),
-                studentProgress: this.academyProgressService.getStudentProgress().pipe(take(1)),
-                lessonsWithProgress: this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(take(1)),
+                courseProgress: of(undefined as any),
+                enrollment: this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId).pipe(take(1), catchError(() => of({ enrollmentId: null, status: null, isEnrolled: false, isCompleted: false } as CourseEnrollmentState))),
+                prerequisites: this.academyProgressService.getTargetedPrerequisiteDetails((course.prerequisites ?? []).map((p: any) => p.id ?? p)).pipe(take(1), catchError(() => of([]))),
+                fullLessons: this.academyProgressService.getAcademyLessons(this.courseId).pipe(take(1), catchError(() => of([]))),
             }).pipe(
-                takeUntil(this.destroy$)
-            ).subscribe(({ quizzes, stages, studentProgress, lessonsWithProgress }) => {
-                let rawLessonsList: Lesson[] = this.extractLessonsFromRawCourse(course);
-                if (rawLessonsList.length === 0 && lessonsWithProgress && lessonsWithProgress.length > 0) {
-                    rawLessonsList = lessonsWithProgress.map((l) => ({
-                        id: l.id,
-                        title: l.title,
-                        duration: l.duration,
-                        type: l.type,
-                        isLocked: l.progress.status === 'locked',
-                        isCompleted: l.progress.isCompleted,
-                        isCurrent: l.progress.status === 'current',
-                    }));
-                }
+                takeUntil(this.destroy$),
+                switchMap((results) => {
+                    const lessonsList = this.extractLessonsFromRawCourse(course);
+                    return this.hydrateLessonsWithYouTube(lessonsList, results.fullLessons).pipe(
+                        map((hydratedLessons) => ({ ...results, hydratedLessons }))
+                    );
+                })
+            ).subscribe(({ quizzes, courseProgress, enrollment, prerequisites, hydratedLessons }) => {
+                const rawLessonsList = hydratedLessons;
 
-                const matchedStage = stages.find(s => s.id === course.levelId);
-                const stageNumber = matchedStage?.number ?? 1;
+                const stageNumberMatch = course.level ? course.level.match(/\d+/) : null;
+                const stageNumber = stageNumberMatch ? parseInt(stageNumberMatch[0], 10) : 1;
 
-                const stageProgressRecord = studentProgress.stageProgress.find(sp => sp.stageNumber === stageNumber);
-                const isLocked = !stageProgressRecord?.isUnlocked;
-
-                const prerequisitesList = (course.prerequisites ?? []).map((prereq: any) => {
-                    const prereqProgress = studentProgress.courseProgress.find(cp => cp.courseId === prereq.id);
-                    return {
-                        id: prereq.id ?? '',
-                        title: prereq.title ?? 'Unknown Course',
-                        isCompleted: prereqProgress?.status === 'completed'
-                    };
-                });
+                const prerequisitesList = prerequisites;
 
                 const unmetPrerequisiteNames = prerequisitesList
                     .filter(p => !p.isCompleted)
                     .map(p => p.title);
 
                 const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+                const isLocked = hasUnmetPrerequisites;
 
-                const isEnrolled = (course['courseProgress'] !== undefined && course['courseProgress'] !== null) || !!course['isCompleted'];
+                const isEnrolled = enrollment.isEnrolled || enrollment.isCompleted || (courseProgress !== undefined && courseProgress !== null);
 
                 const enrichedLessonsList = rawLessonsList.map((lesson) => {
-                    const match = lessonsWithProgress.find((l) => l.id === lesson.id);
                     return {
                         ...lesson,
-                        isCompleted: match ? match.progress.isCompleted : lesson.isCompleted,
-                        isLocked: match ? match.progress.status === 'locked' : lesson.isLocked,
-                        isCurrent: match ? match.progress.status === 'current' : lesson.isCurrent,
+                        isCompleted: lesson.isCompleted || false,
+                        isLocked: false,
+                        isCurrent: false,
                     };
                 });
 
@@ -285,9 +271,9 @@ export class CourseComponent implements OnInit, OnDestroy {
 
                 this.course = {
                     id: course.id ?? '',
-                    levelName: course.level ?? '',
+                    levelName: (course['levelName'] as string) ?? (course.level as string) ?? '',
                     stageNumber: stageNumber,
-                    stageLabel: course.level ? course.level : 'Course',
+                    stageLabel: (course['levelName'] as string) ?? (course.level as string) ?? 'Course',
                     duration: this.calculateCourseDuration(enrichedLessonsList),
                     title: course.title ?? '',
                     intro: course.description ?? '',
@@ -301,7 +287,7 @@ export class CourseComponent implements OnInit, OnDestroy {
                     hasUnmetPrerequisites: hasUnmetPrerequisites,
                     unmetPrerequisiteNames: unmetPrerequisiteNames,
                     isEnrolled: isEnrolled,
-                    isEnrollmentCompleted: !!course['isCompleted'],
+                    isEnrollmentCompleted: enrollment.isCompleted,
                     lessonsList: processedLessons,
                     quizzesList: quizzes,
                     prerequisitesList: prerequisitesList,
@@ -315,17 +301,6 @@ export class CourseComponent implements OnInit, OnDestroy {
                         schemas: [this.seoService.generateCourseSchema(this.course)]
                     });
                 }
-
-                this.academyProgressService.getLevelTitleForCourse({
-                    levelId: course.levelId ?? undefined,
-                    stageId: 1
-                }).pipe(takeUntil(this.destroy$)).subscribe((title) => {
-                    if (this.course) {
-                        this.course.levelName = title;
-                        this.course.stageLabel = title;
-                        this.cdr.detectChanges();
-                    }
-                });
 
                 this.error = null;
                 this.isLoading = false;
@@ -343,55 +318,41 @@ export class CourseComponent implements OnInit, OnDestroy {
 
         forkJoin({
             quizzes: this.fetchCourseQuizzes(this.courseId).pipe(take(1)),
-            stages: this.academyProgressService.getAcademyStages().pipe(take(1)),
-            studentProgress: this.academyProgressService.getStudentProgress().pipe(take(1)),
-            lessonsWithProgress: this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(take(1)),
+            courseProgress: of(undefined as any),
+            enrollment: this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId).pipe(take(1), catchError(() => of({ enrollmentId: null, status: null, isEnrolled: false, isCompleted: false } as CourseEnrollmentState))),
+            prerequisites: this.academyProgressService.getTargetedPrerequisiteDetails((raw.prerequisites ?? []).map((p: any) => p.id ?? p)).pipe(take(1), catchError(() => of([]))),
+            fullLessons: this.academyProgressService.getAcademyLessons(this.courseId).pipe(take(1), catchError(() => of([]))),
         }).pipe(
-            takeUntil(this.destroy$)
-        ).subscribe(({ quizzes, stages, studentProgress, lessonsWithProgress }) => {
-            let lessonsList: Lesson[] = this.extractLessonsFromRawCourse(raw);
-            if (lessonsList.length === 0 && lessonsWithProgress && lessonsWithProgress.length > 0) {
-                lessonsList = lessonsWithProgress.map((l) => ({
-                    id: l.id,
-                    title: l.title,
-                    duration: l.duration,
-                    type: l.type,
-                    isLocked: l.progress.status === 'locked',
-                    isCompleted: l.progress.isCompleted,
-                    isCurrent: l.progress.status === 'current',
-                }));
-            }
+            takeUntil(this.destroy$),
+            switchMap((results) => {
+                const lessonsList = this.extractLessonsFromRawCourse(raw);
+                return this.hydrateLessonsWithYouTube(lessonsList, results.fullLessons).pipe(
+                    map((hydratedLessons) => ({ ...results, hydratedLessons }))
+                );
+            })
+        ).subscribe(({ quizzes, courseProgress, enrollment, prerequisites, hydratedLessons }) => {
+            let lessonsList = hydratedLessons;
 
-            const matchedStage = stages.find(s => s.id === raw.levelId);
-            const stageNumber = matchedStage?.number ?? 1;
+            const stageNumberMatch = raw.level ? raw.level.match(/\d+/) : null;
+            const stageNumber = stageNumberMatch ? parseInt(stageNumberMatch[0], 10) : 1;
 
-            const stageProgressRecord = studentProgress.stageProgress.find(sp => sp.stageNumber === stageNumber);
-            const isLocked = !stageProgressRecord?.isUnlocked;
-
-            const prerequisitesList = (raw.prerequisites ?? []).map((prereq: any) => {
-                const prereqProgress = studentProgress.courseProgress.find(cp => cp.courseId === prereq.id);
-                return {
-                    id: prereq.id ?? '',
-                    title: prereq.title ?? 'Unknown Course',
-                    isCompleted: prereqProgress?.status === 'completed'
-                };
-            });
+            const prerequisitesList = prerequisites;
 
             const unmetPrerequisiteNames = prerequisitesList
                 .filter(p => !p.isCompleted)
                 .map(p => p.title);
 
             const hasUnmetPrerequisites = unmetPrerequisiteNames.length > 0;
+            const isLocked = hasUnmetPrerequisites;
 
-            const isEnrolled = (raw['courseProgress'] !== undefined && raw['courseProgress'] !== null) || !!raw['isCompleted'];
+            const isEnrolled = enrollment.isEnrolled || enrollment.isCompleted || (courseProgress !== undefined && courseProgress !== null);
 
             const enrichedLessonsList = lessonsList.map((lesson) => {
-                const match = lessonsWithProgress.find((l) => l.id === lesson.id);
                 return {
                     ...lesson,
-                    isCompleted: match ? match.progress.isCompleted : lesson.isCompleted,
-                    isLocked: match ? match.progress.status === 'locked' : lesson.isLocked,
-                    isCurrent: match ? match.progress.status === 'current' : lesson.isCurrent,
+                    isCompleted: lesson.isCompleted || false,
+                    isLocked: false,
+                    isCurrent: false,
                 };
             });
 
@@ -407,9 +368,9 @@ export class CourseComponent implements OnInit, OnDestroy {
 
             this.course = {
                 id: raw.id ?? '',
-                levelName: raw.level ?? '',
+                levelName: (raw['levelName'] as string) ?? (raw.level as string) ?? '',
                 stageNumber: stageNumber,
-                stageLabel: raw.level ? raw.level : 'Course',
+                stageLabel: (raw['levelName'] as string) ?? (raw.level as string) ?? 'Course',
                 duration: this.calculateCourseDuration(enrichedLessonsList),
                 title: raw.title ?? '',
                 intro: raw.description ?? '',
@@ -423,7 +384,7 @@ export class CourseComponent implements OnInit, OnDestroy {
                 hasUnmetPrerequisites: hasUnmetPrerequisites,
                 unmetPrerequisiteNames: unmetPrerequisiteNames,
                 isEnrolled: isEnrolled,
-                isEnrollmentCompleted: !!raw['isCompleted'],
+                isEnrollmentCompleted: enrollment.isCompleted,
                 lessonsList: processedLessons,
                 quizzesList: quizzes,
                 prerequisitesList: prerequisitesList,
@@ -437,17 +398,6 @@ export class CourseComponent implements OnInit, OnDestroy {
                     schemas: [this.seoService.generateCourseSchema(this.course)]
                 });
             }
-
-            this.academyProgressService.getLevelTitleForCourse({
-                levelId: raw.levelId ?? undefined,
-                stageId: 1
-            }).pipe(takeUntil(this.destroy$)).subscribe((title) => {
-                if (this.course) {
-                    this.course.levelName = title;
-                    this.course.stageLabel = title;
-                    this.cdr.detectChanges();
-                }
-            });
 
             this.error = null;
             this.isLoading = false;
@@ -486,7 +436,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     private prepareSidebarLessons(lessons: Lesson[], quizzes: Quiz[], isLocked: boolean, isEnrolled: boolean): Lesson[] {
         const nonQuiz = lessons.filter(l => l.type !== 'quiz');
-        const isCourseLockedOrNotEnrolled = isLocked || !isEnrolled;
+        const isCourseLockedOrNotEnrolled = isLocked;
 
         if (nonQuiz.length > 0) {
             nonQuiz.forEach(l => {
@@ -530,11 +480,15 @@ export class CourseComponent implements OnInit, OnDestroy {
         return rawLessons
             .filter((l: any) => l.isPublished !== false)
             .map((l: any) => {
-                const type = this.mapLessonType(l.lessonType ?? l.type);
+                const type = this.mapLessonType(l);
+                
+                // Extract duration from various possible API fields
+                let duration = l.duration ?? l.lessonDuration ?? l.courseDuration ?? l.totalDuration;
+                
                 return {
                     id: l.lessonId ?? l.id ?? '',
                     title: l.lessonName ?? l.title ?? '',
-                    duration: this.academyProgressService.resolveLessonDurationFromDto(l, type),
+                    duration: this.academyProgressService.resolveLessonDurationFromDto({ ...l, duration }, type),
                     type,
                     isLocked: false,
                     isCompleted: l.isLessonCompleted ?? l.isCompleted ?? false,
@@ -551,7 +505,8 @@ export class CourseComponent implements OnInit, OnDestroy {
     /**
      * Map a numeric lesson type to a string type label
      */
-    private mapLessonType(raw: unknown): Lesson['type'] {
+    private mapLessonType(l: any): Lesson['type'] {
+        const raw = l.lessonType ?? l.type;
         // API may return numeric or string type
         const str = String(raw ?? '').toLowerCase();
         if (str === '1' || str === 'video') return 'video';
@@ -559,6 +514,13 @@ export class CourseComponent implements OnInit, OnDestroy {
         if (str === '3' || str === 'document') return 'document';
         if (str === '4' || str === 'audio') return 'audio';
         if (str === '5' || str === 'quiz') return 'quiz';
+
+        // Smart fallback check for video URL presence
+        const videoUrl = l.externalVideoUrl ?? l.videoUrl ?? l.contentUrl;
+        if (videoUrl) {
+            return 'video';
+        }
+
         return 'intro';
     }
 
@@ -597,13 +559,32 @@ export class CourseComponent implements OnInit, OnDestroy {
         if (!this.course || this.course.isLocked || this.isBeginDisabled) return;
         if (!this.hasPlayableLesson || this.isEnrolling) return;
 
-        if (this.hasCourseEnrollment) {
-            this.navigateToPrimaryActionLesson(true);
-            return;
-        }
-
+        // Navigate immediately to the first playable lesson
         this.navigateToPrimaryActionLesson(false);
-        this.enrollCurrentStudentInBackground(this.course.id);
+
+        // Enroll in the background
+        this.isEnrolling = true;
+        this.academyProgressService
+            .enrollCurrentStudentInCourse(this.course.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (isEnrolled) => {
+                    this.isEnrolling = false;
+                    if (isEnrolled) {
+                        if (this.course) {
+                            this.course = {
+                                ...this.course,
+                                isEnrolled: true,
+                            };
+                        }
+                    }
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.isEnrolling = false;
+                    this.cdr.detectChanges();
+                },
+            });
     }
 
     private navigateToPrimaryActionLesson(preferNextUncompleted: boolean): void {
@@ -624,22 +605,7 @@ export class CourseComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
-    private enrollCurrentStudentInBackground(courseId: string): void {
-        this.academyProgressService
-            .enrollCurrentStudentInCourse(courseId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (isEnrolled) => {
-                    if (!isEnrolled || this.course?.id !== courseId) return;
-                    this.course = {
-                        ...this.course,
-                        isEnrolled: true,
-                    };
-                    this.cdr.detectChanges();
-                },
-                error: () => void 0,
-            });
-    }
+
 
     onTakeQuizClick(): void {
         if (!this.authService.isAuthenticated()) {
@@ -691,5 +657,43 @@ export class CourseComponent implements OnInit, OnDestroy {
         void this.router.navigate(['/login'], {
             queryParams: { returnUrl: this.router.url },
         });
+    }
+
+    private hydrateLessonsWithYouTube(lessonsList: Lesson[], rawLessons: any[]): Observable<Lesson[]> {
+        const durationRequests = lessonsList.map((lesson) => {
+            const rawLesson = (rawLessons || []).find((rl: any) => (rl.lessonId ?? rl.id) === lesson.id);
+            const durationStr = String(lesson.duration || '').trim().toLowerCase();
+            const isNullOrFallback = !durationStr ||
+                durationStr === '0:00' ||
+                durationStr === '0m' ||
+                durationStr === '5 min' ||
+                durationStr === '5 mins' ||
+                durationStr === '~5min' ||
+                durationStr.includes('5 min') ||
+                (rawLesson && (rawLesson.lessonDuration === null || rawLesson.lessonDuration === undefined || rawLesson.lessonDuration === 'null' || rawLesson.duration === null || rawLesson.duration === undefined));
+
+            if (lesson.type === 'video' && isNullOrFallback) {
+                if (rawLesson) {
+                    const videoUrl = rawLesson.externalVideoUrl ?? rawLesson.videoUrl ?? rawLesson.contentUrl;
+                    if (videoUrl) {
+                        const videoId = this.academyProgressService.extractVideoId(videoUrl);
+                        if (videoId) {
+                            return from(this.academyProgressService.fetchVideoDuration(videoId)).pipe(
+                                map((isoDuration) => {
+                                    const formatted = this.academyProgressService.renderDuration(
+                                        this.academyProgressService.formatDuration(isoDuration)
+                                    );
+                                    return { ...lesson, duration: formatted };
+                                }),
+                                catchError(() => of(lesson))
+                            );
+                        }
+                    }
+                }
+            }
+            return of(lesson);
+        });
+
+        return forkJoin(durationRequests);
     }
 }

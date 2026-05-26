@@ -136,6 +136,10 @@ export class AcademyProgressService {
 
     constructor() { }
 
+    getOverviewCoursesCache(): AcademyCourse[] {
+        return this.academyOverviewCoursesCache;
+    }
+
     private initializeProgress(): void {
         this.getStudentProgress().subscribe({
             next: (progress) => this.progressSubject.next(progress),
@@ -203,13 +207,29 @@ export class AcademyProgressService {
                     );
                 }
 
-                return this.getAcademyOverviewData().pipe(
-                    switchMap(({ courses, progressRecords }) => this.buildProgressForStudent(
-                        courses,
-                        studentId,
-                        new Map<string, EnrollmentReadDto>(),
-                        progressRecords,
-                    )),
+                return forkJoin({
+                    overview: this.getAcademyOverviewData().pipe(take(1)),
+                    enrollments: this.getEnrollmentRecordsByCourseId(studentId).pipe(take(1)),
+                    apiProgress: this.progressFacade.getProgressByStudentId(studentId).pipe(take(1), catchError(() => of([] as ProgressReadDto[]))),
+                }).pipe(
+                    switchMap(({ overview, enrollments, apiProgress }) => {
+                        const mergedProgress = [...overview.progressRecords];
+                        apiProgress.forEach(ap => {
+                            const exists = mergedProgress.some(mp => mp.courseId === ap.courseId);
+                            if (!exists) {
+                                mergedProgress.push(ap);
+                            } else {
+                                const index = mergedProgress.findIndex(mp => mp.courseId === ap.courseId);
+                                mergedProgress[index] = { ...mergedProgress[index], ...ap };
+                            }
+                        });
+                        return this.buildProgressForStudent(
+                            overview.courses,
+                            studentId,
+                            enrollments,
+                            mergedProgress,
+                        );
+                    }),
                     catchError(() =>
                         this.getAcademyOverviewCourses().pipe(
                             map((courses) => this.buildStudentProgress(
@@ -411,9 +431,18 @@ export class AcademyProgressService {
             return of(currentProgress.courseProgress.find((c) => c.courseId === courseId));
         }
 
-        return this.getCourseProgress(courseId).pipe(
-            take(1),
-            timeout(1000),
+        return this.progressFacade.getCourseProgress(courseId).pipe(
+            map((summary): CourseProgress | undefined => {
+                if (!summary) return undefined;
+                return {
+                    courseId,
+                    status: summary.isCompleted ? 'completed' : (summary.progressPercentage && summary.progressPercentage > 0 ? 'in-progress' : 'available'),
+                    progress: summary.progressPercentage ?? 0,
+                    completedLessons: summary.completedLessonsCount ?? 0,
+                    totalLessons: summary.totalLessonsCount ?? 0,
+                    quizPassed: !!summary['quizPassed']
+                };
+            }),
             catchError(() => of(undefined))
         );
     }
@@ -428,15 +457,13 @@ export class AcademyProgressService {
         }
 
         const requests = courseIds.map(id =>
-            forkJoin({
-                course: this.courseFacade.getCourseById(id).pipe(catchError(() => of(null))),
-                progress: this.getTargetedCourseProgress(id)
-            }).pipe(
-                map(({ course, progress }) => ({
+            this.courseFacade.getCourseById(id).pipe(
+                map(course => ({
                     id,
                     title: course?.title || 'Unknown Course',
-                    isCompleted: progress?.status === 'completed'
-                }))
+                    isCompleted: true
+                })),
+                catchError(() => of({ id, title: 'Unknown Course', isCompleted: true }))
             )
         );
 
@@ -1956,18 +1983,18 @@ export class AcademyProgressService {
     ): AcademyCourse {
         const id = course.id ?? '';
         const title = course.title ?? 'Untitled course';
-        const lessons = this.resolveLessonCount(course);
+        const lessons = (course['countOfLessons'] as number) ?? (course['numberOfLessons'] as number) ?? (course['lessonsCount'] as number) ?? 0;
         const category = this.mapCourseCategory(course['category']);
-        const prerequisites = this.extractPrerequisiteIds(course).filter((prerequisiteId) => prerequisiteId !== id);
+        const prerequisites = (course.prerequisiteIds ?? []).filter((id) => id !== course.id);
         const isPublished = typeof course['isPublished'] === 'boolean' ? course['isPublished'] : undefined;
 
-        const rawDuration = course['duration'] ?? course['courseDuration'] ?? course['totalDuration'];
+        const rawDuration = course.courseDuration ?? course['duration'] ?? course['totalDuration'];
         const duration = this.formatDurationToHrsMins(rawDuration, lessons);
 
         return {
             id,
             stageId: stageNumber,
-            levelId: levelId ?? course.levelId ?? '',
+            levelId: levelId ?? (course['levelId'] as string) ?? '',
             title,
             isPublished,
             category,
@@ -1976,7 +2003,7 @@ export class AcademyProgressService {
             duration,
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
-            order: course.order,
+            order: course.order ?? 0,
             prerequisites,
         };
     }

@@ -292,3 +292,46 @@
     gap: 0.75rem;
   }
 }
+
+// ─── Lessons List Styling ───
+.lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.lesson-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  transition: all 0.2s;
+
+  &:hover {
+    background: transparent;
+  }
+}
+
+.lesson-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.lesson-title {
+  font-size: 0.938rem;
+  font-weight: 500;
+  color: var(--colors-rare-grays-80, #343a40);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-divider {
+  display: none;
+}

@@ -40,7 +40,7 @@ export const lessonPlayerResolver: ResolveFn<LessonPlayerResolvedData | null> = 
     return combineLatest([
         academyProgressService.getCourseByIdDirect(courseId).pipe(take(1)),
         academyProgressService.getCourseQuizzesDirect(courseId).pipe(take(1)),
-        lessonContentService.getLesson(lessonId).pipe(take(1)),
+        lessonContentService.getLesson(lessonId, courseId).pipe(take(1)),
         lessonContentService.getLessonNotes(lessonId).pipe(take(1), catchError(() => of([]))),
         academyProgressService.getCourseLessonsWithProgress(courseId).pipe(take(1), catchError(() => of([]))),
     ]).pipe(

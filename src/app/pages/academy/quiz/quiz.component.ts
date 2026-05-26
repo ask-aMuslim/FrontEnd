@@ -17,8 +17,7 @@ import {
     AcademyBreadcrumbItem,
     AcademyPageShellComponent,
 } from '../shared/academy-page-shell/academy-page-shell.component';
-import { AcademySidebarLessonItem } from '../shared/academy-course-sidebar/academy-course-sidebar.component';
-import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
+import { AcademySidebarLessonItem, AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import { QuizQuestion, QuizOption, QuizResolvedData } from './quiz.resolver';
 
 type SidebarLessonType = 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio';

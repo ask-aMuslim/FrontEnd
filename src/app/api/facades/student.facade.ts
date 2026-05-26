@@ -4,6 +4,7 @@ import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 import { EnrollmentFacade } from './enrollment.facade';
 import { CourseFacade } from './course.facade';
+import { TokenService } from '../../core/auth/token.service';
 import {
   StudentProfileService,
   ProfileError,
@@ -48,6 +49,7 @@ export class StudentFacade {
   private readonly enrollmentFacade = inject(EnrollmentFacade);
   private readonly courseFacade = inject(CourseFacade);
   private readonly profileService = inject(StudentProfileService);
+  private readonly tokenService = inject(TokenService);
 
   // Cache for profile data
   private readonly profileCache$ = new BehaviorSubject<StudentProfile | null>(null);
@@ -124,7 +126,16 @@ export class StudentFacade {
     }
 
     // Return the continuous observable stream so components react to auth changes
-    return this.profileCache$.asObservable();
+    return this.profileCache$.asObservable().pipe(
+      switchMap((profile) => {
+        // If the user has a valid access token but the profile hasn't loaded yet,
+        // we wait (don't emit null) so take(1) doesn't complete prematurely.
+        if (profile === null && this.tokenService.accessToken()) {
+          return of();
+        }
+        return of(profile);
+      })
+    );
   }
 
   private fetchProfile(): Observable<StudentProfile | null> {

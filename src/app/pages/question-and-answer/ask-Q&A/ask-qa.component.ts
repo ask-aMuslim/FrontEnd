@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
 import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
 import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
@@ -121,9 +121,7 @@ export class AskQaComponent implements OnInit {
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
-      if (this.questions.length > 0) {
-        this.onSearch();
-      }
+      this.onSearch();
     }
   }
 
@@ -182,35 +180,48 @@ export class AskQaComponent implements OnInit {
     return option?.id ?? null;
   }
 
-   onSearch(): void {
-     const query = this.searchQuery.trim();
-     if (!query) {
-       this.clearSearch();
-       return;
-     }
+  onSearch(): void {
+    const query = this.searchQuery.trim();
+    if (!query) {
+      this.clearSearch();
+      return;
+    }
 
-     const normalizedQuery = query.toLowerCase();
-     this.searchResults = this.questions
-       .filter((question) =>
-         this.matchesQuery(question, normalizedQuery),
-       )
-       .sort((a, b) => {
-         const aTitleMatch = a.title.toLowerCase().includes(normalizedQuery);
-         const bTitleMatch = b.title.toLowerCase().includes(normalizedQuery);
+    this.qasService.getAll({
+      searchTerm: query,
+      isPublished: true,
+      pageSize: 50,
+    }).subscribe({
+      next: (response) => {
+        const results = this.mapQuestions(response);
+        const normalizedQuery = query.toLowerCase();
+        
+        this.searchResults = results.sort((a, b) => {
+          const aTitleMatch = a.title.toLowerCase().includes(normalizedQuery);
+          const bTitleMatch = b.title.toLowerCase().includes(normalizedQuery);
 
-         if (aTitleMatch && !bTitleMatch) return -1;
-         if (!aTitleMatch && bTitleMatch) return 1;
+          if (aTitleMatch && !bTitleMatch) return -1;
+          if (!aTitleMatch && bTitleMatch) return 1;
 
-         const aDescMatch = a.description.toLowerCase().includes(normalizedQuery);
-         const bDescMatch = b.description.toLowerCase().includes(normalizedQuery);
+          const aDescMatch = a.description.toLowerCase().includes(normalizedQuery);
+          const bDescMatch = b.description.toLowerCase().includes(normalizedQuery);
 
-         if (aDescMatch && !bDescMatch) return -1;
-         if (!aDescMatch && bDescMatch) return 1;
+          if (aDescMatch && !bDescMatch) return -1;
+          if (!aDescMatch && bDescMatch) return 1;
 
-         return 0;
-       });
-     this.hasSearched = true;
-   }
+          return 0;
+        });
+        this.hasSearched = true;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Search failed', error);
+        this.searchResults = [];
+        this.hasSearched = true;
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
   clearSearch(): void {
     this.searchQuery = '';

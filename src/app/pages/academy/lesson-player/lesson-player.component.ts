@@ -24,8 +24,8 @@ import {
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
     AcademySidebarLessonItem,
-} from '../shared/academy-course-sidebar/academy-course-sidebar.component';
-import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
+    AcademySidebarHostComponent,
+} from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import {
     AcademyCourse,
     AcademyLesson,
@@ -340,7 +340,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         combineLatest([
             this.academyProgressService.getCourseByIdDirect(this.courseId),
             this.academyProgressService.getCourseQuizzesDirect(this.courseId),
-            this.lessonContentService.getLesson(this.lessonId),
+            this.lessonContentService.getLesson(this.lessonId, this.courseId),
             this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([]))),
             this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(
                 take(1),
@@ -374,7 +374,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                         duration: '0m',
                         thumbnailUrl: rawCourse.thumbnailUrl,
                         description: rawCourse.description,
-                        stageLabel: rawCourse.level ?? 'Course',
+                        stageLabel: (rawCourse['levelName'] as string) ?? (rawCourse['levelname'] as string) ?? (rawCourse['level_name'] as string) ?? rawCourse.level ?? 'Course',
                     };
 
                     let finalLessons = lessonsWithProgress;

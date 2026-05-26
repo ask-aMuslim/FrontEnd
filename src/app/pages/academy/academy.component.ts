@@ -224,15 +224,24 @@ export class AcademyComponent implements OnInit {
         courses: AcademyCourse[],
     ): Stage[] {
         return apiStages.map((stageData) => {
-            const isLocked = false;
+            // Check if stage has courses. If not, don't show it or show it as locked/empty?
+            // The API response for roadmap gives courses nested under levelId.
+            // Let's filter by matching levelId.
             const stageCourses = courses.filter(course =>
                 course.stageId === stageData.number || course.levelId === stageData.id,
             );
+            
+            // The isLocked status should be derived from stageProgress, not hardcoded to false
+            const stageProgress = _stageProgress.find(sp => sp.stageNumber === stageData.number);
+            const isLocked = !stageProgress?.isUnlocked;
+
             const sortedStageCourses = [...stageCourses];
             sortedStageCourses.sort((a: AcademyCourse, b: AcademyCourse) => (a.order ?? 0) - (b.order ?? 0));
+            
             let allCourses = sortedStageCourses
                 .map((course: AcademyCourse) => this.mapCourseWithProgress(course, courseProgress));
 
+            // Only mark as available if not locked
             if (!isLocked && allCourses.length > 0 && allCourses.every((course) => course.status === 'locked')) {
                 const [firstCourse, ...rest] = allCourses;
                 allCourses = [{ ...firstCourse, status: 'available' }, ...rest];
