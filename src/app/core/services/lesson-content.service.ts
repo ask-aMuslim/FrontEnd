@@ -43,16 +43,17 @@ export class LessonContentService {
   /**
    * Get lesson content and metadata by lesson ID
    */
-  getLesson(lessonId: Id): Observable<LessonData> {
-    // Extract courseId from lessonId (format: s1-mb-1-lesson-1)
-    const parts = String(lessonId).split('-lesson-');
-    const courseId = parts[0];
+  getLesson(lessonId: Id, courseId?: Id): Observable<LessonData> {
+    // Extract courseId from lessonId (format: s1-mb-1-lesson-1) if not provided
+    const resolvedCourseId = courseId
+      ? String(courseId)
+      : String(lessonId).split('-lesson-')[0];
 
     return this.lessonsService.getById(lessonId).pipe(
       switchMap(lessonDto =>
-        this.getCourseLessons(courseId).pipe(
+        this.getCourseLessons(resolvedCourseId).pipe(
           map(lessons => {
-            const lessonData = this.mapLessonDtoToLessonData(lessonDto, String(lessonId), courseId);
+            const lessonData = this.mapLessonDtoToLessonData(lessonDto, String(lessonId), resolvedCourseId);
             const currentIndex = lessons.findIndex(lesson => lesson.id === String(lessonId));
             const currentLessonMetadata = currentIndex >= 0 ? lessons[currentIndex] : undefined;
 
@@ -70,7 +71,7 @@ export class LessonContentService {
           })
         )
       ),
-      catchError(() => of(this.mapLessonDtoToLessonData(null, String(lessonId), courseId)))
+      catchError(() => of(this.mapLessonDtoToLessonData(null, String(lessonId), resolvedCourseId)))
     );
   }
 
@@ -115,8 +116,8 @@ export class LessonContentService {
     return this.courseFacade.getCourseById(String(courseId)).pipe(
       map(course => {
         const rawLessons = course && Array.isArray((course as any).lessons)
-            ? (course as any).lessons as LessonReadDto[]
-            : [];
+          ? (course as any).lessons as LessonReadDto[]
+          : [];
         const withOrder = rawLessons
           .filter((lesson) => lesson.isPublished !== false) as (LessonReadDto & { order?: number })[];
         const sortedLessons = [...withOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -262,7 +263,9 @@ export class LessonContentService {
       } as ArticleLessonContent;
     }
 
-    let lessonType = (lessonDto as { type?: number }).type as LessonType;
+    // Check both 'type' and 'lessonType' fields since different API endpoints use different names
+    const rawType = (lessonDto as Record<string, unknown>)['type'] ?? (lessonDto as Record<string, unknown>)['lessonType'];
+    let lessonType = this.parseLessonType(rawType);
     if (!lessonType) {
       if (lessonDto.videoUrl || lessonDto.externalVideoUrl || lessonDto.contentUrl) {
         lessonType = LessonType.Video;
@@ -273,8 +276,9 @@ export class LessonContentService {
 
     switch (lessonType) {
       case LessonType.Video: {
-        const primaryVideoUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
-        const secondaryVideoUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
+        // Prefer videoUrl (typically the YouTube link) over externalVideoUrl
+        const primaryVideoUrl = toApiMediaUrl(lessonDto.videoUrl ?? null);
+        const secondaryVideoUrl = toApiMediaUrl(lessonDto.externalVideoUrl ?? null);
         const fallbackVideoUrl = toApiMediaUrl(lessonDto.contentUrl ?? null);
         return {
           id: String(lessonDto.id ?? ''),
@@ -383,16 +387,40 @@ export class LessonContentService {
       ? Math.floor(lessonDto.order)
       : null;
 
+    const rawType = (lessonDto as Record<string, unknown>)['type'] ?? (lessonDto as Record<string, unknown>)['lessonType'];
+    let lessonType = this.parseLessonType(rawType);
+    if (!lessonType) {
+      lessonType = LessonType.Video;
+    }
+
     return {
       id: String(lessonDto.id ?? ''),
       courseId: String(lessonDto.courseId ?? ''),
       title: lessonDto.title ?? '',
-      type: ((lessonDto as { type?: number }).type as LessonType) || LessonType.Video,
+      type: lessonType,
       status: 'pending',
       duration: '0:00',
       order: apiOrder ?? fallbackOrder,
       hasFeedback: false
     };
+  }
+
+  private parseLessonType(raw: unknown): LessonType {
+    if (typeof raw === 'number') {
+      return raw as LessonType;
+    }
+    if (typeof raw === 'string') {
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed)) {
+        return parsed as LessonType;
+      }
+      const lower = raw.toLowerCase().trim();
+      if (lower === 'video' || lower === '1') return LessonType.Video;
+      if (lower === 'article' || lower === '2') return LessonType.Article;
+      if (lower === 'document' || lower === '3') return LessonType.Document;
+      if (lower === 'audio' || lower === '4') return LessonType.Audio;
+    }
+    return 0 as LessonType;
   }
 
   private resolveArticleSectionContent(contentJson: unknown, fallbackContent: string): string {

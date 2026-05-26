@@ -101,11 +101,8 @@ export class CongratulationsComponent implements OnInit, OnDestroy {
             this.courseTitle.set(normalizedTitle);
         }
 
-        this.academyProgressService.getLevelTitleForCourse(data.course)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((title) => {
-                this.levelName.set(title);
-            });
+        const levelTitle = (data.course as any).levelName || 'Course';
+        this.levelName.set(levelTitle);
 
         if (data.nextCourse) {
             this.nextCourseId = data.nextCourse.id ?? null;

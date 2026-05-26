@@ -63,25 +63,25 @@
                >
                Lessons:
                </h2>
-               <div
-                 class="lessons-list"
-                 [style.display]="course.lessons.length === 0 ? 'none' : null"
-               >
-                 @for (
-                   lesson of contentLessonsOnly;
-                   track lesson.id;
-                   let last = $last
-                 ) {
-                   <div class="lesson-item">
-                     <div class="lesson-info">
-                       <span class="lesson-title">{{ lesson.title }}</span>
-                     </div>
-                   </div>
-                   @if (!last) {
-                     <div class="lesson-divider"></div>
-                   }
-                 }
-               </div>
+                <div
+                  class="lessons-list"
+                  [style.display]="course.lessonsList.length === 0 ? 'none' : null"
+                >
+                  @for (
+                    lesson of course.lessonsList;
+                    track lesson.id;
+                    let last = $last
+                  ) {
+                    <div class="lesson-item">
+                      <div class="lesson-info">
+                        <span class="lesson-title">{{ lesson.title }}</span>
+                      </div>
+                    </div>
+                    @if (!last) {
+                      <div class="lesson-divider"></div>
+                    }
+                  }
+                </div>
              </div>
            </div>
            <!-- Action Buttons -->
