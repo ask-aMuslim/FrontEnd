@@ -559,8 +559,13 @@ export class CourseComponent implements OnInit, OnDestroy {
         if (!this.course || this.course.isLocked || this.isBeginDisabled) return;
         if (!this.hasPlayableLesson || this.isEnrolling) return;
 
-        // Navigate immediately to the first playable lesson
-        this.navigateToPrimaryActionLesson(false);
+        // Navigate immediately to the correct playable lesson
+        this.navigateToPrimaryActionLesson(this.hasCourseEnrollment);
+
+        // Skip enrollment if already enrolled
+        if (this.hasCourseEnrollment) {
+            return;
+        }
 
         // Enroll in the background
         this.isEnrolling = true;

@@ -165,9 +165,9 @@ export class AcademyProgressService {
             return this.academyStagesRequest$;
         }
 
-        this.academyStagesRequest$ = this.levelFacade.getAllLevels().pipe(
+        this.academyStagesRequest$ = this.levelFacade.getAllLevels({ IsPublished: true }).pipe(
             map(levels => levels
-                .filter(l => l.isPublished !== false) // include all unless explicitly not published
+                .filter(l => l.isPublished === true) // only include published levels
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((level, index) => this.mapLevelToStage(level, index + 1))
             ),
