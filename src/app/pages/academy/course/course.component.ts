@@ -224,11 +224,12 @@ export class CourseComponent implements OnInit, OnDestroy {
                 courseProgress: of(undefined as any),
                 enrollment: this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId).pipe(take(1), catchError(() => of({ enrollmentId: null, status: null, isEnrolled: false, isCompleted: false } as CourseEnrollmentState))),
                 prerequisites: this.academyProgressService.getTargetedPrerequisiteDetails((course.prerequisites ?? []).map((p: any) => p.id ?? p)).pipe(take(1), catchError(() => of([]))),
+                fullLessons: this.academyProgressService.getAcademyLessons(this.courseId).pipe(take(1), catchError(() => of([]))),
             }).pipe(
                 takeUntil(this.destroy$),
                 switchMap((results) => {
                     const lessonsList = this.extractLessonsFromRawCourse(course);
-                    return this.hydrateLessonsWithYouTube(lessonsList, (course.lessons as any[] || [])).pipe(
+                    return this.hydrateLessonsWithYouTube(lessonsList, results.fullLessons).pipe(
                         map((hydratedLessons) => ({ ...results, hydratedLessons }))
                     );
                 })
@@ -320,11 +321,12 @@ export class CourseComponent implements OnInit, OnDestroy {
             courseProgress: of(undefined as any),
             enrollment: this.academyProgressService.getCurrentStudentCourseEnrollment(this.courseId).pipe(take(1), catchError(() => of({ enrollmentId: null, status: null, isEnrolled: false, isCompleted: false } as CourseEnrollmentState))),
             prerequisites: this.academyProgressService.getTargetedPrerequisiteDetails((raw.prerequisites ?? []).map((p: any) => p.id ?? p)).pipe(take(1), catchError(() => of([]))),
+            fullLessons: this.academyProgressService.getAcademyLessons(this.courseId).pipe(take(1), catchError(() => of([]))),
         }).pipe(
             takeUntil(this.destroy$),
             switchMap((results) => {
                 const lessonsList = this.extractLessonsFromRawCourse(raw);
-                return this.hydrateLessonsWithYouTube(lessonsList, (raw.lessons as any[] || [])).pipe(
+                return this.hydrateLessonsWithYouTube(lessonsList, results.fullLessons).pipe(
                     map((hydratedLessons) => ({ ...results, hydratedLessons }))
                 );
             })
@@ -478,7 +480,7 @@ export class CourseComponent implements OnInit, OnDestroy {
         return rawLessons
             .filter((l: any) => l.isPublished !== false)
             .map((l: any) => {
-                const type = this.mapLessonType(l.lessonType ?? l.type);
+                const type = this.mapLessonType(l);
                 
                 // Extract duration from various possible API fields
                 let duration = l.duration ?? l.lessonDuration ?? l.courseDuration ?? l.totalDuration;
@@ -503,7 +505,8 @@ export class CourseComponent implements OnInit, OnDestroy {
     /**
      * Map a numeric lesson type to a string type label
      */
-    private mapLessonType(raw: unknown): Lesson['type'] {
+    private mapLessonType(l: any): Lesson['type'] {
+        const raw = l.lessonType ?? l.type;
         // API may return numeric or string type
         const str = String(raw ?? '').toLowerCase();
         if (str === '1' || str === 'video') return 'video';
@@ -511,6 +514,13 @@ export class CourseComponent implements OnInit, OnDestroy {
         if (str === '3' || str === 'document') return 'document';
         if (str === '4' || str === 'audio') return 'audio';
         if (str === '5' || str === 'quiz') return 'quiz';
+
+        // Smart fallback check for video URL presence
+        const videoUrl = l.externalVideoUrl ?? l.videoUrl ?? l.contentUrl;
+        if (videoUrl) {
+            return 'video';
+        }
+
         return 'intro';
     }
 
@@ -651,8 +661,18 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     private hydrateLessonsWithYouTube(lessonsList: Lesson[], rawLessons: any[]): Observable<Lesson[]> {
         const durationRequests = lessonsList.map((lesson) => {
-            if (lesson.type === 'video' && (!lesson.duration || lesson.duration === '0:00' || lesson.duration === '0m')) {
-                const rawLesson = (rawLessons || []).find((rl: any) => (rl.lessonId ?? rl.id) === lesson.id);
+            const rawLesson = (rawLessons || []).find((rl: any) => (rl.lessonId ?? rl.id) === lesson.id);
+            const durationStr = String(lesson.duration || '').trim().toLowerCase();
+            const isNullOrFallback = !durationStr ||
+                durationStr === '0:00' ||
+                durationStr === '0m' ||
+                durationStr === '5 min' ||
+                durationStr === '5 mins' ||
+                durationStr === '~5min' ||
+                durationStr.includes('5 min') ||
+                (rawLesson && (rawLesson.lessonDuration === null || rawLesson.lessonDuration === undefined || rawLesson.lessonDuration === 'null' || rawLesson.duration === null || rawLesson.duration === undefined));
+
+            if (lesson.type === 'video' && isNullOrFallback) {
                 if (rawLesson) {
                     const videoUrl = rawLesson.externalVideoUrl ?? rawLesson.videoUrl ?? rawLesson.contentUrl;
                     if (videoUrl) {
