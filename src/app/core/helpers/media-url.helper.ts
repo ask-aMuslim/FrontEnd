@@ -14,9 +14,16 @@ export function toApiMediaUrl(value: string | null): string | null {
     return null;
   }
 
-  const trimmed = value.trim();
+  let trimmed = value.trim();
   if (!trimmed) {
     return null;
+  }
+
+  // Normalize /api/uploads/ to /uploads/ (case-insensitive)
+  if (trimmed.includes('/api/uploads/')) {
+    trimmed = trimmed.replace(/\/api\/uploads\//i, '/uploads/');
+  } else if (trimmed.startsWith('api/uploads/')) {
+    trimmed = trimmed.replace(/^api\/uploads\//i, 'uploads/');
   }
 
   if (trimmed.startsWith(legacyAcademyAssetPrefix)) {

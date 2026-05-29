@@ -26,7 +26,7 @@ on:
         type: boolean
 
 env:
-  SWAGGER_URL: 'https://aam-api.ask-a-muslim.com/api/specification.json'
+  SWAGGER_URL: 'https://api.askamuslim.com/api/specification.json'
   GENERATED_DIR: 'src/app/api'
   HASH_FILE: 'src/app/api/swagger.hash'
   NODE_VERSION: '20.x'
