@@ -151,7 +151,18 @@ export class QuestionComponent implements OnDestroy {
           (firstTranslation ? getValue(firstTranslation, 'answerTextJson', 'AnswerTextJson') : undefined) ??
           getValue(data, 'answerTextJson', 'AnswerTextJson');
 
-        const normalizedAnswerJsonValue = this.normalizeJsonMediaSources(mappedAnswerJsonValue);
+        let mappedAnswerJsonObj: unknown = null;
+        if (typeof mappedAnswerJsonValue === 'string') {
+          try {
+            mappedAnswerJsonObj = JSON.parse(mappedAnswerJsonValue);
+          } catch {
+            mappedAnswerJsonObj = null;
+          }
+        } else {
+          mappedAnswerJsonObj = mappedAnswerJsonValue;
+        }
+
+        const normalizedAnswerJsonValue = this.normalizeJsonMediaSources(mappedAnswerJsonObj);
 
         let mappedAnswerJson: string | null = null;
         if (typeof mappedAnswerJsonValue === 'string') {
@@ -161,9 +172,7 @@ export class QuestionComponent implements OnDestroy {
         }
 
         let normalizedAnswerJson: string | null = null;
-        if (typeof normalizedAnswerJsonValue === 'string') {
-          normalizedAnswerJson = normalizedAnswerJsonValue;
-        } else if (normalizedAnswerJsonValue !== null && normalizedAnswerJsonValue !== undefined) {
+        if (normalizedAnswerJsonValue !== null && normalizedAnswerJsonValue !== undefined) {
           normalizedAnswerJson = JSON.stringify(normalizedAnswerJsonValue);
         }
 
@@ -185,9 +194,12 @@ export class QuestionComponent implements OnDestroy {
         const renderedTitle = this.resolveRichHtml(mappedTitle, mappedTitleJson);
         const renderedAnswer = this.resolveRichHtml(mappedAnswer, normalizedAnswerJson ?? mappedAnswerJson);
 
-        this.questionHtml = renderedTitle ? this.toSafeHtml(renderedTitle) : null;
-        this.answerHtmlRaw = renderedAnswer;
-        this.answerViewerContent = (normalizedAnswerJsonValue ?? mappedAnswerJsonValue) ?? renderedAnswer ?? mappedAnswer ?? null;
+        const normalizedTitle = renderedTitle ? this.normalizeHtmlMediaSources(renderedTitle) : null;
+        const normalizedAnswer = renderedAnswer ? this.normalizeHtmlMediaSources(renderedAnswer) : null;
+
+        this.questionHtml = normalizedTitle ? this.toSafeHtml(normalizedTitle) : null;
+        this.answerHtmlRaw = normalizedAnswer;
+        this.answerViewerContent = (normalizedAnswerJsonValue ?? normalizedAnswer ?? mappedAnswerJsonValue) ?? mappedAnswer ?? null;
 
         this.title = this.extractTextFromHtml(renderedTitle ?? mappedTitle ?? this.title) || this.title;
         this.answer = this.extractTextFromHtml(renderedAnswer ?? mappedAnswer ?? this.answer) || this.answer;
@@ -749,35 +761,49 @@ export class QuestionComponent implements OnDestroy {
   }
 
   private normalizeHtmlMediaSources(html: string): string {
-    const parser = new DOMParser();
-    const documentNode = parser.parseFromString(`<div id="pdf-answer-root">${html}</div>`, 'text/html');
-    const root = documentNode.body.querySelector('#pdf-answer-root');
-    if (!root) {
+    if (!html) {
       return html;
     }
 
-    const images = Array.from(root.querySelectorAll('img'));
-    for (const image of images) {
-      const srcCandidate = (image.getAttribute('src') ?? image.dataset['src'] ?? '').trim();
-      if (!srcCandidate) {
-        continue;
+    if (typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const documentNode = parser.parseFromString(`<div id="pdf-answer-root">${html}</div>`, 'text/html');
+      const root = documentNode.body.querySelector('#pdf-answer-root');
+      if (!root) {
+        return html;
       }
 
-      const normalizedSrc = this.isInlineImageSource(srcCandidate)
-        ? srcCandidate
-        : (toApiMediaUrl(srcCandidate) ?? srcCandidate);
+      const images = Array.from(root.querySelectorAll('img'));
+      for (const image of images) {
+        const srcCandidate = (image.getAttribute('src') ?? image.dataset['src'] ?? '').trim();
+        if (!srcCandidate) {
+          continue;
+        }
 
-      image.setAttribute('src', normalizedSrc);
-      image.removeAttribute('srcset');
-      image.removeAttribute('sizes');
-      image.setAttribute('loading', 'eager');
-      image.style.maxWidth = '100%';
-      image.style.height = 'auto';
-      image.style.display = 'block';
-      image.style.margin = '12px 0';
+        const normalizedSrc = this.isInlineImageSource(srcCandidate)
+          ? srcCandidate
+          : (toApiMediaUrl(srcCandidate) ?? srcCandidate);
+
+        image.setAttribute('src', normalizedSrc);
+        image.removeAttribute('srcset');
+        image.removeAttribute('sizes');
+        image.setAttribute('loading', 'eager');
+        image.style.maxWidth = '100%';
+        image.style.height = 'auto';
+        image.style.display = 'block';
+        image.style.margin = '12px 0';
+      }
+
+      return root.innerHTML;
+    } else {
+      // Simple regex fallback for server-side rendering
+      return html.replaceAll(/<img\s+([^>]*?)src=["']([^"']+)["']/gi, (match, before, src) => {
+        const normalizedSrc = this.isInlineImageSource(src)
+          ? src
+          : (toApiMediaUrl(src) ?? src);
+        return `<img ${before}src="${normalizedSrc}"`;
+      });
     }
-
-    return root.innerHTML;
   }
 
   private async inlineContainerImages(container: HTMLElement): Promise<ImageInliningReport> {
