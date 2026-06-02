@@ -8,6 +8,7 @@ import { courseResolver } from './pages/academy/course/course.resolver';
 import { lessonPlayerResolver } from './pages/academy/lesson-player/lesson-player.resolver';
 import { quizResolver } from './pages/academy/quiz/quiz.resolver';
 import { congratulationsResolver } from './pages/academy/congratulations/congratulations.resolver';
+import { donationResolver } from './pages/donation/donation.resolver';
 
 const createQuestionAndAnswerRoutes = (): Routes => [
   { path: '', pathMatch: 'full', redirectTo: 'topics' },
@@ -165,6 +166,7 @@ export const routes: Routes = [
              (m) => m.DonationComponent,
            ),
          title: 'Donate to Change Lives',
+         resolve: { donationUrl: donationResolver },
        },
       {
         path: 'question-and-answer',
