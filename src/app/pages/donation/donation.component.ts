@@ -1,6 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
-import { Title, Meta } from '@angular/platform-browser';
+import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
 interface ImpactCard {
   title: string;
@@ -22,7 +23,9 @@ interface TrustBadge {
   styleUrl: './donation.component.scss'
 })
 export class DonationComponent implements OnInit {
-  protected loadingIframe = true;
+  protected loadingIframe = false;
+  protected safeDonationUrl!: SafeResourceUrl;
+  private donationUrl = 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179';
 
   protected readonly impactCards: readonly ImpactCard[] = [
     {
@@ -63,10 +66,21 @@ export class DonationComponent implements OnInit {
   constructor(
     private titleService: Title,
     private metaService: Meta,
+    private route: ActivatedRoute,
+    private sanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
+    // Retrieve pre-resolved donationUrl from resolver to ensure fast visual rendering
+    const resolvedUrl = this.route.snapshot.data['donationUrl'];
+    if (resolvedUrl) {
+      this.donationUrl = resolvedUrl;
+    }
+    
+    // Sanitize the URL for iframe binding
+    this.safeDonationUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.donationUrl);
+
     // Set premium SEO headers
     this.titleService.setTitle('Donate to Ask A Muslim | Support Global Dawah');
     
