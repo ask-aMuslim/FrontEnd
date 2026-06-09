@@ -297,22 +297,13 @@ const prophecyPosterCards = buildPdfCards(
 
 const dawahResourceCards: readonly ResourceCard[] = [
   {
-    id: 'dawah-learn-islam',
-    title: 'Learn Islam',
-    subtitle: 'Foundational materials for learning Islam',
-    articleUrl: 'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87',
-    downloadUrl: 'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87',
+    id: 'dawah-knowledge-hub',
+    title: 'Knowledge Hub',
+    subtitle: 'Curated materials for learning and research',
+    articleUrl: 'https://drive.google.com/drive/folders/1b8-rR45DccoGUqmFiZ0qTiBuANSQTSUf',
+    downloadUrl: 'https://drive.google.com/drive/folders/1b8-rR45DccoGUqmFiZ0qTiBuANSQTSUf',
     thumbnailUrl: cardThumbnailFallback,
-    thumbnailAlt: 'Learn Islam resource',
-  },
-  {
-    id: 'dawah-learn-christianity',
-    title: 'Learn Christianity',
-    subtitle: 'References related to Christianity',
-    articleUrl: 'https://drive.google.com/drive/folders/1S3D-D4WkRPJpNxZL8EdOsXnOvWY2PxgN',
-    downloadUrl: 'https://drive.google.com/drive/folders/1S3D-D4WkRPJpNxZL8EdOsXnOvWY2PxgN',
-    thumbnailUrl: cardThumbnailFallback,
-    thumbnailAlt: 'Learn Christianity resource',
+    thumbnailAlt: 'Knowledge Hub resource',
   },
   {
     id: 'dawah-101',
