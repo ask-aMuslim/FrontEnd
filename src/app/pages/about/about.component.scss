@@ -255,17 +255,20 @@
 .about-story__media {
   margin: 0;
   position: relative;
-  width: 32.8125rem;
-  height: 28.625rem;
+  width: 100%;
+  max-width: 32.8125rem;
+  height: auto;
+  aspect-ratio: 32.8125 / 28.625;
 
   .about-story__photo {
+    position: absolute;
+    top: 6.98%;
+    left: 0;
     width: 100%;
-    max-width: 32.8125rem;
+    height: 86.03%;
     border-radius: 16px;
     display: block;
-    margin: 2rem 0 0;
-    object-fit: cover;
-    height: 24.625rem;
+    object-fit: fill;
     border: 1px solid var(--color-border-normal-low);
   }
 }
@@ -276,6 +279,7 @@
   height: 3rem;
   display: inline-block;
   pointer-events: none;
+  z-index: 2;
 }
 
 .about-story__quote--top {
@@ -812,17 +816,8 @@
     height: auto;
   }
 
-  .about-story__media img {
-    height: auto;
-  }
-
   .about-story__body {
     padding-top: 0;
-  }
-
-  .about-story__quote--bottom {
-    right: 0.5rem;
-    bottom: -0.25rem;
   }
 }
 
