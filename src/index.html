@@ -18,13 +18,18 @@
     />
     <link rel="preload" href="/backgrounds/texture.svg" as="image" type="image/svg+xml" fetchpriority="high" />
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1RJG2Q758K"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      if (window.location.hostname === 'askamuslim.com' || window.location.hostname === 'www.askamuslim.com') {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-1RJG2Q758K';
+        document.head.appendChild(script);
 
-      gtag('config', 'G-1RJG2Q758K');
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function() { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', 'G-1RJG2Q758K');
+      }
     </script>
   </head>
   <body>
