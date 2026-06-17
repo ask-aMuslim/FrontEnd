@@ -11,6 +11,7 @@ import { TokenService } from '../../core/auth/token.service';
 import { Language, MeetingInquiryTopic } from '../../core/models/interfaces/enums.model';
 import { ScrollService } from '../../core/services/scroll.service';
 import { FormsFacade } from '../../api/facades/forms.facade';
+import { SeoService } from '../../core/services/seo.service';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -44,6 +45,7 @@ export class ContactComponent implements OnInit {
   private readonly tokenService = inject(TokenService);
   private readonly authService = inject(AuthService);
   private readonly formsFacade = inject(FormsFacade);
+  private readonly seoService = inject(SeoService);
 
   readonly quickLinks = signal<readonly ContactQuickLink[]>([]);
 
@@ -101,6 +103,12 @@ export class ContactComponent implements OnInit {
       .subscribe((topic) => {
         this.selectedTopic.set(topic);
       });
+
+    this.seoService.setMetaTags({
+      title: 'Contact Us & Ask Questions',
+      description: 'Get in touch with Ask A Muslim. Ask questions directly to scholars, request studies in Quran, Hadith, or Comparative Religion, and send general inquiries.',
+      keywords: ['contact scholars', 'ask a scholar', 'Islamic advice', 'Quran studies support', 'conversion guidance']
+    });
   }
 
   onTopicSelectionChange(): void {

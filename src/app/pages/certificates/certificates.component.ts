@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import gsap from 'gsap';
 import AOS from 'aos';
 import { CertificateData, CERTIFICATES_DB } from './certificates.data';
+import { SeoService } from '../../core/services/seo.service';
 
 class Particle {
   x: number;
@@ -473,6 +474,7 @@ class Particle {
 export class CertificatesComponent implements OnInit, AfterViewInit {
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
+  private readonly seoService = inject(SeoService);
 
   @ViewChild('splash') splash?: ElementRef;
   @ViewChild('medal') medal?: ElementRef;
@@ -499,6 +501,12 @@ export class CertificatesComponent implements OnInit, AfterViewInit {
         easing: 'ease-out-back'
       });
     }
+
+    this.seoService.setMetaTags({
+      title: 'Hall of Honor - Certificates of Achievement',
+      description: 'Celebrating the dedication, knowledge, and excellence of students who have completed Islamic courses and achievements on Ask A Muslim.',
+      keywords: ['certificates of achievement', 'Islamic courses certificates', 'honor roll', 'student achievements']
+    });
   }
 
   ngAfterViewInit(): void {

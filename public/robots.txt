@@ -17,5 +17,5 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
+# Sitemaps
 Sitemap: https://askamuslim.com/sitemap.xml
-Allow: /

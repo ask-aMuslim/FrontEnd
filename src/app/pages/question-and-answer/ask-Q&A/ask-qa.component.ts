@@ -22,6 +22,7 @@ import { QasService } from '../../../core/services/qas.service';
 import { asRecord, extractArray, getValue, toNumberValue, toStringArray, toStringValue } from '../../../core/helpers/api-response.helper';
 import { TagsService } from '../../../core/services/tags.service';
 import { AskQaResolvedData } from './ask-qa.resolver';
+import { SeoService } from '../../../core/services/seo.service';
 
 interface TagFilterOption {
   id: string;
@@ -57,6 +58,7 @@ export class AskQaComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly seoService = inject(SeoService);
   private initialCategoryQuery: string | null = null;
   private lastScrolledCategoryIndex: number | null = null;
   private lastScrolledCategoryContainerWidth: number | null = null;
@@ -123,6 +125,12 @@ export class AskQaComponent implements OnInit {
       this.searchQuery = initialQuery;
       this.onSearch();
     }
+
+    this.seoService.setMetaTags({
+      title: 'Islamic Q&A - Ask Questions & Find Answers',
+      description: 'Search through thousands of verified Islamic questions and answers on topics of theology, jurisprudence, Quranic studies, comparative religion, and history.',
+      keywords: ['Islamic Q&A', 'ask questions Islam', 'scholar answers', 'theology', 'jurisprudence', 'comparative religion']
+    });
   }
 
   get isShowingResults(): boolean {
