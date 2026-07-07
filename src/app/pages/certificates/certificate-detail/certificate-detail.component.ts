@@ -2,6 +2,7 @@ import { Component, OnInit, inject, PLATFORM_ID, ChangeDetectorRef } from '@angu
 import { CommonModule, isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { CertificateData, CERTIFICATES_DB } from '../certificates.data';
+import { SeoService } from '../../../core/services/seo.service';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -339,6 +340,7 @@ export class CertificateDetailComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
   private cdr = inject(ChangeDetectorRef);
+  private readonly seoService = inject(SeoService);
 
   cert: CertificateData | undefined;
   isLoaded = false;
@@ -349,6 +351,14 @@ export class CertificateDetailComponent implements OnInit {
       const id = params.get('id');
       if (id) {
         this.cert = CERTIFICATES_DB.find(c => c.id === id);
+        if (this.cert) {
+          this.seoService.setMetaTags({
+            title: `Certificate of Achievement - ${this.cert.name}`,
+            description: `${this.cert.name} has successfully earned the certificate: ${this.cert.title}. ${this.cert.description}`,
+            keywords: ['Certificate of Achievement', this.cert.name, this.cert.title, 'Islamic Course Completion'],
+            ogImage: this.cert.jpegUrl
+          });
+        }
       }
       this.isLoaded = true;
     });

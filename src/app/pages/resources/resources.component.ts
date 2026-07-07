@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, Input } from '@angular/core';
+import { Component, inject, signal, Input, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
+import { SeoService } from '../../core/services/seo.service';
 
 import {
     ResourceCard,
@@ -18,7 +19,17 @@ import {
     templateUrl: './resources.component.html',
     styleUrl: './resources.component.scss',
 })
-export class ResourcesComponent {
+export class ResourcesComponent implements OnInit {
+    private readonly seoService = inject(SeoService);
+
+    ngOnInit(): void {
+        this.seoService.setMetaTags({
+            title: 'Islamic Resources & Materials',
+            description: 'Explore our library of free downloadable PDF brochures, scientific posters, prophecy charts, and resources designed for new Muslims and seekers.',
+            keywords: ['Islamic Resources', 'Download free Quran', 'Ablution guide', 'Islamic pamphlets', 'Scientific posters Quran', 'Prophecy posters']
+        });
+    }
+
     private readonly itemsPerLoad = 3;
     private static readonly cardThumbnailFallback = '/images/events-image-placeholder.jpg';
     private readonly sanitizer = inject(DomSanitizer);
@@ -397,7 +408,7 @@ export class ResourcesComponent {
         return candidates[attempt] ?? ResourcesComponent.cardThumbnailFallback;
     }
 
-    protected shouldUsePdfPreview(_card: ResourceCard): boolean {
+    protected shouldUsePdfPreview(): boolean {
         return false;
     }
 

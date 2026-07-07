@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
+import { SeoService } from '../../core/services/seo.service';
 
 interface TimelineItem {
     year: string;
@@ -31,8 +32,17 @@ interface AchievementHighlight {
     templateUrl: './about.component.html',
     styleUrl: './about.component.scss',
 })
-export class AboutComponent {
+export class AboutComponent implements OnInit {
     protected readonly authService = inject(AuthService);
+    private readonly seoService = inject(SeoService);
+
+    ngOnInit(): void {
+        this.seoService.setMetaTags({
+            title: 'About Us',
+            description: 'Learn about Ask A Muslim, our mission, history, achievements, and our dedication to sharing authentic and credible knowledge about Islam.',
+            keywords: ['About Ask A Muslim', 'Islamic Mission', 'Dawah', 'Muslim community', 'Our Story', 'Learn Islam']
+        });
+    }
 
     protected readonly aboutQuestionsCta = {
         title: 'Do You Have Any Questions?',

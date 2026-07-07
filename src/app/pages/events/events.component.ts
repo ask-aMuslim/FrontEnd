@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EventCardComponent } from './event-card/event-card.component';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
+import { SeoService } from '../../core/services/seo.service';
+
 import {
   SelectDropdownComponent,
   SelectOption,
@@ -67,10 +69,17 @@ export class EventsComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly seoService = inject(SeoService);
 
   ngOnInit(): void {
     this.loadFeaturedEvent();
     this.loadEvents();
+
+    this.seoService.setMetaTags({
+      title: 'Islamic Events, Seminars & Webinars',
+      description: 'Join our upcoming and live events, watch recorded seminars, and learn from scholars and preachers.',
+      keywords: ['Islamic events', 'seminars', 'webinars', 'scholars sessions', 'dawah events', 'recorded lectures']
+    });
   }
 
   private loadFeaturedEvent(): void {

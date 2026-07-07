@@ -11,6 +11,7 @@ import {
 import { AskAssistantService } from './ask-assistant.service';
 import { buildChatTitleFromMessages } from './ask-assistant-title.util';
 import { MarkdownPipe } from '../../../shared/pipes/markdown.pipe';
+import { SeoService } from '../../../core/services/seo.service';
 
 interface AskAssistantConversationSection {
   label: string;
@@ -63,6 +64,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly appRef = inject(ApplicationRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly seoService = inject(SeoService);
 
   ngOnInit(): void {
     this.userId = this.askAssistantService.getResolvedUserId();
@@ -81,6 +83,12 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       // Small delay to ensure component is ready
       globalThis.setTimeout(() => this.submitQuestion(), 100);
     }
+
+    this.seoService.setMetaTags({
+      title: 'Ask AI Assistant - Get Instant Islamic Answers',
+      description: 'Chat with our AI Assistant to ask questions and find verified information from scholarly Islamic sources 24/7.',
+      keywords: ['AI Islamic assistant', 'ask questions AI', 'Islamic chatbot', 'verified scholars search']
+    });
   }
 
   ngOnDestroy(): void {

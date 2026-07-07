@@ -21,6 +21,7 @@ import {
   SelectDropdownComponent,
   type SelectOption,
 } from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
+import { SeoService } from '../../../core/services/seo.service';
 import { getUniqueCountryCodesList, searchCountryCodes, getIsoCountryCodeByCallingCode } from './country-codes';
 import {
   validatePhoneNumber,
@@ -98,6 +99,7 @@ export class FormDetailComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly seoService = inject(SeoService);
 
   private readonly countryCodes = signal(getUniqueCountryCodesList());
 
@@ -539,6 +541,12 @@ export class FormDetailComponent implements OnInit, OnDestroy {
         this.form.set(form);
         this.formGroup.set(this.buildFormGroup(form));
         this.isLoading.set(false);
+
+        this.seoService.setMetaTags({
+          title: form.title,
+          description: form.description || `Submit your response for the form: ${form.title} at Ask A Muslim.`,
+          keywords: ['Form submission', form.title, 'Islamic community forms']
+        });
       },
       error: (error: unknown) => {
         this.loadError.set(this.resolveLoadError(error));
