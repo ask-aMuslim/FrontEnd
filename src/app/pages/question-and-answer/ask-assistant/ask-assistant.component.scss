@@ -723,7 +723,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 2001;
+  z-index: 2001 !important;
   display: flex;
   flex-direction: column;
   gap: 1rem;
