@@ -18,6 +18,12 @@
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
+  transition: filter 0.28s ease;
+}
+
+.ask-assistant-page--drawer-open .ask-assistant-page__shell {
+  filter: blur(2px);
+  pointer-events: none;
 }
 
 .ask-assistant-page__toolbar {
@@ -710,7 +716,6 @@
   z-index: 2000;
   border: none;
   background: rgba(15, 23, 42, 0.42);
-  backdrop-filter: blur(2px);
   cursor: pointer;
 }
 
