@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 import { QA_CATEGORIES, PAGINATION } from '../constants/ask-qa.constants';
 import { QaCardComponent, QuestionCard } from './qa-card/qa-card.component';
 import { QuestionSearchResultComponent } from './question-search-result/question-search-result.component';
@@ -22,6 +22,7 @@ import { QasService } from '../../../core/services/qas.service';
 import { asRecord, extractArray, getValue, toNumberValue, toStringArray, toStringValue } from '../../../core/helpers/api-response.helper';
 import { TagsService } from '../../../core/services/tags.service';
 import { AskQaResolvedData } from './ask-qa.resolver';
+import { SeoService } from '../../../core/services/seo.service';
 
 interface TagFilterOption {
   id: string;
@@ -47,6 +48,8 @@ export class AskQaComponent implements OnInit {
   private static readonly fallbackIdPrefix = 'Q-';
   private static readonly idOffset = 1;
   private static readonly defaultPageSize = 10;
+  // Holds an error message when Q&A API fails
+  errorMessage: string | null = null;
   private static readonly tagFetchPageSize = 100;
   private static readonly minimumTotalPages = 1;
 
@@ -55,12 +58,12 @@ export class AskQaComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly seoService = inject(SeoService);
   private initialCategoryQuery: string | null = null;
   private lastScrolledCategoryIndex: number | null = null;
   private lastScrolledCategoryContainerWidth: number | null = null;
   private selectedCategoryScrollTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
   private tagFilterOptions: TagFilterOption[] = [];
-  private allFilteredQuestions: QuestionCard[] = [];
   private loadedTagId: string | null = null;
   categories: string[] = [...QA_CATEGORIES];
   selectedCategory = 0;
@@ -88,16 +91,12 @@ export class AskQaComponent implements OnInit {
     if (data) {
       this.tagFilterOptions = data.categories;
       this.categories = ['All', ...data.categories.map((tag) => tag.name)];
-      this.allFilteredQuestions = data.initialQuestions;
-      this.totalCount = data.initialQuestions.length;
-      this.totalPages = Math.max(
-        AskQaComponent.minimumTotalPages,
-        Math.ceil(this.totalCount / this.itemsPerPage),
-      );
+      this.questions = data.initialQuestions;
+      this.totalCount = data.totalCount;
+      this.totalPages = data.totalPages;
       this.selectedCategory = data.initialSelectedCategoryIndex;
       this.loadedTagId = this.selectedCategoryTagId || 'all';
       this.currentPage = PAGINATION.DEFAULT_PAGE;
-      this.questions = this.getTagPaginatedQuestions();
 
       const initialQuery = this.route.snapshot.queryParamMap.get('question');
       if (initialQuery) {
@@ -115,18 +114,23 @@ export class AskQaComponent implements OnInit {
     if (this.categories.length === QA_CATEGORIES.length && this.categories.every((c, i) => c === QA_CATEGORIES[i])) {
       this.initialCategoryQuery = this.route.snapshot.queryParamMap.get('category')
         ?? this.route.snapshot.queryParamMap.get('tag');
+      const tagIdQuery = this.route.snapshot.queryParamMap.get('tagId');
       this.loadCategories();
-      if (!this.initialCategoryQuery) {
+      if (!this.initialCategoryQuery && !tagIdQuery) {
         this.loadQuestions();
       }
     }
     const initialQuery = this.route.snapshot.queryParamMap.get('question');
     if (initialQuery) {
       this.searchQuery = initialQuery;
-      if (this.allFilteredQuestions.length > 0) {
-        this.onSearch();
-      }
+      this.onSearch();
     }
+
+    this.seoService.setMetaTags({
+      title: 'Islamic Q&A - Ask Questions & Find Answers',
+      description: 'Search through thousands of verified Islamic questions and answers on topics of theology, jurisprudence, Quranic studies, comparative religion, and history.',
+      keywords: ['Islamic Q&A', 'ask questions Islam', 'scholar answers', 'theology', 'jurisprudence', 'comparative religion']
+    });
   }
 
   get isShowingResults(): boolean {
@@ -155,7 +159,7 @@ export class AskQaComponent implements OnInit {
   }
 
   get paginatedFilteredQuestions(): QuestionCard[] {
-    return this.selectedCategory === 0 ? this.questions : this.getTagPaginatedQuestions();
+    return this.questions;
   }
 
   get pages(): number[] {
@@ -175,7 +179,7 @@ export class AskQaComponent implements OnInit {
     return this.categories[this.selectedCategory] ?? '';
   }
 
-  private get selectedCategoryTagId(): string | null {
+  get selectedCategoryTagId(): string | null {
     if (this.selectedCategory === 0) {
       return null;
     }
@@ -191,12 +195,40 @@ export class AskQaComponent implements OnInit {
       return;
     }
 
-    const normalizedQuery = query.toLowerCase();
-    // Always use allFilteredQuestions which now contains the full dataset for the active category (Tag or All)
-    this.searchResults = this.allFilteredQuestions.filter((question) =>
-      this.matchesQuery(question, normalizedQuery),
-    );
-    this.hasSearched = true;
+    this.qasService.getAll({
+      searchTerm: query,
+      isPublished: true,
+      pageSize: 50,
+    }).subscribe({
+      next: (response) => {
+        const results = this.mapQuestions(response);
+        const normalizedQuery = query.toLowerCase();
+        
+        this.searchResults = results.sort((a, b) => {
+          const aTitleMatch = a.title.toLowerCase().includes(normalizedQuery);
+          const bTitleMatch = b.title.toLowerCase().includes(normalizedQuery);
+
+          if (aTitleMatch && !bTitleMatch) return -1;
+          if (!aTitleMatch && bTitleMatch) return 1;
+
+          const aDescMatch = a.description.toLowerCase().includes(normalizedQuery);
+          const bDescMatch = b.description.toLowerCase().includes(normalizedQuery);
+
+          if (aDescMatch && !bDescMatch) return -1;
+          if (!aDescMatch && bDescMatch) return 1;
+
+          return 0;
+        });
+        this.hasSearched = true;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Search failed', error);
+        this.searchResults = [];
+        this.hasSearched = true;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   clearSearch(): void {
@@ -217,6 +249,26 @@ export class AskQaComponent implements OnInit {
     this.loadQuestions();
     this.cdr.markForCheck();
     this.queueSelectedCategoryScroll();
+
+    const selectedTag = index === 0 ? null : this.categories[index];
+    const selectedTagId = this.selectedCategoryTagId;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        tag: selectedTag,
+        tagId: selectedTagId,
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  onTagClicked(tagName: string): void {
+    const matchedIndex = this.categories.findIndex(
+      (category) => category.trim().toLowerCase() === tagName.trim().toLowerCase()
+    );
+    if (matchedIndex >= 0) {
+      this.selectCategory(matchedIndex);
+    }
   }
 
   goToPage(page: number): void {
@@ -265,10 +317,14 @@ export class AskQaComponent implements OnInit {
   }
 
   openSearchPreviewQuestion(question: QuestionCard): void {
-    const queryParams = {
+    const queryParams: any = {
       id: question.id,
       categories: JSON.stringify(question.categories ?? []),
     };
+    const tagId = this.selectedCategoryTagId;
+    if (tagId) {
+      queryParams.tagId = tagId;
+    }
     void this.router.navigate(['/question-and-answer/topics/question'], { queryParams });
   }
 
@@ -290,90 +346,50 @@ export class AskQaComponent implements OnInit {
 
   private loadQuestions(): void {
     const selectedTagId = this.selectedCategoryTagId;
-    const categoryKey = this.selectedCategory === 0 ? 'all' : selectedTagId;
+    const pageSize = this.itemsPerPage;
 
-    if (categoryKey && this.loadedTagId === categoryKey && this.allFilteredQuestions.length > 0) {
-      this.questions = this.getTagPaginatedQuestions();
-      this.cdr.markForCheck();
-      if (this.searchQuery) {
-        this.onSearch();
-      }
-      return;
-    }
-
-    this.loadAllCategoryQuestions(selectedTagId);
-  }
-
-  private loadAllCategoryQuestions(tagId: string | null): void {
-    this.allFilteredQuestions = [];
-    const pageSize = AskQaComponent.tagFetchPageSize;
-    const params: any = { pageNumber: 1, pageSize };
-    if (tagId) {
-      params.tagIds = tagId;
+    this.questions = [];
+    const params: any = {
+      pageNumber: this.currentPage,
+      pageSize: pageSize,
+      isPublished: true,
+    };
+    if (selectedTagId) {
+      params.tagIds = selectedTagId;
     }
 
     this.qasService.getAll(params).pipe(
-      switchMap((firstResponse) => {
-        const firstPageQuestions = this.mapQuestions(firstResponse);
-        const pagination = this.extractPagination(firstResponse, firstPageQuestions.length);
-        const totalPages = pagination.totalPages;
-
-        if (totalPages <= AskQaComponent.minimumTotalPages) {
-          return of({
-            allQuestions: firstPageQuestions,
-          });
-        }
-
-        const remainingPageRequests: Observable<QuestionCard[]>[] = Array.from(
-          { length: totalPages - 1 },
-          (_item, index) => {
-            const p: any = { pageNumber: index + 2, pageSize };
-            if (tagId) p.tagIds = tagId;
-            return this.qasService
-              .getAll(p)
-              .pipe(map((response) => this.mapQuestions(response)));
-          }
-        );
-
-        return forkJoin(remainingPageRequests).pipe(
-          map((remainingPages) => {
-            const allQuestions = [
-              ...firstPageQuestions,
-              ...remainingPages.flat(),
-            ];
-            return {
-              allQuestions,
-            };
-          }),
-        );
+      map((response) => {
+        const questions = this.mapQuestions(response);
+        const pagination = this.extractPagination(response, questions.length);
+        return {
+          questions,
+          pagination,
+        };
       }),
-      catchError(() => of({ allQuestions: [] })),
-    ).subscribe(({ allQuestions }) => {
-      this.loadedTagId = tagId || 'all';
-      this.allFilteredQuestions = allQuestions;
-      this.totalCount = allQuestions.length;
-      this.totalPages = Math.max(
-        AskQaComponent.minimumTotalPages,
-        Math.ceil(this.totalCount / this.itemsPerPage),
-      );
+      catchError((error) => {
+        console.error('Failed to load Q&As', error);
+        this.errorMessage = 'Unable to load questions at this time. Please try again later.';
+        return of({ questions: [], pagination: { totalPages: 1, totalCount: 0 } });
+      })
+    ).subscribe(({ questions, pagination }) => {
+      // Clear any previous error on successful load
+      this.errorMessage = null;
+      this.loadedTagId = selectedTagId || 'all';
+      this.questions = questions;
+      this.totalCount = pagination.totalCount;
+      this.totalPages = pagination.totalPages;
 
       if (this.currentPage > this.totalPages) {
         this.currentPage = this.totalPages;
       }
 
-      this.questions = this.getTagPaginatedQuestions();
       this.cdr.markForCheck();
 
       if (this.searchQuery) {
         this.onSearch();
       }
     });
-  }
-
-  private getTagPaginatedQuestions(): QuestionCard[] {
-    const start = (this.currentPage - PAGINATION.DEFAULT_PAGE) * this.itemsPerPage;
-    const end = start + this.itemsPerPage;
-    return this.allFilteredQuestions.slice(start, end);
   }
 
   private extractPagination(response: unknown, fallbackCount: number): { totalPages: number; totalCount: number } {
@@ -416,6 +432,15 @@ export class AskQaComponent implements OnInit {
           this.categories = ['All', ...ordered.map((tag) => tag.name)];
         }
 
+        const tagIdQuery = this.route.snapshot.queryParamMap.get('tagId');
+        if (tagIdQuery) {
+          const matchedIndex = this.tagFilterOptions.findIndex((t) => t.id === tagIdQuery);
+          if (matchedIndex >= 0) {
+            this.selectCategory(matchedIndex + 1);
+            return;
+          }
+        }
+
         if (this.initialCategoryQuery) {
           this.applyCategoryQuery(this.initialCategoryQuery);
           return;
@@ -424,7 +449,8 @@ export class AskQaComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        if (this.initialCategoryQuery) {
+        const tagIdQuery = this.route.snapshot.queryParamMap.get('tagId');
+        if (this.initialCategoryQuery || tagIdQuery) {
           this.loadQuestions();
           return;
         }
@@ -556,6 +582,37 @@ export class AskQaComponent implements OnInit {
       .filter((question): question is QuestionCard => question !== null);
   }
 
+  private extractTextFromTiptapJson(node: any): string {
+    if (!node) {
+      return '';
+    }
+    if (node.type === 'text') {
+      return node.text || '';
+    }
+    if (node.content && Array.isArray(node.content)) {
+      const childrenText = node.content.map((child: any) => this.extractTextFromTiptapJson(child));
+      const isBlock = [
+        'doc',
+        'paragraph',
+        'heading',
+        'blockquote',
+        'bulletList',
+        'orderedList',
+        'listItem',
+        'table',
+        'tableRow',
+        'tableCell',
+      ].includes(node.type);
+
+      if (isBlock) {
+        return childrenText.join('').trim() + ' ';
+      } else {
+        return childrenText.join('');
+      }
+    }
+    return '';
+  }
+
   private mapQuestion(item: unknown, index: number): QuestionCard | null {
     const record = asRecord(item);
     const isPublished = getValue(record, 'isPublished', 'IsPublished');
@@ -577,9 +634,25 @@ export class AskQaComponent implements OnInit {
       firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
     ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
 
-    const description = toStringValue(
-      firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
-    ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    const rawAnswerJson = firstTranslation
+      ? getValue(firstTranslation, 'answerTextJson', 'AnswerTextJson')
+      : undefined;
+
+    let description = '';
+    if (rawAnswerJson) {
+      try {
+        const parsed = typeof rawAnswerJson === 'string' ? JSON.parse(rawAnswerJson) : rawAnswerJson;
+        description = this.extractTextFromTiptapJson(parsed).replace(/\s+/g, ' ').trim();
+      } catch {
+        // Fallback
+      }
+    }
+
+    if (!description) {
+      description = toStringValue(
+        firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
+      ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    }
 
     if (!title.trim() || !description.trim()) {
       return null;

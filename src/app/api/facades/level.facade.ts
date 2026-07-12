@@ -17,8 +17,8 @@ export interface LevelReadDto {
 export class LevelFacade {
     constructor(private readonly api: ApiService) { }
 
-    getAllLevels(): Observable<LevelReadDto[]> {
-        return extractData(this.api.get<unknown>('/api/Levels'), []).pipe(map(asArray<LevelReadDto>));
+    getAllLevels(params?: { IsPublished?: boolean }): Observable<LevelReadDto[]> {
+        return extractData(this.api.get<unknown>('/api/Levels', params), []).pipe(map(asArray<LevelReadDto>));
     }
 
     getLevelById(id: string): Observable<LevelReadDto | null> {

@@ -1,16 +1,19 @@
-import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { Subject, forkJoin, of } from 'rxjs';
+import { take, takeUntil, catchError } from 'rxjs/operators';
 import { InlineSvgDirective } from '../../shared/directives/inline-svg.directive';
+import { MosquesFacade, MosqueDto } from '../../api/facades/mosques.facade';
 // import { MyLearningComponent } from './my-learning/my-learning.component';
 import { AboutComponent } from './about/about.component';
 import { MyInquiriesComponent } from './my-inquiries/my-inquiries.component';
+import { ChatListComponent } from './chat-list/chat-list.component';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { StudentFacade } from '../../api/facades/student.facade';
 import { AuthService } from '../../core/services/auth.service';
 import type { StudentProfile } from '../../api/facades/student.facade';
-// import { EventsService } from '../../core/services/events.service';
+import { EventsService } from '../../core/services/events.service';
 import { asRecord, getValue, toBooleanValue, toStringValue } from '../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
 import { religiousStatusLabels } from '../../core/helpers/enum-labels.helper';
@@ -18,6 +21,7 @@ import { ReligiousStatus } from '../../core/models/interfaces/enums.model';
 import type { AboutProfileHeaderUpdate } from './about/about.component';
 
 interface UserProfile {
+  id: string;
   name: string;
   bio: string;
   imageUrl: string;
@@ -50,6 +54,7 @@ interface Verse {
     // MyLearningComponent,
     AboutComponent,
     MyInquiriesComponent,
+    ChatListComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
@@ -62,15 +67,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly academyProgressService = inject(AcademyProgressService);
   private readonly studentFacade = inject(StudentFacade);
-  // private readonly eventsService = inject(EventsService);
+  private readonly eventsService = inject(EventsService);
   private readonly destroy$ = new Subject<void>();
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['About', 'My Inquiries'];
+  tabs = ['About', 'Chats', 'My Inquiries'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {
+    id: '',
     name: '',
     bio: '',
     imageUrl: '',
@@ -90,9 +96,50 @@ export class ProfileComponent implements OnInit, OnDestroy {
   isAvatarOptionsOpen = false;
   isAvatarPreviewOpen = false;
 
+  // Mosque Finder Widget state variables
+  nearestMosque: MosqueDto | null = null;
+  isLocationLoading = false;
+  locationError: string | null = null;
+
+  private readonly mosquesFacade = inject(MosquesFacade);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
   ngOnInit(): void {
-    this.loadProfile();
-    // this.loadUpcomingEvent();
+    if (this.isBrowser) {
+      this.checkGeolocationPermission();
+    }
+
+    // Run profile fetch and next event query in parallel using forkJoin
+    forkJoin({
+      profile: this.studentFacade.getMyProfileFromApi().pipe(catchError(() => of(null))),
+      event: this.eventsService.getNext().pipe(catchError(() => of(null)))
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: ({ profile, event }) => {
+        if (profile) {
+          this.updateUserProfile(profile);
+        }
+        if (event) {
+          this.handleEventResponse(event);
+        }
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Reactive subscription to keep profile updated from active cache changes
+    this.studentFacade.me().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (profile) => {
+        if (profile) {
+          globalThis.setTimeout(() => {
+            if (!this.destroy$.closed) {
+              this.updateUserProfile(profile);
+              this.cdr.detectChanges();
+            }
+          }, 0);
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -265,20 +312,45 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadProfile(): void {
-    this.studentFacade.me().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (profile) => {
-        if (profile) {
-          globalThis.setTimeout(() => {
-            if (!this.destroy$.closed) {
-              this.updateUserProfile(profile);
-              this.cdr.detectChanges();
-            }
-          }, 0);
-        }
-      },
-      error: () => void 0,
-    });
+  private handleEventResponse(response: unknown): void {
+    const responseRecord = asRecord(response);
+    const dataRecord = asRecord(getValue(responseRecord, 'data', 'Data'));
+
+    if (!dataRecord || !toBooleanValue(getValue(dataRecord, 'isPublished', 'IsPublished'))) {
+      this.upcomingEvent = null;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const id = toStringValue(getValue(dataRecord, 'id', 'Id'));
+    const title = toStringValue(getValue(dataRecord, 'title', 'Title'));
+    const speaker = toStringValue(getValue(dataRecord, 'speakerName', 'SpeakerName'));
+    const startDate = toStringValue(getValue(dataRecord, 'startDateTime', 'StartDateTime'));
+    const speakerImage =
+      toApiMediaUrl(toStringValue(getValue(dataRecord, 'imageUrl', 'ImageUrl'))) ??
+      '/images/profile-picture-navbar.png';
+    const isRegistered = toBooleanValue(getValue(dataRecord, 'isRegistered', 'IsRegistered'));
+
+    // Parse date and ensure it's in the future
+    const eventDate = new Date(startDate ?? '');
+    const now = new Date();
+    const isFuture = !Number.isNaN(eventDate.getTime()) && eventDate > now;
+
+    // Only create event if we have valid data and it's a future event
+    if (id && (title || speaker || startDate) && isFuture) {
+      this.upcomingEvent = {
+        id,
+        title: title ?? '',
+        speaker: speaker ?? '',
+        date: this.formatDate(startDate) ?? '',
+        time: this.formatTime(startDate) ?? '',
+        speakerRole: 'Guest Speaker',
+        speakerImage: speakerImage,
+        isRegistered,
+      };
+    } else {
+      this.upcomingEvent = null;
+    }
   }
 
   /**
@@ -296,6 +368,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const nextGender = this.toNonEmptyString(profile.gender) ?? this.userProfile.gender;
 
     this.userProfile = {
+      id: profile.userId || profile.id || '',
       name: fullName ?? this.userProfile.name,
       bio: nextBio,
       imageUrl: nextImageUrl,
@@ -387,58 +460,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  /*
-  private loadUpcomingEvent(): void {
-    this.upcomingEvent = null;
 
-    this.eventsService.getNext().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (response) => {
-        globalThis.setTimeout(() => {
-          if (this.destroy$.closed) {
-            return;
-          }
-
-          const responseRecord = asRecord(response);
-          const dataRecord = asRecord(getValue(responseRecord, 'data', 'Data'));
-
-          if (!dataRecord || !toBooleanValue(getValue(dataRecord, 'isPublished', 'IsPublished'))) {
-            this.upcomingEvent = null;
-            this.cdr.detectChanges();
-            return;
-          }
-
-          const id = toStringValue(getValue(dataRecord, 'id', 'Id'));
-          const title = toStringValue(getValue(dataRecord, 'title', 'Title'));
-          const speaker = toStringValue(getValue(dataRecord, 'speakerName', 'SpeakerName'));
-          const startDate = toStringValue(getValue(dataRecord, 'startDateTime', 'StartDateTime'));
-          const speakerImage =
-            toApiMediaUrl(toStringValue(getValue(dataRecord, 'imageUrl', 'ImageUrl'))) ??
-            '/images/profile-picture-navbar.png';
-          const isRegistered = toBooleanValue(getValue(dataRecord, 'isRegistered', 'IsRegistered'));
-
-          // Only create event if we have valid data from API
-          if (id && (title || speaker || startDate)) {
-            this.upcomingEvent = {
-              id,
-              title: title ?? '',
-              speaker: speaker ?? '',
-              date: this.formatDate(startDate) ?? '',
-              time: this.formatTime(startDate) ?? '',
-              speakerRole: 'Guest Speaker',
-              speakerImage: speakerImage,
-              isRegistered,
-            };
-          } else {
-            this.upcomingEvent = null;
-          }
-
-          this.cdr.detectChanges();
-        }, 0);
-      },
-      error: () => void 0,
-    });
-  }
-  */
+  
 
   private buildDisplayName(firstName?: string, lastName?: string): string | null {
     const first = toStringValue(firstName ?? null);
@@ -479,5 +502,92 @@ export class ProfileComponent implements OnInit, OnDestroy {
       minute: '2-digit',
       hour12: true,
     });
+  }
+
+  checkGeolocationPermission(): void {
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((result) => {
+        if (result.state === 'granted') {
+          this.loadNearestMosque();
+        }
+      });
+    }
+  }
+
+  loadNearestMosque(): void {
+    if (!this.isBrowser || !('geolocation' in navigator)) {
+      this.locationError = 'Geolocation is not supported by your browser.';
+      return;
+    }
+
+    this.isLocationLoading = true;
+    this.locationError = null;
+    this.cdr.detectChanges();
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        this.mosquesFacade
+          .getNearbyMosques({
+            latitude: lat,
+            longitude: lng,
+            radiusInKm: 100, // Large radius to make sure we find one if any exists
+            pageSize: 1, // Only need the single nearest mosque!
+          })
+          .pipe(take(1))
+          .subscribe({
+            next: (mosques) => {
+              if (mosques.length > 0) {
+                this.nearestMosque = mosques[0];
+              } else {
+                this.nearestMosque = null;
+                this.locationError = 'No mosques found nearby.';
+              }
+              this.isLocationLoading = false;
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.locationError = 'Failed to load nearest mosque.';
+              this.isLocationLoading = false;
+              this.cdr.detectChanges();
+            },
+          });
+      },
+      (error) => {
+        this.isLocationLoading = false;
+        this.nearestMosque = null;
+        if (error.code === error.PERMISSION_DENIED) {
+          this.locationError = 'Location access denied.';
+        } else {
+          this.locationError = 'Unable to retrieve location.';
+        }
+        this.cdr.detectChanges();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  }
+
+  resolveMosqueLocation(mosque: MosqueDto): string {
+    const parts = [
+      mosque.address,
+      mosque.district,
+      mosque.city,
+      mosque.governorate,
+      mosque.country,
+    ]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .filter((value, index, values) => values.indexOf(value) === index);
+
+    return parts.join(', ');
+  }
+
+  goToMosques(): void {
+    void this.router.navigate(['/mosques']);
   }
 }

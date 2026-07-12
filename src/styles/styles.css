@@ -38,7 +38,10 @@ app-root {
 
 * {
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif !important;
+}
+
+body, button, input, select, textarea {
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Scrollbar Styles */
@@ -185,9 +188,36 @@ img.aam-late-image.aam-late-image--loaded {
   border: 0 !important;
 }
 
-.google-btn-wrapper iframe .qJTHM>#container-div {
+.google-btn-wrapper {
   width: 100% !important;
-  padding: 2px 0px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+/* Ensure our custom Google Sign-In button container stretches to match custom width and centers correctly */
+.google-custom-btn-container {
+  display: block !important;
+  width: 100% !important;
+  max-width: 380px !important;
+  margin: 0 auto !important;
+}
+
+/* Force Google's outer wrapper divs to stretch to full width (overriding Google GSI inline styles) without breaking inner flex buttons */
+.google-custom-btn-container,
+.google-custom-btn-container > div,
+.google-custom-btn-container > div > div {
+  width: 100% !important;
+  max-width: 380px !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+/* Ensure the GSI standard button element itself can stretch to its parent block container */
+.google-custom-btn-container div[role="button"] {
+  width: 100% !important;
+  max-width: 380px !important;
 }
 
 /* Leaflet needs its own image sizing so Tailwind/base resets do not hide tiles and markers. */
@@ -380,3 +410,28 @@ img.aam-late-image.aam-late-image--loaded {
   background: #def0e1;
   color: #0f5a34;
 }
+
+/* ==========================================================================
+   GLOBAL MODALS & POPUPS Z-INDEX COMPLIANCE
+   Ensure all modals, popups, dialogs, backdrops, and overlays on the website
+   stack cleanly above the sticky header (100) and the footer.
+   ========================================================================== */
+[role="dialog"],
+[aria-modal="true"],
+dialog,
+.modal,
+.modal-backdrop,
+[class*="-modal"],
+[class*="-popup"],
+app-profile-popup > div,
+app-share-popup > div,
+.fixed.inset-0.z-50,
+.fixed.inset-0,
+.notes__modal-backdrop,
+.notes__modal,
+.sign-in-modal,
+.sign-in-modal__backdrop,
+.sign-in-modal__card {
+  z-index: 200 !important;
+}
+

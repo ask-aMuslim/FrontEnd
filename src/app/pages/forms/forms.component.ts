@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsFacade, FormDto } from '../../api/facades/forms.facade';
+import { SeoService } from '../../core/services/seo.service';
 
 interface FormCard {
   id: string;
@@ -23,6 +24,7 @@ export class FormsComponent implements OnInit {
   private static readonly defaultPageSize = 9;
 
   private readonly formsFacade = inject(FormsFacade);
+  private readonly seoService = inject(SeoService);
 
   readonly isLoading = signal(false);
   readonly loadError = signal<string | null>(null);
@@ -48,6 +50,11 @@ export class FormsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadForms();
+    this.seoService.setMetaTags({
+      title: 'Forms & Registrations',
+      description: 'Fill out and submit forms for different community services, registrations, and requests at Ask A Muslim.',
+      keywords: ['Islamic community forms', 'registration forms', 'scholar inquiry', 'Ask A Muslim requests']
+    });
   }
 
   trackById(_index: number, item: FormCard): string {

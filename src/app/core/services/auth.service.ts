@@ -227,7 +227,8 @@ export class AuthService {
   }
 
   getCurrentUserName(): string {
-    return this._currentUser()?.name || this.tokenService.userEmail() || 'User';
+    const rawName = this._currentUser()?.name || this.tokenService.userEmail() || 'User';
+    return this.isEmail(rawName) ? this.formatEmailAsName(rawName) : rawName;
   }
 
   getCurrentUserMeta(): string {
@@ -361,5 +362,21 @@ export class AuthService {
 
   private normalizeImageUrl(imageUrl?: string | null): string | null {
     return toApiMediaUrl(typeof imageUrl === 'string' ? imageUrl : null);
+  }
+
+  private isEmail(value: string): boolean {
+    return typeof value === 'string' && value.includes('@');
+  }
+
+  private formatEmailAsName(email: string): string {
+    if (!email) return 'User';
+    const localPart = email.split('@')[0];
+    if (!localPart) return 'User';
+    return localPart
+      .replace(/[._-]/g, ' ')
+      .split(' ')
+      .filter((word) => word.length > 0)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 }

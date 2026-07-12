@@ -13,7 +13,7 @@ export const CERTIFICATES_DB: CertificateData[] = [
     id: 'kholoud-elsisi',
     name: 'Kholoud Elsisi',
     title: 'Certificate of Excellence',
-    description: 'Awarded for outstanding contribution to the Ask A Muslim project and dedication to spreading knowledge.',
+    description: 'Awarded for outstanding performance in the UX/UI Design Internship, demonstrating timely deliverables such as strong user-centered research, mid-fidelity wireframes, and high-fidelity interaction designs.',
     webpUrl: '/certificate-assets/Certificate-Kholoud-Elsisi.webp',
     jpegUrl: '/certificate-assets/Certificate-Kholoud-Elsisi.jpeg',
     svgUrl: '/certificate-assets/Certificate - Kholoud Elsisi.svg'
@@ -22,7 +22,7 @@ export const CERTIFICATES_DB: CertificateData[] = [
     id: 'nuha-abdelmeged',
     name: 'Nuha Abdelmeged',
     title: 'Certificate of Achievement',
-    description: 'Recognized for exceptional commitment to community engagement and educational support.',
+    description: 'Awarded for outstanding performance in the UX/UI Design Internship, demonstrating timely deliverables such as strong user-centered research, mid-fidelity wireframes, and high-fidelity interaction designs.',
     webpUrl: '/certificate-assets/Certificate-Nuha-Abdelmeged.webp',
     jpegUrl: '/certificate-assets/Certificate-Nuha-Abdelmeged.jpeg',
     svgUrl: '/certificate-assets/Certificate - Nuha Abdelmeged.svg'

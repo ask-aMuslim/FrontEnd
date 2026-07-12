@@ -116,7 +116,7 @@ export class MyLearningComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private loadLevelTitles(): void {
     this.levelFacade
-      .getAllLevels()
+      .getAllLevels({ IsPublished: true })
       .pipe(
         take(1),
         catchError(() => of([] as LevelReadDto[])),

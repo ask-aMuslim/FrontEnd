@@ -1,26 +1,12 @@
 <!--
 Sync Impact Report
-- Version change: 1.0 -> 2.0.0
-- Modified principles:
-  - Core Tech Stack (Immutable) -> I. Angular Standalone + OnPush by Default
-  - Data Flow Pattern (Mandatory) -> II. Facade-First Data Access
-  - State Management Pattern -> III. Signal-First Immutable State (NON-NEGOTIABLE)
-  - API Contract Integrity -> IV. Contract-First API Discipline
-  - Project Health / Review Checklist -> V. Verification Gates Before Merge
+- Version change: 2.0.0 -> 2.1.0
+- Modified sections:
+  - Automated Spec-Kit Pipeline -> Split-Agent Planning & Review Pipeline
 - Added sections:
-  - Architecture & Boundaries
-  - Development Workflow & Quality Gates
-- Removed sections:
-  - Project Identity (folded into principles and governance)
-  - Special Patterns & Known Gotchas (moved to runtime guidance docs)
+  - Plan-First Split-Agent Protocol (codifying separate Planning, Execution, and Review agents)
 - Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md
-  - ✅ .specify/templates/spec-template.md
-  - ✅ .specify/templates/tasks-template.md
-  - ⚠ pending (directory missing): .specify/templates/commands/*.md
-  - ✅ .specify/README.md
-- Follow-up TODOs:
-  - TODO(COMMAND_TEMPLATES): Create .specify/templates/commands/ if command-level templates are introduced.
+  - ✅ .specify/templates/constitution-template.md
 -->
 
 # AskAMuslim Constitution
@@ -97,17 +83,31 @@ Specification workflow is mandatory for non-trivial work:
 - `/speckit.tasks` -> executable task breakdown
 - `/speckit.implement` -> tracked implementation
 
-## Automated Spec-Kit Pipeline
+## Split-Agent Planning & Review Pipeline (NON-NEGOTIABLE)
 
-You are the Automated Spec-Driven Development orchestrator for every AskAMuslim feature. Treat each request as an immediate pipeline execution, and never pause for manual prompts or phase approvals. The following mandates are non-negotiable:
+To maximize quality and prevent regressions, feature development is split into a **Planning Phase** and an **Implementation Phase** executed by separate, specialized agent instances.
 
-1. **Single-Stream Execution** – Upon receiving a new feature, immediately simulate the full Spec-Kit pipeline in your single-response reply. Do **not** wait for `/speckit.specify`, `.plan`, `.tasks`, or `.implement` commands to be run explicitly; the pipeline is implicit and executed only once per request.
-2. **Phase 1 (Specify & Plan)** – Generate a brief but dense `spec.md` and `plan.md` that describe the user journey, the impacted Supabase schema (tables/fields/constraints), and the Angular component tree (pages/components/signals). Present them in separate code blocks labeled `spec.md` and `plan.md`.
-3. **Phase 2 (Tasks)** – Immediately follow with a `tasks.md` breakdown that decomposes the plan into atomic, parallelizable engineering steps. Use an ordered list with clear owners (the automated agent) and estimated effort. Wrap in a `tasks.md` block.
-4. **Phase 3 (Implement)** – In the same response, emit the Angular and TailwindCSS implementation for the tasks above. Provide fully-formed component/service snippets inside code blocks labeled `typescript`, `html`, or `css` as needed. No placeholder text. This is the delivery phase.
-5. **Zero Interruption** – Never request permission or clarification between phases. Label each phase explicitly in markdown headings/blocks, maintain sequential order (Specify → Plan → Tasks → Implement), and complete the entire pipeline in one uninterrupted message.
+### 1. Planning & Design Phase (Current Agent)
+The Planning Agent is responsible for specifying, planning, and creating highly granular, high-fidelity developer tasks. In this phase, the agent MUST:
+- **No Implementation**: The planning agent MUST NOT write or apply any functional feature code.
+- **High-Fidelity Tasks**: Author `tasks.md` such that each task is atomic, complete, and self-contained. Each task description MUST specify:
+  - Exact file paths and relative imports.
+  - Required component state, Inputs, Outputs, and specific Signal APIs to use (e.g., `signal`, `computed`, `linkedSignal`).
+  - Explicit UI structure, CSS/Tailwind classes, and responsive behavior matching our design systems.
+  - Required unit test coverage details (which files, what to assert).
+- **Handoff Package**: Generate a clear, high-level handoff brief summarizing context, APIs, database updates, and safety-critical boundaries for the implementation agent.
 
-If execution fails, diagnose and re-run the pipeline within the same message rather than waiting for user approval. Every automated run must end with the code delivery phase ready for review.
+### 2. Implementation Phase (Execution Agent)
+The Execution Agent is delegated to implement the defined tasks. This agent MUST:
+- **Strict Task Adherence**: Read `.specify/memory/constitution.md` and the `tasks.md` of the feature. Only implement tasks defined in the approved `tasks.md`.
+- **Zero Ambiguity/Assumptions**: If a task is underspecified, the Execution Agent must stop and ask the user rather than guessing.
+- **Incremental Verification**: Run quality gates (`npm run lint`, `npm run test`, `npm run build`) after each task is implemented to catch bugs early.
+
+### 3. Verification & Review Phase (Review Agent)
+Once implementation is complete, the Planning Agent resumes as the Review Agent. They MUST:
+- **Verify Quality Gates**: Run the complete verification suite (`build`, `test`, `lint`, and API swagger checks if applicable).
+- **Architecture & Diff Audit**: Perform a rigorous review of the implemented code diffs to ensure no architectural boundaries were breached, ChangeDetectionStrategy is correct, and all styling utilizes approved design tokens.
+- **Check-off Completed Tasks**: Verify and check off completed tasks in the final walkthrough and task list.
 
 ## Governance
 
@@ -127,4 +127,4 @@ This Constitution supersedes ad-hoc practices in this repository.
     relevant).
   - Violations MUST be resolved before merge; no deferred TODO bypass.
 
-**Version**: 2.0.0 | **Ratified**: 2026-03-11 | **Last Amended**: 2026-03-14
+**Version**: 2.1.0 | **Ratified**: 2026-05-23 | **Last Amended**: 2026-05-23

@@ -6,6 +6,8 @@ import {
   PLATFORM_ID,
   signal,
   inject,
+  ElementRef,
+  ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
@@ -22,8 +24,8 @@ import {
 import type { ReligiousStatus } from '../../../api/models';
 import { toFriendlyAuthErrorMessage } from '../auth-error-message.util';
 import { SocialAuthenticationService } from '../../services/social-auth.service';
+import { take } from 'rxjs';
 import {
-  GoogleSigninButtonModule,
   SocialAuthService,
 } from '@abacritt/angularx-social-login';
 
@@ -41,7 +43,7 @@ const religionStatusBySelection: Readonly<
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, GoogleSigninButtonModule],
+  imports: [ReactiveFormsModule, RouterModule],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
@@ -100,6 +102,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
     email: false,
     password: false,
   };
+
+  private _googleBtnContainer?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('googleBtnContainer', { static: false }) set googleBtnContainer(content: ElementRef<HTMLDivElement> | undefined) {
+    if (content) {
+      this._googleBtnContainer = content;
+      this.renderGoogleButton();
+    }
+  }
 
   submitSuccess = false;
 
@@ -177,7 +188,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   isFieldInvalid(field: RegisterField): boolean {
     const control = this.registerForm.get(field);
-    return !!(control && control.invalid && this.fieldTouched[field]);
+    if (field === 'religionType') {
+      return !!(control && control.invalid && this.fieldTouched.religionType);
+    }
+    return !!(control && control.invalid && this.fieldFocused[field]);
   }
 
   private getFullNameError(
@@ -472,5 +486,26 @@ export class RegisterComponent implements OnInit, OnDestroy {
       lastName: lastName || 'Account',
       religiousStatus,
     };
+  }
+
+  private renderGoogleButton(): void {
+    if (!this.isBrowser) return;
+
+    this.abacrittAuthService.initState.pipe(take(1)).subscribe(() => {
+      setTimeout(() => {
+        const google = (window as any).google;
+        if (google?.accounts?.id && this._googleBtnContainer?.nativeElement) {
+          google.accounts.id.renderButton(this._googleBtnContainer.nativeElement, {
+            type: 'standard',
+            size: 'large',
+            theme: 'outline',
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 380
+          });
+        }
+      }, 50);
+    });
   }
 }

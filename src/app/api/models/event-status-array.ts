@@ -9,6 +9,5 @@ import { EventStatus } from './event-status';
 export const EVENT_STATUS: EventStatus[] = [
   1,
   2,
-  3,
-  4
+  3
 ];

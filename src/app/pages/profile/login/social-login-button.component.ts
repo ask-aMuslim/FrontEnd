@@ -35,7 +35,7 @@ export type SocialProvider = 'google' | 'facebook';
       gap: 0.75rem;
       padding: 0.75rem 1.5rem;
       border: 1px solid var(--color-border-primary, #e5e7eb);
-      border-radius: 0.5rem;
+      border-radius: var(--border-radius-default);
       background: white;
       color: var(--color-text-body, #1f2937);
       font-weight: 500;

@@ -7,12 +7,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { Language } from '../../models/language';
 
 export interface GetLevelsWithPagination$Params {
   PageNumber?: number | null;
   PageSize?: number | null;
   SearchTerm?: string | null;
   IsPublished?: boolean | null;
+  Language?: Language | null;
 }
 
 export function getLevelsWithPagination(http: HttpClient, rootUrl: string, params?: GetLevelsWithPagination$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -22,6 +24,7 @@ export function getLevelsWithPagination(http: HttpClient, rootUrl: string, param
     rb.query('PageSize', params.PageSize, {});
     rb.query('SearchTerm', params.SearchTerm, {});
     rb.query('IsPublished', params.IsPublished, {});
+    rb.query('Language', params.Language, {});
   }
 
   return http.request(

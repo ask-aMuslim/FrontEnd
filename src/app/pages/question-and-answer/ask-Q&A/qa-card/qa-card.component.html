@@ -7,7 +7,12 @@
         let isLast = $last
       ) {
         <span class="topics-question-card__category flex items-center gap-2 text-(--color-text-caption)">
-          <span class="topics-question-card__category-label text-xs leading-5">{{ category }}</span>
+          <span
+            class="topics-question-card__category-label text-xs leading-5 hover:text-[var(--color-button-primary-normal)] cursor-pointer transition-colors"
+            (click)="onTagClick(category); $event.stopPropagation()"
+          >
+            {{ category }}
+          </span>
           @if (!isLast) {
             <span class="topics-question-card__category-separator text-sm">•</span>
           }
@@ -17,12 +22,12 @@
 
     <div class="topics-question-card__heading flex items-start py-0.5 w-full">
       <h3 class="topics-question-card__title flex-1 text-xl font-medium text-(--color-text-title)">
-        {{ question.title }}
+        {{ question.title | description }}
       </h3>
     </div>
 
     <p class="topics-question-card__description text-base leading-[160%] text-text-body line-clamp-3 w-full">
-      {{ question.description }}
+      {{ question.description | description }}
     </p>
   </div>
 

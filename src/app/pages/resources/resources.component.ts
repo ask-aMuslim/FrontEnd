@@ -1,27 +1,46 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, Input } from '@angular/core';
+import { Component, inject, signal, Input, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Router, RouterLink } from '@angular/router';
+import { SeoService } from '../../core/services/seo.service';
+
 import {
-  ResourceCard,
-  ResourceTab,
-  ResourceGalleryId,
-  ResourceGallery,
-  NewMuslimCard,
-  ResourcesResolvedData
+    ResourceCard,
+    ResourceGalleryId,
+    ResourceGallery,
+    NewMuslimCard,
+    ResourcesResolvedData
 } from './resources.resolver';
 
 @Component({
     selector: 'app-resources',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterLink],
     templateUrl: './resources.component.html',
     styleUrl: './resources.component.scss',
 })
-export class ResourcesComponent {
+export class ResourcesComponent implements OnInit {
+    private readonly seoService = inject(SeoService);
+
+    ngOnInit(): void {
+        this.seoService.setMetaTags({
+            title: 'Islamic Resources & Materials',
+            description: 'Explore our library of free downloadable PDF brochures, scientific posters, prophecy charts, and resources designed for new Muslims and seekers.',
+            keywords: ['Islamic Resources', 'Download free Quran', 'Ablution guide', 'Islamic pamphlets', 'Scientific posters Quran', 'Prophecy posters']
+        });
+    }
+
     private readonly itemsPerLoad = 3;
     private static readonly cardThumbnailFallback = '/images/events-image-placeholder.jpg';
     private readonly sanitizer = inject(DomSanitizer);
+    private readonly router = inject(Router);
+
     private readonly safeDrivePreviewUrlByFileId = new Map<string, SafeResourceUrl>();
+
+
+    constructor() {
+        // No API calls needed for resources page
+    }
     protected readonly hero = {
         eyebrowPrimary: 'About',
         eyebrowSecondary: 'Guidance',
@@ -32,24 +51,24 @@ export class ResourcesComponent {
 
     private readonly driveFileIdsByAssetPath: Readonly<Record<string, string>> = {
         // Pamphlets
-        "resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Da'wah%20Pamphlet.pdf":
-            '1bSeiFM4Bbl7sYIxprDF__s0QHpvu6PLd',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Foretold%20Pamphlet.pdf':
-            '1vmRjYvUJUc-9Dmy-3knRxUTKA8HYKV6y',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Jesus%20Pamphlet.pdf':
-            '1wzV8c_yBcQiwGnEMDo-IkV7QprZeQSqU',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Misconceptions%20Pamphlet.pdf':
-            '1Y3qwk_P7CwEw2MP1R74qQfig6P0Lcttk',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Prophecy%20Pamphlet.pdf':
-            '1zTRYhfEmQpqSxKGCviW8iIFROAikXIoP',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Prophet%20Muhammad%20Pamphlet.pdf':
-            '1BZLVdsbWe2M0PXEZeqpmc3XnJ-yjUM8O',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Science%20Pamphlet.pdf':
-            '1LkaZlsCFuppXH95y4lwNVLJzvU-RfSoi',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Truth%20Pamphlet.pdf':
-            '1lJj8FtryOh9BxM8Ur6jpmoNijh5fiNDa',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Women%20Pamphlet.pdf':
-            '1QzavhMdPGN2OpIw54ANr9ldX-AennZEo',
+        "resources/pamphlets/AAM%20Pamphlets/AAM%20Da'wah%20Pamphlet.pdf":
+            '1qa4b1kYLmbE30sQZKzSLWNSxiiB30XPU',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Foretold%20Pamphlet.pdf':
+            '1LjxnLZxDXHGc30fx9qIvKevD3mqpSlin',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Jesus%20Pamphlet.pdf':
+            '1WMaXiizFCIzeAmGADdSRerRFK7aCMtoj',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Misconceptions%20Pamphlet.pdf':
+            '1Th5LIEVPVKIlVOZOr9tCoMsu0LmQCV6A',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Prophecy%20Pamphlet.pdf':
+            '1JJslu5uJuOkHNbpu5FuTAjy2eQTqBwOB',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Prophet%20Muhammad%20Pamphlet.pdf':
+            '1Tq4fBKpggRrZRteU35pO1VRhWA78wfIM',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Science%20Pamphlet.pdf':
+            '1sQJdKS-ZrOcJHf0XpRXNjpgCfNXCOspF',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Truth%20Pamphlet.pdf':
+            '13CTfSg8h0SAcaFgfEjLNvSqjt85y3rUF',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Women%20Pamphlet.pdf':
+            '1GBeXoudcR58OTA72a9uJ6z7mAeFfy3q-',
 
         // Scientific posters
         'resources/scientific-posters/PDF%20Versions/AAM%20Atmosphere%20Protects%20Humans%20on%20Earth%20.pdf':
@@ -113,15 +132,15 @@ export class ResourcesComponent {
     };
 
     private readonly pamphletPdfFiles: readonly string[] = [
-        'Finalized 289x214mm AAM Truth Pamphlet.pdf',
-        'Finalized 289x214mm AAM Science Pamphlet.pdf',
-        'Finalized 289x214mm AAM Prophecy Pamphlet.pdf',
-        'Finalized 289x214mm AAM Foretold Pamphlet.pdf',
-        'Finalized 289x214mm AAM Jesus Pamphlet.pdf',
-        'Finalized 289x214mm AAM Prophet Muhammad Pamphlet.pdf',
-        'Finalized 289x214mm AAM Misconceptions Pamphlet.pdf',
-        'Finalized 289x214mm AAM Women Pamphlet.pdf',
-        "Finalized 289x214mm AAM Da'wah Pamphlet.pdf",
+        'AAM Truth Pamphlet.pdf',
+        'AAM Science Pamphlet.pdf',
+        'AAM Prophecy Pamphlet.pdf',
+        'AAM Foretold Pamphlet.pdf',
+        'AAM Jesus Pamphlet.pdf',
+        'AAM Prophet Muhammad Pamphlet.pdf',
+        'AAM Misconceptions Pamphlet.pdf',
+        'AAM Women Pamphlet.pdf',
+        "AAM Da'wah Pamphlet.pdf",
     ];
 
     private readonly scientificPosterPdfFiles: readonly string[] = [
@@ -178,22 +197,13 @@ export class ResourcesComponent {
 
     private readonly dawahResourceCards: readonly ResourceCard[] = [
         {
-            id: 'dawah-learn-islam',
-            title: 'Learn Islam',
-            subtitle: 'Foundational materials for learning Islam',
-            articleUrl: 'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87',
-            downloadUrl: 'https://drive.google.com/drive/folders/1tav9eQ2KpVfSYPYZKiNMYbXRBYpZ-S87',
+            id: 'dawah-knowledge-hub',
+            title: 'Knowledge Hub',
+            subtitle: 'Curated materials for learning and research',
+            articleUrl: 'https://drive.google.com/drive/folders/1b8-rR45DccoGUqmFiZ0qTiBuANSQTSUf',
+            downloadUrl: 'https://drive.google.com/drive/folders/1b8-rR45DccoGUqmFiZ0qTiBuANSQTSUf',
             thumbnailUrl: ResourcesComponent.cardThumbnailFallback,
-            thumbnailAlt: 'Learn Islam resource',
-        },
-        {
-            id: 'dawah-learn-christianity',
-            title: 'Learn Christianity',
-            subtitle: 'References related to Christianity',
-            articleUrl: 'https://drive.google.com/drive/folders/1S3D-D4WkRPJpNxZL8EdOsXnOvWY2PxgN',
-            downloadUrl: 'https://drive.google.com/drive/folders/1S3D-D4WkRPJpNxZL8EdOsXnOvWY2PxgN',
-            thumbnailUrl: ResourcesComponent.cardThumbnailFallback,
-            thumbnailAlt: 'Learn Christianity resource',
+            thumbnailAlt: 'Knowledge Hub resource',
         },
         {
             id: 'dawah-101',
@@ -275,16 +285,19 @@ export class ResourcesComponent {
             id: 'wudu',
             title: 'How to Perform Ablution (Wudu)',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://m.youtube.com/watch?v=2xS70Zn-jRk&pp=ygUgaG93IHRvIGRvIHd1ZHUgZ3JlZW4gbGFuZSBtYXNqaWQ%3D',
         },
         {
             id: 'prayer',
             title: 'How to Pray',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://m.youtube.com/watch?v=4zr6tNgmKSI&pp=ygUjSG93IHRvIFByYXkgSXNsYW0gZ3JlZW4gbGFuZSBNYXNqaWQ%3D',
         },
         {
             id: 'guidebook',
             title: 'New Muslim Guide Book',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://drive.google.com/file/d/1jp6YkciKa24wu34XxdHxt6v2EkzzceiR/view?usp=drivesdk',
         },
         {
             id: 'daily-dua',
@@ -398,8 +411,8 @@ export class ResourcesComponent {
         return candidates[attempt] ?? ResourcesComponent.cardThumbnailFallback;
     }
 
-    protected shouldUsePdfPreview(card: ResourceCard): boolean {
-        return Boolean(card.driveFileId) && Boolean(this.usePdfPreviewByCardId()[card.id]);
+    protected shouldUsePdfPreview(): boolean {
+        return false;
     }
 
     protected isThumbnailLoading(card: ResourceCard): boolean {
@@ -408,23 +421,6 @@ export class ResourcesComponent {
 
     protected onCardImageLoad(card: ResourceCard): void {
         this.setThumbnailLoading(card.id, false);
-    }
-
-    protected onCardPreviewLoad(card: ResourceCard): void {
-        this.setThumbnailLoading(card.id, false);
-    }
-
-    protected getDrivePreviewUrl(fileId: string): SafeResourceUrl {
-        const cachedUrl = this.safeDrivePreviewUrlByFileId.get(fileId);
-        if (cachedUrl) {
-            return cachedUrl;
-        }
-
-        const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-            `https://drive.google.com/file/d/${fileId}/preview`,
-        );
-        this.safeDrivePreviewUrlByFileId.set(fileId, safeUrl);
-        return safeUrl;
     }
 
     protected onCardImageError(card: ResourceCard, event: Event): void {
@@ -444,15 +440,6 @@ export class ResourcesComponent {
             this.thumbnailAttemptByCardId.update((current) => ({
                 ...current,
                 [card.id]: nextAttempt,
-            }));
-            return;
-        }
-
-        if (card.driveFileId) {
-            this.setThumbnailLoading(card.id, true);
-            this.usePdfPreviewByCardId.update((current) => ({
-                ...current,
-                [card.id]: true,
             }));
             return;
         }
@@ -492,12 +479,16 @@ export class ResourcesComponent {
             const thumbnailUrl = thumbnailUrls[0] ?? ResourcesComponent.cardThumbnailFallback;
             const title = this.toDisplayTitle(fileName);
             const subtitle = this.toCardSubtitle(idPrefix);
+            const articleId = idPrefix === 'pamphlet'
+                ? ResourcesComponent.getPamphletArticleId(title)
+                : undefined;
 
             return {
                 id: `${idPrefix}-${index + 1}`,
                 title,
                 articleUrl,
                 subtitle,
+                articleId,
                 downloadUrl,
                 thumbnailUrl,
                 thumbnailUrls,
@@ -505,6 +496,23 @@ export class ResourcesComponent {
                 driveFileId,
             };
         });
+    }
+
+    private static getPamphletArticleId(displayTitle: string): string | undefined {
+        const map: Readonly<Record<string, string>> = {
+            'Truth': '04941fd7-b369-4e8a-d7c4-08de7962a21d',
+            'Science': '4bc0851e-b42d-4416-d7c5-08de7962a21d',
+            'Prophecy': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
+            'Foretold': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+            'Jesus': '2ac25076-8d77-4c64-d7c8-08de7962a21d',
+            'Prophet Muhammad': '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
+            'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',
+            'Women': 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
+            "Da'wah": '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
+        };
+
+        const key = displayTitle.replace(/\s*Pamphlet$/i, '').trim();
+        return map[key];
     }
 
     private buildDriveViewUrl(fileId: string): string {

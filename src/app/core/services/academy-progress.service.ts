@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, BehaviorSubject, of, forkJoin, from } from 'rxjs';
-import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, forkJoin, from, combineLatest } from 'rxjs';
+import { map, catchError, tap, switchMap, shareReplay, take, filter, finalize, timeout } from 'rxjs/operators';
 import {
     StudentProgress,
     StageProgress,
@@ -136,6 +136,10 @@ export class AcademyProgressService {
 
     constructor() { }
 
+    getOverviewCoursesCache(): AcademyCourse[] {
+        return this.academyOverviewCoursesCache;
+    }
+
     private initializeProgress(): void {
         this.getStudentProgress().subscribe({
             next: (progress) => this.progressSubject.next(progress),
@@ -161,9 +165,9 @@ export class AcademyProgressService {
             return this.academyStagesRequest$;
         }
 
-        this.academyStagesRequest$ = this.levelFacade.getAllLevels().pipe(
+        this.academyStagesRequest$ = this.levelFacade.getAllLevels({ IsPublished: true }).pipe(
             map(levels => levels
-                .filter(l => l.isPublished !== false) // include all unless explicitly not published
+                .filter(l => l.isPublished === true) // only include published levels
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((level, index) => this.mapLevelToStage(level, index + 1))
             ),
@@ -203,13 +207,29 @@ export class AcademyProgressService {
                     );
                 }
 
-                return this.getAcademyOverviewData().pipe(
-                    switchMap(({ courses, progressRecords }) => this.buildProgressForStudent(
-                        courses,
-                        studentId,
-                        new Map<string, EnrollmentReadDto>(),
-                        progressRecords,
-                    )),
+                return forkJoin({
+                    overview: this.getAcademyOverviewData().pipe(take(1)),
+                    enrollments: this.getEnrollmentRecordsByCourseId(studentId).pipe(take(1)),
+                    apiProgress: this.progressFacade.getProgressByStudentId(studentId).pipe(take(1), catchError(() => of([] as ProgressReadDto[]))),
+                }).pipe(
+                    switchMap(({ overview, enrollments, apiProgress }) => {
+                        const mergedProgress = [...overview.progressRecords];
+                        apiProgress.forEach(ap => {
+                            const exists = mergedProgress.some(mp => mp.courseId === ap.courseId);
+                            if (!exists) {
+                                mergedProgress.push(ap);
+                            } else {
+                                const index = mergedProgress.findIndex(mp => mp.courseId === ap.courseId);
+                                mergedProgress[index] = { ...mergedProgress[index], ...ap };
+                            }
+                        });
+                        return this.buildProgressForStudent(
+                            overview.courses,
+                            studentId,
+                            enrollments,
+                            mergedProgress,
+                        );
+                    }),
                     catchError(() =>
                         this.getAcademyOverviewCourses().pipe(
                             map((courses) => this.buildStudentProgress(
@@ -406,8 +426,23 @@ export class AcademyProgressService {
      * Fetch progress for a single course directly without triggering global student progress state.
      */
     getTargetedCourseProgress(courseId: string): Observable<CourseProgress | undefined> {
-        return this.getCourseProgress(courseId).pipe(
-            take(1),
+        const currentProgress = this.progressSubject.value;
+        if (currentProgress) {
+            return of(currentProgress.courseProgress.find((c) => c.courseId === courseId));
+        }
+
+        return this.progressFacade.getCourseProgress(courseId).pipe(
+            map((summary): CourseProgress | undefined => {
+                if (!summary) return undefined;
+                return {
+                    courseId,
+                    status: summary.isCompleted ? 'completed' : (summary.progressPercentage && summary.progressPercentage > 0 ? 'in-progress' : 'available'),
+                    progress: summary.progressPercentage ?? 0,
+                    completedLessons: summary.completedLessonsCount ?? 0,
+                    totalLessons: summary.totalLessonsCount ?? 0,
+                    quizPassed: !!summary['quizPassed']
+                };
+            }),
             catchError(() => of(undefined))
         );
     }
@@ -422,15 +457,13 @@ export class AcademyProgressService {
         }
 
         const requests = courseIds.map(id =>
-            forkJoin({
-                course: this.courseFacade.getCourseById(id).pipe(catchError(() => of(null))),
-                progress: this.getTargetedCourseProgress(id)
-            }).pipe(
-                map(({ course, progress }) => ({
+            this.courseFacade.getCourseById(id).pipe(
+                map(course => ({
                     id,
                     title: course?.title || 'Unknown Course',
-                    isCompleted: progress?.status === 'completed'
-                }))
+                    isCompleted: true
+                })),
+                catchError(() => of({ id, title: 'Unknown Course', isCompleted: true }))
             )
         );
 
@@ -766,7 +799,7 @@ export class AcademyProgressService {
             return cachedRequest;
         }
 
-        const request$ = this.courseFacade.getRoadmap(trimmedLevelId).pipe(
+        const request$ = this.courseFacade.getRoadmap(trimmedLevelId, undefined, true).pipe(
             catchError(() => of([] as RoadmapCourseDto[])),
             shareReplay(1),
         );
@@ -833,6 +866,49 @@ export class AcademyProgressService {
             )
         );
     }
+    
+    private readonly courseDirectCache = new Map<string, import('../../api/facades/course.facade').CourseReadByIdDto>();
+    private readonly courseQuizzesCache = new Map<string, import('../../api/facades/quiz.facade').QuizReadDto[]>();
+
+    /**
+     * Fetches a course directly from GET /api/Courses/:id without triggering
+     * any additional requests (no lessons, no quizzes, no stages, no enrollment).
+     * Use this for the course detail page where only the course data is needed.
+     */
+    getCourseByIdDirect(courseId: string): Observable<import('../../api/facades/course.facade').CourseReadByIdDto | null> {
+        const cached = this.courseDirectCache.get(courseId);
+        if (cached) {
+            return of(cached);
+        }
+        return this.courseFacade.getCourseById(courseId).pipe(
+            tap((course) => {
+                if (course) {
+                    this.courseDirectCache.set(courseId, course);
+                }
+            }),
+            catchError(() => of(null))
+        );
+    }
+
+    /**
+     * Fetches and caches quizzes for a specific course.
+     */
+    getCourseQuizzesDirect(courseId: string): Observable<import('../../api/facades/quiz.facade').QuizReadDto[]> {
+        const cached = this.courseQuizzesCache.get(courseId);
+        if (cached) {
+            return of(cached);
+        }
+        return this.quizFacade.getAllQuizzes({
+            courseId: courseId
+        }).pipe(
+            tap((quizzes) => {
+                if (quizzes) {
+                    this.courseQuizzesCache.set(courseId, quizzes);
+                }
+            }),
+            catchError(() => of([]))
+        );
+    }
 
     private readonly activeLessonsRequests = new Map<string, Observable<AcademyLesson[]>>();
 
@@ -847,10 +923,12 @@ export class AcademyProgressService {
         }
 
         const request$ = this.lessonFacade.getCourseLessons(courseId).pipe(
-            map(lessons => lessons
-                .filter((lesson) => lesson.isPublished !== false)
-                .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index))
-            ),
+            map(rawLessons => {
+                const lessons = Array.isArray(rawLessons) ? rawLessons : [];
+                return lessons
+                    .filter((lesson) => lesson.isPublished !== false)
+                    .map((lesson, index) => this.mapLessonDtoToAcademyLesson(lesson, courseId, index));
+            }),
             switchMap((lessons) => this.hydrateVideoDurations(lessons)),
             tap(lessons => {
                 this.lessonsCache.set(courseId, lessons);
@@ -881,14 +959,30 @@ export class AcademyProgressService {
     }
 
     /**
+     * Helper to retrieve the matching level name/title for a given course.
+     * Uses cached stages, making it efficient and safe to call anywhere.
+     */
+    getLevelTitleForCourse(course: { levelId?: string; stageId: number }): Observable<string> {
+        return this.getAcademyStages().pipe(
+            map(stages => {
+                const matchedStage = stages.find(s => s.id === course.levelId)
+                    || stages.find(s => s.number === course.stageId);
+                return matchedStage?.title || `Stage ${course.stageId}`;
+            })
+        );
+    }
+
+
+    /**
      * Get lessons for a specific course with their progress.
      * Uses API lessons and derives an initial progress projection.
      */
     getCourseLessonsWithProgress(courseId: string): Observable<(AcademyLesson & { progress: LessonProgress })[]> {
-        return forkJoin({
-            apiLessons: this.getAcademyLessons(courseId),
+        return combineLatest({
+            apiLessons: this.getAcademyLessons(courseId).pipe(take(1)),
             courseProgress: this.getTargetedCourseProgress(courseId).pipe(catchError(() => of(null))),
         }).pipe(
+            take(1),
             map(({ apiLessons, courseProgress }) => {
                 const sortedLessons = [...apiLessons].sort((a, b) => a.order - b.order);
                 const completedByApi = Math.max(
@@ -1131,10 +1225,8 @@ export class AcademyProgressService {
             coursesByStage.set(c.stageId, list);
         });
 
-        const unlockedStageIds = new Set<number>();
-        if (sortedStageIds.length > 0) {
-            unlockedStageIds.add(sortedStageIds[0]); // Stage 1 is always unlocked
-        }
+        // Unlock all stages by default so progress doesn't depend on the previous stage quiz for now
+        const unlockedStageIds = new Set<number>(sortedStageIds);
 
         const allCourseProgress: CourseProgress[] = [];
         let isCurrentStageUnlocked = true;
@@ -1181,9 +1273,10 @@ export class AcademyProgressService {
                     ? Math.round((normalizedProgress / 100) * totalCourseItems)
                     : 0;
 
-                const isApiCompleted = normalizedProgress >= 100 || !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
                 const requiresQuizPass = this.courseHasAnyQuiz(course.id);
-                const quizPassed = isApiCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
+                const quizPassed = !!apiProgress?.completedProgress || !!apiProgress?.isCompleted || isEnrollmentCompleted || this.isCourseQuizPassedLocally(course.id);
+
+                const isApiCompleted = (normalizedProgress >= 100 && (!requiresQuizPass || quizPassed)) || !!apiProgress?.completedProgress || !!apiProgress?.isCompleted;
 
                 const completedStandaloneQuizCount = quizPassed ? this.getStandaloneQuizCount(course.id) : 0;
                 const locallyCompletedLessons = this.getLocallyCompletedLessonIds(course.id).size;
@@ -1194,6 +1287,9 @@ export class AcademyProgressService {
                 if (!hasApiProgress && requiresQuizPass && quizPassed) {
                     completedLessonsBeforeStandaloneQuiz = Math.max(completedLessonsBeforeStandaloneQuiz, totalCourseItems - completedStandaloneQuizCount);
                 }
+                if (requiresQuizPass && !quizPassed) {
+                    completedLessonsBeforeStandaloneQuiz = Math.min(completedLessonsBeforeStandaloneQuiz, totalCourseItems - this.getStandaloneQuizCount(course.id));
+                }
 
                 const completedLessonsCount = totalCourseItems > 0
                     ? Math.min(totalCourseItems, completedLessonsBeforeStandaloneQuiz + completedStandaloneQuizCount)
@@ -1203,16 +1299,6 @@ export class AcademyProgressService {
                     ? this.normalizeProgressPercentage((completedLessonsCount / totalCourseItems) * 100)
                     : 0;
 
-                let progressBeforeCompletion = hasApiProgress
-                    ? normalizedProgress
-                    : isApiCompleted
-                        ? 100
-                        : Math.max(normalizedProgress, completionRateFromLessons);
-
-                if (!hasApiProgress && !isApiCompleted && requiresQuizPass && !quizPassed) {
-                    progressBeforeCompletion = completionRateFromLessons;
-                }
-
                 const hasTrackableCourseItems = totalCourseItems > 0;
                 const completedByRule = hasTrackableCourseItems
                     && !hasApiProgress
@@ -1220,6 +1306,16 @@ export class AcademyProgressService {
                     && (!requiresQuizPass || quizPassed);
 
                 const isCourseCompleted = isApiCompleted || completedByRule || isEnrollmentCompleted;
+
+                let progressBeforeCompletion = hasApiProgress
+                    ? normalizedProgress
+                    : isApiCompleted
+                        ? 100
+                        : Math.max(normalizedProgress, completionRateFromLessons);
+
+                if (!isCourseCompleted && requiresQuizPass && !quizPassed) {
+                    progressBeforeCompletion = Math.min(progressBeforeCompletion, completionRateFromLessons);
+                }
 
                 if (isCourseCompleted) {
                     status = 'completed';
@@ -1872,7 +1968,7 @@ export class AcademyProgressService {
             category,
             categoryLabel: this.buildCategoryLabel(course.category),
             lessons,
-            duration: this.buildDurationText(lessons),
+            duration: this.formatDurationToHrsMins(course['duration'] ?? course['courseDuration'] ?? course['totalDuration'], lessons),
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
             order: course.order,
@@ -1887,24 +1983,27 @@ export class AcademyProgressService {
     ): AcademyCourse {
         const id = course.id ?? '';
         const title = course.title ?? 'Untitled course';
-        const lessons = this.resolveLessonCount(course);
+        const lessons = (course['countOfLessons'] as number) ?? (course['numberOfLessons'] as number) ?? (course['lessonsCount'] as number) ?? 0;
         const category = this.mapCourseCategory(course['category']);
-        const prerequisites = this.extractPrerequisiteIds(course).filter((prerequisiteId) => prerequisiteId !== id);
+        const prerequisites = (course.prerequisiteIds ?? []).filter((id) => id !== course.id);
         const isPublished = typeof course['isPublished'] === 'boolean' ? course['isPublished'] : undefined;
+
+        const rawDuration = course.courseDuration ?? course['duration'] ?? course['totalDuration'];
+        const duration = this.formatDurationToHrsMins(rawDuration, lessons);
 
         return {
             id,
             stageId: stageNumber,
-            levelId: levelId ?? course.levelId ?? '',
+            levelId: levelId ?? (course['levelId'] as string) ?? '',
             title,
             isPublished,
             category,
             categoryLabel: this.buildCategoryLabel(course['category']),
             lessons,
-            duration: this.buildDurationText(lessons),
+            duration,
             thumbnailUrl: toApiMediaUrl(course.thumbnailUrl ?? null) ?? undefined,
             description: course.description ?? undefined,
-            order: course.order,
+            order: course.order ?? 0,
             prerequisites,
         };
     }
@@ -2009,9 +2108,22 @@ export class AcademyProgressService {
     }
 
     private resolveLessonCount(source: Record<string, unknown>): number {
-        const numberOfLessons = source['numberOfLessons'];
+        const numberOfLessons = source['numberOfLessons']
+            ?? source['lessonsCount']
+            ?? source['totalLessons']
+            ?? source['lessons']
+            ?? source['lessons_count']
+            ?? source['number_of_lessons'];
+
         if (typeof numberOfLessons === 'number' && Number.isFinite(numberOfLessons)) {
             return Math.max(0, numberOfLessons);
+        }
+
+        if (typeof numberOfLessons === 'string') {
+            const parsed = parseInt(numberOfLessons, 10);
+            if (Number.isFinite(parsed)) {
+                return Math.max(0, parsed);
+            }
         }
 
         const lessons = source['lessons'];
@@ -2020,6 +2132,71 @@ export class AcademyProgressService {
         }
 
         return 0;
+    }
+
+    private formatDurationToHrsMins(rawDuration: unknown, fallbackLessons = 0): string {
+        if (rawDuration === undefined || rawDuration === null) {
+            return this.buildHrsMinsText(fallbackLessons * 10);
+        }
+
+        let totalMinutes = 0;
+
+        if (typeof rawDuration === 'number') {
+            if (Number.isFinite(rawDuration) && rawDuration > 0) {
+                totalMinutes = rawDuration;
+            }
+        } else if (typeof rawDuration === 'string') {
+            const trimmed = rawDuration.trim().toLowerCase();
+            if (trimmed.length > 0) {
+                // Check if it's HH:MM:SS or MM:SS
+                if (trimmed.includes(':')) {
+                    const parts = trimmed.split(':').map(Number);
+                    if (parts.every(p => !Number.isNaN(p))) {
+                        if (parts.length === 3) {
+                            totalMinutes = parts[0] * 60 + parts[1] + Math.round(parts[2] / 60);
+                        } else if (parts.length === 2) {
+                            totalMinutes = parts[0] + Math.round(parts[1] / 60);
+                        }
+                    }
+                } else {
+                    // Try parsing as a clean number (e.g. "30")
+                    const parsedNum = parseInt(trimmed, 10);
+                    if (trimmed.match(/^\d+$/) && !Number.isNaN(parsedNum) && parsedNum > 0) {
+                        totalMinutes = parsedNum;
+                    } else {
+                        // Extract hours and minutes from strings like "2h 30m" or "30m" or "30 mins"
+                        const hoursMatch = trimmed.match(/(\d+)\s*(h|hr|hour|hrs)/);
+                        const minsMatch = trimmed.match(/(\d+)\s*(m|min|minute|mins)/);
+                        const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+                        const mins = minsMatch ? parseInt(minsMatch[1], 10) : 0;
+                        totalMinutes = hours * 60 + mins;
+                    }
+                }
+            }
+        }
+
+        if (totalMinutes <= 0) {
+            return this.buildHrsMinsText(fallbackLessons * 10);
+        }
+
+        return this.buildHrsMinsText(totalMinutes);
+    }
+
+    private buildHrsMinsText(totalMinutes: number): string {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.round(totalMinutes % 60);
+
+        const hrsLabel = hours === 1 ? 'hr' : 'hrs';
+        const minsLabel = minutes === 1 ? 'min' : 'mins';
+
+        if (hours === 0) {
+            return `${minutes} ${minsLabel}`;
+        }
+        if (minutes === 0) {
+            return `${hours} ${hrsLabel}`;
+        }
+
+        return `${hours} ${hrsLabel} ${minutes} ${minsLabel}`;
     }
 
     private mapLessonDtoToAcademyLesson(
@@ -2179,8 +2356,8 @@ export class AcademyProgressService {
 
                 return {
                     ...course,
-                    lessons: lessonCount,
-                    duration: this.calculateCourseVideoDuration(publishedLessons, fallbackDuration),
+                    lessons: (course.lessons !== undefined && course.lessons > 0) ? course.lessons : lessonCount,
+                    duration: (course.duration && course.duration !== '0m' && course.duration !== '0h 0m') ? course.duration : this.calculateCourseVideoDuration(publishedLessons, fallbackDuration),
                 };
             }),
             catchError(() => of(course)),
@@ -2228,25 +2405,56 @@ export class AcademyProgressService {
     }
 
     private buildDurationText(lessonCount: number): string {
-        const estimatedMinutesPerLesson = 10;
-        const totalMinutes = lessonCount * estimatedMinutesPerLesson;
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-
-        if (hours === 0) {
-            return `${minutes}m`;
-        }
-
-        return `${hours}h ${minutes}m`;
+        return this.buildHrsMinsText(lessonCount * 10);
     }
 
-    private resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
+    private formatPrettyDuration(rawDuration: string, type: AcademyLesson['type']): string {
+        const normalized = rawDuration.trim().toLowerCase();
+        if (!normalized || normalized === '0:00' || normalized === '00:00:00') {
+            return type === 'article' || type === 'document' ? '~5min' : '5 min';
+        }
+        
+        // If it's already a clean duration like '~5min' or '5 min' or contains 'min' or 'm', return it
+        if (normalized.includes('min') || normalized.endsWith('m') || normalized.includes('hr')) {
+            return rawDuration;
+        }
+
+        // Parse HH:MM:SS or MM:SS
+        const parts = normalized.split(':').map(Number);
+        if (parts.every(p => !Number.isNaN(p))) {
+            let totalSeconds = 0;
+            if (parts.length === 3) {
+                totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else if (parts.length === 2) {
+                totalSeconds = parts[0] * 60 + parts[1];
+            } else if (parts.length === 1) {
+                totalSeconds = parts[0];
+            }
+
+            if (totalSeconds > 0) {
+                const totalMinutes = Math.round(totalSeconds / 60);
+                if (totalMinutes < 1) {
+                    return `${totalSeconds}s`;
+                }
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m`;
+                }
+                return `${minutes} min`;
+            }
+        }
+
+        return rawDuration;
+    }
+
+    public resolveLessonDurationFromDto(lesson: LessonReadDto, type: AcademyLesson['type']): string {
         if (type === 'quiz') {
             return 'Assessment';
         }
 
         if (type === 'article' || type === 'document') {
-            return '~5 min';
+            return '~5min';
         }
 
         const supportsPlaybackDuration = type === 'video' || type === 'audio';
@@ -2258,26 +2466,28 @@ export class AcademyProgressService {
 
         const durationFromSeconds = this.readNumericDurationLabel(
             rawLesson,
-            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds'],
+            ['durationInSeconds', 'videoDurationInSeconds', 'lengthInSeconds', 'lessonDurationInSeconds'],
             1,
         );
         if (durationFromSeconds) {
-            return durationFromSeconds;
+            return this.formatPrettyDuration(durationFromSeconds, type);
         }
 
         const durationFromMinutes = this.readNumericDurationLabel(
             rawLesson,
-            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes'],
+            ['durationInMinutes', 'videoDurationInMinutes', 'lengthInMinutes', 'lessonDurationInMinutes'],
             60,
         );
         if (durationFromMinutes) {
-            return durationFromMinutes;
+            return this.formatPrettyDuration(durationFromMinutes, type);
         }
 
-        return this.readStringDurationLabel(
+        const stringDuration = this.readStringDurationLabel(
             rawLesson,
-            ['duration', 'videoDuration', 'durationLabel', 'length'],
+            ['lessonDuration', 'duration', 'videoDuration', 'durationLabel', 'length'],
         ) ?? '0:00';
+
+        return this.formatPrettyDuration(stringDuration, type);
     }
 
     private readNumericDurationLabel(
@@ -2446,11 +2656,7 @@ export class AcademyProgressService {
         mediaUrl: string,
         mediaType: 'video' | 'audio',
     ): Observable<number> {
-        if (!this.isBrowser) {
-            return of(0);
-        }
-
-        return this.measureHtmlMediaDurationSeconds(mediaUrl, mediaType);
+        return of(0);
     }
 
     private measureHtmlMediaDurationSeconds(
@@ -2658,11 +2864,7 @@ export class AcademyProgressService {
                 return forkJoin({
                     enrollmentsByCourseId: this.getEnrollmentRecordsByCourseId(studentId).pipe(take(1)),
                     lessons: this.getAcademyLessons(courseId).pipe(take(1)),
-                    quizzes: this.quizFacade.getAllQuizzes({
-                        courseId,
-                        pageNumber: 1,
-                        pageSize: 200,
-                    }).pipe(catchError(() => of([] as QuizReadDto[]))),
+                    quizzes: this.getCourseQuizzesDirect(courseId).pipe(take(1), catchError(() => of([] as QuizReadDto[]))),
                 }).pipe(
                     switchMap(({ enrollmentsByCourseId, lessons, quizzes }) => {
                         const enrollment = enrollmentsByCourseId.get(courseId);

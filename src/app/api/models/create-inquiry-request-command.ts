@@ -6,5 +6,5 @@ import { MeetingInquiryTopic } from '../models/meeting-inquiry-topic';
 export interface CreateInquiryRequestCommand {
   languages?: Array<Language>;
   message?: string;
-  topic?: MeetingInquiryTopic;
+  topic?: MeetingInquiryTopic | null;
 }

@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build:netlify"
+  publish = "dist/AskAMuslim"
+
+[[redirects]]
+  from = "/backend/*"
+  to = "https://api.askamuslim.com/:splat"
+  status = 200
+  force = true
+
+# NOTE: /assistant-api/* redirect is generated dynamically at build time
+# by scripts/setup-environments.mjs using the ASSISTANT_TUNNEL_URL
+# Netlify environment variable. Set that variable in the Netlify dashboard
+# with your current Cloudflare tunnel URL (e.g. https://xxx.trycloudflare.com).
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

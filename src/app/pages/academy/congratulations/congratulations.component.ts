@@ -32,6 +32,7 @@ export class CongratulationsComponent implements OnInit, OnDestroy {
 
     readonly courseTitle = signal<string>('Prayer (Salah)');
     readonly nextCourseName = signal<string>('');
+    readonly levelName = signal<string>('');
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
@@ -39,18 +40,20 @@ export class CongratulationsComponent implements OnInit, OnDestroy {
 
     readonly breadcrumbs = computed<readonly AcademyBreadcrumbItem[]>(() => {
         const title = this.courseTitle().trim();
-
-        if (!title) {
-            return [...this.breadcrumbsBase];
+        const list: AcademyBreadcrumbItem[] = [...this.breadcrumbsBase];
+        if (this.levelName()) {
+            list.push({
+                label: this.levelName(),
+                link: ['/academy'],
+            });
         }
-
-        return [
-            ...this.breadcrumbsBase,
-            {
+        if (title) {
+            list.push({
                 label: title,
                 link: ['/academy/course', this.courseId],
-            },
-        ];
+            });
+        }
+        return list;
     });
 
     constructor() { }
@@ -97,6 +100,9 @@ export class CongratulationsComponent implements OnInit, OnDestroy {
         if (normalizedTitle && normalizedTitle.toLowerCase() !== 'unknown course') {
             this.courseTitle.set(normalizedTitle);
         }
+
+        const levelTitle = (data.course as any).levelName || 'Course';
+        this.levelName.set(levelTitle);
 
         if (data.nextCourse) {
             this.nextCourseId = data.nextCourse.id ?? null;

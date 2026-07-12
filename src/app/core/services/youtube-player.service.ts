@@ -41,6 +41,7 @@ export interface YouTubePlayerEvents {
 type YouTubePlayerConstructor = new (
     host: string | HTMLElement,
     options: {
+        host?: string;
         videoId: string;
         playerVars: Record<string, string | number>;
         events: {
@@ -148,6 +149,7 @@ export class YouTubePlayerService {
             let isResolved = false;
 
             const player = new playerFactory(host, {
+                host: 'https://www.youtube-nocookie.com',
                 videoId,
                 playerVars: {
                     rel: 0,

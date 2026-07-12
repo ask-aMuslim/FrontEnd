@@ -7,38 +7,27 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { Result } from '../../models/result';
-import { VerifyOtpCommand } from '../../models/verify-otp-command';
+import { ResultOfAuthenticationResponse } from '../../models/result-of-authentication-response';
+import { VerifyRegistrationOtpCommand } from '../../models/verify-registration-otp-command';
 
 export interface VerifyRegistrationOtp$Params {
-  body: VerifyOtpCommand;
+      body: VerifyRegistrationOtpCommand
 }
 
-export function verifyRegistrationOtp(
-  http: HttpClient,
-  rootUrl: string,
-  params: VerifyRegistrationOtp$Params,
-  context?: HttpContext,
-): Observable<StrictHttpResponse<Result>> {
-  const rb = new RequestBuilder(
-    rootUrl,
-    verifyRegistrationOtp.PATH,
-    'post',
-  );
+export function verifyRegistrationOtp(http: HttpClient, rootUrl: string, params: VerifyRegistrationOtp$Params, context?: HttpContext): Observable<StrictHttpResponse<ResultOfAuthenticationResponse>> {
+  const rb = new RequestBuilder(rootUrl, verifyRegistrationOtp.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/json');
   }
 
-  return http
-    .request(
-      rb.build({ responseType: 'json', accept: 'application/json', context }),
-    )
-    .pipe(
-      filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
-      map((r: HttpResponse<any>) => {
-        return r as StrictHttpResponse<Result>;
-      }),
-    );
+  return http.request(
+    rb.build({ responseType: 'json', accept: 'application/json', context })
+  ).pipe(
+    filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
+    map((r: HttpResponse<any>) => {
+      return r as StrictHttpResponse<ResultOfAuthenticationResponse>;
+    })
+  );
 }
 
 verifyRegistrationOtp.PATH = '/api/Authentication/verify-registration-otp';

@@ -11,6 +11,7 @@ import {
 import { AskAssistantService } from './ask-assistant.service';
 import { buildChatTitleFromMessages } from './ask-assistant-title.util';
 import { MarkdownPipe } from '../../../shared/pipes/markdown.pipe';
+import { SeoService } from '../../../core/services/seo.service';
 
 interface AskAssistantConversationSection {
   label: string;
@@ -54,12 +55,16 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
   conversationErrorMessage: string | null = null;
   errorMessage: string | null = null;
   isResponding: WritableSignal<boolean> = signal(false);
+  selectedMessageId: WritableSignal<number | null> = signal(null);
+  copiedMessageId: WritableSignal<number | null> = signal(null);
+
 
   private readonly askAssistantService = inject(AskAssistantService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
   private readonly appRef = inject(ApplicationRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly seoService = inject(SeoService);
 
   ngOnInit(): void {
     this.userId = this.askAssistantService.getResolvedUserId();
@@ -78,6 +83,12 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
       // Small delay to ensure component is ready
       globalThis.setTimeout(() => this.submitQuestion(), 100);
     }
+
+    this.seoService.setMetaTags({
+      title: 'Ask AI Assistant - Get Instant Islamic Answers',
+      description: 'Chat with our AI Assistant to ask questions and find verified information from scholarly Islamic sources 24/7.',
+      keywords: ['AI Islamic assistant', 'ask questions AI', 'Islamic chatbot', 'verified scholars search']
+    });
   }
 
   ngOnDestroy(): void {
@@ -181,6 +192,7 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         userId: this.userId,
         question,
         threadId: this.activeThreadId,
+        threadName: this.resolveOutgoingThreadName(tempTitle),
       })
       .pipe(
         takeUntil(this.destroy$),
@@ -270,6 +282,38 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
     return this.activeThreadId === threadId;
   }
 
+  toggleMessageDate(messageId: number): void {
+    if (this.selectedMessageId() === messageId) {
+      this.selectedMessageId.set(null);
+    } else {
+      this.selectedMessageId.set(messageId);
+    }
+    this.cdr.markForCheck();
+  }
+
+  copyMessage(message: ChatMessage, event: MouseEvent): void {
+    event.stopPropagation();
+    if (!message.text || !this.isBrowser) {
+      return;
+    }
+
+    globalThis.navigator.clipboard.writeText(message.text)
+      .then(() => {
+        this.copiedMessageId.set(message.id);
+        this.cdr.markForCheck();
+        globalThis.setTimeout(() => {
+          if (this.copiedMessageId() === message.id) {
+            this.copiedMessageId.set(null);
+            this.cdr.markForCheck();
+          }
+        }, 2000);
+      })
+      .catch((err) => {
+        globalThis.console.error('Failed to copy text: ', err);
+      });
+  }
+
+
   get activeChatTitle(): string {
     const selectedConversationTitle = this.activeThreadId
       ? this.conversations.find((conversation) => conversation.threadId === this.activeThreadId)?.title
@@ -323,6 +367,26 @@ export class AskAssistantComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     }
+  }
+
+  private resolveOutgoingThreadName(fallbackTitle: string): string {
+    if (this.activeThreadId) {
+      const existingConversation = this.conversations.find(
+        (conversation) => conversation.threadId === this.activeThreadId,
+      );
+      const existingTitle = existingConversation?.title?.trim();
+      if (existingTitle) {
+        return existingTitle;
+      }
+    }
+
+    const activeTitle = this.activeChatTitle.trim();
+    if (activeTitle && activeTitle !== 'New chat') {
+      return activeTitle;
+    }
+
+    const normalizedFallback = fallbackTitle.trim();
+    return normalizedFallback || 'New chat';
   }
 
 

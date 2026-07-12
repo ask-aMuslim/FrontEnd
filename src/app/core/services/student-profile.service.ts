@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, catchError, timeout, timer, map, switchMap } from 'rxjs';
+import { Observable, throwError, catchError, timeout, timer, map, switchMap, shareReplay } from 'rxjs';
 import { retryWhen, mergeMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
@@ -42,6 +42,7 @@ export interface ProfileError {
 export class StudentProfileService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl.replaceAll(/\/+$/g, '');
+  private myProfile$: Observable<StudentProfile | null> | null = null;
 
   // Configuration constants
   private readonly DEFAULT_TIMEOUT = 30000; // 30 seconds
@@ -53,13 +54,21 @@ export class StudentProfileService {
    * Get the current student's profile
    * GET /api/StudentProfiles/me
    */
-  getMyProfile(): Observable<StudentProfile | null> {
-    return this.http.get<ApiResponse<StudentProfile>>(`${this.baseUrl}/api/StudentProfiles/me`).pipe(
-      map(response => response?.data ?? null),
-      timeout(this.DEFAULT_TIMEOUT),
-      this.retryWithBackoff(),
-      catchError((error) => this.handleError(error, 'getMyProfile'))
-    );
+  getMyProfile(forceRefresh = false): Observable<StudentProfile | null> {
+    if (!this.myProfile$ || forceRefresh) {
+      this.myProfile$ = this.http.get<ApiResponse<StudentProfile>>(`${this.baseUrl}/api/StudentProfiles/me`).pipe(
+        map(response => response?.data ?? null),
+        timeout(this.DEFAULT_TIMEOUT),
+        this.retryWithBackoff(),
+        catchError((error) => this.handleError(error, 'getMyProfile')),
+        shareReplay(1)
+      );
+    }
+    return this.myProfile$;
+  }
+
+  clearCache(): void {
+    this.myProfile$ = null;
   }
 
   /**
@@ -102,6 +111,7 @@ export class StudentProfileService {
    */
   createProfile(request: CreateStudentProfileRequest): Observable<StudentProfile> {
     this.validateProfileRequest(request);
+    this.clearCache();
 
     return this.http.post<ApiResponse<StudentProfile>>(`${this.baseUrl}/api/StudentProfiles/me`, request).pipe(
       map(response => response?.data),
@@ -116,6 +126,7 @@ export class StudentProfileService {
    */
   updateProfile(request: UpdateStudentProfileRequest): Observable<StudentProfile> {
     this.validateProfileRequest(request);
+    this.clearCache();
 
     return this.http.put<ApiResponse<StudentProfile>>(`${this.baseUrl}/api/StudentProfiles/me`, request).pipe(
       map(response => response?.data),

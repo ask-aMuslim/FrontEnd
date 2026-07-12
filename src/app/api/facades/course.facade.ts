@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map, shareReplay, finalize } from 'rxjs';
+import { Observable, map, shareReplay, finalize, forkJoin, of, switchMap, catchError } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { asArray, extractData } from './shared';
 
@@ -32,14 +32,24 @@ export interface RoadmapCourseDto {
     title?: string;
     description?: string;
     thumbnailUrl?: string;
+    isPublished?: boolean;
+    hasQuiz?: boolean;
     order?: number;
-    isCompleted?: boolean;
-    isLocked?: boolean;
-    prerequisites?: RoadmapCourseDto[];
+    countOfLessons?: number;
+    courseDuration?: string;
     prerequisiteIds?: string[];
-    levelId?: string;
+    isAvailable?: boolean;
+    enrollmentStatus?: string | null;
+    progress?: number | null;
     [key: string]: unknown;
 }
+
+export interface RoadmapResponseDto {
+    levelId?: string;
+    levelTitle?: string;
+    courses?: RoadmapCourseDto[];
+}
+
 
 export type CourseCreatePayload = Record<string, unknown>;
 export type CourseUpdatePayload = Record<string, unknown>;
@@ -81,20 +91,36 @@ export class CourseFacade {
         return request$;
     }
 
-    getRoadmap(levelId: string, studentId?: string): Observable<RoadmapCourseDto[]> {
-        const cacheKey = `roadmap_${levelId}_${studentId || ''}`;
+    getRoadmap(levelId: string, studentId?: string, isPublished?: boolean): Observable<RoadmapCourseDto[]> {
+        const cacheKey = `roadmap_${levelId}_${studentId || ''}_${isPublished !== undefined ? isPublished : ''}`;
         if (this.activeRequests.has(cacheKey)) return this.activeRequests.get(cacheKey)!;
 
         const params: Record<string, string> = {};
         if (studentId) {
             params['studentId'] = studentId;
         }
+        if (isPublished !== undefined) {
+            params['isPublished'] = String(isPublished);
+        }
 
         const request$ = extractData(
             this.api.get<unknown>(`/api/Courses/roadmap/${levelId}`, params),
-            []
+            null
         ).pipe(
-            map(asArray<RoadmapCourseDto>),
+            map((payload: any) => {
+                if (payload) {
+                    if (Array.isArray(payload)) {
+                        return payload as RoadmapCourseDto[];
+                    }
+                    if (Array.isArray(payload.courses)) {
+                        return payload.courses as RoadmapCourseDto[];
+                    }
+                    if (payload.data && Array.isArray(payload.data.courses)) {
+                        return payload.data.courses as RoadmapCourseDto[];
+                    }
+                }
+                return [];
+            }),
             finalize(() => this.activeRequests.delete(cacheKey)),
             shareReplay(1)
         );

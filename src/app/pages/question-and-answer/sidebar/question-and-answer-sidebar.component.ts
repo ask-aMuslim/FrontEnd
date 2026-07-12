@@ -23,7 +23,7 @@ export class QuestionAndAnswerSidebarComponent {
     },
     {
       key: 'ask-assistant',
-      label: 'Ask Assistant',
+      label: 'Ask AI Assistant',
       href: '/question-and-answer/ask-assistant',
       icon: '/icons/icons-24/ai-talk.svg',
     },

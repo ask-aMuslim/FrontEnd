@@ -5,7 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, combineLatest, of } from 'rxjs';
-import { takeUntil, catchError } from 'rxjs/operators';
+import { takeUntil, catchError, take } from 'rxjs/operators';
 import { LessonContentService, LessonNoteItem } from '../../../core/services/lesson-content.service';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
 import { VideoProgressService } from '../../../core/services/video-progress.service';
@@ -15,7 +15,6 @@ import {
     YouTubePlayerService,
     YouTubePlayerState,
 } from '../../../core/services/youtube-player.service';
-import { QuizzesService } from '../../../core/services/quizzes.service';
 import { TokenService } from '../../../core/auth/token.service';
 import { QuizReadDto } from '../../../api/facades/quiz.facade';
 import { toApiMediaUrl } from '../../../core/helpers/media-url.helper';
@@ -25,8 +24,8 @@ import {
 } from '../shared/academy-page-shell/academy-page-shell.component';
 import {
     AcademySidebarLessonItem,
-} from '../shared/academy-course-sidebar/academy-course-sidebar.component';
-import { AcademySidebarHostComponent } from '../shared/academy-sidebar-host/academy-sidebar-host.component';
+    AcademySidebarHostComponent,
+} from '../shared/academy-sidebar-host/academy-sidebar-host.component';
 import {
     AcademyCourse,
     AcademyLesson,
@@ -85,6 +84,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     nextAcademyLesson: AcademyLesson | undefined;
     previousAcademyLesson: AcademyLesson | undefined;
     courseLessons: Array<AcademyLesson & { progress: LessonProgress }> = [];
+    courseQuizzes: QuizReadDto[] = [];
 
     lessonData: LessonData | null = null;
     lessonContent: LessonContent | null = null;
@@ -123,6 +123,18 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     feedbackSubmissionMessage: string | null = null;
     feedbackSubmissionStatus: 'success' | 'error' | null = null;
     isSubmittingFeedback = false;
+    localFeedbackSubmissions = new Set<string>();
+
+    get hasSubmittedFeedback(): boolean {
+        if (this.lessonId && this.localFeedbackSubmissions.has(this.lessonId)) {
+            return true;
+        }
+        if (!this.isBrowser || !this.lessonId) {
+            return false;
+        }
+        return this.document.defaultView?.localStorage.getItem(`lesson_feedback_${this.lessonId}`) === 'true';
+    }
+    levelName = '';
 
     readonly breadcrumbsBase: readonly AcademyBreadcrumbItem[] = [
         { label: 'Academy', link: ['/academy'] },
@@ -130,6 +142,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     readonly youtubePlayerHostElementId = LessonPlayerComponent.youtubePlayerHostElementId;
     readonly mediaContainer = viewChild<ElementRef<HTMLElement>>('lessonMediaContainer');
     readonly audioElementRef = viewChild<ElementRef<HTMLAudioElement>>('audioElement');
+
+    private currentLoadedLessonId: string | null = null;
+    private currentLoadedCourseId: string | null = null;
 
     private readonly destroy$ = new Subject<void>();
     private readonly platformId = inject(PLATFORM_ID);
@@ -150,7 +165,6 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         private readonly academyProgressService: AcademyProgressService,
         private readonly youtubePlayerService: YouTubePlayerService,
         private readonly videoProgressService: VideoProgressService,
-        private readonly quizzesService: QuizzesService,
         private readonly cdr: ChangeDetectorRef,
     ) { }
 
@@ -175,13 +189,20 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
     }
 
     get breadcrumbs(): readonly AcademyBreadcrumbItem[] {
-        return [
-            ...this.breadcrumbsBase,
-            {
-                label: this.currentCourse?.title || 'Course',
-                link: ['/academy/course', this.courseId],
-            },
+        const list: AcademyBreadcrumbItem[] = [
+            ...this.breadcrumbsBase
         ];
+        if (this.levelName) {
+            list.push({
+                label: this.levelName,
+                link: ['/academy'],
+            });
+        }
+        list.push({
+            label: this.currentCourse?.title || 'Course',
+            link: ['/academy/course', this.courseId],
+        });
+        return list;
     }
 
     get currentBreadcrumb(): string {
@@ -201,19 +222,37 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         combineLatest([this.route.paramMap, this.route.queryParamMap, this.route.data])
             .pipe(takeUntil(this.destroy$))
             .subscribe(([params, queryParams, routeData]) => {
-                this.courseId = params.get('courseId') || '';
-                this.lessonId = params.get('lessonId') || '';
+                const newCourseId = params.get('courseId') || '';
+                const newLessonId = params.get('lessonId') || '';
 
-                if (this.courseId && this.lessonId) {
+                if (newCourseId && newLessonId) {
                     const requestedTab = queryParams.get('tab') === 'notes' ? 'notes' : 'overview';
                     const requestedSeekSeconds = this.parseSeekQueryParam(queryParams.get('seek'));
-                    this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
 
-                    const resolved = routeData['resolvedData'] as LessonPlayerResolvedData | null;
-                    if (resolved?.lessonData.content.id === this.lessonId) {
-                        this.applyResolvedLessonData(resolved);
+                    const isSameLesson = newLessonId === this.currentLoadedLessonId && newCourseId === this.currentLoadedCourseId;
+
+                    if (!isSameLesson) {
+                        this.courseId = newCourseId;
+                        this.lessonId = newLessonId;
+                        this.currentLoadedCourseId = newCourseId;
+                        this.currentLoadedLessonId = newLessonId;
+
+                        this.resetViewStateForRouteChange(requestedTab, requestedSeekSeconds);
+
+                        const resolved = routeData['resolvedData'] as LessonPlayerResolvedData | null;
+                        if (resolved?.lessonData.content.id === this.lessonId) {
+                            this.applyResolvedLessonData(resolved);
+                        } else {
+                            this.loadLessonData();
+                        }
                     } else {
-                        this.loadLessonData();
+                        if (requestedTab !== this.activeTab) {
+                            this.setActiveTab(requestedTab);
+                        }
+                        if (requestedSeekSeconds !== null && requestedSeekSeconds !== this.pendingSeekSeconds) {
+                            this.pendingSeekSeconds = requestedSeekSeconds;
+                            this.applyPendingPlaybackSeek();
+                        }
                     }
                 }
             });
@@ -234,6 +273,8 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             return lessonId.length === 0 || courseLessonIds.has(lessonId);
         });
 
+        this.courseQuizzes = scopedQuizzes;
+
         if (!currentLesson) {
             this.error = 'Lesson not found';
             this.isLoading = false;
@@ -251,6 +292,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ...course,
             duration: aggregatedVideoDuration,
         };
+        this.levelName = course.stageLabel || '';
         this.hasCourseQuiz = scopedQuizzes.length > 0 || lessonsWithProgress.some((lesson) => lesson.type === 'quiz');
         this.courseQuizLessonId = this.resolveQuizLessonId(lessonsWithProgress, scopedQuizzes);
         this.courseQuizTitle = this.resolveCourseQuizTitle(lessonsWithProgress, scopedQuizzes);
@@ -296,19 +338,100 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.error = null;
 
         combineLatest([
-            this.academyProgressService.getAcademyCourseById(this.courseId),
-            this.academyProgressService.getCourseLessonsWithProgress(this.courseId),
-            this.quizzesService.getAll({ courseId: this.courseId, pageSize: 200 }),
-            this.lessonContentService.getLesson(this.lessonId),
-            this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([])))
+            this.academyProgressService.getCourseByIdDirect(this.courseId),
+            this.academyProgressService.getCourseQuizzesDirect(this.courseId),
+            this.lessonContentService.getLesson(this.lessonId, this.courseId),
+            this.lessonContentService.getLessonNotes(this.lessonId).pipe(catchError(() => of([]))),
+            this.academyProgressService.getCourseLessonsWithProgress(this.courseId).pipe(
+                take(1),
+                catchError(() => of([]))
+            )
         ])
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                take(1),
+                takeUntil(this.destroy$)
+            )
             .subscribe({
-                next: ([course, lessonsWithProgress, quizzes, lessonData, notes]) => {
+                next: ([rawCourse, quizzes, lessonData, notes, lessonsWithProgress]) => {
+                    if (!rawCourse || !lessonData) {
+                        this.error = 'Unable to load this lesson right now. Please try again.';
+                        this.isLoading = false;
+                        this.isContentLoading = false;
+                        this.cdr.detectChanges();
+                        return;
+                    }
+
+                    // Map AcademyCourse
+                    const category = (rawCourse.category as any) || 'social-topics';
+                    const course: AcademyCourse = {
+                        id: rawCourse.id ?? '',
+                        stageId: 1,
+                        levelId: rawCourse.levelId ?? '',
+                        title: rawCourse.title ?? 'Untitled Course',
+                        category,
+                        categoryLabel: rawCourse.category ? String(rawCourse.category).toUpperCase() : 'Social Topics',
+                        lessons: Array.isArray(rawCourse.lessons) ? rawCourse.lessons.length : 0,
+                        duration: '0m',
+                        thumbnailUrl: rawCourse.thumbnailUrl,
+                        description: rawCourse.description,
+                        stageLabel: (rawCourse['levelName'] as string) ?? (rawCourse['levelname'] as string) ?? (rawCourse['level_name'] as string) ?? rawCourse.level ?? 'Course',
+                    };
+
+                    let finalLessons = lessonsWithProgress;
+                    if (!finalLessons || finalLessons.length === 0) {
+                        const rawLessons = Array.isArray(rawCourse.lessons) ? rawCourse.lessons : [];
+                        const parseLessonType = (raw: unknown): 'intro' | 'video' | 'article' | 'document' | 'quiz' | 'audio' => {
+                            const str = String(raw ?? '').toLowerCase();
+                            if (str === '1' || str === 'video') return 'video';
+                            if (str === '2' || str === 'article') return 'article';
+                            if (str === '3' || str === 'document') return 'document';
+                            if (str === '4' || str === 'audio') return 'audio';
+                            if (str === '5' || str === 'quiz') return 'quiz';
+                            return 'intro';
+                        };
+
+                        finalLessons = rawLessons
+                            .filter((l: any) => l.isPublished !== false)
+                            .map((l: any, index: number) => {
+                                const lId = l.lessonId ?? l.id ?? '';
+                                const lessonType = parseLessonType(l.lessonType ?? l.type);
+                                const isCompleted = !!(l.isLessonCompleted ?? l.isCompleted);
+
+                                const academyLesson: AcademyLesson = {
+                                    id: lId,
+                                    courseId: this.courseId,
+                                    title: l.lessonName ?? l.title ?? '',
+                                    duration: this.academyProgressService.resolveLessonDurationFromDto(l, lessonType),
+                                    type: lessonType,
+                                    order: index + 1,
+                                };
+
+                                const progress: LessonProgress = {
+                                    lessonId: lId,
+                                    courseId: this.courseId,
+                                    status: lId === this.lessonId ? 'current' : (isCompleted ? 'completed' : 'available'),
+                                    isCompleted,
+                                };
+
+                                return {
+                                    ...academyLesson,
+                                    progress,
+                                };
+                            });
+                    }
+
+                    const lessonsWithProgressEnriched = finalLessons.map((lesson) => ({
+                        ...lesson,
+                        progress: {
+                            ...lesson.progress,
+                            status: lesson.id === this.lessonId ? 'current' : lesson.progress.status
+                        }
+                    }));
+
                     this.applyResolvedLessonData({
                         course,
-                        lessonsWithProgress,
-                        quizzes,
+                        lessonsWithProgress: lessonsWithProgressEnriched,
+                        quizzes: quizzes || [],
                         lessonData,
                         notes,
                     });
@@ -651,7 +774,9 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         }
     }
 
-    isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'completed'; }
+    isLessonCompleted(lesson: AcademyLesson & { progress: LessonProgress }): boolean {
+        return lesson.progress.status === 'completed' || lesson.progress.isCompleted;
+    }
     isLessonCurrent(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.id === this.lessonId; }
     isLessonPending(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status === 'locked'; }
     canClickLesson(lesson: AcademyLesson & { progress: LessonProgress }): boolean { return lesson.progress.status !== 'locked'; }
@@ -772,6 +897,16 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                     this.isSubmittingFeedback = false;
 
                     if (submitted) {
+                        if (this.lessonId) {
+                            this.localFeedbackSubmissions.add(this.lessonId);
+                            if (this.isBrowser) {
+                                try {
+                                    this.document.defaultView?.localStorage.setItem(`lesson_feedback_${this.lessonId}`, 'true');
+                                } catch (e) {
+                                    // Ignore localStorage storage exceptions (e.g. privacy mode)
+                                }
+                            }
+                        }
                         this.lessonRating = 0;
                         this.feedbackText = '';
                         this.feedbackSubmissionMessage = 'Thank you for your feedback!';
@@ -866,9 +1001,23 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
+    private isQuizCompleted(quizId: string): boolean {
+        if (!this.isBrowser) return false;
+        const key = `quiz_${this.courseId}_${quizId}`;
+        const data = this.document.defaultView?.localStorage.getItem(key);
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                return !!parsed?.completed && !!parsed?.passed;
+            } catch {
+                return false;
+            }
+        }
+        return false;
+    }
+
     get sidebarLessons(): AcademySidebarLessonItem[] {
         const lastContentLessonId = this.getLastContentLessonId();
-        const isViewingLastCourseLesson = !!lastContentLessonId && this.lessonId === lastContentLessonId;
 
         const mappedLessons = this.courseLessons.map((lesson) => ({
             id: lesson.id,
@@ -878,20 +1027,31 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             quizLessonId: lesson.type === 'quiz' ? lesson.id : undefined,
             isCompleted: this.isLessonCompleted(lesson),
             isCurrent: this.isLessonCurrent(lesson),
-            isLastCourseLesson:
-                isViewingLastCourseLesson
-                && !!lastContentLessonId
-                && lesson.id === lastContentLessonId,
+            isLastCourseLesson: false,
             isLocked: this.isLessonPending(lesson),
         }));
 
-        if (mappedLessons.some((lesson) => lesson.type === 'quiz') || !this.hasCourseQuiz) {
-            return mappedLessons;
+        const nonQuiz = mappedLessons.filter((l) => l.type !== 'quiz');
+
+        if (nonQuiz.length > 0) {
+            nonQuiz.forEach(l => l.isLastCourseLesson = false);
+            nonQuiz[nonQuiz.length - 1].isLastCourseLesson = true;
         }
 
-        return [
-            ...mappedLessons,
-            {
+        const courseQuizItems = this.courseQuizzes.map((q, idx) => ({
+            id: `${LessonPlayerComponent.syntheticQuizSidebarIdPrefix}${q.id || this.courseId}`,
+            quizLessonId: q.id ?? undefined,
+            title: q.title || `Quiz ${idx + 1}`,
+            duration: 'Assessment',
+            type: 'quiz',
+            isCompleted: this.isQuizCompleted(q.id || ''),
+            isCurrent: false,
+            isLastCourseLesson: false,
+            isLocked: false,
+        }));
+
+        if (courseQuizItems.length === 0 && this.hasCourseQuiz) {
+            courseQuizItems.push({
                 id: `${LessonPlayerComponent.syntheticQuizSidebarIdPrefix}${this.courseId}`,
                 quizLessonId: this.courseQuizLessonId ?? undefined,
                 title: this.courseQuizTitle,
@@ -899,9 +1059,12 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
                 type: 'quiz',
                 isCompleted: false,
                 isCurrent: false,
+                isLastCourseLesson: false,
                 isLocked: false,
-            },
-        ];
+            });
+        }
+
+        return [...nonQuiz, ...courseQuizItems];
     }
 
     private getLastContentLessonId(): string | null {
@@ -1313,6 +1476,7 @@ export class LessonPlayerComponent implements OnInit, OnDestroy {
             ? 100
             : Math.max(0, Math.min(100, rawProgress));
 
+        this.audioProgressPercent = progressPercentage;
         this.lessonProgressLabel = `${this.formatPlaybackClock(boundedCurrent)} / ${this.formatPlaybackClock(duration)}`;
 
         const payload = this.buildMediaProgressPayload(progressPercentage);

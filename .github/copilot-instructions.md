@@ -28,6 +28,31 @@ Ignore any deleted legacy instruction files and avoid loading broad skill packs 
 - Keep one instruction source only: this file.
 - Avoid loading extra rule systems or redundant instruction files.
 
+### Context Optimization Protocol
+- Keep prompts lean: only include the minimum files or snippets required for the task.
+- Do not inline large tool catalogs, skill registries, or workspace trees unless explicitly requested.
+- Prefer short summaries over repeated long instructions.
+
+### On-Demand Skill Retrieval (Angular & Frontend)
+- Skills must be **pulled only when needed**, never preloaded.
+- Default: **no skill packs** in context.
+- When a task matches the need, load **only one** relevant skill file and proceed.
+- Recommended skill names to fetch on demand:
+  - `angular`
+  - `angular-best-practices`
+  - `angular-component`
+  - `angular-signals`
+  - `angular-http`
+  - `angular-routing`
+  - `angular-ui-patterns`
+  - `frontend-dev-guidelines`
+  - `react-best-practices`
+  - `tailwind-patterns` (only when Tailwind/CSS tokens are involved)
+- Retrieval steps:
+  1. Identify which skill is required.
+  2. Locate its file path from the skill registry.
+  3. Load that single skill file only, then continue the task.
+
 ### Speckit Usage
 - Use Speckit workflows when the task is feature-sized or multi-step.
 - For small scoped edits, apply minimal-change implementation directly, then verify.

@@ -1,23 +1,104 @@
 <div class="chat-list">
   <div class="chat-list__header">
-    <h2 class="chat-list__title">Chats ({{ chats.length }})</h2>
+    <h2 class="chat-list__title">Chats ({{ threads.length }})</h2>
   </div>
 
-  <div class="chat-list__items">
-    @for (chat of chats; track chat) {
-      <div (click)="selectChat(chat)" class="chat-list__item">
-        <div [inlineSVG]="'/icons/icons-24/ai-talk.svg'" class="chat-list__item-icon"></div>
-        <div class="chat-list__item-content">
-          <div class="chat-list__item-top">
-            <h2 class="chat-list__item-name">{{ chat.name }}</h2>
-            <div
-              [inlineSVG]="'/icons/icons-24/go-for-more.svg'"
-              class="chat-list__item-go-icon"
-            ></div>
+  <!-- Loading Skeletons State -->
+  @if (isLoading) {
+    <div class="chat-list__items">
+      @for (item of [1, 2, 3]; track $index) {
+        <div class="chat-card chat-card--skeleton">
+          <div class="chat-card__left">
+            <div class="chat-card__title-row">
+              <div class="chat-card__skeleton-circle"></div>
+              <div class="chat-card__skeleton-title"></div>
+            </div>
+            <div class="chat-card__skeleton-meta"></div>
           </div>
-          <p class="chat-list__item-meta">Last response: {{ chat.timestamp }}</p>
         </div>
+      }
+    </div>
+  }
+
+  <!-- Error Boundary State -->
+  @else if (errorMessage) {
+    <div class="chat-list__error">
+      <div class="chat-list__error-icon-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d9534f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
       </div>
-    }
-  </div>
+      <h3 class="chat-list__error-title">Oops! Something went wrong</h3>
+      <p class="chat-list__error-description">
+        {{ errorMessage }}
+      </p>
+      <button
+        type="button"
+        class="chat-list__retry-btn"
+        (click)="loadUserThreads()"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        <span>Try Again</span>
+      </button>
+    </div>
+  }
+
+  <!-- Gorgeous Empty State -->
+  @else if (threads.length === 0) {
+    <div class="chat-list__empty">
+      <div
+        [inlineSVG]="'/icons/icons-24/ai-talk.svg'"
+        class="chat-list__empty-icon"
+      ></div>
+      <h3 class="chat-list__empty-title">No chats found yet</h3>
+      <p class="chat-list__empty-description">
+        Start a conversation with the Ask A Muslim Islamic Assistant to see your chat history here!
+      </p>
+      <button
+        type="button"
+        class="chat-list__empty-btn"
+        [routerLink]="['/question-and-answer', 'ask-assistant']"
+      >
+        <span>Ask Assistant</span>
+        <div
+          [inlineSVG]="'/icons/icons-16/arrow-right.svg'"
+          style="width: 14px; height: 14px; display: inline-flex;"
+        ></div>
+      </button>
+    </div>
+  }
+
+  <!-- Dynamic Threads List -->
+  @else {
+    <div class="chat-list__items">
+      @for (thread of threads; track thread.threadId) {
+        <div (click)="selectChat(thread)" class="chat-card">
+          <div class="chat-card__left">
+            <div class="chat-card__title-row">
+              <div
+                [inlineSVG]="'/icons/icons-24/ai-talk.svg'"
+                class="chat-card__icon"
+              ></div>
+              <h3 class="chat-card__title">{{ thread.title || "New chat" }}</h3>
+            </div>
+            <div class="chat-card__meta-row">
+              <span class="chat-card__meta-label">Last response:</span>
+              <span class="chat-card__meta-value">{{
+                formatLastResponse(thread.updatedAt)
+              }}</span>
+            </div>
+          </div>
+          <div
+            [inlineSVG]="'/icons/icons-24/go-for-more.svg'"
+            class="chat-card__arrow"
+          ></div>
+        </div>
+      }
+    </div>
+  }
 </div>

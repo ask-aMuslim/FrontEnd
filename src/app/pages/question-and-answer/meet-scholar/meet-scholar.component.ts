@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { OnInit, inject } from '@angular/core';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
 import type { CreateMeetingRequestCommand } from '../../../api/models';
 import { MeetingRequestsService } from '../../../core/services';
@@ -11,6 +12,7 @@ import { StepperComponent, Step } from './stepper/stepper.component';
 import { RequestStepComponent } from './request-step/request-step.component';
 import { DatetimeStepComponent } from './datetime-step/datetime-step.component';
 import { ReviewStepComponent } from './review-step/review-step.component';
+import { SeoService } from '../../../core/services/seo.service';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -48,11 +50,20 @@ interface TimeOption {
   styleUrls: ['./meet-scholar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MeetScholarComponent {
+export class MeetScholarComponent implements OnInit {
   currentStep = signal(1);
   meetingForm: FormGroup;
   isSubmitting = signal(false);
   submitError = signal<string | null>(null);
+  private readonly seoService = inject(SeoService);
+
+  ngOnInit(): void {
+    this.seoService.setMetaTags({
+      title: 'Book a Session with a Scholar',
+      description: 'Schedule a one-on-one virtual meeting with a qualified Islamic scholar to ask questions, seek advice, or discuss topics in detail.',
+      keywords: ['meet scholar', 'Islamic scholars meeting', 'one-on-one scholar consultation', 'ask advice scholar']
+    });
+  }
 
   steps: Step[] = [
     { label: 'Request', index: 1 },

@@ -20,9 +20,9 @@ import {
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-// import { EventsService } from '../../core/services/events.service';
 import { AuthService } from '../../core/services/auth.service';
 import { QasService } from '../../core/services/qas.service';
+import { SeoService } from '../../core/services/seo.service';
 // import { EventCardComponent, type EventCard as SharedEventCard } from '../events/event-card/event-card.component';
 import { HeroSearchInputComponent } from '../../shared/reusable-components/hero-search-input/hero-search-input.component';
 import {
@@ -81,7 +81,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     { value: '250+', label: 'Scholars & Teachers', icon: 'scholars' },
   ];
 
-  @Input() heroBubbles: string[] = [];
+  @Input() homeData!: {
+    heroBubbles: string[];
+    faithPillarQuestionIds: Record<string, string>;
+    islamPillarQuestionIds: Record<string, string>;
+  };
+
+  protected get heroBubbles(): string[] {
+    return this.homeData?.heroBubbles ?? [];
+  }
 
   protected readonly featureCards: FeatureCard[] = [
     {
@@ -148,8 +156,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       title: 'AI Assistant',
       description:
         'Available 24/7 to answer initial questions and direct users to verified scholarly sources.',
-      cta: 'Ask AI',
-      href: '/question-and-answer/ask-assistant',
+      cta: 'Soon ..',
+      status: 'soon',
     },
     {
       icon: `
@@ -193,19 +201,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly faithPillarTag = '6 Pillars of Faith';
   protected readonly islamPillarTag = '5 Pillars of Islam';
 
-  private readonly islamPillarQuestionIds: Record<string, string> = {
-    'Shahada': '019e2fcd-6e95-7cbf-83f8-fb2da9f4c8df',
-    'Salah': '019e2fcd-d029-76c4-93a0-db33b9c07436',
-    'Zakat': '019e2fcf-33c2-741c-9dfb-2588fb1706a5',
-    'Sawm': '019e2fcf-a5f8-7017-9d44-1851a15821c6',
-    'Hajj': '019e2fd0-6564-76bd-b09d-308d62caa379',
-  };
-
   protected getPillarQuestionQueryParams(pillarName: string): { id: string; categories: string } {
-    const questionId = this.islamPillarQuestionIds[pillarName] ?? '';
+    const questionId = this.homeData?.islamPillarQuestionIds?.[pillarName] ?? '';
     return {
       id: questionId,
       categories: JSON.stringify([this.islamPillarTag]),
+    };
+  }
+
+  protected getFaithPillarQueryParams(pillarName: string): { id: string; categories: string } {
+    const questionId = this.homeData?.faithPillarQuestionIds?.[pillarName] ?? '';
+    return {
+      id: questionId,
+      categories: JSON.stringify([this.faithPillarTag]),
     };
   }
 
@@ -232,6 +240,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  private readonly seoService = inject(SeoService);
   private cleanupFns: (() => void)[] = [];
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
@@ -264,6 +273,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     // heroBubbles is pre-fetched by route resolver
+    this.seoService.setMetaTags({
+      title: 'Learn About Islam, Ask Questions & Locate Mosques',
+      description: 'Ask A Muslim is your premier digital platform to seek authentic Islamic knowledge, ask questions directly to scholars, find nearby mosques with prayer times, and learn in the Academy.',
+      keywords: ['Islam', 'Ask A Muslim', 'AskAMuslim', 'Find Mosques', 'Prayer Timings', 'Islamic Q&A', 'Islamic Scholars', 'Academy', 'Learn Islam'],
+      schemas: [
+        this.seoService.generateOrganizationSchema(),
+        this.seoService.generateWebsiteSchema()
+      ]
+    });
+
   }
 
   protected isSvgIcon(feature: FeatureCard): boolean {

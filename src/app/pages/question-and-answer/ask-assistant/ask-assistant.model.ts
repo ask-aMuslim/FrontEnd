@@ -20,6 +20,14 @@ export interface AskAssistantMessageSeed {
   createdAt: number;
 }
 
+export interface AskAssistantChatContext {
+  threadName: string;
+  religiousStatus: number;
+  isMuslim: boolean;
+  isNewMuslim: boolean;
+  oldReligion: string;
+}
+
 export type AskAssistantStreamKind = 'meta' | 'delta' | 'error';
 
 export interface AskAssistantStreamUpdate {

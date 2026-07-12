@@ -18,13 +18,6 @@
   --academy-recent-lesson-width: min(100%, 72rem);
   --academy-important-note-width: min(100%, 64rem);
 
-  @media (min-width: 768px) {
-    padding: var(--spacing-2xl) var(--spacing-3xl);
-  }
-
-  @media (min-width: 1024px) {
-    padding: var(--spacing-2xl) 96px;
-  }
 }
 
 .section-title {
@@ -287,6 +280,7 @@
     transform: translateY(-2px);
   }
 }
+
 .important-note .section-block {
   width: 100%;
   box-sizing: border-box;
@@ -294,51 +288,63 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .important-note-content {
+  position: relative;
   width: 100%;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
+  display: block;
   padding: 16px 20px;
   background: var(--colors-rare-grays-10);
   border-radius: 8px;
   margin-bottom: var(--spacing-2xl);
-  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &.expanded {
-    background: var(--colors-rare-grays-20);
-  }
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
   .note-text {
-    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
     color: var(--colors-rare-grays-80);
     font-size: 20px;
     font-weight: 500;
     line-height: 1.5;
     margin: 0;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
     max-height: 1.5em;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-right: 40px;
+    position: relative;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &::after {
+      content: "";
+      position: absolute;
+      right: 40px;
+      bottom: 0;
+      width: 80px;
+      height: 100%;
+      background: linear-gradient(to right, transparent, var(--colors-rare-grays-10));
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      opacity: 1;
+    }
   }
 
+
   &.expanded .note-text {
-    -webkit-line-clamp: unset;
-    line-clamp: unset;
-    max-height: 1000px;
+    max-height: 200px;
+    
+    &::after {
+      opacity: 0;
+    }
   }
 
   .toggle-button {
+    position: absolute;
+    top: 16px;
+    right: 20px;
     width: 40px;
     height: 40px;
-    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -362,6 +368,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
+
+
+  .section-block {
+    margin: 0;
+    max-width: fit-content;
+    align-self: center;
+    padding: 0;
+  }
+
+
 }
 
 .stage-wrapper {
@@ -385,9 +401,6 @@
     box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.15);
   }
 
-  @media (min-width: 768px) {
-    padding: var(--spacing-2xl) 56px;
-  }
 }
 
 .stage-footer {
@@ -468,9 +481,11 @@
   &.in-progress {
     background: var(--colors-orange-10);
   }
+
   &.completed {
     background: var(--colors-system-sys-green-10);
   }
+
   &.locked {
     background: var(--colors-system-sys-green-10);
     cursor: not-allowed;
@@ -582,6 +597,7 @@
   align-items: center;
   justify-content: center;
   margin: var(--spacing-lg) auto;
+
   .connector-line {
     position: absolute;
     top: 0;
@@ -626,21 +642,70 @@
   .academy-content {
     padding: var(--spacing-lg) var(--spacing-md);
   }
+
   .stage-container {
     padding: var(--spacing-lg) var(--spacing-md);
   }
+
   .course-meta {
     flex-direction: column;
     gap: var(--spacing-xs) !important;
   }
+
   .stage-title {
-    font-size: 24px;
+    font-size: 18px;
   }
+
   .course-name {
     font-size: 16px !important;
   }
+
   .course-card {
     min-height: 150px;
+  }
+
+  .stage-connector {
+    height: 40px;
+    margin: 12px auto;
+
+    .connector-line {
+      border-left: 3px dashed var(--colors-rare-grays-50);
+    }
+
+    .lock-icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .important-note-content {
+    padding: 12px 16px;
+
+    .note-text {
+      font-size: 13px;
+      padding-right: 33px;
+
+      &::after {
+        right: 33px;
+        width: 60px;
+      }
+    }
+
+    &.expanded .note-text {
+      max-height: 320px;
+    }
+
+    .toggle-button {
+      top: 12px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
   }
 }
 
@@ -667,9 +732,11 @@
   0% {
     transform: translateX(0) scaleX(0);
   }
+
   40% {
     transform: translateX(0) scaleX(0.4);
   }
+
   100% {
     transform: translateX(100%) scaleX(0.5);
   }

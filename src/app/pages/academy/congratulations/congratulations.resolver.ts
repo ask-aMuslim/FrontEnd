@@ -1,10 +1,9 @@
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { type ResolveFn } from '@angular/router';
-import { combineLatest, of } from 'rxjs';
-import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { catchError, map, take } from 'rxjs/operators';
 import { AcademyProgressService } from '../../../core/services/academy-progress.service';
-import { ACADEMY_COURSES } from '../../../core/services/academy-data';
 import { AcademyCourse } from '../../../core/models/interfaces/academy-progress.model';
 
 export interface CongratulationsResolvedData {
@@ -25,45 +24,45 @@ export const congratulationsResolver: ResolveFn<CongratulationsResolvedData | nu
 
     const academyProgressService = inject(AcademyProgressService);
 
-    return academyProgressService.getAcademyCourseById(courseId).pipe(
+    return academyProgressService.getCourseByIdDirect(courseId).pipe(
         take(1),
-        switchMap((courseInfo) => {
-            const resolvedCourse = courseInfo ?? ACADEMY_COURSES.find((item) => item.id === courseId);
-            if (!resolvedCourse) {
-                return of(null);
+        map((course) => {
+            if (!course) {
+                return null;
             }
 
-            return academyProgressService.getAcademyCourses().pipe(
-                take(1),
-                map((courses) => {
-                    const orderedCourses = [...courses].sort((left, right) => {
-                        const stageDifference = (left.stageId ?? 0) - (right.stageId ?? 0);
-                        if (stageDifference !== 0) {
-                            return stageDifference;
-                        }
+            const mappedCourse: AcademyCourse = {
+                id: course.id ?? '',
+                stageId: 1,
+                levelId: course.levelId ?? '',
+                title: course.title ?? '',
+                isPublished: course.isPublished,
+                category: 'Other',
+                duration: (course['courseDuration'] as string) ?? (course['duration'] as string) ?? '0m',
+                order: course.order ?? 0,
+                prerequisites: course.prerequisiteIds ?? [],
+                description: course.description,
+                levelName: (course['levelName'] as string) ?? (course.level as string) ?? ''
+            } as any;
 
-                        const leftOrder = left.order ?? Number.MAX_SAFE_INTEGER;
-                        const rightOrder = right.order ?? Number.MAX_SAFE_INTEGER;
-                        if (leftOrder !== rightOrder) {
-                            return leftOrder - rightOrder;
-                        }
+            let nextCourse: AcademyCourse | null = null;
+            const overviewCourses = academyProgressService.getOverviewCoursesCache();
+            if (overviewCourses && overviewCourses.length > 0) {
+                const orderedCourses = [...overviewCourses].sort((left, right) => {
+                    const stageDifference = (left.stageId ?? 0) - (right.stageId ?? 0);
+                    if (stageDifference !== 0) return stageDifference;
+                    return (left.order ?? 0) - (right.order ?? 0);
+                });
+                const currentIndex = orderedCourses.findIndex((c) => c.id === courseId);
+                if (currentIndex >= 0 && currentIndex < orderedCourses.length - 1) {
+                    nextCourse = orderedCourses[currentIndex + 1];
+                }
+            }
 
-                        return left.title.localeCompare(right.title);
-                    });
-
-                    const currentIndex = orderedCourses.findIndex((course) => course.id === courseId);
-                    const nextCourse = currentIndex >= 0 ? orderedCourses[currentIndex + 1] : undefined;
-
-                    return {
-                        course: resolvedCourse,
-                        nextCourse: nextCourse ?? null,
-                    };
-                }),
-                catchError(() => of({
-                    course: resolvedCourse,
-                    nextCourse: null,
-                }))
-            );
+            return {
+                course: mappedCourse,
+                nextCourse
+            };
         }),
         catchError(() => of(null))
     );

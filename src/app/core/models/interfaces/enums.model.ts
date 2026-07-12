@@ -12,8 +12,17 @@ export enum EventStatus {
   Cancelled = 4,
 }
 
-import { EnrollmentStatus } from '../../../api/models/enrollment-status';
-export { EnrollmentStatus };
+import type { EnrollmentStatus as ApiEnrollmentStatus } from '../../../api/models/enrollment-status';
+
+export enum EnrollmentStatus {
+  Active = 1,
+  Completed = 2,
+  Cancelled = 3,
+  Paused = 4,
+}
+
+// For API compatibility, we can still export the type alias
+export type { ApiEnrollmentStatus as EnrollmentStatusType };
 
 export enum Language {
   English = 1,

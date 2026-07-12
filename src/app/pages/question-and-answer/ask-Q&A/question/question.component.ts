@@ -8,6 +8,7 @@ import { takeUntil } from 'rxjs/operators';
 import DOMPurify from 'dompurify';
 import { QasService } from '../../../../core/services/qas.service';
 import { TokenService } from '../../../../core/auth/token.service';
+import { SeoService } from '../../../../core/services/seo.service';
 import { asRecord, extractArray, getValue, toStringValue, toStringArray } from '../../../../core/helpers/api-response.helper';
 import { toApiMediaUrl } from '../../../../core/helpers/media-url.helper';
 import { TiptapViewerComponent } from '../../../../shared/components/tiptap-viewer/tiptap-viewer.component';
@@ -31,6 +32,7 @@ export class QuestionComponent implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly isBrowser: boolean;
   private readonly tokenService: TokenService;
+  private readonly seoService: SeoService;
 
   id = '';
   title = '';
@@ -41,6 +43,7 @@ export class QuestionComponent implements OnDestroy {
   categories: string[] = [];
   imageUrl: string | null = null;
   isSaved = false;
+  backQueryParams: Record<string, string | null> = {};
 
   readonly saveIcon = '/icons/icons-24/save.svg';
   readonly savedIcon = '/icons/icons-24/saved.svg';
@@ -57,14 +60,26 @@ export class QuestionComponent implements OnDestroy {
     private readonly sanitizer: DomSanitizer,
     private readonly changeDetectorRef: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object,
+    seoService: SeoService,
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
     this.tokenService = tokenService;
+    this.seoService = seoService;
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.id = params.get('id') ?? '';
       const categoriesParam = params.get('categories');
       this.categories = categoriesParam ? this.parseCategories(categoriesParam) : [];
+
+      const tagId = params.get('tagId');
+      const tag = params.get('tag');
+      this.backQueryParams = {};
+      if (tagId) {
+        this.backQueryParams['tagId'] = tagId;
+      }
+      if (tag) {
+        this.backQueryParams['tag'] = tag;
+      }
 
       if (this.id) {
         this.loadQuestionById(this.id);
@@ -78,7 +93,7 @@ export class QuestionComponent implements OnDestroy {
   }
 
   back(): void {
-    void this.router.navigate(['/question-and-answer/topics']);
+    void this.router.navigate(['/question-and-answer/topics'], { queryParams: this.backQueryParams });
   }
 
   toggleSave(): void {
@@ -136,11 +151,29 @@ export class QuestionComponent implements OnDestroy {
           (firstTranslation ? getValue(firstTranslation, 'answerTextJson', 'AnswerTextJson') : undefined) ??
           getValue(data, 'answerTextJson', 'AnswerTextJson');
 
+        let mappedAnswerJsonObj: unknown = null;
+        if (typeof mappedAnswerJsonValue === 'string') {
+          try {
+            mappedAnswerJsonObj = JSON.parse(mappedAnswerJsonValue);
+          } catch {
+            mappedAnswerJsonObj = null;
+          }
+        } else {
+          mappedAnswerJsonObj = mappedAnswerJsonValue;
+        }
+
+        const normalizedAnswerJsonValue = this.normalizeJsonMediaSources(mappedAnswerJsonObj);
+
         let mappedAnswerJson: string | null = null;
         if (typeof mappedAnswerJsonValue === 'string') {
           mappedAnswerJson = mappedAnswerJsonValue;
         } else if (mappedAnswerJsonValue !== null && mappedAnswerJsonValue !== undefined) {
           mappedAnswerJson = JSON.stringify(mappedAnswerJsonValue);
+        }
+
+        let normalizedAnswerJson: string | null = null;
+        if (normalizedAnswerJsonValue !== null && normalizedAnswerJsonValue !== undefined) {
+          normalizedAnswerJson = JSON.stringify(normalizedAnswerJsonValue);
         }
 
         const mappedImage = toApiMediaUrl(
@@ -159,17 +192,39 @@ export class QuestionComponent implements OnDestroy {
         }
 
         const renderedTitle = this.resolveRichHtml(mappedTitle, mappedTitleJson);
-        const renderedAnswer = this.resolveRichHtml(mappedAnswer, mappedAnswerJson);
+        const renderedAnswer = this.resolveRichHtml(mappedAnswer, normalizedAnswerJson ?? mappedAnswerJson);
 
-        this.questionHtml = renderedTitle ? this.toSafeHtml(renderedTitle) : null;
-        this.answerHtmlRaw = renderedAnswer;
-        this.answerViewerContent = mappedAnswerJsonValue ?? renderedAnswer ?? mappedAnswer ?? null;
+        const normalizedTitle = renderedTitle ? this.normalizeHtmlMediaSources(renderedTitle) : null;
+        const normalizedAnswer = renderedAnswer ? this.normalizeHtmlMediaSources(renderedAnswer) : null;
+
+        this.questionHtml = normalizedTitle ? this.toSafeHtml(normalizedTitle) : null;
+        this.answerHtmlRaw = normalizedAnswer;
+        this.answerViewerContent = (normalizedAnswerJsonValue ?? normalizedAnswer ?? mappedAnswerJsonValue) ?? mappedAnswer ?? null;
 
         this.title = this.extractTextFromHtml(renderedTitle ?? mappedTitle ?? this.title) || this.title;
         this.answer = this.extractTextFromHtml(renderedAnswer ?? mappedAnswer ?? this.answer) || this.answer;
-        this.categories = toStringArray(getValue(data, 'categories', 'Categories', 'tags', 'Tags')) ?? this.categories;
+        const apiCategories = toStringArray(getValue(data, 'categories', 'Categories', 'tags', 'Tags'));
+        const queryTag = this.route.snapshot.queryParamMap.get('tag');
+        if (queryTag) {
+          this.categories = [
+            queryTag,
+            ...(apiCategories ?? []).filter((c) => c.toLowerCase() !== queryTag.toLowerCase())
+          ];
+        } else {
+          this.categories = apiCategories ?? this.categories;
+        }
         this.imageUrl = mappedImage ?? null;
         this.changeDetectorRef.markForCheck();
+
+        if (this.title && this.answer) {
+          this.seoService.setMetaTags({
+            title: `${this.title} - Islamic Q&A`,
+            description: this.answer.length > 160 ? `${this.answer.substring(0, 157)}...` : this.answer,
+            keywords: [...(this.categories || []), 'islamic Q&A', 'ask scholar', 'AskAMuslim'],
+            ogImage: this.imageUrl ?? undefined,
+            schemas: [this.seoService.generateFAQSchema([{ question: this.title, answer: this.answer }])]
+          });
+        }
       },
       error: () => {
         this.changeDetectorRef.markForCheck();
@@ -506,79 +561,83 @@ export class QuestionComponent implements OnDestroy {
     const titleText = this.title || 'Question';
     const answerHtml = this.getRenderedAnswerHtmlForPdf() ?? this.prepareAnswerHtmlForPdf();
     const richTextStyles = this.getPdfRichTextStyles();
-    let exportContainer: HTMLDivElement | null = null;
 
-    try {
-      const jsPDF = (await import('jspdf')).jsPDF;
-      const html2canvas = (await import('html2canvas')).default;
-      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    await this.openPrintWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
+  }
 
-      exportContainer = globalThis.document.createElement('div');
-      exportContainer.style.position = 'fixed';
-      exportContainer.style.left = '-10000px';
-      exportContainer.style.top = '0';
-      exportContainer.style.width = '794px';
-      exportContainer.style.background = '#ffffff';
-      exportContainer.style.color = '#111827';
-      exportContainer.style.padding = '32px';
-      exportContainer.style.fontFamily = 'Arial, sans-serif';
-      exportContainer.style.lineHeight = '1.65';
-
-      const questionImage = this.imageUrl
-        ? `<img src="${this.escapeHtml(this.imageUrl)}" alt="${this.escapeHtml(titleText)}" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0 20px;" />`
-        : '';
-
-      exportContainer.innerHTML = `
-        <style>${richTextStyles}</style>
-        <div class="pdf-export-root">
-          <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;color:#111827;">${this.escapeHtml(titleText)}</h1>
-          ${questionImage}
-          <div class="pdf-export-content">${answerHtml}</div>
-        </div>
-      `;
-
-      globalThis.document.body.appendChild(exportContainer);
-      const imageReport = await this.inlineContainerImages(exportContainer);
-      await this.waitForImages(exportContainer);
-
-      if (imageReport.unresolvedCrossOrigin > 0) {
-        this.openPrintFallbackWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
-        return;
-      }
-
-      const canvas = await html2canvas(exportContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const imageHeight = (canvas.height * pageWidth) / canvas.width;
-
-      let heightLeft = imageHeight;
-      let position = 0;
-
-      doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imageHeight;
-        doc.addPage();
-        doc.addImage(imgData, 'JPEG', 0, position, pageWidth, imageHeight);
-        heightLeft -= pageHeight;
-      }
-
-      const safeTitle = titleText.replaceAll(/[^a-z0-9-]/gi, '_').slice(0, 60);
-      doc.save(`${safeTitle || 'question'}.pdf`);
-    } catch {
-      this.openPrintFallbackWindow(titleText, answerHtml, richTextStyles, this.imageUrl ?? null);
-    } finally {
-      exportContainer?.remove();
+  private async openPrintWindow(
+    titleText: string,
+    contentHtml: string,
+    richTextStyles: string,
+    imageUrl: string | null,
+  ): Promise<void> {
+    const safeTitle = this.escapeHtml(titleText);
+    const printWindow = globalThis.open('', '_blank');
+    if (!printWindow) {
+      return;
     }
+
+    const inlinedHtml = await this.inlineImagesToDataUrls(contentHtml);
+    const inlinedMainImage = imageUrl ? await this.fetchAsDataUrl(imageUrl) : null;
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${safeTitle}</title>
+  <style>
+    @page { size: A4; margin: 20mm 15mm; }
+    body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; margin: 0; padding: 0; }
+    h1 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; color: #111827; }
+    h2, h3 { margin-top: 16px; margin-bottom: 8px; }
+    p { margin-bottom: 8px; }
+    img { max-width: 100%; height: auto; display: block; margin: 12px 0; }
+    .print-content { font-size: 15px; line-height: 1.75; }
+    .print-content img { max-width: 100%; height: auto; display: block; margin: 16px 0; border-radius: 4px; page-break-inside: avoid; }
+    ${richTextStyles}
+  </style>
+</head>
+<body>
+  <h1>${safeTitle}</h1>
+  ${inlinedMainImage ? `<img src="${inlinedMainImage}" alt="${safeTitle}" style="max-width:100%;height:auto;display:block;margin:12px 0 20px;border-radius:8px;" />` : ''}
+  <div class="print-content">${inlinedHtml}</div>
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 300);
+    });
+  </script>
+</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.focus();
+  }
+
+  private async inlineImagesToDataUrls(html: string): Promise<string> {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+    const container = doc.body.firstElementChild as HTMLElement | null;
+    if (!container) return html;
+
+    const images = Array.from(container.querySelectorAll('img'));
+    await Promise.all(
+      images.map(async (img) => {
+        const src = (img.getAttribute('src') ?? '').trim();
+        if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
+
+        const normalizedSrc = toApiMediaUrl(src) ?? src;
+        const dataUrl = await this.resolveImageDataUrl(normalizedSrc);
+        if (dataUrl) {
+          img.setAttribute('src', dataUrl);
+        }
+      }),
+    );
+
+    return container.innerHTML;
+  }
+
+  private async fetchAsDataUrl(url: string): Promise<string | null> {
+    const resolved = toApiMediaUrl(url) ?? url;
+    return this.resolveImageDataUrl(resolved);
   }
 
   private prepareAnswerHtmlForPdf(): string {
@@ -670,36 +729,81 @@ export class QuestionComponent implements OnDestroy {
     `;
   }
 
+  private normalizeJsonMediaSources(content: unknown): unknown {
+    if (!content || typeof content !== 'object') {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      return content.map(item => this.normalizeJsonMediaSources(item));
+    }
+
+    const record = content as Record<string, unknown>;
+    const normalized: Record<string, unknown> = { ...record };
+
+    if (record['attrs'] && typeof record['attrs'] === 'object') {
+      const attrs = record['attrs'] as Record<string, unknown>;
+      const normalizedAttrs: Record<string, unknown> = { ...attrs };
+
+      if (record['type'] === 'image' && typeof attrs['src'] === 'string') {
+        const normalizedSrc = toApiMediaUrl(attrs['src']) ?? attrs['src'];
+        normalizedAttrs['src'] = normalizedSrc;
+      }
+
+      normalized['attrs'] = normalizedAttrs;
+    }
+
+    if (record['content'] !== undefined) {
+      normalized['content'] = this.normalizeJsonMediaSources(record['content']);
+    }
+
+    return normalized;
+  }
+
   private normalizeHtmlMediaSources(html: string): string {
-    const parser = new DOMParser();
-    const documentNode = parser.parseFromString(`<div id="pdf-answer-root">${html}</div>`, 'text/html');
-    const root = documentNode.body.querySelector('#pdf-answer-root');
-    if (!root) {
+    if (!html) {
       return html;
     }
 
-    const images = Array.from(root.querySelectorAll('img'));
-    for (const image of images) {
-      const srcCandidate = (image.getAttribute('src') ?? image.dataset['src'] ?? '').trim();
-      if (!srcCandidate) {
-        continue;
+    if (typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const documentNode = parser.parseFromString(`<div id="pdf-answer-root">${html}</div>`, 'text/html');
+      const root = documentNode.body.querySelector('#pdf-answer-root');
+      if (!root) {
+        return html;
       }
 
-      const normalizedSrc = this.isInlineImageSource(srcCandidate)
-        ? srcCandidate
-        : (toApiMediaUrl(srcCandidate) ?? srcCandidate);
+      const images = Array.from(root.querySelectorAll('img'));
+      for (const image of images) {
+        const srcCandidate = (image.getAttribute('src') ?? image.dataset['src'] ?? '').trim();
+        if (!srcCandidate) {
+          continue;
+        }
 
-      image.setAttribute('src', normalizedSrc);
-      image.removeAttribute('srcset');
-      image.removeAttribute('sizes');
-      image.setAttribute('loading', 'eager');
-      image.style.maxWidth = '100%';
-      image.style.height = 'auto';
-      image.style.display = 'block';
-      image.style.margin = '12px 0';
+        const normalizedSrc = this.isInlineImageSource(srcCandidate)
+          ? srcCandidate
+          : (toApiMediaUrl(srcCandidate) ?? srcCandidate);
+
+        image.setAttribute('src', normalizedSrc);
+        image.removeAttribute('srcset');
+        image.removeAttribute('sizes');
+        image.setAttribute('loading', 'eager');
+        image.style.maxWidth = '100%';
+        image.style.height = 'auto';
+        image.style.display = 'block';
+        image.style.margin = '12px 0';
+      }
+
+      return root.innerHTML;
+    } else {
+      // Simple regex fallback for server-side rendering
+      return html.replaceAll(/<img\s+([^>]*?)src=["']([^"']+)["']/gi, (match, before, src) => {
+        const normalizedSrc = this.isInlineImageSource(src)
+          ? src
+          : (toApiMediaUrl(src) ?? src);
+        return `<img ${before}src="${normalizedSrc}"`;
+      });
     }
-
-    return root.innerHTML;
   }
 
   private async inlineContainerImages(container: HTMLElement): Promise<ImageInliningReport> {
@@ -782,15 +886,14 @@ export class QuestionComponent implements OnDestroy {
 
     for (const options of requestOptions) {
       try {
-        const response = await globalThis.fetch(source, options);
-        if (!response.ok) {
-          continue;
-        }
+        const controller = new AbortController();
+        const timer = globalThis.setTimeout(() => controller.abort(), 8000);
+        const response = await globalThis.fetch(source, { ...options, signal: controller.signal });
+        globalThis.clearTimeout(timer);
+        if (!response.ok) continue;
 
         const blob = await response.blob();
-        if (blob.size === 0) {
-          continue;
-        }
+        if (blob.size === 0) continue;
 
         return await this.convertBlobToDataUrl(blob);
       } catch {
@@ -813,68 +916,6 @@ export class QuestionComponent implements OnDestroy {
     } catch {
       return false;
     }
-  }
-
-  private openPrintFallbackWindow(
-    titleText: string,
-    contentHtml: string,
-    richTextStyles: string,
-    imageUrl: string | null,
-  ): void {
-    const printWindow = globalThis.open('', '_blank');
-    if (!printWindow) {
-      return;
-    }
-
-    const printDocument = printWindow.document;
-    printDocument.title = this.escapeHtml(titleText);
-
-    while (printDocument.head.firstChild) {
-      printDocument.head.firstChild.remove();
-    }
-
-    while (printDocument.body.firstChild) {
-      printDocument.body.firstChild.remove();
-    }
-
-    const style = printDocument.createElement('style');
-    style.textContent = `
-      @page { size: A4; margin: 16mm; }
-      body { font-family: Arial, sans-serif; color: #111827; line-height: 1.65; }
-      .pdf-export-content { font-size: 16px; line-height: 1.75; }
-      ${richTextStyles}
-    `;
-    printDocument.head.appendChild(style);
-
-    const title = printDocument.createElement('h1');
-    title.style.fontSize = '28px';
-    title.style.lineHeight = '1.3';
-    title.style.margin = '0 0 16px';
-    title.style.color = '#111827';
-    title.textContent = titleText;
-    printDocument.body.appendChild(title);
-
-    if (imageUrl) {
-      const image = printDocument.createElement('img');
-      image.src = imageUrl;
-      image.alt = titleText;
-      image.style.maxWidth = '100%';
-      image.style.height = 'auto';
-      image.style.display = 'block';
-      image.style.margin = '12px 0 20px';
-      image.style.borderRadius = '8px';
-      printDocument.body.appendChild(image);
-    }
-
-    const content = printDocument.createElement('div');
-    content.className = 'pdf-export-content';
-    content.innerHTML = contentHtml;
-    printDocument.body.appendChild(content);
-
-    printWindow.focus();
-    globalThis.setTimeout(() => {
-      printWindow.print();
-    }, 350);
   }
 
   private isInlineImageSource(value: string): boolean {
@@ -905,6 +946,8 @@ export class QuestionComponent implements OnDestroy {
       return;
     }
 
+    const timeout = 10000;
+
     await Promise.all(
       images.map(
         (image) =>
@@ -914,8 +957,9 @@ export class QuestionComponent implements OnDestroy {
               return;
             }
 
-            image.addEventListener('load', () => resolve(), { once: true });
-            image.addEventListener('error', () => resolve(), { once: true });
+            const timer = globalThis.setTimeout(() => resolve(), timeout);
+            image.addEventListener('load', () => { globalThis.clearTimeout(timer); resolve(); }, { once: true });
+            image.addEventListener('error', () => { globalThis.clearTimeout(timer); resolve(); }, { once: true });
           }),
       ),
     );

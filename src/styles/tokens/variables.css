@@ -163,6 +163,8 @@
   --color-success-light: rgba(16, 185, 129, 0.1);
   --color-success-base: var(--color-semantic-success-base);
   --warning: var(--color-semantic-warning-base);
+  --colors-rare-grays-10: #f8f9fa;
+  --colors-rare-grays-20: #e9ecef;
 
   /* Opacity Values */
   --opacity-disabled: 0.5;
@@ -201,6 +203,7 @@
   /* Shadows --------------------- */
   --shadow-base: var(--shadows-shadow-md);
   --shadow-15: 0px 0px 4px 2px rgba(0, 0, 0, 0.15);
+  --shadow-15-light: 0px 0px 4px 0px rgba(0, 0, 0, 0.15);
   --shadow-4-green: 0px 0px 4px 2px rgba(21, 107, 64, 0.04);
   --shadow-big: 0px 0px 8px 2px rgba(21, 107, 64, 0.5);
 

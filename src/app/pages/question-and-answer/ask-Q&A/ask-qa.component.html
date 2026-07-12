@@ -126,13 +126,20 @@
     </div>
   </div>
 
-  @if (isShowingResults) {
+  @if (errorMessage) {
+  <div class="topics-page__error-message text-red-600 text-center mb-4">
+    {{ errorMessage }}
+  </div>
+}
+@if (isShowingResults) {
     <app-question-search-result
       class="topics-page__search-results w-full"
       [query]="searchQuery"
       [results]="searchResults"
+      [activeTagId]="selectedCategoryTagId"
       (clearSearch)="clearSearch()"
       (askAI)="onAskAI($event)"
+      (tagClicked)="onTagClicked($event)"
     />
   } @else {
     <ng-container>
@@ -152,7 +159,12 @@
             track trackByQuestionId($index, question);
             let isLast = $last
           ) {
-            <app-qa-card class="topics-page__question-item" [question]="question" />
+            <app-qa-card
+              class="topics-page__question-item"
+              [question]="question"
+              [activeTagId]="selectedCategoryTagId"
+              (tagClicked)="onTagClicked($event)"
+            />
             @if (!isLast) {
               <div class="topics-page__question-divider qa-question-separator" aria-hidden="true"></div>
             }

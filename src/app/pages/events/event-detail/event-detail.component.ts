@@ -15,6 +15,7 @@ import {
   EventRegistrationStatus,
 } from '../../../core/services/event-registrations.service';
 import { take, filter } from 'rxjs';
+import { SeoService } from '../../../core/services/seo.service';
 
 export interface EventDetail {
   id: number | string;
@@ -67,6 +68,7 @@ export class EventDetailComponent implements OnInit {
   private readonly document = inject(DOCUMENT);
   private readonly studentFacade = inject(StudentFacade);
   private readonly eventRegistrationsService = inject(EventRegistrationsService);
+  private readonly seoService = inject(SeoService);
 
   get statusVariant(): 'upcoming' | 'live' | 'finished' {
     return getEventStatusBadgeState(
@@ -126,6 +128,7 @@ export class EventDetailComponent implements OnInit {
     const fallbackEvent = this.eventService.getSelectedEventById(this.eventId);
     if (fallbackEvent) {
       this.event = fallbackEvent;
+      this.updateSeoTags(fallbackEvent);
       this.cdr.detectChanges();
     }
 
@@ -133,6 +136,7 @@ export class EventDetailComponent implements OnInit {
       next: (event) => {
         if (event) {
           this.event = event;
+          this.updateSeoTags(event);
           this.cdr.detectChanges();
           return;
         }
@@ -149,8 +153,21 @@ export class EventDetailComponent implements OnInit {
     });
   }
 
+  private updateSeoTags(event: EventDetail): void {
+    this.seoService.setMetaTags({
+      title: event.title,
+      description: event.description || event.fullDescription,
+      keywords: ['Islamic Event', event.title, event.speakerName, 'Lecture', 'Seminar'],
+      ogImage: event.imageUrl,
+    });
+  }
+
   goBack(): void {
     void this.router.navigate(['/events']);
+  }
+
+  isSeparatorVisible(event: EventDetail | null): boolean {
+    return !!(event?.agenda && event.agenda.length > 0);
   }
 
   registerForEvent(): void {
@@ -170,6 +187,12 @@ export class EventDetailComponent implements OnInit {
       )
       .subscribe({
         next: (profile) => {
+          // If the email is already added in the profile, bypass the profile completion modal and register directly
+          if (profile?.email && profile.email.trim()) {
+            this.createEventRegistration(this.eventId as string);
+            return;
+          }
+
           if (profile?.isProfileCompleted === false) {
             this.showProfilePopup = true;
             return;

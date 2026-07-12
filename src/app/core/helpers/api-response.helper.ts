@@ -173,8 +173,22 @@ export function toNumberValue(value: unknown): number | null {
 export function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value
-      .map((entry) => toStringValue(entry))
+      .map((entry) => {
+        if (entry && typeof entry === 'object') {
+          const rec = entry as Record<string, unknown>;
+          const val = rec['name'] ?? rec['Name'] ?? rec['title'] ?? rec['Title'] ?? rec['id'] ?? rec['Id'];
+          return toStringValue(val);
+        }
+        return toStringValue(entry);
+      })
       .filter((entry): entry is string => entry !== null);
+  }
+
+  if (value && typeof value === 'object') {
+    const rec = value as Record<string, unknown>;
+    const val = rec['name'] ?? rec['Name'] ?? rec['title'] ?? rec['Title'] ?? rec['id'] ?? rec['Id'];
+    const str = toStringValue(val);
+    return str ? [str] : [];
   }
 
   const text = toStringValue(value);

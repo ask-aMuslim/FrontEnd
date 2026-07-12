@@ -24,6 +24,7 @@ describe('CourseComponent', () => {
         id: 'course-1',
         stageNumber: 1,
         stageLabel: 'Stage 1',
+        levelName: 'Level 1',
         title: 'Course title',
         intro: 'Course intro',
         lessons,
@@ -38,6 +39,7 @@ describe('CourseComponent', () => {
         isEnrollmentCompleted: false,
         lessonsList,
         prerequisitesList: [],
+        quizzesList: [],
     });
 
     beforeEach(async () => {

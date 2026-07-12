@@ -815,50 +815,64 @@
           <!-- Feedback Tab -->
           @if (activeTab === "feedback") {
             <div class="tab-pane feedback-pane">
-              <div class="feedback-section">
-                <h3 class="feedback-title">Rate the lesson's content</h3>
-                <div class="rating-stars">
-                  @for (i of [1, 2, 3, 4, 5]; track i) {
+              @if (hasSubmittedFeedback) {
+                <div class="feedback-success-card">
+                  <div class="success-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                  <h3 class="success-title">Thank you for your feedback!</h3>
+                  <p class="success-description">
+                    Your response has been successfully recorded. We appreciate your feedback as it helps us improve the learning experience.
+                  </p>
+                </div>
+              } @else {
+                <div class="feedback-section">
+                  <h3 class="feedback-title">Rate the lesson's content</h3>
+                  <div class="rating-stars">
+                    @for (i of [1, 2, 3, 4, 5]; track i) {
+                      <button
+                        class="star-button"
+                        [class.active]="lessonRating >= i"
+                        (click)="setRating(i)"
+                      >
+                        Star
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div class="feedback-input-wrapper">
+                  <textarea
+                    class="feedback-textarea"
+                    [(ngModel)]="feedbackText"
+                    placeholder="Write a suggestion so we can improve. (optional)"
+                    rows="5"
+                  ></textarea>
+                  <div class="feedback-action">
                     <button
-                      class="star-button"
-                      [class.active]="lessonRating >= i"
-                      (click)="setRating(i)"
+                      class="btn-icon-add"
+                      (click)="submitFeedback()"
+                      [disabled]="
+                        isSubmittingFeedback ||
+                        (lessonRating === 0 && !feedbackText.trim())
+                      "
                     >
-                      Star
+                      {{ isSubmittingFeedback ? "Submitting..." : "Submit" }}
                     </button>
+                  </div>
+                  @if (feedbackSubmissionMessage) {
+                    <p
+                      class="feedback-submission-message"
+                      [class.feedback-submission-message--error]="
+                        feedbackSubmissionStatus === 'error'
+                      "
+                    >
+                      {{ feedbackSubmissionMessage }}
+                    </p>
                   }
                 </div>
-              </div>
-              <div class="feedback-input-wrapper">
-                <textarea
-                  class="feedback-textarea"
-                  [(ngModel)]="feedbackText"
-                  placeholder="Write a suggestion so we can improve. (optional)"
-                  rows="5"
-                ></textarea>
-                <div class="feedback-action">
-                  <button
-                    class="btn-icon-add"
-                    (click)="submitFeedback()"
-                    [disabled]="
-                      isSubmittingFeedback ||
-                      (lessonRating === 0 && !feedbackText.trim())
-                    "
-                  >
-                    {{ isSubmittingFeedback ? "Submitting..." : "Submit" }}
-                  </button>
-                </div>
-                @if (feedbackSubmissionMessage) {
-                  <p
-                    class="feedback-submission-message"
-                    [class.feedback-submission-message--error]="
-                      feedbackSubmissionStatus === 'error'
-                    "
-                  >
-                    {{ feedbackSubmissionMessage }}
-                  </p>
-                }
-              </div>
+              }
             </div>
           }
         </div>

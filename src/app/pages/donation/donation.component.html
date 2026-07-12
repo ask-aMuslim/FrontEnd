@@ -68,7 +68,7 @@
             <blockquote class="donation-quote-box__text">
               The example of those who spend their wealth in the way of Allah is like a seed of grain which grows seven spikes; in each spike is a hundred grains. And Allah multiplies for whom He wills.
             </blockquote>
-            <cite class="donation-quote-box__author">Surah Al-Baqarah, 2:261</cite>
+             <cite class="donation-quote-box__author">Quran 2:261</cite>
           </div>
         </div>
 
@@ -81,7 +81,7 @@
               <p class="donation-checkout-header__subtitle">Enter your details securely below to finalize your contribution</p>
             </div>
 
-            <!-- Loader State -->
+            <!-- Loader Overlay State -->
             @if (loadingIframe) {
               <div class="donation-loader">
                 <div class="donation-loader__spinner"></div>
@@ -89,12 +89,12 @@
               </div>
             }
 
-            <!-- Zeffy Form Embed -->
-            <div class="donation-embed-container" [class.donation-embed-container--hidden]="loadingIframe">
+            <!-- Zeffy Form Embed (Visible from the first look) -->
+            <div class="donation-embed-container">
               <div class="donation-iframe-wrapper">
                 <iframe 
                   title="Donation form powered by Zeffy" 
-                  src="https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179" 
+                  [src]="safeDonationUrl" 
                   allowpaymentrequest 
                   allowTransparency="true"
                   class="donation-iframe"

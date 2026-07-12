@@ -17,6 +17,7 @@ import { take } from 'rxjs';
 import type { LayerGroup, Map as LeafletMap } from 'leaflet';
 import { MosqueDto, MosquesFacade } from '../../api/facades/mosques.facade';
 import { toApiMediaUrl } from '../../core/helpers/media-url.helper';
+import { SeoService } from '../../core/services/seo.service';
 
 interface MosqueCard {
   id: string;
@@ -57,6 +58,7 @@ export class MosquesComponent implements OnInit, OnDestroy {
 
   private readonly mosquesFacade = inject(MosquesFacade);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly seoService = inject(SeoService);
 
   readonly isLoading = signal(false);
   readonly loadError = signal<string | null>(null);
@@ -169,6 +171,12 @@ export class MosquesComponent implements OnInit, OnDestroy {
     if (this.isBrowser) {
       this.loadNearbyMosques();
     }
+
+    this.seoService.setMetaTags({
+      title: 'Find Mosques Near You',
+      description: 'Locate local mosques, find prayer times, check for facilities like women prayer areas, Friday sermons, and get map directions.',
+      keywords: ['find mosque', 'masjid near me', 'prayer timings', 'local mosque', 'women prayer area', 'Friday khutbah']
+    });
   }
 
   ngOnDestroy(): void {

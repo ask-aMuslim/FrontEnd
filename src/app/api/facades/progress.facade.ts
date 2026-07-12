@@ -45,12 +45,7 @@ export class ProgressFacade {
     constructor(private readonly _api: ApiService) { }
 
     getProgressByStudentId(studentId: string): Observable<ProgressReadDto[]> {
-        return extractData(
-            this._api.get<unknown>(`/api/Progress/GetProgressByStudentId/ByStudent/${studentId}`, undefined, {
-                context: this.skipLoadingContext,
-            }),
-            [],
-        ).pipe(map(asArray<ProgressReadDto>));
+        return of([] as ProgressReadDto[]);
     }
 
     createProgress(payload: ProgressCreateDto): Observable<ProgressReadDto | null> {

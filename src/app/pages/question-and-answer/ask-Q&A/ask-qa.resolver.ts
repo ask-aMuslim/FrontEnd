@@ -23,6 +23,8 @@ export interface AskQaResolvedData {
   categories: TagFilterOption[];
   initialQuestions: QuestionCard[];
   initialSelectedCategoryIndex: number;
+  totalCount: number;
+  totalPages: number;
 }
 
 const mapCategories = (response: unknown): TagFilterOption[] => {
@@ -65,6 +67,37 @@ const prioritizeGeneralCategory = (categories: TagFilterOption[]): TagFilterOpti
   return [...generalCategories, ...otherCategories];
 };
 
+const extractTextFromTiptapJson = (node: any): string => {
+  if (!node) {
+    return '';
+  }
+  if (node.type === 'text') {
+    return node.text || '';
+  }
+  if (node.content && Array.isArray(node.content)) {
+    const childrenText = node.content.map((child: any) => extractTextFromTiptapJson(child));
+    const isBlock = [
+      'doc',
+      'paragraph',
+      'heading',
+      'blockquote',
+      'bulletList',
+      'orderedList',
+      'listItem',
+      'table',
+      'tableRow',
+      'tableCell',
+    ].includes(node.type);
+
+    if (isBlock) {
+      return childrenText.join('').trim() + ' ';
+    } else {
+      return childrenText.join('');
+    }
+  }
+  return '';
+};
+
 const mapQuestion = (item: unknown, index: number): QuestionCard | null => {
   const record = asRecord(item);
   const isPublished = getValue(record, 'isPublished', 'IsPublished');
@@ -85,9 +118,25 @@ const mapQuestion = (item: unknown, index: number): QuestionCard | null => {
     firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
   ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
 
-  const description = toStringValue(
-    firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
-  ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+  const rawAnswerJson = firstTranslation
+    ? getValue(firstTranslation, 'answerTextJson', 'AnswerTextJson')
+    : undefined;
+
+  let description = '';
+  if (rawAnswerJson) {
+    try {
+      const parsed = typeof rawAnswerJson === 'string' ? JSON.parse(rawAnswerJson) : rawAnswerJson;
+      description = extractTextFromTiptapJson(parsed).replace(/\s+/g, ' ').trim();
+    } catch {
+      // Fallback
+    }
+  }
+
+  if (!description) {
+    description = toStringValue(
+      firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
+    ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+  }
 
   if (!title.trim() || !description.trim()) {
     return null;
@@ -148,6 +197,7 @@ export const askQaResolver: ResolveFn<AskQaResolvedData | null> = (route: Activa
   const qasService = inject(QasService);
 
   const initialCategoryQuery = route.queryParamMap.get('category') ?? route.queryParamMap.get('tag');
+  const initialTagIdQuery = route.queryParamMap.get('tagId');
 
   return tagsService.getAll({ pageNumber: 1, pageSize: 100 }).pipe(
     switchMap((tagsResponse) => {
@@ -158,7 +208,15 @@ export const askQaResolver: ResolveFn<AskQaResolvedData | null> = (route: Activa
       let selectedCategoryIndex = 0;
       let selectedTagId: string | null = null;
 
-      if (initialCategoryQuery) {
+      if (initialTagIdQuery) {
+        const matchedIndex = categories.findIndex(
+          (category) => category.id === initialTagIdQuery
+        );
+        if (matchedIndex >= 0) {
+          selectedCategoryIndex = matchedIndex + 1; // 1-based index because 0 is "All"
+          selectedTagId = categories[matchedIndex].id;
+        }
+      } else if (initialCategoryQuery) {
         const normalizedQuery = initialCategoryQuery.trim().toLowerCase();
         const matchedIndex = categories.findIndex(
           (category) => category.name.trim().toLowerCase() === normalizedQuery
@@ -170,53 +228,31 @@ export const askQaResolver: ResolveFn<AskQaResolvedData | null> = (route: Activa
       }
 
       // Fetch all questions for the determined category
-      const pageSize = 100;
-      const params: any = { pageNumber: 1, pageSize };
+      const pageSize = 10;
+      const params: any = { pageNumber: 1, pageSize, isPublished: true };
       if (selectedTagId) {
         params.tagIds = selectedTagId;
       }
 
       return qasService.getAll(params).pipe(
-        switchMap((firstResponse) => {
+        map((firstResponse) => {
           const firstPageQuestions = mapQuestions(firstResponse);
           const pagination = extractPagination(firstResponse, firstPageQuestions.length);
-          const totalPages = pagination.totalPages;
 
-          if (totalPages <= 1) {
-            return of({
-              categories,
-              initialQuestions: firstPageQuestions,
-              initialSelectedCategoryIndex: selectedCategoryIndex,
-            });
-          }
-
-          const remainingPageRequests: Observable<QuestionCard[]>[] = Array.from(
-            { length: totalPages - 1 },
-            (_item, index) => {
-              const p: any = { pageNumber: index + 2, pageSize };
-              if (selectedTagId) p.tagIds = selectedTagId;
-              return qasService.getAll(p).pipe(map((response) => mapQuestions(response)));
-            }
-          );
-
-          return forkJoin(remainingPageRequests).pipe(
-            map((remainingPages) => {
-              const allQuestions = [
-                ...firstPageQuestions,
-                ...remainingPages.flat(),
-              ];
-              return {
-                categories,
-                initialQuestions: allQuestions,
-                initialSelectedCategoryIndex: selectedCategoryIndex,
-              };
-            })
-          );
+          return {
+            categories,
+            initialQuestions: firstPageQuestions,
+            initialSelectedCategoryIndex: selectedCategoryIndex,
+            totalCount: pagination.totalCount,
+            totalPages: pagination.totalPages,
+          };
         }),
         catchError(() => of({
           categories,
           initialQuestions: [],
           initialSelectedCategoryIndex: selectedCategoryIndex,
+          totalCount: 0,
+          totalPages: 1,
         }))
       );
     }),
