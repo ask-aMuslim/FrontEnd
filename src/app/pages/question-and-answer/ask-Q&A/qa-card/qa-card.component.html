@@ -22,12 +22,12 @@
 
     <div class="topics-question-card__heading flex items-start py-0.5 w-full">
       <h3 class="topics-question-card__title flex-1 text-xl font-medium text-(--color-text-title)">
-        {{ question.title }}
+        {{ question.title | description }}
       </h3>
     </div>
 
     <p class="topics-question-card__description text-base leading-[160%] text-text-body line-clamp-3 w-full">
-      {{ question.description }}
+      {{ question.description | description }}
     </p>
   </div>
 
