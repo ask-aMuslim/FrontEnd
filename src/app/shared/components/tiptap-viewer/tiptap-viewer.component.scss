@@ -76,3 +76,19 @@
 :host ::ng-deep .tiptap-viewer .ProseMirror :where(em, i) {
   font-style: italic;
 }
+
+:host ::ng-deep .tiptap-viewer .ProseMirror .text-left {
+  text-align: left;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror .text-center {
+  text-align: center;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror .text-right {
+  text-align: right;
+}
+
+:host ::ng-deep .tiptap-viewer .ProseMirror .text-justify {
+  text-align: justify;
+}
