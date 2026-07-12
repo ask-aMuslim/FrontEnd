@@ -15,6 +15,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Image from '@tiptap/extension-image';
+import TextAlign, { TextAlignOptions } from '@tiptap/extension-text-align';
 
 @Component({
   selector: 'app-tiptap-viewer',
@@ -39,9 +40,13 @@ export class TiptapViewerComponent implements OnInit, OnChanges, OnDestroy {
     const normalized = this.normalizeContent(this.content);
     this.lastContentFingerprint = this.createFingerprint(this.content);
 
+    const textAlignOptions: Partial<TextAlignOptions> = {
+      types: ['heading', 'paragraph'],
+    };
+
     this.editor = new Editor({
       element: this.editorHostRef.nativeElement,
-      extensions: [StarterKit, TextStyle, Color, Image],
+      extensions: [StarterKit, TextStyle, Color, Image, TextAlign.configure(textAlignOptions)],
       content: normalized,
       editable: false,
       injectCSS: false,

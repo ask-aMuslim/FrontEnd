@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { Router } from '@angular/router';
+import { DescriptionPipe } from '../../../../shared/pipes/description.pipe';
 
 export interface QuestionCard {
   categories: string[];
@@ -13,7 +14,7 @@ export interface QuestionCard {
 @Component({
   selector: 'app-qa-card',
   standalone: true,
-  imports: [],
+  imports: [DescriptionPipe],
   templateUrl: './qa-card.component.html',
   styleUrls: ['./qa-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
