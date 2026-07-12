@@ -582,6 +582,37 @@ export class AskQaComponent implements OnInit {
       .filter((question): question is QuestionCard => question !== null);
   }
 
+  private extractTextFromTiptapJson(node: any): string {
+    if (!node) {
+      return '';
+    }
+    if (node.type === 'text') {
+      return node.text || '';
+    }
+    if (node.content && Array.isArray(node.content)) {
+      const childrenText = node.content.map((child: any) => this.extractTextFromTiptapJson(child));
+      const isBlock = [
+        'doc',
+        'paragraph',
+        'heading',
+        'blockquote',
+        'bulletList',
+        'orderedList',
+        'listItem',
+        'table',
+        'tableRow',
+        'tableCell',
+      ].includes(node.type);
+
+      if (isBlock) {
+        return childrenText.join('').trim() + ' ';
+      } else {
+        return childrenText.join('');
+      }
+    }
+    return '';
+  }
+
   private mapQuestion(item: unknown, index: number): QuestionCard | null {
     const record = asRecord(item);
     const isPublished = getValue(record, 'isPublished', 'IsPublished');
@@ -603,9 +634,25 @@ export class AskQaComponent implements OnInit {
       firstTranslation ? getValue(firstTranslation, 'questionText', 'questionText', 'question') : undefined,
     ) ?? toStringValue(getValue(record, 'title', 'Title')) ?? '';
 
-    const description = toStringValue(
-      firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
-    ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    const rawAnswerJson = firstTranslation
+      ? getValue(firstTranslation, 'answerTextJson', 'AnswerTextJson')
+      : undefined;
+
+    let description = '';
+    if (rawAnswerJson) {
+      try {
+        const parsed = typeof rawAnswerJson === 'string' ? JSON.parse(rawAnswerJson) : rawAnswerJson;
+        description = this.extractTextFromTiptapJson(parsed).replace(/\s+/g, ' ').trim();
+      } catch {
+        // Fallback
+      }
+    }
+
+    if (!description) {
+      description = toStringValue(
+        firstTranslation ? getValue(firstTranslation, 'answerText', 'answerText', 'answer') : undefined,
+      ) ?? toStringValue(getValue(record, 'description', 'Description')) ?? '';
+    }
 
     if (!title.trim() || !description.trim()) {
       return null;

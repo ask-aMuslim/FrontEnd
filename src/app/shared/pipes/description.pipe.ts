@@ -4,6 +4,7 @@ import { Pipe, PipeTransform } from '@angular/core';
  * Converts a description string to plain text by:
  * - Handling TipTap JSON content strings and extracting text with block spacing
  * - Converting HTML block tags to spaces before stripping
+ * - Restoring spaces at concatenated boundaries (e.g., "God“The", "5:75).The", "JesusIslam")
  * - Converting newlines and other whitespace to single spaces
  * - Trimming the result
  */
@@ -37,7 +38,18 @@ export class DescriptionPipe implements PipeTransform {
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ');
 
-    return htmlConverted.replace(/\s+/g, ' ').trim();
+    // Restore missing spaces at block-level concatenation boundaries
+    const restoredText = htmlConverted
+      // 1. Lowercase followed by uppercase (e.g., JesusIslam -> Jesus Islam)
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      // 2. Word/number/punctuation followed by opening quote/bracket (e.g., God“The -> God “The)
+      .replace(/([a-zA-Z0-9\.\?!,\)])([“"\[\(])/g, '$1 $2')
+      // 3. Closing quote/bracket followed by word/number (e.g., Messiah”Islam -> Messiah” Islam)
+      .replace(/([”"\]\)])([a-zA-Z0-9])/g, '$1 $2')
+      // 4. Punctuation followed by word/number (e.g., 5:75).The -> 5:75). The)
+      .replace(/([\.\?!])([a-zA-Z0-9])/g, '$1 $2');
+
+    return restoredText.replace(/\s+/g, ' ').trim();
   }
 
   private extractTextFromTiptapJson(node: any): string {
