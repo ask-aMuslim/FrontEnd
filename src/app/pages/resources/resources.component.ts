@@ -51,24 +51,24 @@ export class ResourcesComponent implements OnInit {
 
     private readonly driveFileIdsByAssetPath: Readonly<Record<string, string>> = {
         // Pamphlets
-        "resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Da'wah%20Pamphlet.pdf":
-            '1bSeiFM4Bbl7sYIxprDF__s0QHpvu6PLd',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Bible%20Pamphlet.pdf':
-            '1vmRjYvUJUc-9Dmy-3knRxUTKA8HYKV6y',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Jesus%20Pamphlet.pdf':
-            '1wzV8c_yBcQiwGnEMDo-IkV7QprZeQSqU',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Misconceptions%20Pamphlet.pdf':
-            '1Y3qwk_P7CwEw2MP1R74qQfig6P0Lcttk',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Prophecy%20Pamphlet.pdf':
-            '1zTRYhfEmQpqSxKGCviW8iIFROAikXIoP',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Prophet%20Muhammad%20Pamphlet.pdf':
-            '1BZLVdsbWe2M0PXEZeqpmc3XnJ-yjUM8O',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Science%20Pamphlet.pdf':
-            '1LkaZlsCFuppXH95y4lwNVLJzvU-RfSoi',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Truth%20Pamphlet.pdf':
-            '1lJj8FtryOh9BxM8Ur6jpmoNijh5fiNDa',
-        'resources/pamphlets/AAM%20Pamphlets/Finalized%20289x214mm%20AAM%20Women%20Pamphlet.pdf':
-            '1QzavhMdPGN2OpIw54ANr9ldX-AennZEo',
+        "resources/pamphlets/AAM%20Pamphlets/AAM%20Da'wah%20Pamphlet.pdf":
+            '1qa4b1kYLmbE30sQZKzSLWNSxiiB30XPU',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Foretold%20Pamphlet.pdf':
+            '1LjxnLZxDXHGc30fx9qIvKevD3mqpSlin',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Jesus%20Pamphlet.pdf':
+            '1WMaXiizFCIzeAmGADdSRerRFK7aCMtoj',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Misconceptions%20Pamphlet.pdf':
+            '1Th5LIEVPVKIlVOZOr9tCoMsu0LmQCV6A',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Prophecy%20Pamphlet.pdf':
+            '1JJslu5uJuOkHNbpu5FuTAjy2eQTqBwOB',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Prophet%20Muhammad%20Pamphlet.pdf':
+            '1Tq4fBKpggRrZRteU35pO1VRhWA78wfIM',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Science%20Pamphlet.pdf':
+            '1sQJdKS-ZrOcJHf0XpRXNjpgCfNXCOspF',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Truth%20Pamphlet.pdf':
+            '13CTfSg8h0SAcaFgfEjLNvSqjt85y3rUF',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Women%20Pamphlet.pdf':
+            '1GBeXoudcR58OTA72a9uJ6z7mAeFfy3q-',
 
         // Scientific posters
         'resources/scientific-posters/PDF%20Versions/AAM%20Atmosphere%20Protects%20Humans%20on%20Earth%20.pdf':
@@ -132,15 +132,15 @@ export class ResourcesComponent implements OnInit {
     };
 
     private readonly pamphletPdfFiles: readonly string[] = [
-        'Finalized 289x214mm AAM Truth Pamphlet.pdf',
-        'Finalized 289x214mm AAM Science Pamphlet.pdf',
-        'Finalized 289x214mm AAM Prophecy Pamphlet.pdf',
-        'Finalized 289x214mm AAM Bible Pamphlet.pdf',
-        'Finalized 289x214mm AAM Jesus Pamphlet.pdf',
-        'Finalized 289x214mm AAM Prophet Muhammad Pamphlet.pdf',
-        'Finalized 289x214mm AAM Misconceptions Pamphlet.pdf',
-        'Finalized 289x214mm AAM Women Pamphlet.pdf',
-        "Finalized 289x214mm AAM Da'wah Pamphlet.pdf",
+        'AAM Truth Pamphlet.pdf',
+        'AAM Science Pamphlet.pdf',
+        'AAM Prophecy Pamphlet.pdf',
+        'AAM Foretold Pamphlet.pdf',
+        'AAM Jesus Pamphlet.pdf',
+        'AAM Prophet Muhammad Pamphlet.pdf',
+        'AAM Misconceptions Pamphlet.pdf',
+        'AAM Women Pamphlet.pdf',
+        "AAM Da'wah Pamphlet.pdf",
     ];
 
     private readonly scientificPosterPdfFiles: readonly string[] = [
@@ -285,16 +285,19 @@ export class ResourcesComponent implements OnInit {
             id: 'wudu',
             title: 'How to Perform Ablution (Wudu)',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://m.youtube.com/watch?v=2xS70Zn-jRk&pp=ygUgaG93IHRvIGRvIHd1ZHUgZ3JlZW4gbGFuZSBtYXNqaWQ%3D',
         },
         {
             id: 'prayer',
             title: 'How to Pray',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://m.youtube.com/watch?v=4zr6tNgmKSI&pp=ygUjSG93IHRvIFByYXkgSXNsYW0gZ3JlZW4gbGFuZSBNYXNqaWQ%3D',
         },
         {
             id: 'guidebook',
             title: 'New Muslim Guide Book',
             subtitle: 'Step-by-step learning journey from ignorance to knowledge.',
+            url: 'https://drive.google.com/file/d/1jp6YkciKa24wu34XxdHxt6v2EkzzceiR/view?usp=drivesdk',
         },
         {
             id: 'daily-dua',
@@ -500,7 +503,7 @@ export class ResourcesComponent implements OnInit {
             'Truth': '04941fd7-b369-4e8a-d7c4-08de7962a21d',
             'Science': '4bc0851e-b42d-4416-d7c5-08de7962a21d',
             'Prophecy': '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
-            'Bible': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+            'Foretold': 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
             'Jesus': '2ac25076-8d77-4c64-d7c8-08de7962a21d',
             'Prophet Muhammad': '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
             'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',
