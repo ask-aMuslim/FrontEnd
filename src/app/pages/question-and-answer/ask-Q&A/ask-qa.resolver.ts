@@ -67,15 +67,17 @@ const prioritizeGeneralCategory = (categories: TagFilterOption[]): TagFilterOpti
   return [...generalCategories, ...otherCategories];
 };
 
-const extractTextFromTiptapJson = (node: any): string => {
-  if (!node) {
+const extractTextFromTiptapJson = (node: unknown): string => {
+  if (!node || typeof node !== 'object') {
     return '';
   }
-  if (node.type === 'text') {
-    return node.text || '';
+  const nodeRecord = node as Record<string, unknown>;
+  if (nodeRecord['type'] === 'text') {
+    return (nodeRecord['text'] as string) || '';
   }
-  if (node.content && Array.isArray(node.content)) {
-    const childrenText = node.content.map((child: any) => extractTextFromTiptapJson(child));
+  const content = nodeRecord['content'];
+  if (content && Array.isArray(content)) {
+    const childrenText = content.map((child: unknown) => extractTextFromTiptapJson(child));
     const isBlock = [
       'doc',
       'paragraph',
@@ -87,7 +89,7 @@ const extractTextFromTiptapJson = (node: any): string => {
       'table',
       'tableRow',
       'tableCell',
-    ].includes(node.type);
+    ].includes(nodeRecord['type'] as string);
 
     if (isBlock) {
       return childrenText.join('').trim() + ' ';

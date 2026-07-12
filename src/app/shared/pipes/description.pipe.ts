@@ -24,7 +24,7 @@ export class DescriptionPipe implements PipeTransform {
     // Check if it is a JSON string (TipTap JSON structure)
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
       try {
-        const parsed = JSON.parse(trimmed);
+        const parsed = JSON.parse(trimmed) as unknown;
         return this.extractTextFromTiptapJson(parsed).replace(/\s+/g, ' ').trim();
       } catch {
         // Fallback to HTML/text parsing if JSON parsing fails
@@ -43,24 +43,26 @@ export class DescriptionPipe implements PipeTransform {
       // 1. Lowercase followed by uppercase (e.g., JesusIslam -> Jesus Islam)
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       // 2. Word/number/punctuation followed by opening quote/bracket (e.g., God“The -> God “The)
-      .replace(/([a-zA-Z0-9\.\?!,\)])([“"\[\(])/g, '$1 $2')
+      .replace(/([a-zA-Z0-9.?!,)])([“"[(])/g, '$1 $2')
       // 3. Closing quote/bracket followed by word/number (e.g., Messiah”Islam -> Messiah” Islam)
-      .replace(/([”"\]\)])([a-zA-Z0-9])/g, '$1 $2')
+      .replace(/([”"\])])([a-zA-Z0-9])/g, '$1 $2')
       // 4. Punctuation followed by word/number (e.g., 5:75).The -> 5:75). The)
-      .replace(/([\.\?!])([a-zA-Z0-9])/g, '$1 $2');
+      .replace(/([.?!])([a-zA-Z0-9])/g, '$1 $2');
 
     return restoredText.replace(/\s+/g, ' ').trim();
   }
 
-  private extractTextFromTiptapJson(node: any): string {
-    if (!node) {
+  private extractTextFromTiptapJson(node: unknown): string {
+    if (!node || typeof node !== 'object') {
       return '';
     }
-    if (node.type === 'text') {
-      return node.text || '';
+    const nodeRecord = node as Record<string, unknown>;
+    if (nodeRecord['type'] === 'text') {
+      return (nodeRecord['text'] as string) || '';
     }
-    if (node.content && Array.isArray(node.content)) {
-      const childrenText = node.content.map((child: any) => this.extractTextFromTiptapJson(child));
+    const content = nodeRecord['content'];
+    if (content && Array.isArray(content)) {
+      const childrenText = content.map((child: unknown) => this.extractTextFromTiptapJson(child));
       const isBlock = [
         'doc',
         'paragraph',
@@ -72,7 +74,7 @@ export class DescriptionPipe implements PipeTransform {
         'table',
         'tableRow',
         'tableCell',
-      ].includes(node.type);
+      ].includes(nodeRecord['type'] as string);
 
       if (isBlock) {
         return childrenText.join('').trim() + ' ';

@@ -582,15 +582,17 @@ export class AskQaComponent implements OnInit {
       .filter((question): question is QuestionCard => question !== null);
   }
 
-  private extractTextFromTiptapJson(node: any): string {
-    if (!node) {
+  private extractTextFromTiptapJson(node: unknown): string {
+    if (!node || typeof node !== 'object') {
       return '';
     }
-    if (node.type === 'text') {
-      return node.text || '';
+    const nodeRecord = node as Record<string, unknown>;
+    if (nodeRecord['type'] === 'text') {
+      return (nodeRecord['text'] as string) || '';
     }
-    if (node.content && Array.isArray(node.content)) {
-      const childrenText = node.content.map((child: any) => this.extractTextFromTiptapJson(child));
+    const content = nodeRecord['content'];
+    if (content && Array.isArray(content)) {
+      const childrenText = content.map((child: unknown) => this.extractTextFromTiptapJson(child));
       const isBlock = [
         'doc',
         'paragraph',
@@ -602,7 +604,7 @@ export class AskQaComponent implements OnInit {
         'table',
         'tableRow',
         'tableCell',
-      ].includes(node.type);
+      ].includes(nodeRecord['type'] as string);
 
       if (isBlock) {
         return childrenText.join('').trim() + ' ';
