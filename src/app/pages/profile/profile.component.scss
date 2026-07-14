@@ -175,6 +175,7 @@
   background: transparent;
   color: var(--color-text-caption);
   cursor: pointer;
+  z-index: 10;
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
@@ -184,6 +185,13 @@
     background: var(--color-card-surface-secondary);
     color: var(--color-text-body);
     transform: rotate(90deg) scale(1.05);
+  }
+
+  svg,
+  svg *,
+  ::ng-deep svg,
+  ::ng-deep svg * {
+    pointer-events: none;
   }
 }
 
