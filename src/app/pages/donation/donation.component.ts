@@ -25,6 +25,7 @@ interface TrustBadge {
 export class DonationComponent implements OnInit {
   protected loadingIframe = false;
   protected safeDonationUrl!: SafeResourceUrl;
+  protected readonly directDonationUrl = 'https://www.zeffy.com/donation-form/donate-to-change-lives-14179';
   private donationUrl = 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179';
 
   protected readonly impactCards: readonly ImpactCard[] = [

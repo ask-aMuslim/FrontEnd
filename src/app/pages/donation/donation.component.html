@@ -95,7 +95,8 @@
                 <iframe 
                   title="Donation form powered by Zeffy" 
                   [src]="safeDonationUrl" 
-                  allowpaymentrequest 
+                  allow="payment *; paymentrequest *; fullscreen"
+                  allowpaymentrequest="true" 
                   allowTransparency="true"
                   class="donation-iframe"
                   (load)="onIframeLoad()">
@@ -106,8 +107,8 @@
             <!-- Checkout Footer Actions -->
             <div class="donation-checkout-footer">
               <p class="donation-checkout-footer__text">
-                Having issues loading the form? 
-                <a href="https://www.zeffy.com/embed/donation-form/donate-to-change-lives-14179" target="_blank" rel="noopener noreferrer" class="donation-checkout-footer__link">
+                Having issues loading the form or paying with Apple Pay? 
+                <a [href]="directDonationUrl" target="_blank" rel="noopener noreferrer" class="donation-checkout-footer__link">
                   Open donation page in a new window
                 </a>
               </p>
