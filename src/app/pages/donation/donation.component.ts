@@ -105,4 +105,21 @@ export class DonationComponent implements OnInit {
       this.loadingIframe = false;
     }
   }
+
+  protected openDonationPortal(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    if (isPlatformBrowser(this.platformId)) {
+      const width = 640;
+      const height = 850;
+      const left = window.screen.width ? (window.screen.width - width) / 2 : 100;
+      const top = window.screen.height ? (window.screen.height - height) / 2 : 100;
+      window.open(
+        this.directDonationUrl,
+        'ZeffyCheckout',
+        `toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no,width=${width},height=${height},top=${top},left=${left}`
+      );
+    }
+  }
 }
