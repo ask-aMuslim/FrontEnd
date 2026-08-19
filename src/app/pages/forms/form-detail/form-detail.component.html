@@ -51,7 +51,72 @@
     </div>
   </section>
 
-   <!-- ── CONTENT ───────────────────────────────────────── -->
+   <!-- ── GOOGLE FORM LINK CONTENT ──────────────────────── -->
+   <section class="section-block form-detail-content form-detail-external">
+     <div class="form-external-card">
+       <div class="form-external-card__badge">
+         <i class="fas fa-hand-holding-heart" aria-hidden="true"></i>
+         <span>Join Our Mission</span>
+       </div>
+
+       <div class="form-external-card__icon-wrapper">
+         <div class="form-external-card__icon-glow"></div>
+         <div class="form-external-card__icon">
+           <i class="fas fa-file-signature"></i>
+         </div>
+       </div>
+
+       <div class="form-external-card__header">
+         <h2 class="form-external-card__title">Join the Ask A Muslim Team</h2>
+         <p class="form-external-card__description">
+           We are delighted by your interest in joining our community. To ensure a smooth application experience, please complete our official registration form on Google Forms.
+         </p>
+       </div>
+
+       <div class="form-external-card__highlights">
+         <div class="form-external-highlight">
+           <i class="fas fa-clock form-external-highlight__icon"></i>
+           <div class="form-external-highlight__text">
+             <strong>Quick & Easy</strong>
+             <span>Takes only 2–3 minutes</span>
+           </div>
+         </div>
+         <div class="form-external-highlight">
+           <i class="fas fa-shield-halved form-external-highlight__icon"></i>
+           <div class="form-external-highlight__text">
+             <strong>Secure & Direct</strong>
+             <span>Official Google Form</span>
+           </div>
+         </div>
+         <div class="form-external-highlight">
+           <i class="fas fa-users form-external-highlight__icon"></i>
+           <div class="form-external-highlight__text">
+             <strong>Community Driven</strong>
+             <span>Open to all passionate members</span>
+           </div>
+         </div>
+       </div>
+
+       <div class="form-external-card__actions">
+         <a
+           href="https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="form-detail-action form-detail-action--primary form-external-btn"
+         >
+           <span>Open Join Form</span>
+           <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+         </a>
+         <button type="button" class="form-detail-action form-detail-action--secondary" (click)="goBack()">
+           <i class="fas fa-arrow-left" aria-hidden="true"></i>
+           <span>Back to forms</span>
+         </button>
+       </div>
+     </div>
+   </section>
+
+   <!-- ── ORIGINAL FORM CONTENT (COMMENTED OUT) ────────────── -->
+   <!--
    @if (!isLoading() && !loadError()) {
      <section class="section-block form-detail-content">
 
@@ -97,7 +162,6 @@
            (ngSubmit)="submitForm()"
            novalidate
          >
-          <!-- Section heading -->
           <div class="form-panel-header">
             <h2 class="form-panel-title">
               <span class="form-panel-title__icon" aria-hidden="true">
@@ -112,7 +176,6 @@
 
           <hr class="form-divider" />
 
-          <!-- Fields -->
           <div class="form-detail__fields">
             @for (field of fields(); track trackById($index, field)) {
               <div class="form-field">
@@ -357,5 +420,6 @@
 
      </section>
    }
+   -->
 
 </section>
