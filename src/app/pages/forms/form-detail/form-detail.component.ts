@@ -18,7 +18,6 @@ import {
   FormsFacade,
 } from '../../../api/facades/forms.facade';
 import {
-  SelectDropdownComponent,
   type SelectOption,
 } from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { SeoService } from '../../../core/services/seo.service';
@@ -70,7 +69,7 @@ declare const grecaptcha: {
 @Component({
   selector: 'app-form-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, SelectDropdownComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule],
   templateUrl: './form-detail.component.html',
   styleUrls: ['./form-detail.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
