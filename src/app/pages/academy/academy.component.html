@@ -201,40 +201,38 @@
           let i = $index;
           let isLast = $last
         ) {
-          <div class="stage-wrapper">
-            <div class="stage-container" [class.locked]="stage.isLocked">
-              <h3 class="stage-title">{{ stage.title }}</h3>
-              <app-course-tree
-                [nodes]="stage.treeCourses"
-                [loading]="false"
-                [error]="error"
-                (retryAction)="ngOnInit()"
-                (courseClick)="onCourseClick($event)"
-              >
-              </app-course-tree>
-              @if (stage.description) {
-                <div class="stage-footer">
-                  <div class="stage-divider"></div>
-                  <p class="stage-description">{{ stage.description }}</p>
-                </div>
-              }
+          @if ((stage.title || '').trim().toLowerCase() !== 'string') {
+            <div class="stage-wrapper">
+              <div class="stage-container" [class.locked]="stage.isLocked">
+                <h3 class="stage-title">{{ stage.title }}</h3>
+                <app-course-tree
+                  [nodes]="stage.treeCourses"
+                  [loading]="false"
+                  [error]="error"
+                  (retryAction)="ngOnInit()"
+                  (courseClick)="onCourseClick($event)"
+                >
+                </app-course-tree>
+                @if (stage.description) {
+                  <div class="stage-footer">
+                    <div class="stage-divider"></div>
+                    <p class="stage-description">{{ stage.description }}</p>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
-          @if (!isLast) {
-            <!-- New academy connector design commented out as requested.
-              <div class="connector-line"></div>
-              -->
-
-            <div class="stage-connector">
-              <div class="connector-line"></div>
-              @if (stages[i + 1]?.isLocked) {
-                <img
-                  src="/icons/icons-40/Lock.svg"
-                  alt="Locked level"
-                  class="lock-icon"
-                />
-              }
-            </div>
+            @if (!isLast && (stages[i + 1]?.title || '').trim().toLowerCase() !== 'string') {
+              <div class="stage-connector">
+                <div class="connector-line"></div>
+                @if (stages[i + 1]?.isLocked) {
+                  <img
+                    src="/icons/icons-40/Lock.svg"
+                    alt="Locked level"
+                    class="lock-icon"
+                  />
+                }
+              </div>
+            }
           }
         }
       </div>

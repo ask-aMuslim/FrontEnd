@@ -223,7 +223,12 @@ export class AcademyComponent implements OnInit {
         courseProgress: CourseProgress[],
         courses: AcademyCourse[],
     ): Stage[] {
-        return apiStages.map((stageData) => {
+        const validStages = apiStages.filter((stageData) => {
+            const title = (stageData.title || '').trim().toLowerCase();
+            return title !== 'string';
+        });
+
+        return validStages.map((stageData) => {
             // Check if stage has courses. If not, don't show it or show it as locked/empty?
             // The API response for roadmap gives courses nested under levelId.
             // Let's filter by matching levelId.
