@@ -47,7 +47,21 @@ export class ContactComponent implements OnInit {
   private readonly formsFacade = inject(FormsFacade);
   private readonly seoService = inject(SeoService);
 
+  readonly googleFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header';
+
   readonly quickLinks = signal<readonly ContactQuickLink[]>([]);
+
+  isExternalForm(link: ContactQuickLink): boolean {
+    if (this.quickLinks().length === 1) {
+      return true;
+    }
+    const title = (link.title || '').toLowerCase();
+    return title.includes('join') || title.includes('ask a muslim') || title.includes('askamuslim');
+  }
+
+  formatTitle(title: string): string {
+    return (title || '').replace(/AskAMuslim/gi, 'Ask A Muslim');
+  }
 
   readonly topicOptions: readonly TopicOption[] = [
     { value: MeetingInquiryTopic.GeneralInquiry, label: 'Answered Question' },

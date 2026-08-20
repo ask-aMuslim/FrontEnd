@@ -10,6 +10,29 @@ interface FormCard {
   description: string;
 }
 
+const STATIC_GOOGLE_FORMS: FormCard[] = [
+  {
+    id: 'join-ask-a-muslim',
+    title: 'Join the Ask A Muslim Team',
+    description: 'We are delighted by your interest in joining our community. Complete our official registration form to join the Ask A Muslim team.',
+  },
+  {
+    id: 'revert-buddy-program',
+    title: 'Revert Buddy Program',
+    description: 'Connect with a mentor or become a buddy to support new Muslims on their spiritual journey.',
+  },
+  {
+    id: 'dawah-workshop',
+    title: 'Request a Da’wah Workshop',
+    description: 'Request an interactive workshop to learn effective da’wah and outreach techniques.',
+  },
+  {
+    id: 'dawah-table',
+    title: 'Establish a Da’wah Table',
+    description: 'Apply to set up and manage a da’wah table in your local area or campus.',
+  },
+];
+
 @Component({
   selector: 'app-forms',
   standalone: true,
@@ -26,8 +49,6 @@ export class FormsComponent implements OnInit {
   private readonly formsFacade = inject(FormsFacade);
   private readonly seoService = inject(SeoService);
 
-  readonly googleFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header';
-
   readonly isLoading = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly forms = signal<FormDto[]>([]);
@@ -36,27 +57,41 @@ export class FormsComponent implements OnInit {
   readonly pageSize = signal(FormsComponent.defaultPageSize);
   readonly hasNextPage = signal(false);
 
-  readonly formCards = computed<FormCard[]>(() =>
-    this.forms().map((form) => ({
+  readonly formCards = computed<FormCard[]>(() => {
+    const apiForms = this.forms().map((form) => ({
       id: form.id,
       title: this.resolveTitle(form),
       description: this.resolveDescription(form),
-    })),
-  );
+    }));
+
+    const search = this.searchTerm().trim().toLowerCase();
+
+    // Include static Google forms that aren't already represented by an API form
+    const staticForms = STATIC_GOOGLE_FORMS.filter((staticForm) => {
+      const isAlreadyInApi = apiForms.some((apiForm) =>
+        (apiForm.title.toLowerCase().includes('join') || apiForm.title.toLowerCase().includes('ask a muslim'))
+        && staticForm.id === 'join-ask-a-muslim'
+      );
+      if (isAlreadyInApi) {
+        return false;
+      }
+      if (!search) {
+        return true;
+      }
+      return (
+        staticForm.title.toLowerCase().includes(search) ||
+        staticForm.description.toLowerCase().includes(search)
+      );
+    });
+
+    return [...apiForms, ...staticForms];
+  });
 
   readonly hasForms = computed(() => this.formCards().length > 0);
   readonly isFirstPage = computed(() => this.currentPage() === 1);
   readonly showPagination = computed(
     () => this.currentPage() > 1 || this.hasNextPage(),
   );
-
-  isExternalForm(form: FormCard): boolean {
-    if (this.formCards().length === 1) {
-      return true;
-    }
-    const title = (form.title || '').toLowerCase();
-    return title.includes('join') || title.includes('ask a muslim') || title.includes('askamuslim');
-  }
 
   private resolveTitle(form: FormDto): string {
     const title = form.title?.trim() || 'Form';

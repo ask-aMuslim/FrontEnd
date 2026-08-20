@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
@@ -17,7 +17,9 @@ import {
   FormFieldType,
   FormsFacade,
 } from '../../../api/facades/forms.facade';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
+  SelectDropdownComponent,
   type SelectOption,
 } from '../../../shared/reusable-components/select-dropdown/select-dropdown.component';
 import { SeoService } from '../../../core/services/seo.service';
@@ -32,6 +34,55 @@ import {
 } from './phone-number.formatter';
 
 import { environment } from '../../../../environments/environment';
+
+export interface GoogleFormConfig {
+  id: string;
+  title: string;
+  description: string;
+  embedUrl: string;
+  directUrl: string;
+  badge?: string;
+  icon?: string;
+}
+
+export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
+  'join-ask-a-muslim': {
+    id: 'join-ask-a-muslim',
+    title: 'Join the Ask A Muslim Team',
+    description: 'We are delighted by your interest in joining our community. Please complete our official registration form below to join our team.',
+    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?embedded=true',
+    directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header',
+    badge: 'Join Our Mission',
+    icon: 'fas fa-hand-holding-heart',
+  },
+  'revert-buddy-program': {
+    id: 'revert-buddy-program',
+    title: 'Revert Buddy Program',
+    description: 'Connect with a mentor or become a buddy to support new Muslims on their spiritual journey.',
+    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSf4CEffU8mjL5RdtgCrvASqBdJxGS2MQHEGSb-VOxAZpleLxA/viewform?embedded=true',
+    directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSf4CEffU8mjL5RdtgCrvASqBdJxGS2MQHEGSb-VOxAZpleLxA/viewform',
+    badge: 'Community Support',
+    icon: 'fas fa-user-friends',
+  },
+  'dawah-workshop': {
+    id: 'dawah-workshop',
+    title: 'Request a Da’wah Workshop',
+    description: 'Request an interactive workshop to learn effective da’wah and outreach techniques.',
+    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc2xJle4ZROLniNXFD2mZLIBq9uPrmV1Q3G5SRJuI0XBUQBuw/viewform?embedded=true',
+    directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc2xJle4ZROLniNXFD2mZLIBq9uPrmV1Q3G5SRJuI0XBUQBuw/viewform',
+    badge: 'Educational Workshop',
+    icon: 'fas fa-chalkboard-teacher',
+  },
+  'dawah-table': {
+    id: 'dawah-table',
+    title: 'Establish a Da’wah Table',
+    description: 'Apply to set up and manage a da’wah table in your local area or campus.',
+    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?embedded=true',
+    directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
+    badge: 'Outreach Initiative',
+    icon: 'fas fa-table',
+  },
+};
 
 interface FormFieldOptionView extends FormFieldOptionDto {
   inputId: string;
@@ -69,7 +120,7 @@ declare const grecaptcha: {
 @Component({
   selector: 'app-form-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, SelectDropdownComponent],
   templateUrl: './form-detail.component.html',
   styleUrls: ['./form-detail.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -99,6 +150,7 @@ export class FormDetailComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly seoService = inject(SeoService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   private readonly countryCodes = signal(getUniqueCountryCodesList());
 
@@ -112,7 +164,13 @@ export class FormDetailComponent implements OnInit, OnDestroy {
   readonly submitError = signal<string | null>(null);
   readonly submissionId = signal<string | null>(null);
 
-   private recaptchaPromise: Promise<void> | null = null;
+  readonly googleFormSafeUrl = signal<SafeResourceUrl | null>(null);
+  readonly googleFormDirectUrl = signal<string>('');
+  readonly customFormTitle = signal<string | null>(null);
+  readonly customFormDescription = signal<string | null>(null);
+  readonly isGoogleForm = computed(() => this.googleFormSafeUrl() !== null);
+
+  private recaptchaPromise: Promise<void> | null = null;
 
   get recaptchaSiteKey(): string {
     return environment.recaptchaSiteKey ?? '';
@@ -122,10 +180,16 @@ export class FormDetailComponent implements OnInit, OnDestroy {
   readonly formGroup = signal<FormGroup | null>(null);
 
   readonly formTitle = computed(() => {
+    if (this.customFormTitle()) {
+      return this.customFormTitle()!;
+    }
     const title = this.form()?.title ?? 'Form';
     return title.replace(/AskAMuslim/g, 'Ask A Muslim');
   });
   readonly formDescription = computed(() => {
+    if (this.customFormDescription()) {
+      return this.customFormDescription()!;
+    }
     const description = this.form()?.description ?? '';
     return description.replace(/AskAMuslim/g, 'Ask A Muslim');
   });
@@ -532,6 +596,28 @@ export class FormDetailComponent implements OnInit, OnDestroy {
     this.submitError.set(null);
     this.form.set(null);
     this.formGroup.set(null);
+    this.googleFormSafeUrl.set(null);
+    this.googleFormDirectUrl.set('');
+    this.customFormTitle.set(null);
+    this.customFormDescription.set(null);
+
+    const normalizedId = id.trim().toLowerCase();
+    const knownConfig = KNOWN_GOOGLE_FORMS[normalizedId];
+
+    if (knownConfig) {
+      this.customFormTitle.set(knownConfig.title);
+      this.customFormDescription.set(knownConfig.description);
+      this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(knownConfig.embedUrl));
+      this.googleFormDirectUrl.set(knownConfig.directUrl);
+      this.isLoading.set(false);
+
+      this.seoService.setMetaTags({
+        title: knownConfig.title,
+        description: knownConfig.description,
+        keywords: [knownConfig.title, 'Ask A Muslim Form', 'Google Form registration']
+      });
+      return;
+    }
 
     this.formsFacade.getFormById(id).subscribe({
       next: (form) => {
@@ -540,6 +626,24 @@ export class FormDetailComponent implements OnInit, OnDestroy {
           this.form.set(null);
           this.formGroup.set(null);
           this.isLoading.set(false);
+          return;
+        }
+
+        const titleLower = (form.title || '').toLowerCase();
+        if (titleLower.includes('join') || titleLower.includes('ask a muslim') || titleLower.includes('askamuslim')) {
+          const joinConfig = KNOWN_GOOGLE_FORMS['join-ask-a-muslim'];
+          this.form.set(form);
+          this.customFormTitle.set(joinConfig.title);
+          this.customFormDescription.set(form.description || joinConfig.description);
+          this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(joinConfig.embedUrl));
+          this.googleFormDirectUrl.set(joinConfig.directUrl);
+          this.isLoading.set(false);
+
+          this.seoService.setMetaTags({
+            title: joinConfig.title,
+            description: form.description || joinConfig.description,
+            keywords: [joinConfig.title, 'Ask A Muslim', 'Join Team']
+          });
           return;
         }
 

@@ -83,7 +83,7 @@
         <div class="quick-link-list">
           @for (link of quickLinks(); track link.id) {
             <a [routerLink]="['/forms', link.id]">
-              {{ link.title }}
+              {{ formatTitle(link.title) }}
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M7 17L17 7M17 7H9M17 7V15"
@@ -95,27 +95,28 @@
               </svg>
             </a>
           }
-          <!-- Static quick links -->
-          <a href="https://www.noorohio.org/newmuslims/" target="_blank" rel="noopener">
-            New Muslim Support
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </a>
-          <a href="https://docs.google.com/forms/d/e/1FAIpQLSf4CEffU8mjL5RdtgCrvASqBdJxGS2MQHEGSb-VOxAZpleLxA/viewform" target="_blank" rel="noopener">
+          <!-- Integrated Google Form Quick Links -->
+          <a [routerLink]="['/forms', 'revert-buddy-program']">
             Revert Buddy Program
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </a>
-          <a href="https://docs.google.com/forms/d/e/1FAIpQLSc2xJle4ZROLniNXFD2mZLIBq9uPrmV1Q3G5SRJuI0XBUQBuw/viewform" target="_blank" rel="noopener">
+          <a [routerLink]="['/forms', 'dawah-workshop']">
             Request a Da’wah Workshop
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </a>
-          <a href="https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1" target="_blank" rel="noopener">
+          <a [routerLink]="['/forms', 'dawah-table']">
             Establish a Da’wah Table
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <!-- External Support link -->
+          <a href="https://www.noorohio.org/newmuslims/" target="_blank" rel="noopener">
+            New Muslim Support
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
