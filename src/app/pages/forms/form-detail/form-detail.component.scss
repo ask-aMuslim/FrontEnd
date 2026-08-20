@@ -1231,18 +1231,19 @@ input[type="file"]::-webkit-file-upload-button {
 .google-form-iframe-wrapper {
   position: relative;
   width: 100%;
-  min-height: 900px;
   background: #ffffff;
   border-radius: 0 0 var(--border-radius-large, 24px) var(--border-radius-large, 24px);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .google-form-iframe {
   display: block;
   width: 100%;
-  height: 1200px;
+  min-height: 2200px;
+  height: 2400px;
   border: none;
   background: transparent;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
@@ -1261,11 +1262,8 @@ input[type="file"]::-webkit-file-upload-button {
     }
   }
 
-  .google-form-iframe-wrapper {
-    min-height: 800px;
-  }
-
   .google-form-iframe {
-    height: 1350px;
+    min-height: 2900px;
+    height: 3300px;
   }
 }
