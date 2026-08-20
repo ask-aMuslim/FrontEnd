@@ -122,8 +122,14 @@ export class FormDetailComponent implements OnInit, OnDestroy {
   readonly form = signal<FormDto | null>(null);
   readonly formGroup = signal<FormGroup | null>(null);
 
-  readonly formTitle = computed(() => this.form()?.title ?? 'Form');
-  readonly formDescription = computed(() => this.form()?.description ?? '');
+  readonly formTitle = computed(() => {
+    const title = this.form()?.title ?? 'Form';
+    return title.replace(/AskAMuslim/g, 'Ask A Muslim');
+  });
+  readonly formDescription = computed(() => {
+    const description = this.form()?.description ?? '';
+    return description.replace(/AskAMuslim/g, 'Ask A Muslim');
+  });
   readonly isPublished = computed(() => this.form()?.isPublished ?? false);
 
   readonly fields = computed<FormFieldView[]>(() => {

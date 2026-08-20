@@ -26,6 +26,8 @@ export class FormsComponent implements OnInit {
   private readonly formsFacade = inject(FormsFacade);
   private readonly seoService = inject(SeoService);
 
+  readonly googleFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header';
+
   readonly isLoading = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly forms = signal<FormDto[]>([]);
@@ -37,7 +39,7 @@ export class FormsComponent implements OnInit {
   readonly formCards = computed<FormCard[]>(() =>
     this.forms().map((form) => ({
       id: form.id,
-      title: form.title,
+      title: this.resolveTitle(form),
       description: this.resolveDescription(form),
     })),
   );
@@ -47,6 +49,19 @@ export class FormsComponent implements OnInit {
   readonly showPagination = computed(
     () => this.currentPage() > 1 || this.hasNextPage(),
   );
+
+  isExternalForm(form: FormCard): boolean {
+    if (this.formCards().length === 1) {
+      return true;
+    }
+    const title = (form.title || '').toLowerCase();
+    return title.includes('join') || title.includes('ask a muslim') || title.includes('askamuslim');
+  }
+
+  private resolveTitle(form: FormDto): string {
+    const title = form.title?.trim() || 'Form';
+    return title.replace(/AskAMuslim/g, 'Ask A Muslim');
+  }
 
   ngOnInit(): void {
     this.loadForms();
@@ -127,9 +142,10 @@ export class FormsComponent implements OnInit {
 
   private resolveDescription(form: FormDto): string {
     const description = form.description?.trim();
-    return description && description.length > 0
+    const resolved = description && description.length > 0
       ? description
       : FormsComponent.emptyDescription;
+    return resolved.replace(/AskAMuslim/g, 'Ask A Muslim');
   }
 
   private resolveErrorMessage(error: unknown): string {
