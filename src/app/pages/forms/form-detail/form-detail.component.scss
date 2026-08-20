@@ -1239,8 +1239,6 @@ input[type="file"]::-webkit-file-upload-button {
 .google-form-iframe {
   display: block;
   width: 100%;
-  min-height: 2200px;
-  height: 2400px;
   border: none;
   background: transparent;
   overflow: hidden;
@@ -1260,10 +1258,5 @@ input[type="file"]::-webkit-file-upload-button {
       width: 100%;
       justify-content: center;
     }
-  }
-
-  .google-form-iframe {
-    min-height: 2900px;
-    height: 3300px;
   }
 }

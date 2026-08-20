@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
@@ -40,6 +40,8 @@ export interface GoogleFormConfig {
   description: string;
   embedUrl: string;
   directUrl: string;
+  desktopHeight?: number;
+  mobileHeight?: number;
   badge?: string;
   icon?: string;
 }
@@ -51,6 +53,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     description: 'We are delighted by your interest in joining our community. Please complete our official registration form below to join our team.',
     embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?embedded=true',
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header',
+    desktopHeight: 2150,
+    mobileHeight: 2850,
     badge: 'Join Our Mission',
     icon: 'fas fa-hand-holding-heart',
   },
@@ -60,6 +64,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     description: 'Connect with a mentor or become a buddy to support new Muslims on their spiritual journey.',
     embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSf4CEffU8mjL5RdtgCrvASqBdJxGS2MQHEGSb-VOxAZpleLxA/viewform?embedded=true',
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSf4CEffU8mjL5RdtgCrvASqBdJxGS2MQHEGSb-VOxAZpleLxA/viewform',
+    desktopHeight: 1450,
+    mobileHeight: 1850,
     badge: 'Community Support',
     icon: 'fas fa-user-friends',
   },
@@ -69,6 +75,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     description: 'Request an interactive workshop to learn effective da’wah and outreach techniques.',
     embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc2xJle4ZROLniNXFD2mZLIBq9uPrmV1Q3G5SRJuI0XBUQBuw/viewform?embedded=true',
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc2xJle4ZROLniNXFD2mZLIBq9uPrmV1Q3G5SRJuI0XBUQBuw/viewform',
+    desktopHeight: 1400,
+    mobileHeight: 1800,
     badge: 'Educational Workshop',
     icon: 'fas fa-chalkboard-teacher',
   },
@@ -78,6 +86,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     description: 'Apply to set up and manage a da’wah table in your local area or campus.',
     embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?embedded=true',
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
+    desktopHeight: 1500,
+    mobileHeight: 1900,
     badge: 'Outreach Initiative',
     icon: 'fas fa-table',
   },
@@ -165,9 +175,16 @@ export class FormDetailComponent implements OnInit, OnDestroy {
 
   readonly googleFormSafeUrl = signal<SafeResourceUrl | null>(null);
   readonly googleFormDirectUrl = signal<string>('');
+  readonly googleFormDesktopHeight = signal<number>(2150);
+  readonly googleFormMobileHeight = signal<number>(2850);
+  readonly isMobileView = signal<boolean>(false);
   readonly customFormTitle = signal<string | null>(null);
   readonly customFormDescription = signal<string | null>(null);
   readonly isGoogleForm = computed(() => this.googleFormSafeUrl() !== null);
+
+  readonly googleFormCalculatedHeight = computed(() => {
+    return this.isMobileView() ? this.googleFormMobileHeight() : this.googleFormDesktopHeight();
+  });
 
   private recaptchaPromise: Promise<void> | null = null;
 
@@ -221,7 +238,18 @@ export class FormDetailComponent implements OnInit, OnDestroy {
     return FormDetailComponent.textAreaRows;
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (typeof window !== 'undefined') {
+      this.isMobileView.set(window.innerWidth <= 768);
+    }
+  }
+
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      this.isMobileView.set(window.innerWidth <= 768);
+    }
+
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       if (!id) {
@@ -606,6 +634,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
     if (knownConfig) {
       this.customFormTitle.set(knownConfig.title);
       this.customFormDescription.set(knownConfig.description);
+      this.googleFormDesktopHeight.set(knownConfig.desktopHeight ?? 2150);
+      this.googleFormMobileHeight.set(knownConfig.mobileHeight ?? 2850);
       this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(knownConfig.embedUrl));
       this.googleFormDirectUrl.set(knownConfig.directUrl);
       this.isLoading.set(false);
@@ -635,6 +665,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
           this.form.set(form);
           this.customFormTitle.set(joinConfig.title);
           this.customFormDescription.set(form.description || joinConfig.description);
+          this.googleFormDesktopHeight.set(joinConfig.desktopHeight ?? 2150);
+          this.googleFormMobileHeight.set(joinConfig.mobileHeight ?? 2850);
           this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(joinConfig.embedUrl));
           this.googleFormDirectUrl.set(joinConfig.directUrl);
           this.isLoading.set(false);
