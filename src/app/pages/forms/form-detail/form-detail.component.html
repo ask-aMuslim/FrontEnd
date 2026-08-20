@@ -92,24 +92,20 @@
            <iframe
              [src]="safeUrl"
              width="100%"
-             [style.height.px]="googleFormCalculatedHeight()"
+             height="100%"
              frameborder="0"
              marginheight="0"
              marginwidth="0"
-             scrolling="no"
              class="google-form-iframe"
              [title]="formTitle()"
+             allowfullscreen
            >
              Loading form…
            </iframe>
          </div>
        </div>
      </section>
-   }
-
-   <!-- ── ORIGINAL FORM CONTENT (COMMENTED OUT) ────────────── -->
-   <!--
-   @if (!isLoading() && !loadError()) {
+   } @else if (!isLoading() && !loadError()) {
      <section class="section-block form-detail-content">
 
        @if (!isPublished()) {
@@ -410,8 +406,7 @@
          </div>
        }
 
-     </section>
-   }
-   -->
+      </section>
+    }
 
 </section>

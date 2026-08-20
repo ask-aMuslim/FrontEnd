@@ -1231,17 +1231,19 @@ input[type="file"]::-webkit-file-upload-button {
 .google-form-iframe-wrapper {
   position: relative;
   width: 100%;
+  height: 85vh;
+  min-height: 750px;
   background: #ffffff;
   border-radius: 0 0 var(--border-radius-large, 24px) var(--border-radius-large, 24px);
-  overflow: visible;
+  overflow: hidden;
 }
 
 .google-form-iframe {
   display: block;
   width: 100%;
+  height: 100%;
   border: none;
   background: transparent;
-  overflow: hidden;
 }
 
 @media (max-width: 768px) {
