@@ -82,18 +82,33 @@
 
         <div class="quick-link-list">
           @for (link of quickLinks(); track link.id) {
-            <a [routerLink]="['/forms', link.id]">
-              {{ link.title }}
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 17L17 7M17 7H9M17 7V15"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </a>
+            @if (isExternalForm(link)) {
+              <a [href]="googleFormUrl" target="_blank" rel="noopener">
+                {{ formatTitle(link.title) }}
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M7 17L17 7M17 7H9M17 7V15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            } @else {
+              <a [routerLink]="['/forms', link.id]">
+                {{ formatTitle(link.title) }}
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M7 17L17 7M17 7H9M17 7V15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            }
           }
           <!-- Static quick links -->
           <a href="https://www.noorohio.org/newmuslims/" target="_blank" rel="noopener">
