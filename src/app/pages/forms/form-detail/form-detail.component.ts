@@ -49,7 +49,7 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
   'join-ask-a-muslim': {
     id: 'join-ask-a-muslim',
     title: 'Join the Ask A Muslim Team',
-    description: 'We are delighted by your interest in joining our community. Please complete our official registration form below to join our team.',
+    description: 'We are delighted by your interest in joining our community. Complete our official registration form below to join our team and contribute to our global da’wah and outreach mission.',
     embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?embedded=true',
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header',
     badge: 'Join Our Mission',
@@ -76,7 +76,25 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
   'dawah-table': {
     id: 'dawah-table',
     title: 'Establish a Da’wah Table',
-    description: 'Apply to set up and manage a da’wah table in your local area or campus.',
+    description: 'Apply to set up and manage an official da’wah table in your local area, university campus, or community center.',
+    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?embedded=true',
+    directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
+    badge: 'Outreach Initiative',
+    icon: 'fas fa-table',
+  },
+  'establish-a-dawah-table': {
+    id: 'dawah-table',
+    title: 'Establish a Da’wah Table',
+    description: 'Apply to set up and manage an official da’wah table in your local area, university campus, or community center.',
+    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?embedded=true',
+    directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
+    badge: 'Outreach Initiative',
+    icon: 'fas fa-table',
+  },
+  'establish-dawah-table': {
+    id: 'dawah-table',
+    title: 'Establish a Da’wah Table',
+    description: 'Apply to set up and manage an official da’wah table in your local area, university campus, or community center.',
     embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?embedded=true',
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
     badge: 'Outreach Initiative',
@@ -634,15 +652,38 @@ export class FormDetailComponent implements OnInit, OnDestroy {
           const joinConfig = KNOWN_GOOGLE_FORMS['join-ask-a-muslim'];
           this.form.set(form);
           this.customFormTitle.set(joinConfig.title);
-          this.customFormDescription.set(form.description || joinConfig.description);
+          const description = (form.description && form.description.trim().length > 0)
+            ? form.description.trim()
+            : joinConfig.description;
+          this.customFormDescription.set(description);
           this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(joinConfig.embedUrl));
           this.googleFormDirectUrl.set(joinConfig.directUrl);
           this.isLoading.set(false);
 
           this.seoService.setMetaTags({
             title: joinConfig.title,
-            description: form.description || joinConfig.description,
+            description,
             keywords: [joinConfig.title, 'Ask A Muslim', 'Join Team']
+          });
+          return;
+        }
+
+        if (titleLower.includes('table') || titleLower.includes('establish')) {
+          const tableConfig = KNOWN_GOOGLE_FORMS['dawah-table'];
+          this.form.set(form);
+          this.customFormTitle.set(tableConfig.title);
+          const description = (form.description && form.description.trim().length > 0)
+            ? form.description.trim()
+            : tableConfig.description;
+          this.customFormDescription.set(description);
+          this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(tableConfig.embedUrl));
+          this.googleFormDirectUrl.set(tableConfig.directUrl);
+          this.isLoading.set(false);
+
+          this.seoService.setMetaTags({
+            title: tableConfig.title,
+            description,
+            keywords: [tableConfig.title, 'Ask A Muslim', 'Da’wah Table']
           });
           return;
         }
