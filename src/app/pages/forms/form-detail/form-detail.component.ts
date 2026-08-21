@@ -43,6 +43,8 @@ export interface GoogleFormConfig {
   directUrl: string;
   badge?: string;
   icon?: string;
+  hasFileUpload?: boolean;
+  fileUploadNote?: string;
 }
 
 export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
@@ -81,6 +83,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
     badge: 'Outreach Initiative',
     icon: 'fas fa-table',
+    hasFileUpload: true,
+    fileUploadNote: 'This form includes a letter of recommendation upload. Google requires sign-in for file uploads.',
   },
   'establish-a-dawah-table': {
     id: 'dawah-table',
@@ -90,6 +94,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
     badge: 'Outreach Initiative',
     icon: 'fas fa-table',
+    hasFileUpload: true,
+    fileUploadNote: 'This form includes a letter of recommendation upload. Google requires sign-in for file uploads.',
   },
   'establish-dawah-table': {
     id: 'dawah-table',
@@ -99,6 +105,8 @@ export const KNOWN_GOOGLE_FORMS: Record<string, GoogleFormConfig> = {
     directUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScnO0EZQXIm7OAvt2ZHcED3FeD83o8fxyI5VSVQ37nrTADUDA/viewform?pli=1',
     badge: 'Outreach Initiative',
     icon: 'fas fa-table',
+    hasFileUpload: true,
+    fileUploadNote: 'This form includes a letter of recommendation upload. Google requires sign-in for file uploads.',
   },
 };
 
@@ -186,6 +194,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
   readonly googleFormDirectUrl = signal<string>('');
   readonly customFormTitle = signal<string | null>(null);
   readonly customFormDescription = signal<string | null>(null);
+  readonly googleFormHasFileUpload = signal<boolean>(false);
+  readonly googleFormFileNote = signal<string>('');
   readonly isGoogleForm = computed(() => this.googleFormSafeUrl() !== null);
 
   private recaptchaPromise: Promise<void> | null = null;
@@ -618,6 +628,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
     this.googleFormDirectUrl.set('');
     this.customFormTitle.set(null);
     this.customFormDescription.set(null);
+    this.googleFormHasFileUpload.set(false);
+    this.googleFormFileNote.set('');
 
     const normalizedId = id.trim().toLowerCase();
     const knownConfig = KNOWN_GOOGLE_FORMS[normalizedId];
@@ -627,6 +639,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
       this.customFormDescription.set(knownConfig.description);
       this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(knownConfig.embedUrl));
       this.googleFormDirectUrl.set(knownConfig.directUrl);
+      this.googleFormHasFileUpload.set(knownConfig.hasFileUpload ?? false);
+      this.googleFormFileNote.set(knownConfig.fileUploadNote ?? '');
       this.isLoading.set(false);
 
       this.seoService.setMetaTags({
@@ -658,6 +672,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
           this.customFormDescription.set(description);
           this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(joinConfig.embedUrl));
           this.googleFormDirectUrl.set(joinConfig.directUrl);
+          this.googleFormHasFileUpload.set(joinConfig.hasFileUpload ?? false);
+          this.googleFormFileNote.set(joinConfig.fileUploadNote ?? '');
           this.isLoading.set(false);
 
           this.seoService.setMetaTags({
@@ -678,6 +694,8 @@ export class FormDetailComponent implements OnInit, OnDestroy {
           this.customFormDescription.set(description);
           this.googleFormSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(tableConfig.embedUrl));
           this.googleFormDirectUrl.set(tableConfig.directUrl);
+          this.googleFormHasFileUpload.set(tableConfig.hasFileUpload ?? false);
+          this.googleFormFileNote.set(tableConfig.fileUploadNote ?? '');
           this.isLoading.set(false);
 
           this.seoService.setMetaTags({
