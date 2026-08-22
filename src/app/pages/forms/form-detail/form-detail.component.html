@@ -88,31 +88,6 @@
            </div>
          </div>
 
-         @if (googleFormHasFileUpload()) {
-           <div class="google-form-file-banner">
-             <div class="google-form-file-banner__icon">
-               <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
-             </div>
-             <div class="google-form-file-banner__content">
-               <strong class="google-form-file-banner__title">Document & Letter Upload Required</strong>
-               <p class="google-form-file-banner__desc">
-                 {{ googleFormFileNote() || 'This registration form includes a document upload field. Please click below or use the button inside to submit your application.' }}
-               </p>
-             </div>
-             @if (googleFormDirectUrl()) {
-               <a
-                 [href]="googleFormDirectUrl()"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 class="google-form-file-banner__btn"
-               >
-                 <span>Complete Form & Upload</span>
-                 <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-               </a>
-             }
-           </div>
-         }
-
          <div class="google-form-iframe-wrapper">
            <iframe
              [src]="safeUrl"

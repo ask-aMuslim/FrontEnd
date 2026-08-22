@@ -8,6 +8,7 @@ interface FormCard {
   id: string;
   title: string;
   description: string;
+  externalUrl?: string;
 }
 
 const STATIC_GOOGLE_FORMS: FormCard[] = [
@@ -30,6 +31,12 @@ const STATIC_GOOGLE_FORMS: FormCard[] = [
     id: 'dawah-table',
     title: 'Establish a Da’wah Table',
     description: 'Apply to set up and manage a da’wah table in your local area or campus.',
+  },
+  {
+    id: 'new-muslim-support',
+    title: 'New Muslim Support',
+    description: 'Access dedicated guidance, mentorship, educational resources, and community support tailored for new Muslims.',
+    externalUrl: 'https://www.noorohio.org/newmuslims/',
   },
 ];
 
@@ -192,6 +199,9 @@ export class FormsComponent implements OnInit {
     }
     if (titleLower.includes('buddy') || titleLower.includes('revert')) {
       return 'Connect with a mentor or become a buddy to support new Muslims on their spiritual journey.';
+    }
+    if (titleLower.includes('new muslim') || titleLower.includes('support')) {
+      return 'Access dedicated guidance, mentorship, educational resources, and community support tailored for new Muslims.';
     }
     return FormsComponent.emptyDescription;
   }
