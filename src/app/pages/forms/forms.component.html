@@ -2,7 +2,7 @@
   <header class="forms-hero">
     <div class="section-block forms-hero__content">
       <span class="forms-pill">Forms</span>
-      <h1 id="forms-title" class="forms-hero__title">Choose a form</h1>
+      <h1 id="forms-title" class="forms-hero__title">Choose a Form</h1>
       <p class="forms-hero__subtitle">
         Browse the available forms and open the one you need to fill out.
       </p>
@@ -72,11 +72,21 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </div>
-              <a
-                class="form-card__overlay-link"
-                [routerLink]="['/forms', form.id]"
-                aria-label="Open form {{ form.title }}"
-              ></a>
+              @if (form.externalUrl) {
+                <a
+                  class="form-card__overlay-link"
+                  [href]="form.externalUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open {{ form.title }}"
+                ></a>
+              } @else {
+                <a
+                  class="form-card__overlay-link"
+                  [routerLink]="['/forms', form.id]"
+                  aria-label="Open form {{ form.title }}"
+                ></a>
+              }
             </article>
           }
         </div>
