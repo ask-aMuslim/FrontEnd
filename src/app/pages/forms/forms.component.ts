@@ -15,17 +15,17 @@ const STATIC_GOOGLE_FORMS: FormCard[] = [
   {
     id: 'join-ask-a-muslim',
     title: 'Join the Ask A Muslim Team',
-    description: 'We are delighted by your interest in joining our community. Complete our official registration form to join the Ask A Muslim team.',
+    description: 'Register to join our team and contribute to global da’wah outreach.',
   },
   {
     id: 'revert-buddy-program',
     title: 'Revert Buddy Program',
-    description: 'Connect with a mentor or become a buddy to support new Muslims on their spiritual journey.',
+    description: 'Connect with a mentor or become a buddy to support new Muslims.',
   },
   {
     id: 'dawah-workshop',
     title: 'Request a Da’wah Workshop',
-    description: 'Request an interactive workshop to learn effective da’wah and outreach techniques.',
+    description: 'Request an interactive workshop to learn effective da’wah techniques.',
   },
   {
     id: 'dawah-table',
@@ -35,7 +35,7 @@ const STATIC_GOOGLE_FORMS: FormCard[] = [
   {
     id: 'new-muslim-support',
     title: 'New Muslim Support',
-    description: 'Access dedicated guidance, mentorship, educational resources, and community support tailored for new Muslims.',
+    description: 'Guidance, mentorship, and resources for new Muslims.',
     externalUrl: 'https://www.noorohio.org/newmuslims/',
   },
 ];
@@ -189,19 +189,19 @@ export class FormsComponent implements OnInit {
     }
     const titleLower = (form.title || '').toLowerCase();
     if (titleLower.includes('join') || titleLower.includes('ask a muslim') || titleLower.includes('askamuslim')) {
-      return 'We are delighted by your interest in joining our community. Complete our official registration form to join the Ask A Muslim team.';
+      return 'Register to join our team and contribute to global da’wah outreach.';
     }
     if (titleLower.includes('table') || titleLower.includes('establish')) {
-      return 'Apply to set up and manage an official da’wah table in your local area, university campus, or community center.';
+      return 'Apply to set up and manage a da’wah table in your local area or campus.';
     }
     if (titleLower.includes('workshop')) {
-      return 'Request an interactive workshop to learn effective da’wah and outreach techniques.';
+      return 'Request an interactive workshop to learn effective da’wah techniques.';
     }
     if (titleLower.includes('buddy') || titleLower.includes('revert')) {
-      return 'Connect with a mentor or become a buddy to support new Muslims on their spiritual journey.';
+      return 'Connect with a mentor or become a buddy to support new Muslims.';
     }
     if (titleLower.includes('new muslim') || titleLower.includes('support')) {
-      return 'Access dedicated guidance, mentorship, educational resources, and community support tailored for new Muslims.';
+      return 'Access dedicated guidance, mentorship, and resources for new Muslims.';
     }
     return FormsComponent.emptyDescription;
   }
