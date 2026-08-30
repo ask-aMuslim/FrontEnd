@@ -35,7 +35,7 @@ const STATIC_GOOGLE_FORMS: FormCard[] = [
   {
     id: 'new-muslim-support',
     title: 'New Muslim Support',
-    description: 'Guidance, mentorship, and resources for new Muslims.',
+    description: 'Become a buddy to support new Muslims on their spiritual journey.',
     externalUrl: 'https://www.noorohio.org/newmuslims/',
   },
 ];
