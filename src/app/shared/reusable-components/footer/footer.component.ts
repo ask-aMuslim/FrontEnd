@@ -79,6 +79,7 @@ export class FooterComponent {
     {
       title: 'Ask & Contact',
       links: [
+        { label: 'How to Become Muslim', href: '/accept-islam', external: false },
         { label: 'Topics', href: '/question-and-answer/topics', external: false },
         { label: 'Meet Scholar', href: '/question-and-answer/meet-scholar', external: false },
         { label: 'Contact', href: '/contact', external: false },

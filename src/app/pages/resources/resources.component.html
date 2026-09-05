@@ -13,7 +13,14 @@
         <h1 id="resources-hero-title">{{ hero.title }}</h1>
         <p class="resources-hero__subtitle">{{ hero.subtitle }}</p>
 
-        <p class="resources-hero__cta">{{ hero.ctaLabel }}</p>
+        <a
+          routerLink="/accept-islam"
+          class="resources-hero__cta"
+          aria-label="Want to Accept Islam? Learn how to become Muslim"
+        >
+          <span>{{ hero.ctaLabel }}</span>
+          <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
+        </a>
 
         <img
           src="/icons/gate.svg"

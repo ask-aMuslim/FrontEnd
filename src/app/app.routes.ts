@@ -146,6 +146,19 @@ export const routes: Routes = [
         resolve: { resolvedData: resourcesResolver },
       },
       {
+        path: 'accept-islam',
+        loadComponent: () =>
+          import('./pages/accept-islam/accept-islam.component').then(
+            (m) => m.AcceptIslamComponent,
+          ),
+        title: 'How to Become Muslim',
+      },
+      {
+        path: 'how-to-become-muslim',
+        redirectTo: 'accept-islam',
+        pathMatch: 'full',
+      },
+      {
         path: 'mosques/:id',
         loadComponent: () =>
           import('./pages/mosques/mosque-detail/mosque-detail.component').then(

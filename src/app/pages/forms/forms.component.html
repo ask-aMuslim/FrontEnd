@@ -61,7 +61,7 @@
       @if (hasForms()) {
         <div class="forms-grid" role="list">
           @for (form of formCards(); track trackById($index, form)) {
-            <article class="form-card" role="listitem">
+            <article class="form-card" [attr.id]="form.id" role="listitem">
               <div class="form-card__body">
                 <h2 class="form-card__title">{{ form.title }}</h2>
                 <p class="form-card__description">{{ form.description }}</p>
