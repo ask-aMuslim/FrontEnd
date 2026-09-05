@@ -201,6 +201,7 @@
    ============================================= */
 .form-card {
   position: relative; /* essential for absolute overlay link overlay */
+  scroll-margin-top: 100px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

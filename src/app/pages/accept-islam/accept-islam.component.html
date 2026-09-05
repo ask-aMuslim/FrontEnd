@@ -1,0 +1,235 @@
+<div class="accept-islam-page">
+  <!-- ── 1. HERO SECTION ─────────────────────────────────── -->
+  <section
+    class="accept-islam-hero full-width-section"
+    aria-labelledby="accept-islam-hero-title"
+  >
+    <div class="accept-islam-hero__pattern" aria-hidden="true"></div>
+
+    <div class="section-container">
+      <div class="section-block">
+        <div class="accept-islam-hero__content">
+          <!-- Back button with arrow -->
+          <div class="accept-islam-back-wrapper">
+            <button
+              type="button"
+              class="accept-islam-back-btn"
+              (click)="goBack()"
+              aria-label="Back"
+            >
+              <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+            </button>
+          </div>
+
+          <!-- Decorative Pill -->
+          <p class="accept-islam-hero__pill" aria-label="About Declaration of Faith">
+            <span>Declaration of Faith</span>
+            <span>Shahada</span>
+          </p>
+
+          <!-- Main Page Title -->
+          <h1 id="accept-islam-hero-title" class="accept-islam-hero__title">
+            How to Become Muslim
+          </h1>
+
+          <!-- Golden Accent Divider Line -->
+          <div class="accept-islam-hero__accent-bar" aria-hidden="true"></div>
+
+          <!-- Subtitle / Introductory Paragraph -->
+          <p class="accept-islam-hero__intro">
+            Accepting Islam is simple. Your belief is a personal relationship between you and God,
+            so you do not need anyone else present to declare your faith. By making this declaration,
+            you affirm that there is only one true God and that Muhammad is the Messenger of God,
+            including all the prophets who came before him. Follow the steps below.
+          </p>
+
+          <!-- Signature architectural Gate icon -->
+          <img
+            src="/icons/gate.svg"
+            class="hero-gate--single"
+            alt=""
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. STEPS CARD SECTION ───────────────────────────── -->
+  <section
+    class="accept-islam-main"
+    aria-label="Steps to Accept Islam"
+    data-aos="fade-up"
+  >
+    <div class="section-container">
+      <div class="section-block">
+        <div class="steps-card">
+          <!-- STEP ONE -->
+          <article class="step-box" aria-labelledby="step-1-heading">
+            <div class="step-badge-wrap">
+              <span class="step-number-badge">1</span>
+              <h2 id="step-1-heading" class="step-heading">Step One</h2>
+            </div>
+
+            <blockquote class="step-testimony step-testimony--english">
+              &ldquo;I testify that there is no one worthy of worship except Allah, and I testify that Muhammad is the Messenger of Allah.&rdquo;
+            </blockquote>
+
+            <div class="step-actions">
+              <button
+                type="button"
+                class="step-copy-btn"
+                (click)="copyStepText(stepOneEnglish, 1)"
+                [attr.aria-label]="copiedStep() === 1 ? 'Copied' : 'Copy English testimony'"
+              >
+                <i [class]="copiedStep() === 1 ? 'fas fa-check' : 'far fa-copy'" aria-hidden="true"></i>
+                <span>{{ copiedStep() === 1 ? 'Copied to Clipboard' : 'Copy Testimony' }}</span>
+              </button>
+            </div>
+          </article>
+
+          <div class="step-divider" aria-hidden="true"></div>
+
+          <!-- STEP TWO -->
+          <article class="step-box" aria-labelledby="step-2-heading">
+            <div class="step-badge-wrap">
+              <span class="step-number-badge">2</span>
+              <h2 id="step-2-heading" class="step-heading">Step Two</h2>
+            </div>
+
+            <!-- Arabic Calligraphic Text -->
+            <div class="arabic-card">
+              <p class="arabic-text" lang="ar" dir="rtl">
+                أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللهِ
+              </p>
+            </div>
+
+            <!-- Phonetic Transliteration -->
+            <p class="transliteration-text">
+              &ldquo;Ash-hadu an la ilaha illa-Allah, wa ash-hadu anna Muhammadan Rasul-Allah&rdquo;
+            </p>
+
+            <div class="step-actions">
+              <button
+                type="button"
+                class="step-audio-btn"
+                (click)="toggleShahadaAudio()"
+                [class.step-audio-btn--playing]="isPlayingAudio()"
+                [attr.aria-label]="isPlayingAudio() ? 'Pause audio' : 'Listen to Shahada pronunciation'"
+              >
+                <i [class]="isPlayingAudio() ? 'fas fa-pause' : 'fas fa-volume-up'" aria-hidden="true"></i>
+                <span>{{ isPlayingAudio() ? 'Pause Audio' : 'Listen to Pronunciation' }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="step-copy-btn"
+                (click)="copyStepText(stepTwoArabic + '\n' + stepTwoTransliteration, 2)"
+                [attr.aria-label]="copiedStep() === 2 ? 'Copied' : 'Copy Arabic and transliteration'"
+              >
+                <i [class]="copiedStep() === 2 ? 'fas fa-check' : 'far fa-copy'" aria-hidden="true"></i>
+                <span>{{ copiedStep() === 2 ? 'Copied!' : 'Copy Arabic & Transliteration' }}</span>
+              </button>
+            </div>
+          </article>
+
+          <div class="step-divider" aria-hidden="true"></div>
+
+          <!-- STEP THREE -->
+          <article class="step-box" aria-labelledby="step-3-heading">
+            <div class="step-badge-wrap">
+              <span class="step-number-badge">3</span>
+              <h2 id="step-3-heading" class="step-heading">Step Three</h2>
+            </div>
+
+            <div class="step-three-content">
+              <p>
+                While this is optional, it is definitely encouraged. We recommend
+                <a routerLink="/mosques" class="step-link">finding a mosque near you</a>
+                to connect with local Muslims who can guide you in the right direction. It is also a beautiful opportunity to formally declare your Shahada, though taking it alone is valid and sufficient.
+              </p>
+              <p>
+                If you are in the Columbus, Ohio region, we highly recommend visiting the
+                <a
+                  [href]="noorCenterUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="step-link"
+                >
+                  Noor Islamic Cultural Center (5011 Wilcox Rd, Dublin, OH 43016)
+                  <i class="fas fa-external-link-alt ms-1 text-xs" aria-hidden="true"></i>
+                </a>.
+                Also please be sure to connect with Ask A Muslim using the form below and to check out our resources!
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. CONGRATULATIONS & CALL TO ACTION SECTION ───── -->
+  <section
+    class="accept-islam-celebration full-width-section"
+    aria-labelledby="celebration-heading"
+    data-aos="fade-up"
+  >
+    <div class="section-container">
+      <div class="section-block">
+        <div class="celebration-box">
+          <h2 id="celebration-heading" class="celebration-title">
+            Congratulations on making the best decision of your life!
+          </h2>
+
+          <p class="celebration-lead">
+            Welcome to the community of Islam. We are honored to accompany and support you every step of your new journey.
+          </p>
+
+          <!-- Primary Actions -->
+          <div class="celebration-actions">
+            <a
+              [href]="newMuslimFormUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="celebration-cta-btn celebration-cta-btn--form"
+              aria-label="Open New Muslim Support Form (opens in new tab)"
+            >
+              <span class="cta-label">New Muslim Support Form</span>
+              <i class="fas fa-arrow-up-right-from-square cta-icon" aria-hidden="true"></i>
+            </a>
+
+            <a
+              routerLink="/resources"
+              fragment="new-muslim-title"
+              class="celebration-cta-btn celebration-cta-btn--resources"
+              aria-label="View New Muslim Resources"
+            >
+              <span class="cta-label">New Muslim Resources</span>
+              <i class="fas fa-book-open cta-icon" aria-hidden="true"></i>
+            </a>
+          </div>
+
+          <!-- Helpful Community Navigation Chips -->
+          <div class="celebration-chips-row">
+            <a routerLink="/mosques" class="helpful-chip">
+              <i class="fas fa-mosque" aria-hidden="true"></i>
+              <span>Locate a Mosque</span>
+            </a>
+            <a routerLink="/academy" class="helpful-chip">
+              <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+              <span>Join the Academy</span>
+            </a>
+            <a routerLink="/question-and-answer/meet-scholar" class="helpful-chip">
+              <i class="fas fa-user-friends" aria-hidden="true"></i>
+              <span>Meet a Scholar</span>
+            </a>
+            <a routerLink="/contact" class="helpful-chip">
+              <i class="fas fa-envelope" aria-hidden="true"></i>
+              <span>Contact Us</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

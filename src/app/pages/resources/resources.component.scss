@@ -108,13 +108,42 @@ $radius-lg: 16px;
 }
 
 .resources-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   width: fit-content;
   margin: 1.5rem auto 0;
-  color: #156b40;
+  color: var(--color-button-primary-normal, #156b40);
   font-size: 1.125rem;
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease, transform 0.2s ease;
+
+  i {
+    font-size: 0.875rem;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    color: var(--color-button-secondary-hovering, #cda736);
+    text-decoration-color: var(--color-button-secondary-normal, #ecc140);
+    transform: translateY(-1px);
+
+    i {
+      transform: translateX(4px);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-button-secondary-normal, #ecc140);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
 }
 
 .resources-hero__divider {
