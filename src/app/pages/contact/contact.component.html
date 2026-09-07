@@ -81,23 +81,8 @@
         </div>
 
         <div class="quick-link-list">
-          @for (link of quickLinks(); track link.id) {
-            <a [routerLink]="['/forms', link.id]">
-              {{ formatTitle(link.title) }}
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 17L17 7M17 7H9M17 7V15"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </a>
-          }
-          <!-- Integrated Google Form Quick Links -->
-          <a [routerLink]="['/forms', 'revert-buddy-program']">
-            Revert Buddy Program
+          <a [routerLink]="['/forms', 'join-ask-a-muslim']">
+            Join Ask A Muslim
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
@@ -114,6 +99,12 @@
               <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </a>
+          <a [routerLink]="['/forms', 'revert-companion-program']">
+            Revert Companion Program
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
           <!-- External Support link -->
           <a href="https://www.noorohio.org/newmuslims/" target="_blank" rel="noopener">
             New Muslim Support
@@ -121,6 +112,20 @@
               <path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </a>
+          @for (link of quickLinks(); track link.id) {
+            <a [routerLink]="['/forms', link.id]">
+              {{ formatTitle(link.title) }}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 17L17 7M17 7H9M17 7V15"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          }
         </div>
       </article>
 
