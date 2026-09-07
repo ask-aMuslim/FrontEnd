@@ -14,13 +14,8 @@ interface FormCard {
 const STATIC_GOOGLE_FORMS: FormCard[] = [
   {
     id: 'join-ask-a-muslim',
-    title: 'Join the Ask A Muslim Team',
+    title: 'Join Ask A Muslim',
     description: 'Register to join our team and contribute to global da’wah outreach.',
-  },
-  {
-    id: 'revert-buddy-program',
-    title: 'Revert Buddy Program',
-    description: 'Connect with a mentor or become a buddy to support new Muslims.',
   },
   {
     id: 'dawah-workshop',
@@ -33,9 +28,14 @@ const STATIC_GOOGLE_FORMS: FormCard[] = [
     description: 'Apply to set up and manage a da’wah table in your local area or campus.',
   },
   {
+    id: 'revert-companion-program',
+    title: 'Revert Companion Program',
+    description: 'Become a companion to support new Muslims on their spiritual journey.',
+  },
+  {
     id: 'new-muslim-support',
     title: 'New Muslim Support',
-    description: 'Become a buddy to support new Muslims on their spiritual journey.',
+    description: 'Become a companion to support new Muslims on their spiritual journey.',
     externalUrl: 'https://www.noorohio.org/newmuslims/',
   },
 ];
@@ -91,7 +91,37 @@ export class FormsComponent implements OnInit {
       );
     });
 
-    return [...apiForms, ...staticForms];
+    const allCards = [...apiForms, ...staticForms];
+    const getOrderIndex = (card: FormCard): number => {
+      const id = card.id.toLowerCase();
+      const title = card.title.toLowerCase();
+
+      if (id === 'join-ask-a-muslim' || title.includes('join') || (title.includes('ask a muslim') && !title.includes('table') && !title.includes('workshop'))) {
+        return 0;
+      }
+      if (id === 'dawah-workshop' || title.includes('workshop')) {
+        return 1;
+      }
+      if (id === 'dawah-table' || title.includes('table')) {
+        return 2;
+      }
+      if (id === 'revert-companion-program' || id === 'revert-buddy-program' || title.includes('revert') || title.includes('companion') || title.includes('buddy')) {
+        return 3;
+      }
+      if (id === 'new-muslim-support' || title.includes('new muslim')) {
+        return 4;
+      }
+      return 999;
+    };
+
+    return allCards.sort((a, b) => {
+      const orderA = getOrderIndex(a);
+      const orderB = getOrderIndex(b);
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.title.localeCompare(b.title);
+    });
   });
 
   readonly hasForms = computed(() => this.formCards().length > 0);
@@ -197,8 +227,8 @@ export class FormsComponent implements OnInit {
     if (titleLower.includes('workshop')) {
       return 'Request an interactive workshop to learn effective da’wah techniques.';
     }
-    if (titleLower.includes('buddy') || titleLower.includes('revert')) {
-      return 'Connect with a mentor or become a buddy to support new Muslims.';
+    if (titleLower.includes('buddy') || titleLower.includes('revert') || titleLower.includes('companion')) {
+      return 'Become a companion to support new Muslims on their spiritual journey.';
     }
     if (titleLower.includes('new muslim') || titleLower.includes('support')) {
       return 'Access dedicated guidance, mentorship, and resources for new Muslims.';

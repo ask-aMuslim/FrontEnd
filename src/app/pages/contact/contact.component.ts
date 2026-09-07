@@ -242,10 +242,25 @@ export class ContactComponent implements OnInit {
       .subscribe({
         next: (forms) => {
           this.quickLinks.set(
-            (forms ?? []).map((form) => ({
-              id: form.id,
-              title: form.title,
-            }))
+            (forms ?? [])
+              .filter((form) => {
+                const title = (form.title || '').toLowerCase();
+                return (
+                  !title.includes('join') &&
+                  !title.includes('ask a muslim') &&
+                  !title.includes('askamuslim') &&
+                  !title.includes('workshop') &&
+                  !title.includes('table') &&
+                  !title.includes('revert') &&
+                  !title.includes('companion') &&
+                  !title.includes('buddy') &&
+                  !title.includes('new muslim')
+                );
+              })
+              .map((form) => ({
+                id: form.id,
+                title: form.title,
+              }))
           );
         },
         error: () => {
