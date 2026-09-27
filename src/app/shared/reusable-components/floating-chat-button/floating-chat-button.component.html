@@ -1,0 +1,76 @@
+@if (!isChatbotPage()) {
+  <aside class="floating-chat-container" aria-label="AI Assistant Quick Access">
+    <div class="floating-chat-tooltip" role="tooltip" id="chatbot-fab-tooltip">
+      <span>Chat with AI Assistant</span>
+    </div>
+    <a
+      routerLink="/question-and-answer/ask-assistant"
+      class="floating-chat-button"
+      aria-label="Ask AI Islamic Assistant"
+      aria-describedby="chatbot-fab-tooltip"
+    >
+      <!-- Ripple effect ring -->
+      <span class="floating-chat-button__pulse" aria-hidden="true"></span>
+
+      <!-- Active glow dot / AI indicator -->
+      <span class="floating-chat-button__status" aria-hidden="true"></span>
+
+      <!-- Icon -->
+      <span class="floating-chat-button__icon-wrapper" aria-hidden="true">
+        <svg
+          class="floating-chat-button__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <!-- Antenna signal -->
+          <path
+            d="M12 7.05V3.45H8.4"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <!-- Eyes -->
+          <path
+            d="M14.7 11.55V13.35"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M9.3 11.55V13.35"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <!-- Signal wings -->
+          <path
+            d="M3 12.45H4.8"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M19.2 12.45H21"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <!-- Speech bubble body -->
+          <path
+            d="M19.2 16.05C19.2 16.53 19.01 16.99 18.67 17.32C18.34 17.66 17.88 17.85 17.4 17.85H9.15C8.67 17.85 8.21 18.04 7.87 18.38L5.89 20.36C5.8 20.45 5.69 20.51 5.56 20.54C5.44 20.56 5.31 20.55 5.19 20.5C5.08 20.45 4.98 20.37 4.91 20.26C4.84 20.16 4.8 20.04 4.8 19.91V8.85C4.8 8.37 4.99 7.92 5.33 7.58C5.66 7.24 6.12 7.05 6.6 7.05H17.4C17.88 7.05 18.34 7.24 18.67 7.58C19.01 7.92 19.2 8.37 19.2 8.85V16.05Z"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </span>
+    </a>
+  </aside>
+}
