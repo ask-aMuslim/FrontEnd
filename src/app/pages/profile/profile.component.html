@@ -356,7 +356,6 @@
                 (click)="selectTab(i)"
                 class="profile-tab"
                 [class.profile-tab--active]="i === activeTabIndex"
-                [class.profile-tab--hidden]="tab === 'My Inquiries'"
               >
                 {{ tab }}
               </button>
@@ -375,9 +374,9 @@
             <app-chat-list [userId]="userProfile.id"></app-chat-list>
           }
 
-          <!-- My Inquiries Tab -->
+          <!-- My Mails Tab -->
           @if (activeTabIndex === 2) {
-            <div class="profile-tab-panel profile-tab-panel--hidden">
+            <div class="profile-tab-panel">
               <app-my-inquiries></app-my-inquiries>
             </div>
           }

@@ -28,33 +28,36 @@
         </svg>
       </div>
 
-      <h2 class="success-title">Your message sent successfully!</h2>
+      <h2 class="success-title">Your inquiry has been sent successfully.</h2>
       <p class="success-subtitle">
-        Thanks for Contacting Us. We will respond to you as soon as possible to
-        your email.
+        Thanks for contacting us. The support team will reply here, and we will
+        also let you know by email.
       </p>
 
       <article class="submitted-message-card">
-        <h3>“{{ submitted.topicLabel }}”</h3>
-        <p>{{ submitted.message }}</p>
+        <span class="submitted-topic">{{ submitted.topicLabel }}</span>
+        <h3 dir="auto">{{ submitted.subject }}</h3>
+        @if (submitted.explanation) {
+          <p dir="auto">{{ submitted.explanation }}</p>
+        }
       </article>
 
       <div class="success-actions">
-        <button type="button" class="button-light" (click)="goToProfile()">
-          Go to Profile
-        </button>
         <button
           type="button"
           class="send-button success-secondary-button"
-          (click)="onSendAnotherMessage()"
+          (click)="viewSubmittedMail()"
         >
-          Send another message
+          View this mail
+        </button>
+        <button type="button" class="button-light" (click)="onSendAnotherMessage()">
+          Back to contact
         </button>
       </div>
 
-      <p class="success-note">
-        You will be able to send a new message after 48 hours from now.
-      </p>
+      @if (cooldownMessage(); as cooldown) {
+        <p class="success-note">{{ cooldown }}</p>
+      }
     </section>
   } @else {
     <section class="section-block contact-content">
@@ -67,6 +70,16 @@
           Fill out the form below then send it, and we will get back to you
           shortly.
         </p>
+        @if (isAuthenticated()) {
+          <a class="my-mails-link" [routerLink]="['/contact', 'mails']">
+            My mails
+            @if (unreadCount() > 0) {
+              <span class="unread-badge" [attr.aria-label]="unreadCount() + ' unread'">
+                {{ unreadCount() }}
+              </span>
+            }
+          </a>
+        }
       </div>
 
       <article class="quick-links" aria-label="Quick links">
@@ -136,55 +149,19 @@
         novalidate
       >
         <div class="form-field">
-          <label for="contact-name">Name</label>
-          <input
-            id="contact-name"
-            type="text"
-            formControlName="name"
-            placeholder="Full name"
-            autocomplete="name"
-            [class.input-error]="isFieldInvalid('name')"
-          />
-          @if (isFieldInvalid("name")) {
-            <p class="field-error">
-              Please enter your full name (minimum 2 characters).
-            </p>
-          }
-        </div>
-
-        <div class="form-field">
-          <label for="contact-email"
-            >Email</label
-          >
-          <input
-            id="contact-email"
-            type="email"
-            formControlName="email"
-            placeholder="you@example.com"
-            autocomplete="email"
-            [class.input-error]="isFieldInvalid('email')"
-          />
-          @if (isFieldInvalid("email")) {
-            <p class="field-error">Please enter a valid email address.</p>
-          }
-        </div>
-
-        <div class="form-field">
-          <label for="contact-topic"
-            >Topic — choose the reason for contact:</label
-          >
+          <label for="contact-topic">Select your inquiry type</label>
           <div
             class="select-wrapper"
-            [class.input-error]="isFieldInvalid('topic')"
+            [class.input-error]="isFieldInvalid('topic') || !!serverFieldErrors().topic"
           >
             <select
               id="contact-topic"
               formControlName="topic"
-              (change)="onTopicSelectionChange()"
+              aria-describedby="contact-topic-error"
             >
               <option [ngValue]="null">Select</option>
-              @for (topic of topicOptions; track topic.value) {
-                <option [ngValue]="topic.value">{{ topic.label }}</option>
+              @for (topic of topicOptions(); track topic.value) {
+                <option [ngValue]="topic.value">{{ topic.name }}</option>
               }
             </select>
             <svg viewBox="0 0 24 24" aria-hidden="true" class="select-arrow">
@@ -198,35 +175,71 @@
             </svg>
           </div>
           @if (isFieldInvalid("topic")) {
-            <p class="field-error">
-              Please choose a topic before sending your message.
+            <p id="contact-topic-error" class="field-error">
+              Please choose an inquiry type.
             </p>
+          } @else if (serverFieldErrors().topic) {
+            <p id="contact-topic-error" class="field-error">{{ serverFieldErrors().topic }}</p>
           }
         </div>
 
-        @if (topicSelected()) {
-          <div class="form-field">
-            <label for="contact-message">Write your message:</label>
-            <textarea
-              id="contact-message"
-              formControlName="message"
-              rows="10"
-              placeholder="Explain in particular what do you need to ask or understand .."
-              [class.input-error]="isFieldInvalid('message')"
-            ></textarea>
-            @if (isFieldInvalid("message")) {
-              <p class="field-error">
-                Please enter a clear message (minimum 10 characters).
-              </p>
-            }
-          </div>
+        <div class="form-field">
+          <label for="contact-subject">Write your question</label>
+          <input
+            id="contact-subject"
+            type="text"
+            formControlName="subject"
+            dir="auto"
+            placeholder="A one-sentence summary of your question"
+            [attr.maxlength]="limits.subject"
+            aria-describedby="contact-subject-error"
+            [class.input-error]="isFieldInvalid('subject') || !!serverFieldErrors().subject"
+          />
+          @if (isFieldInvalid("subject")) {
+            <p id="contact-subject-error" class="field-error">
+              Please write your question (up to {{ limits.subject }} characters).
+            </p>
+          } @else if (serverFieldErrors().subject) {
+            <p id="contact-subject-error" class="field-error">{{ serverFieldErrors().subject }}</p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="contact-explanation">
+            Further explanation <span class="optional-label">(optional)</span>
+          </label>
+          <textarea
+            id="contact-explanation"
+            formControlName="explanation"
+            rows="8"
+            dir="auto"
+            placeholder="Explain in particular what do you need to ask or understand .."
+            [attr.maxlength]="limits.explanation"
+            aria-describedby="contact-explanation-counter contact-explanation-error"
+            [class.input-error]="isFieldInvalid('explanation') || !!serverFieldErrors().explanation"
+          ></textarea>
+          <p
+            id="contact-explanation-counter"
+            class="char-counter"
+            [class.char-counter--limit]="explanationLength() >= limits.explanation"
+            aria-live="polite"
+          >
+            {{ explanationLength() }}/{{ limits.explanation }} characters
+          </p>
+          @if (serverFieldErrors().explanation; as explanationError) {
+            <p id="contact-explanation-error" class="field-error">{{ explanationError }}</p>
+          }
+        </div>
+
+        @if (cooldownMessage(); as cooldown) {
+          <p class="cooldown-hint" role="status" aria-live="polite">{{ cooldown }}</p>
         }
 
         <div class="form-actions">
           <button
             type="submit"
             class="send-button"
-            [disabled]="isSubmitting() || !topicSelected()"
+            [disabled]="isSubmitting() || !eligibility().canCreate"
           >
             <span>{{ isSubmitting() ? "Sending..." : "Send Message" }}</span>
             <img

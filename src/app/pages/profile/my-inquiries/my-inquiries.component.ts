@@ -1,142 +1,70 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subject, filter, of, switchMap, take } from 'rxjs';
-import { catchError, finalize, takeUntil } from 'rxjs/operators';
-import { StudentFacade, type StudentProfile } from '../../../api/facades/student.facade';
-import { InquiryRequestsService } from '../../../core/services/inquiry-requests.service';
-import { asRecord, extractArray, getValue, toStringValue } from '../../../core/helpers/api-response.helper';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SupportMailsFacade } from '../../../api/facades/support-mails.facade';
+import {
+    SUPPORT_MAIL_STATUS_LABELS,
+    type SupportMailListItem,
+    type SupportMailStatus,
+} from '../../../api/facades/support-mails.models';
+import { formatSupportMailTime, supportMailStatusClass } from '../../contact/mails/support-mail-format';
 
-export interface Inquiry {
-    id: string;
-    subject: string;
-    status: string;
-    createdAt: string;
-}
-
+/** Profile "My Mails" tab: the latest Support Mails, linking to /contact/mails. */
 @Component({
     selector: 'app-my-inquiries',
     standalone: true,
     imports: [RouterLink],
     templateUrl: './my-inquiries.component.html',
-    styleUrls: ['./my-inquiries.component.scss']
+    styleUrls: ['./my-inquiries.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MyInquiriesComponent implements OnInit, OnDestroy {
-    inquiries: Inquiry[] = [];
-    isLoading = false;
-    error: string | null = null;
+export class MyInquiriesComponent implements OnInit {
+    private static readonly pageSize = 5;
+    private readonly facade = inject(SupportMailsFacade);
+    private readonly destroyRef = inject(DestroyRef);
 
-    private readonly destroy$ = new Subject<void>();
-
-    constructor(
-        private readonly studentFacade: StudentFacade,
-        private readonly inquiryRequestsService: InquiryRequestsService,
-    ) { }
+    readonly mails = signal<readonly SupportMailListItem[]>([]);
+    readonly totalCount = signal(0);
+    readonly isLoading = signal(false);
+    readonly error = signal<string | null>(null);
 
     ngOnInit(): void {
-        this.loadInquiries();
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+        this.loadMails();
     }
 
     retry(): void {
-        this.loadInquiries();
+        this.loadMails();
     }
 
-    private loadInquiries(): void {
-        this.isLoading = true;
-        this.error = null;
-
-        this.studentFacade.me().pipe(
-            filter((profile): profile is StudentProfile => profile !== null),
-            take(1),
-            switchMap((profile) => {
-                const requesterId = this.resolveRequesterId(profile);
-                if (!requesterId) {
-                    return of([] as Inquiry[]);
-                }
-
-                return this.inquiryRequestsService.getByRequester(requesterId).pipe(
-                    catchError(() => of([])),
-                    switchMap((response) => of(this.mapInquiries(response))),
-                );
-            }),
-            finalize(() => {
-                this.isLoading = false;
-            }),
-            takeUntil(this.destroy$),
-        ).subscribe({
-            next: (inquiries) => {
-                this.inquiries = inquiries;
-            },
-            error: () => {
-                this.error = 'Unable to load your inquiries right now.';
-            },
-        });
+    statusLabel(status: SupportMailStatus): string {
+        return SUPPORT_MAIL_STATUS_LABELS[status] ?? 'Unknown';
     }
 
-    private mapInquiries(response: unknown): Inquiry[] {
-        const records = extractArray(response);
-
-        return records
-            .map((item) => {
-                const record = asRecord(item);
-                const id = toStringValue(getValue(record, 'id', 'Id'));
-                if (!id) {
-                    return null;
-                }
-
-                const topic = toStringValue(getValue(record, 'topic', 'Topic'));
-                const message = toStringValue(getValue(record, 'message', 'Message'));
-                const status = toStringValue(getValue(record, 'status', 'Status')) ?? 'Pending';
-                const createdRaw = toStringValue(getValue(record, 'createdAt', 'CreatedAt'));
-
-                return {
-                    id,
-                    subject: topic ?? message ?? 'Inquiry',
-                    status,
-                    createdAt: this.formatDate(createdRaw),
-                } satisfies Inquiry;
-            })
-            .filter((inquiry): inquiry is Inquiry => inquiry !== null);
+    statusClass(status: SupportMailStatus): string {
+        return supportMailStatusClass(status);
     }
 
-    private formatDate(value: string | null): string {
-        if (!value) {
-            return 'Unknown date';
-        }
-
-        const parsed = new Date(value);
-        if (Number.isNaN(parsed.getTime())) {
-            return value;
-        }
-
-        return parsed.toLocaleDateString('en-US', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-        });
+    formatTime(value: string): string {
+        return formatSupportMailTime(value);
     }
 
-    private resolveRequesterId(profile: { userId?: unknown; studentId?: unknown; id?: unknown } | null): string | null {
-        if (!profile) {
-            return null;
-        }
+    private loadMails(): void {
+        this.isLoading.set(true);
+        this.error.set(null);
 
-        if (typeof profile.userId === 'string' && profile.userId.length > 0) {
-            return profile.userId;
-        }
-
-        if (typeof profile.studentId === 'string' && profile.studentId.length > 0) {
-            return profile.studentId;
-        }
-
-        if (typeof profile.id === 'string' && profile.id.length > 0) {
-            return profile.id;
-        }
-
-        return null;
+        this.facade
+            .getMine({ pageNumber: 1, pageSize: MyInquiriesComponent.pageSize })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (page) => {
+                    this.mails.set(page.items);
+                    this.totalCount.set(page.totalCount);
+                    this.isLoading.set(false);
+                },
+                error: () => {
+                    this.error.set('Unable to load your mails right now.');
+                    this.isLoading.set(false);
+                },
+            });
     }
 }

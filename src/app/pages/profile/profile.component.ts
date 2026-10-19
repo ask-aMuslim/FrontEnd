@@ -72,7 +72,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['About', 'Chats', 'My Inquiries'];
+  tabs = ['About', 'Chats', 'My Mails'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {

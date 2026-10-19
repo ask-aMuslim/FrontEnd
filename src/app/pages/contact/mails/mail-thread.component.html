@@ -1,0 +1,97 @@
+<section class="mails-page" aria-labelledby="mail-thread-title">
+  <div class="section-block mails-content">
+    <a class="back-link" [routerLink]="['/contact', 'mails']">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      My Mails
+    </a>
+
+    @if (isLoading()) {
+      <p class="mails-state" role="status">Loading mail...</p>
+    } @else if (notFound()) {
+      <div class="mails-state" role="alert">
+        <h1 id="mail-thread-title">Mail not found</h1>
+        <p>This mail doesn't exist or isn't yours.</p>
+        <a class="primary-button" [routerLink]="['/contact', 'mails']">Back to My Mails</a>
+      </div>
+    } @else if (loadError()) {
+      <div class="mails-state mails-state--error" role="alert">
+        <h1 id="mail-thread-title" class="visually-hidden">Mail</h1>
+        <p>{{ loadError() }}</p>
+        <button type="button" class="button-light" (click)="retry()">Retry</button>
+      </div>
+    } @else {
+      @if (mail(); as mail) {
+      <header class="thread-header">
+        <div class="thread-header__meta">
+          <span class="thread-header__number">Mail #{{ mail.number }}</span>
+          @if (topicLabel(mail.topic); as topic) {
+            <span class="thread-header__topic">· {{ topic }}</span>
+          }
+        </div>
+        <h1 id="mail-thread-title" class="thread-header__subject" dir="auto">{{ mail.subject }}</h1>
+        <span [class]="'status-badge ' + statusClass(mail.status)">{{ statusLabel(mail.status) }}</span>
+      </header>
+
+      <ol class="message-list">
+        @for (message of mail.messages; track message.id) {
+          <li class="message" [class.message--staff]="!isRequester(message)">
+            <div class="message__head">
+              @if (isRequester(message)) {
+                <img
+                  class="message__avatar"
+                  [src]="message.senderProfilePictureUrl || '/images/profile-placeholder.svg'"
+                  alt=""
+                  (error)="onAvatarError($event)"
+                />
+                <div class="message__who">
+                  <span class="message__name">{{ message.senderName || "You" }}</span>
+                  <span class="message__role">Your inquiry</span>
+                </div>
+              } @else {
+                <img class="message__avatar message__avatar--logo" src="/ask-a-muslim-logo.png" alt="" />
+                <div class="message__who">
+                  <span class="message__name">Support Team</span>
+                  <span class="message__role">Support reply</span>
+                </div>
+              }
+              <time class="message__time" [attr.datetime]="message.created">{{ formatTime(message.created) }}</time>
+            </div>
+            <p class="message__body" dir="auto">{{ message.body }}</p>
+          </li>
+        }
+      </ol>
+      <div #messagesEnd></div>
+
+      <form class="reply-form" [formGroup]="replyForm" (ngSubmit)="onReply()" novalidate>
+        <label for="mail-reply">Reply</label>
+        @if (isClosed()) {
+          <p class="reply-note">This mail is closed. Replying will reopen it.</p>
+        }
+        <textarea
+          id="mail-reply"
+          formControlName="body"
+          rows="5"
+          dir="auto"
+          placeholder="Write your reply..."
+          [attr.maxlength]="limits.reply"
+          aria-describedby="mail-reply-counter"
+          [class.input-error]="isReplyInvalid()"
+        ></textarea>
+        <div class="reply-form__footer">
+          <span id="mail-reply-counter" class="char-counter" [class.char-counter--limit]="replyLength() >= limits.reply">
+            {{ replyLength() }}/{{ limits.reply }} characters
+          </span>
+          <button type="submit" class="primary-button" [disabled]="isSending() || replyForm.invalid">
+            {{ isSending() ? "Sending..." : "Send reply" }}
+          </button>
+        </div>
+        @if (replyError(); as message) {
+          <p class="field-error" role="alert">{{ message }}</p>
+        }
+      </form>
+      }
+    }
+  </div>
+</section>

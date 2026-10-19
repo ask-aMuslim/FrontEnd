@@ -1,22 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { CreateInquiryRequestCommand } from '../../api/models';
-import { AuthService } from '../../core/services/auth.service';
-import { InquiryRequestsService } from '../../core/services/inquiry-requests.service';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Subscription, timer } from 'rxjs';
 import { TokenService } from '../../core/auth/token.service';
-import { Language, MeetingInquiryTopic } from '../../core/models/interfaces/enums.model';
+import { AuthService } from '../../core/services/auth.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import { FormsFacade } from '../../api/facades/forms.facade';
 import { SeoService } from '../../core/services/seo.service';
-
-interface TopicOption {
-  value: MeetingInquiryTopic;
-  label: string;
-}
+import { SupportMailsFacade } from '../../api/facades/support-mails.facade';
+import {
+  FALLBACK_SUPPORT_MAIL_TOPICS,
+  SUPPORT_MAIL_LIMITS,
+  type SupportMailEligibility,
+  type SupportMailError,
+  type SupportMailTopic,
+} from '../../api/facades/support-mails.models';
+import { SupportMailUnreadService } from '../../core/services/support-mail-unread.service';
+import { formatSupportMailTime } from './mails/support-mail-format';
 
 interface ContactQuickLink {
   id: string;
@@ -24,9 +26,22 @@ interface ContactQuickLink {
 }
 
 interface SubmittedContact {
+  id: string;
   topicLabel: string;
-  message: string;
+  subject: string;
+  explanation: string;
 }
+
+interface ContactDraft {
+  topic: number | null;
+  subject: string;
+  explanation: string;
+}
+
+type ContactField = 'topic' | 'subject' | 'explanation';
+
+const DRAFT_STORAGE_KEY = 'aam.contact.supportMailDraft';
+const COOLDOWN_ERROR_PREFIX = 'you can send a new inquiry after';
 
 @Component({
   selector: 'app-contact',
@@ -41,11 +56,13 @@ export class ContactComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  private readonly inquiryRequestsService = inject(InquiryRequestsService);
   private readonly tokenService = inject(TokenService);
   private readonly authService = inject(AuthService);
   private readonly formsFacade = inject(FormsFacade);
   private readonly seoService = inject(SeoService);
+  private readonly supportMails = inject(SupportMailsFacade);
+  private readonly unreadService = inject(SupportMailUnreadService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly googleFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfYgoGSOqGLsuUdBvKRmr1mpFMlJXrkxicoFDDl-949o49oGQ/viewform?usp=header';
 
@@ -63,29 +80,42 @@ export class ContactComponent implements OnInit {
     return (title || '').replace(/AskAMuslim/gi, 'Ask A Muslim');
   }
 
-  readonly topicOptions: readonly TopicOption[] = [
-    { value: MeetingInquiryTopic.GeneralInquiry, label: 'Answered Question' },
-    { value: MeetingInquiryTopic.Quran, label: 'Quran Studies' },
-    { value: MeetingInquiryTopic.Hadith, label: 'Hadith Studies' },
-    { value: MeetingInquiryTopic.ComparativeReligion, label: 'Comparative Religion' },
-    { value: MeetingInquiryTopic.ConversionGuidance, label: 'Conversion Guidance' },
-    { value: MeetingInquiryTopic.IslamicHistory, label: 'Islamic History' },
-    { value: MeetingInquiryTopic.Fiqh, label: 'Fiqh (Islamic Jurisprudence)' },
-    { value: MeetingInquiryTopic.Theology, label: 'Theology' },
-  ];
+  readonly limits = SUPPORT_MAIL_LIMITS;
+  readonly topicOptions = signal<readonly SupportMailTopic[]>(FALLBACK_SUPPORT_MAIL_TOPICS);
 
   readonly contactForm = this.fb.group({
-    name: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
-    email: this.fb.nonNullable.control('', [Validators.required, Validators.email]),
-    topic: this.fb.control<MeetingInquiryTopic | null>(null, [Validators.required]),
-    message: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(10)]),
+    topic: this.fb.control<number | null>(null, [Validators.required]),
+    subject: this.fb.nonNullable.control('', [
+      Validators.required,
+      Validators.maxLength(SUPPORT_MAIL_LIMITS.subject),
+    ]),
+    explanation: this.fb.nonNullable.control('', [Validators.maxLength(SUPPORT_MAIL_LIMITS.explanation)]),
   });
+
+  private readonly explanationValue = toSignal(this.contactForm.controls.explanation.valueChanges, {
+    initialValue: '',
+  });
+  readonly explanationLength = computed(() => this.explanationValue().length);
+
+  readonly isAuthenticated = this.tokenService.isAuthenticated;
+  readonly unreadCount = this.unreadService.unreadCount;
 
   readonly isSubmitting = signal(false);
   readonly submitError = signal<string | null>(null);
+  readonly serverFieldErrors = signal<Partial<Record<ContactField, string>>>({});
   readonly submittedContact = signal<SubmittedContact | null>(null);
-  private readonly selectedTopic = signal<MeetingInquiryTopic | null>(null);
-  readonly topicSelected = computed(() => this.selectedTopic() !== null);
+  readonly eligibility = signal<SupportMailEligibility>({ canCreate: true, nextAllowedAt: null });
+
+  readonly cooldownMessage = computed(() => {
+    const { canCreate, nextAllowedAt } = this.eligibility();
+    if (canCreate) {
+      return null;
+    }
+    const at = formatSupportMailTime(nextAllowedAt);
+    return at
+      ? `You can send a new inquiry after one hour, at ${at}.`
+      : 'You can send a new inquiry after one hour.';
+  });
 
   readonly greetingName = computed(() => {
     const profileName = this.authService.currentUser()?.name?.trim();
@@ -107,28 +137,23 @@ export class ContactComponent implements OnInit {
   });
 
   private readonly scrollService = inject(ScrollService);
+  private cooldownTimer: Subscription | null = null;
 
   ngOnInit(): void {
-    this.prefillContactDetails();
     this.loadQuickLinks();
-    this.selectedTopic.set(this.contactForm.controls.topic.value);
-    this.contactForm.controls.topic.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((topic) => {
-        this.selectedTopic.set(topic);
-      });
+    this.destroyRef.onDestroy(() => this.cooldownTimer?.unsubscribe());
+
+    if (this.isBrowser && this.isAuthenticated()) {
+      this.restoreDraft();
+      this.loadTopics();
+      this.loadEligibility();
+    }
 
     this.seoService.setMetaTags({
       title: 'Contact Us & Ask Questions',
       description: 'Get in touch with Ask A Muslim. Ask questions directly to scholars, request studies in Quran, Hadith, or Comparative Religion, and send general inquiries.',
       keywords: ['contact scholars', 'ask a scholar', 'Islamic advice', 'Quran studies support', 'conversion guidance']
     });
-  }
-
-  onTopicSelectionChange(): void {
-    this.contactForm.controls.topic.markAsTouched();
-    this.selectedTopic.set(this.contactForm.controls.topic.value);
-    this.submitError.set(null);
   }
 
   onSubmit(): void {
@@ -141,94 +166,72 @@ export class ContactComponent implements OnInit {
       return;
     }
 
-    const selectedTopic = this.contactForm.controls.topic.value;
-    if (selectedTopic === null) {
+    const topic = this.contactForm.controls.topic.value;
+    if (topic === null) {
       this.contactForm.controls.topic.markAsTouched();
       return;
     }
 
-    if (!this.tokenService.isAuthenticated()) {
+    if (!this.isAuthenticated()) {
+      this.saveDraft();
       this.submitError.set('Please sign in before sending your message.');
-      this.router.navigate(['/login'], {
+      void this.router.navigate(['/login'], {
         queryParams: { returnUrl: '/contact' },
       });
       return;
     }
 
+    if (!this.eligibility().canCreate) {
+      return;
+    }
+
     this.submitError.set(null);
+    this.serverFieldErrors.set({});
     this.isSubmitting.set(true);
 
-    const rawMessage = this.contactForm.controls.message.value.trim();
-    const payload: CreateInquiryRequestCommand = {
-      topic: selectedTopic,
-      message: this.buildApiMessage(rawMessage),
-      languages: [Language.English],
-    };
+    const subject = this.contactForm.controls.subject.value.trim();
+    const explanation = this.contactForm.controls.explanation.value.trim();
 
-    this.inquiryRequestsService.create(payload).subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.submittedContact.set({
-          topicLabel: this.getTopicLabel(selectedTopic),
-          message: rawMessage,
-        });
-
-        this.contactForm.reset({
-          name: this.contactForm.controls.name.value,
-          email: this.contactForm.controls.email.value,
-          topic: null,
-          message: '',
-        });
-
-        this.scrollService.scrollToTop('smooth');
-      },
-      error: (error: unknown) => {
-        this.isSubmitting.set(false);
-        this.submitError.set(this.resolveSubmitError(error));
-
-        if (this.extractErrorStatus(error) === 401) {
-          this.router.navigate(['/login'], {
-            queryParams: { returnUrl: '/contact' },
+    this.supportMails
+      .create({ topic, subject, explanation: explanation || null })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (id) => {
+          this.isSubmitting.set(false);
+          this.submittedContact.set({
+            id,
+            topicLabel: this.getTopicLabel(topic),
+            subject,
+            explanation,
           });
-        }
-      },
-    });
+          this.contactForm.reset({ topic: null, subject: '', explanation: '' });
+          this.clearDraft();
+          this.loadEligibility();
+          this.scrollService.scrollToTop('smooth');
+        },
+        error: (error: SupportMailError) => {
+          this.isSubmitting.set(false);
+          this.handleSubmitError(error);
+        },
+      });
   }
 
   onSendAnotherMessage(): void {
     this.submittedContact.set(null);
     this.submitError.set(null);
-    this.contactForm.controls.topic.setValue(null);
-    this.selectedTopic.set(null);
-    this.contactForm.controls.message.setValue('');
-    this.contactForm.markAsPristine();
-    this.contactForm.markAsUntouched();
-    this.contactForm.updateValueAndValidity();
+    this.serverFieldErrors.set({});
+    this.contactForm.reset({ topic: null, subject: '', explanation: '' });
+    this.loadEligibility();
   }
 
-  goToProfile(): void {
-    this.router.navigate(['/profile']);
+  viewSubmittedMail(): void {
+    const submitted = this.submittedContact();
+    void this.router.navigate(submitted?.id ? ['/contact', 'mails', submitted.id] : ['/contact', 'mails']);
   }
 
-  isFieldInvalid(field: 'name' | 'email' | 'topic' | 'message'): boolean {
+  isFieldInvalid(field: ContactField): boolean {
     const control = this.contactForm.get(field);
     return !!control && control.invalid && (control.touched || control.dirty);
-  }
-
-  private prefillContactDetails(): void {
-    const existingName = this.contactForm.controls.name.value.trim();
-    const existingEmail = this.contactForm.controls.email.value.trim();
-
-    const profileName = this.authService.currentUser()?.name?.trim() ?? '';
-    const profileEmail = this.tokenService.userEmail()?.trim() ?? '';
-
-    this.contactForm.patchValue(
-      {
-        name: existingName || profileName,
-        email: existingEmail || profileEmail,
-      },
-      { emitEvent: false }
-    );
   }
 
   private loadQuickLinks(): void {
@@ -269,94 +272,145 @@ export class ContactComponent implements OnInit {
       });
   }
 
-  private buildApiMessage(message: string): string {
-    const name = this.contactForm.controls.name.value.trim();
-    const email = this.contactForm.controls.email.value.trim();
-
-    return `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+  private loadTopics(): void {
+    this.supportMails
+      .getTopics()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (topics) => {
+          if (topics.length > 0) {
+            this.topicOptions.set(topics);
+          }
+        },
+        error: () => {
+          // Keep the local fallback list.
+        },
+      });
   }
 
-  private getTopicLabel(topic: MeetingInquiryTopic): string {
-    return this.topicOptions.find((item) => item.value === topic)?.label ?? 'Answered Question';
+  private loadEligibility(): void {
+    if (!this.isBrowser || !this.isAuthenticated()) {
+      return;
+    }
+
+    this.supportMails
+      .getEligibility()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (eligibility) => {
+          this.eligibility.set(eligibility);
+          this.scheduleCooldownEnd(eligibility);
+        },
+        error: () => {
+          // The server still enforces the limit; don't block Send on a failed check.
+          this.eligibility.set({ canCreate: true, nextAllowedAt: null });
+        },
+      });
   }
 
-  private resolveSubmitError(error: unknown): string {
-    const status = this.extractErrorStatus(error);
-    const message = this.extractErrorMessage(error).toLowerCase();
+  private scheduleCooldownEnd(eligibility: SupportMailEligibility): void {
+    this.cooldownTimer?.unsubscribe();
+    this.cooldownTimer = null;
 
-    if (status === 401 || message.includes('unauthorized') || message.includes('authentication')) {
-      return 'Please sign in before sending your message.';
+    if (eligibility.canCreate || !eligibility.nextAllowedAt) {
+      return;
     }
 
-    if (status === 400) {
-      return 'Please review your information and try again.';
+    const waitMs = new Date(eligibility.nextAllowedAt).getTime() - Date.now();
+    if (!Number.isFinite(waitMs)) {
+      return;
     }
 
-    return 'Unable to send your message right now. Please try again shortly.';
+    this.cooldownTimer = timer(Math.max(waitMs, 0) + 1000).subscribe(() => this.loadEligibility());
   }
 
-  private extractErrorStatus(error: unknown): number | null {
-    if (error instanceof HttpErrorResponse) {
-      const nested = this.parseStatusCandidate(error.error);
-      return nested ?? error.status;
+  private handleSubmitError(error: SupportMailError): void {
+    const firstMessage = error.messages[0] ?? '';
+
+    if (error.status === 400 && firstMessage.toLowerCase().startsWith(COOLDOWN_ERROR_PREFIX)) {
+      this.submitError.set(null);
+      this.eligibility.set({ canCreate: false, nextAllowedAt: null });
+      this.loadEligibility();
+      return;
     }
 
-    return this.parseStatusCandidate(error);
-  }
-
-  private parseStatusCandidate(candidate: unknown): number | null {
-    if (candidate === null || candidate === undefined) {
-      return null;
+    if (error.status === 401) {
+      this.saveDraft();
+      this.submitError.set('Please sign in before sending your message.');
+      return;
     }
 
-    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
-      return candidate;
-    }
-
-    if (typeof candidate === 'string') {
-      const parsed = Number(candidate);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
-
-    if (typeof candidate === 'object') {
-      const record = candidate as Record<string, unknown>;
-      const directStatus = this.parseStatusCandidate(record['statusCode'] ?? record['status']);
-
-      if (directStatus !== null) {
-        return directStatus;
+    const fieldErrors: Partial<Record<ContactField, string>> = {};
+    for (const field of ['topic', 'subject', 'explanation'] as const) {
+      const messages = error.fieldErrors[field];
+      if (messages?.length) {
+        fieldErrors[field] = messages[0];
       }
+    }
+    this.serverFieldErrors.set(fieldErrors);
 
-      return this.parseStatusCandidate(record['originalError'] ?? record['error']);
+    if (Object.keys(fieldErrors).length > 0) {
+      this.submitError.set('Please review the highlighted fields and try again.');
+      return;
     }
 
-    return null;
+    if (error.status === 400 && firstMessage) {
+      this.submitError.set(firstMessage);
+      return;
+    }
+
+    this.submitError.set('Unable to send your message right now. Please try again shortly.');
   }
 
-  private extractErrorMessage(error: unknown): string {
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    if (error instanceof HttpErrorResponse) {
-      const nestedMessage = this.extractErrorMessage(error.error);
-      return nestedMessage.length > 0 ? nestedMessage : error.message;
-    }
-
-    if (typeof error === 'object' && error !== null) {
-      const record = error as Record<string, unknown>;
-      const candidates = [record['message'], record['detail'], record['error']];
-
-      for (const candidate of candidates) {
-        if (typeof candidate === 'string' && candidate.length > 0) {
-          return candidate;
-        }
-      }
-
-      return this.extractErrorMessage(record['originalError']);
-    }
-
-    return '';
+  private getTopicLabel(topic: number): string {
+    return this.topicOptions().find((item) => item.value === topic)?.name ?? 'General Inquiry';
   }
 
+  private saveDraft(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    const draft: ContactDraft = {
+      topic: this.contactForm.controls.topic.value,
+      subject: this.contactForm.controls.subject.value,
+      explanation: this.contactForm.controls.explanation.value,
+    };
+    try {
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // Storage unavailable (private mode, blocked); the draft is a convenience only.
+    }
+  }
 
+  private restoreDraft(): void {
+    let raw: string | null = null;
+    try {
+      raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) {
+      return;
+    }
+
+    try {
+      const draft = JSON.parse(raw) as Partial<ContactDraft>;
+      this.contactForm.patchValue({
+        topic: typeof draft.topic === 'number' ? draft.topic : null,
+        subject: typeof draft.subject === 'string' ? draft.subject : '',
+        explanation: typeof draft.explanation === 'string' ? draft.explanation : '',
+      });
+    } catch {
+      // Ignore a corrupt draft.
+    }
+    this.clearDraft();
+  }
+
+  private clearDraft(): void {
+    try {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // Ignore.
+    }
+  }
 }

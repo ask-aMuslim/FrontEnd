@@ -297,11 +297,34 @@ export const routes: Routes = [
       },
       {
         path: 'contact',
-        loadComponent: () =>
-          import('./pages/contact/contact.component').then(
-            (m) => m.ContactComponent,
-          ),
-        title: 'Contact Us',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/contact/contact.component').then(
+                (m) => m.ContactComponent,
+              ),
+            title: 'Contact Us',
+          },
+          {
+            path: 'mails',
+            loadComponent: () =>
+              import('./pages/contact/mails/mail-history.component').then(
+                (m) => m.MailHistoryComponent,
+              ),
+            title: 'My Mails',
+            canActivate: [authGuard],
+          },
+          {
+            path: 'mails/:id',
+            loadComponent: () =>
+              import('./pages/contact/mails/mail-thread.component').then(
+                (m) => m.MailThreadComponent,
+              ),
+            title: 'Mail',
+            canActivate: [authGuard],
+          },
+        ],
       },
       {
         path: 'profile',

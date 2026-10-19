@@ -15,3 +15,5 @@ export * from './newsletter.facade';
 export * from './assistant-chat.facade';
 export * from './forms.facade';
 export * from './mosques.facade';
+export * from './support-mails.facade';
+export * from './support-mails.models';

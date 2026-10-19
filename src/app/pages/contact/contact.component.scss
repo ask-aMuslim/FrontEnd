@@ -504,3 +504,73 @@ textarea {
     min-width: 0;
   }
 }
+.my-mails-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-block-start: 4px;
+  color: #156b40;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding-inline: 6px;
+  border-radius: 9999px;
+  background: #dc3545;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.optional-label {
+  color: #6c757d;
+  font-weight: 400;
+}
+
+textarea#contact-explanation {
+  min-height: 180px;
+}
+
+.char-counter {
+  margin: 0;
+  align-self: flex-end;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.4;
+
+  &--limit {
+    color: #dc3545;
+  }
+}
+
+.cooldown-hint {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #8a4b00;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.submitted-message-card .submitted-topic {
+  display: inline-block;
+  margin-block-end: 8px;
+  color: #156b40;
+  font-size: 14px;
+  font-weight: 600;
+}

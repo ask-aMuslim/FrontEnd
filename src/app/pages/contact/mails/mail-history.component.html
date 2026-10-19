@@ -1,0 +1,103 @@
+<section class="mails-page" aria-labelledby="mail-history-title">
+  <div class="section-block mails-content">
+    <a class="back-link" [routerLink]="['/contact']">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Contact Us
+    </a>
+
+    <header class="mails-header">
+      <h1 id="mail-history-title">My Mails</h1>
+      <a class="primary-button" [routerLink]="['/contact']">New inquiry</a>
+    </header>
+
+    <div class="mail-filters">
+      <div class="status-chips" role="group" aria-label="Filter by status">
+        @for (filter of statusFilters; track filter.label) {
+          <button
+            type="button"
+            class="status-chip"
+            [class.status-chip--active]="activeStatus() === filter.value"
+            [attr.aria-pressed]="activeStatus() === filter.value"
+            (click)="selectStatus(filter.value)"
+          >
+            {{ filter.label }}
+          </button>
+        }
+      </div>
+
+      <label class="search-field">
+        <span class="visually-hidden">Search by subject</span>
+        <input
+          type="search"
+          placeholder="Search by subject"
+          dir="auto"
+          (input)="onSearchInput($any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    @if (isLoading()) {
+      <p class="mails-state" role="status">Loading your mails...</p>
+    } @else if (error()) {
+      <div class="mails-state mails-state--error" role="alert">
+        <p>{{ error() }}</p>
+        <button type="button" class="button-light" (click)="retry()">Retry</button>
+      </div>
+    } @else if (mails().length === 0) {
+      <div class="mails-state">
+        @if (searchTerm() || activeStatus()) {
+          <p>No mails match your filters.</p>
+        } @else {
+          <p>No mails yet.</p>
+          <a class="primary-button" [routerLink]="['/contact']">Send an inquiry</a>
+        }
+      </div>
+    } @else {
+      <ul class="mail-list">
+        @for (mail of mails(); track mail.id) {
+          <li>
+            <a
+              class="mail-card"
+              [class.mail-card--unread]="mail.hasUnreadReply"
+              [routerLink]="['/contact', 'mails', mail.id]"
+            >
+              <div class="mail-card__top">
+                <span class="mail-card__number">
+                  @if (mail.hasUnreadReply) {
+                    <span class="unread-dot" aria-hidden="true"></span>
+                    <span class="visually-hidden">New reply. </span>
+                  }
+                  Mail #{{ mail.number }}
+                  @if (topicLabel(mail.topic); as topic) {
+                    <span class="mail-card__topic">· {{ topic }}</span>
+                  }
+                </span>
+                <time class="mail-card__time" [attr.datetime]="mail.lastMessageAt">
+                  {{ formatTime(mail.lastMessageAt) }}
+                </time>
+              </div>
+              <h2 class="mail-card__subject" dir="auto">{{ mail.subject }}</h2>
+              <p class="mail-card__preview" dir="auto">{{ mail.preview }}</p>
+              <div class="mail-card__bottom">
+                <span [class]="'status-badge ' + statusClass(mail.status)">
+                  {{ statusLabel(mail.status) }}
+                </span>
+                <span class="mail-card__details">View details &rsaquo;</span>
+              </div>
+            </a>
+          </li>
+        }
+      </ul>
+
+      @if (hasNextPage()) {
+        <div class="load-more">
+          <button type="button" class="button-light" [disabled]="isLoadingMore()" (click)="loadMore()">
+            {{ isLoadingMore() ? "Loading..." : "Load more" }}
+          </button>
+        </div>
+      }
+    }
+  </div>
+</section>

@@ -11,6 +11,8 @@ export interface SeoConfig {
   ogType?: string;
   canonicalUrl?: string;
   schemas?: object[];
+  /** Ask search engines not to index this page (e.g. private, signed-in pages). */
+  noIndex?: boolean;
 }
 
 @Injectable({
@@ -55,7 +57,7 @@ export class SeoService {
     this.metaService.updateTag({ name: 'description', content: description });
     this.metaService.updateTag({ name: 'keywords', content: keywords.join(', ') });
     this.metaService.updateTag({ name: 'author', content: author });
-    this.metaService.updateTag({ name: 'robots', content: 'index, follow' });
+    this.metaService.updateTag({ name: 'robots', content: config.noIndex ? 'noindex, nofollow' : 'index, follow' });
 
     // 3. Set Open Graph (OG) Tags
     this.metaService.updateTag({ property: 'og:title', content: title });
