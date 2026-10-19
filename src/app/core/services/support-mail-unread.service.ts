@@ -1,15 +1,16 @@
-import { DestroyRef, Injectable, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, filter, fromEvent } from 'rxjs';
+import { Subscription, filter, fromEvent, interval } from 'rxjs';
 import { SupportMailsFacade } from '../../api/facades/support-mails.facade';
 import { TokenService } from '../auth/token.service';
 
 /**
  * Unread Support Mails count for the header bell and the contact page.
- * Refreshes on sign-in, on navigation into /contact, and when the window
- * regains focus. Browser only (the site is server-rendered).
+ * Refreshes on sign-in, on navigation into /contact, when the window regains
+ * focus, and every 2 minutes while the tab is visible. Browser only (the site
+ * is server-rendered).
  */
 @Injectable({ providedIn: 'root' })
 export class SupportMailUnreadService {
@@ -49,7 +50,21 @@ export class SupportMailUnreadService {
     fromEvent(window, 'focus')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.refresh());
+
+    // Periodic check, only while the tab is visible. Runs outside the Angular zone so
+    // the timer doesn't keep the app permanently unstable (hydration waits for stability);
+    // the signal update still triggers change detection.
+    inject(NgZone).runOutsideAngular(() => {
+      interval(SupportMailUnreadService.pollIntervalMs)
+        .pipe(
+          filter(() => document.visibilityState === 'visible'),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe(() => this.refresh());
+    });
   }
+
+  static readonly pollIntervalMs = 2 * 60_000;
 
   refresh(): void {
     if (!this.isBrowser || !this.tokenService.isAuthenticated()) {
