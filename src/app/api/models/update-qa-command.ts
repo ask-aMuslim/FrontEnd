@@ -4,6 +4,7 @@
 import { UpdateQaTranslationInput } from '../models/update-qa-translation-input';
 export interface UpdateQaCommand {
   isPublished?: boolean;
+  order?: number;
   tagIds?: Array<string>;
   translations?: Array<UpdateQaTranslationInput>;
 }

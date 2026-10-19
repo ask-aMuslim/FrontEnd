@@ -11,6 +11,7 @@ import { RequestBuilder } from '../../request-builder';
 export interface GetCourseRoadmap$Params {
   levelId: string;
   studentId?: string | null;
+  isPublished?: boolean | null;
 }
 
 export function getCourseRoadmap(http: HttpClient, rootUrl: string, params: GetCourseRoadmap$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -18,6 +19,7 @@ export function getCourseRoadmap(http: HttpClient, rootUrl: string, params: GetC
   if (params) {
     rb.path('levelId', params.levelId, {});
     rb.query('studentId', params.studentId, {});
+    rb.query('isPublished', params.isPublished, {});
   }
 
   return http.request(

@@ -3,5 +3,6 @@
 
 export interface UpdateTagCommand {
   description?: string | null;
+  order?: number;
   title?: string;
 }
