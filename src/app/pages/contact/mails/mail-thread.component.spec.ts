@@ -67,6 +67,13 @@ describe('MailThreadComponent', () => {
     expect(el().querySelector('.message__body')?.textContent).toBe('First\nquestion');
   });
 
+  it('resolves a relative avatar path against the API host', async () => {
+    await setup(() => of(mail()));
+    const url = component.avatarUrl({ ...mail().messages[0], senderProfilePictureUrl: '/uploads/noah.jpg' });
+    expect(url).toMatch(/^https?:\/\/.+\/uploads\/noah\.jpg$/);
+    expect(component.avatarUrl({ ...mail().messages[0], senderProfilePictureUrl: null })).toBe('/images/profile-placeholder.svg');
+  });
+
   it('notes that replying reopens a closed mail', async () => {
     await setup(() => of(mail(SupportMailStatus.Closed)));
     expect(el().textContent).toContain('Replying will reopen it.');

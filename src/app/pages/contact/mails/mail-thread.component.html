@@ -41,7 +41,7 @@
                 @if (isRequester(message)) {
                   <img
                     class="message__avatar"
-                    [src]="message.senderProfilePictureUrl || '/images/profile-placeholder.svg'"
+                    [src]="avatarUrl(message)"
                     alt=""
                     (error)="onAvatarError($event)"
                   />

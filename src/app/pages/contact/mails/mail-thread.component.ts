@@ -26,6 +26,7 @@ import {
   type SupportMailError,
   type SupportMailMessage,
 } from '../../../api/facades/support-mails.models';
+import { toApiMediaUrl } from '../../../core/helpers/media-url.helper';
 import { SeoService } from '../../../core/services/seo.service';
 import { SupportMailUnreadService } from '../../../core/services/support-mail-unread.service';
 import { formatSupportMailTime, supportMailStatusClass } from './support-mail-format';
@@ -176,6 +177,11 @@ export class MailThreadComponent implements OnInit {
 
   formatTime(value: string): string {
     return formatSupportMailTime(value);
+  }
+
+  /** The API returns relative paths like /uploads/...; resolve them against the API host. */
+  avatarUrl(message: SupportMailMessage): string {
+    return toApiMediaUrl(message.senderProfilePictureUrl) ?? '/images/profile-placeholder.svg';
   }
 
   onAvatarError(event: Event): void {
