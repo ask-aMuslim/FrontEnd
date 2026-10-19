@@ -23,74 +23,76 @@
       </div>
     } @else {
       @if (mail(); as mail) {
-      <header class="thread-header">
-        <div class="thread-header__meta">
-          <span class="thread-header__number">Mail #{{ mail.number }}</span>
-          @if (topicLabel(mail.topic); as topic) {
-            <span class="thread-header__topic">· {{ topic }}</span>
-          }
-        </div>
-        <h1 id="mail-thread-title" class="thread-header__subject" dir="auto">{{ mail.subject }}</h1>
-        <span [class]="'status-badge ' + statusClass(mail.status)">{{ statusLabel(mail.status) }}</span>
-      </header>
+        <header class="thread-header">
+          <div class="thread-header__meta">
+            <span class="thread-header__number">Mail #{{ mail.number }}</span>
+            @if (topicLabel(mail.topic); as topic) {
+              <span class="thread-header__topic">· {{ topic }}</span>
+            }
+          </div>
+          <h1 id="mail-thread-title" class="thread-header__subject" dir="auto">{{ mail.subject }}</h1>
+          <span [class]="'status-badge ' + statusClass(mail.status)">{{ statusLabel(mail.status) }}</span>
+        </header>
 
-      <ol class="message-list">
-        @for (message of mail.messages; track message.id) {
-          <li class="message" [class.message--staff]="!isRequester(message)">
-            <div class="message__head">
-              @if (isRequester(message)) {
-                <img
-                  class="message__avatar"
-                  [src]="message.senderProfilePictureUrl || '/images/profile-placeholder.svg'"
-                  alt=""
-                  (error)="onAvatarError($event)"
-                />
-                <div class="message__who">
-                  <span class="message__name">{{ message.senderName || "You" }}</span>
-                  <span class="message__role">Your inquiry</span>
+        <div class="chat-panel">
+          <ol class="message-list" aria-live="polite">
+            @for (message of mail.messages; track message.id) {
+              <li class="message" [class.message--staff]="!isRequester(message)">
+                @if (isRequester(message)) {
+                  <img
+                    class="message__avatar"
+                    [src]="message.senderProfilePictureUrl || '/images/profile-placeholder.svg'"
+                    alt=""
+                    (error)="onAvatarError($event)"
+                  />
+                } @else {
+                  <img class="message__avatar message__avatar--logo" src="/ask-a-muslim-logo.png" alt="" />
+                }
+                <div class="message__stack">
+                  <p class="message__bubble message__body" dir="auto">{{ message.body }}</p>
+                  <div class="message__meta">
+                    <span class="message__name">{{ isRequester(message) ? (message.senderName || "You") : "Support Team" }}</span>
+                    <span class="message__role">{{ isRequester(message) ? "Your inquiry" : "Support reply" }}</span>
+                    <time class="message__time" [attr.datetime]="message.created">{{ formatTime(message.created) }}</time>
+                  </div>
                 </div>
-              } @else {
-                <img class="message__avatar message__avatar--logo" src="/ask-a-muslim-logo.png" alt="" />
-                <div class="message__who">
-                  <span class="message__name">Support Team</span>
-                  <span class="message__role">Support reply</span>
-                </div>
-              }
-              <time class="message__time" [attr.datetime]="message.created">{{ formatTime(message.created) }}</time>
+              </li>
+            }
+            <li #messagesEnd class="message-list__end" aria-hidden="true"></li>
+          </ol>
+
+          <form class="composer" [formGroup]="replyForm" (ngSubmit)="onReply()" novalidate>
+            @if (isClosed()) {
+              <p class="reply-note">This mail is closed. Replying will reopen it.</p>
+            }
+            <div class="composer__row">
+              <label for="mail-reply" class="visually-hidden">Reply</label>
+              <textarea
+                id="mail-reply"
+                formControlName="body"
+                rows="1"
+                dir="auto"
+                placeholder="Write your reply..."
+                [attr.maxlength]="limits.reply"
+                aria-describedby="mail-reply-counter"
+                [class.input-error]="isReplyInvalid()"
+                (keydown)="onComposerKeydown($event)"
+              ></textarea>
+              <button type="submit" class="primary-button composer__send" [disabled]="isSending() || replyForm.invalid">
+                {{ isSending() ? "Sending..." : "Send" }}
+              </button>
             </div>
-            <p class="message__body" dir="auto">{{ message.body }}</p>
-          </li>
-        }
-      </ol>
-      <div #messagesEnd></div>
-
-      <form class="reply-form" [formGroup]="replyForm" (ngSubmit)="onReply()" novalidate>
-        <label for="mail-reply">Reply</label>
-        @if (isClosed()) {
-          <p class="reply-note">This mail is closed. Replying will reopen it.</p>
-        }
-        <textarea
-          id="mail-reply"
-          formControlName="body"
-          rows="5"
-          dir="auto"
-          placeholder="Write your reply..."
-          [attr.maxlength]="limits.reply"
-          aria-describedby="mail-reply-counter"
-          [class.input-error]="isReplyInvalid()"
-        ></textarea>
-        <div class="reply-form__footer">
-          <span id="mail-reply-counter" class="char-counter" [class.char-counter--limit]="replyLength() >= limits.reply">
-            {{ replyLength() }}/{{ limits.reply }} characters
-          </span>
-          <button type="submit" class="primary-button" [disabled]="isSending() || replyForm.invalid">
-            {{ isSending() ? "Sending..." : "Send reply" }}
-          </button>
+            <div class="composer__footer">
+              <span class="composer__hint">Enter to send, Shift+Enter for a new line</span>
+              <span id="mail-reply-counter" class="char-counter" [class.char-counter--limit]="replyLength() >= limits.reply">
+                {{ replyLength() }}/{{ limits.reply }}
+              </span>
+            </div>
+            @if (replyError(); as message) {
+              <p class="field-error" role="alert">{{ message }}</p>
+            }
+          </form>
         </div>
-        @if (replyError(); as message) {
-          <p class="field-error" role="alert">{{ message }}</p>
-        }
-      </form>
       }
     }
   </div>

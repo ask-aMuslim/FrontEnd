@@ -145,6 +145,14 @@ export class MailThreadComponent implements OnInit {
       });
   }
 
+  /** Chat behaviour: Enter sends, Shift+Enter inserts a new line. */
+  onComposerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      this.onReply();
+    }
+  }
+
   isReplyInvalid(): boolean {
     const control = this.replyForm.controls.body;
     return control.invalid && (control.touched || control.dirty) && control.value.length > 0;
@@ -235,6 +243,11 @@ export class MailThreadComponent implements OnInit {
     if (!this.isBrowser) {
       return;
     }
-    setTimeout(() => this.messagesEnd()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'end' }));
+    // Scroll only the message panel (not the whole page) to the newest message.
+    setTimeout(() => {
+      const end = this.messagesEnd()?.nativeElement;
+      const list = end?.parentElement;
+      list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+    });
   }
 }

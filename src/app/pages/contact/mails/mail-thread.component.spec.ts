@@ -84,6 +84,25 @@ describe('MailThreadComponent', () => {
     expect(component.replyForm.controls.body.value).toBe('');
   });
 
+  it('sends on Enter but not on Shift+Enter', async () => {
+    await setup(() => of(mail()));
+    facade.reply.and.returnValue(of('c'));
+    component.replyForm.setValue({ body: 'Hello' });
+
+    component.onComposerKeydown(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true }));
+    expect(facade.reply).not.toHaveBeenCalled();
+
+    component.onComposerKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(facade.reply).toHaveBeenCalledOnceWith('mail-1', { body: 'Hello' });
+  });
+
+  it('puts your messages on the right and Support Team on the left', async () => {
+    await setup(() => of(mail()));
+    const items = el().querySelectorAll('.message');
+    expect(items[0].classList).not.toContain('message--staff');
+    expect(items[1].classList).toContain('message--staff');
+  });
+
   it('shows not-found for another user\'s mail', async () => {
     await setup(() => throwError(() => ({ status: 400, messages: ['Mail not found'], fieldErrors: {} })));
     fixture.detectChanges();
