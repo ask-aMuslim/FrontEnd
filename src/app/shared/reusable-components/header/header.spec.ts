@@ -29,6 +29,15 @@ describe('HeaderComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('opens My Mails from the user menu', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+
+    (component as unknown as { goToMails(): void }).goToMails();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/contact', 'mails']);
+  });
+
   it('opens Mails History from the bell without opening the user menu', () => {
     const router = TestBed.inject(Router);
     spyOn(router, 'navigate').and.resolveTo(true);

@@ -161,6 +161,20 @@
   flex-shrink: 0;
 }
 
+.user-popup__badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: #dc3545;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+
 .user-text {
   display: flex;
   flex-direction: column;

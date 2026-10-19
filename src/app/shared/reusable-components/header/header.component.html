@@ -76,6 +76,27 @@
             />
             Profile
           </button>
+          <button
+            class="user-popup__item"
+            type="button"
+            (click)="goToMails()"
+          >
+            <img
+              class="user-popup__icon"
+              src="/icons/icons-24/mail.svg"
+              alt=""
+              aria-hidden="true"
+            />
+            My Mails
+            @if (mailUnreadCount() > 0) {
+              <span
+                class="user-popup__badge"
+                [attr.aria-label]="mailUnreadCount() + ' unread'"
+              >
+                {{ mailUnreadCount() > 9 ? "9+" : mailUnreadCount() }}
+              </span>
+            }
+          </button>
           <button class="user-popup__item" type="button" (click)="logout()">
             <img
               class="user-popup__icon"
