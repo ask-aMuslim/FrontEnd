@@ -519,10 +519,10 @@ textarea {
   gap: 8px;
   flex-shrink: 0;
   min-height: 48px;
-  padding: 10px 18px;
-  border: 1px solid #156b40;
+  padding: 10px 12px;
+  border: none;
   border-radius: 8px;
-  background: #ffffff;
+  background: transparent;
   color: #156b40;
   font-size: 16px;
   font-weight: 600;
@@ -534,9 +534,19 @@ textarea {
     height: 20px;
   }
 
+  .my-mails-arrow {
+    width: 20px;
+    height: 20px;
+    transition: transform 160ms ease;
+  }
+
   &:hover,
   &:focus-visible {
     background: #e8f5e8;
+
+    .my-mails-arrow {
+      transform: translateX(3px);
+    }
   }
 
   &:focus-visible {
