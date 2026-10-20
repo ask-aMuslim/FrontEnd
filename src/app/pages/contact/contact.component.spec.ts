@@ -77,7 +77,14 @@ describe('ContactComponent', () => {
     expect(facade.getTopics).toHaveBeenCalled();
     expect(facade.getEligibility).toHaveBeenCalled();
     expect(component.topicOptions().map((t) => t.name)).toEqual(['Fiqh']);
-    expect(text()).toContain('My mails');
+    const myMails = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.welcome-row .my-mails-button');
+    expect(myMails?.getAttribute('href')).toBe('/contact/mails');
+    expect(myMails?.textContent).toContain('My Mails');
+  });
+
+  it('hides My Mails for guests', async () => {
+    await setup(false);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.my-mails-button')).toBeNull();
   });
 
   it('uses the fallback topics and skips the API for guests', async () => {

@@ -61,21 +61,24 @@
     </section>
   } @else {
     <section class="section-block contact-content">
-      <div class="welcome-copy">
-        <h2>
-          Welcome,
-          <span>{{ greetingName() }}</span>
-        </h2>
-        <p>
-          Fill out the form below then send it, and we will get back to you
-          shortly.
-        </p>
+      <div class="welcome-row">
+        <div class="welcome-copy">
+          <h2>
+            Welcome,
+            <span>{{ greetingName() }}</span>
+          </h2>
+          <p>
+            Fill out the form below then send it, and we will get back to you
+            shortly.
+          </p>
+        </div>
         @if (isAuthenticated()) {
-          <a class="my-mails-link" [routerLink]="['/contact', 'mails']">
-            My mails
+          <a class="my-mails-button" [routerLink]="['/contact', 'mails']">
+            <img src="/icons/icons-24/mail.svg" alt="" aria-hidden="true" />
+            My Mails
             @if (unreadCount() > 0) {
               <span class="unread-badge" [attr.aria-label]="unreadCount() + ' unread'">
-                {{ unreadCount() }}
+                {{ unreadCount() > 9 ? "9+" : unreadCount() }}
               </span>
             }
           </a>
