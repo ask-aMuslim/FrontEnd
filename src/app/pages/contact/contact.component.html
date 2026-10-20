@@ -74,7 +74,22 @@
         </div>
         @if (isAuthenticated()) {
           <a class="my-mails-button" [routerLink]="['/contact', 'mails']">
-            <img src="/icons/icons-24/mail.svg" alt="" aria-hidden="true" />
+            <svg class="my-mails-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M20.4333 7.83301L12.9408 12.6055C12.6865 12.7532 12.3977 12.831 12.1037 12.831C11.8097 12.831 11.5209 12.7532 11.2666 12.6055L3.7666 7.83301"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M18.7666 5.33301H5.43327C4.51279 5.33301 3.7666 6.0792 3.7666 6.99967V16.9997C3.7666 17.9201 4.51279 18.6663 5.43327 18.6663H18.7666C19.6871 18.6663 20.4333 17.9201 20.4333 16.9997V6.99967C20.4333 6.0792 19.6871 5.33301 18.7666 5.33301Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
             My Mails
             @if (unreadCount() > 0) {
               <span class="unread-badge" [attr.aria-label]="unreadCount() + ' unread'">
