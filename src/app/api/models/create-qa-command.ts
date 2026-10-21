@@ -4,6 +4,7 @@
 import { QaTranslationInput } from '../models/qa-translation-input';
 export interface CreateQaCommand {
   isPublished?: boolean;
+  order?: number;
   tagIds?: Array<string>;
   translations?: Array<QaTranslationInput>;
 }

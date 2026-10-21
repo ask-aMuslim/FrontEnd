@@ -7,6 +7,6 @@ export interface UpdateQaTranslationInput {
   answerTextJson?: string | null;
   id?: string | null;
   isDeleted?: boolean;
-  language?: Language;
+  language?: Language | null;
   questionText?: string;
 }

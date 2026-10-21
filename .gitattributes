@@ -1,0 +1,2 @@
+# Keep Netlify config LF so Windows autocrlf doesn't keep flagging it as modified
+netlify/_redirects text eol=lf

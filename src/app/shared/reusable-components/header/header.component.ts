@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { SupportMailUnreadService } from '../../../core/services/support-mail-unread.service';
 
 interface NavLink {
   label: string;
@@ -21,6 +22,7 @@ interface NavLink {
 export class HeaderComponent {
   protected readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  protected readonly mailUnreadCount = inject(SupportMailUnreadService).unreadCount;
 
   protected readonly isQnaSectionActive = toSignal(
     this.router.events.pipe(
@@ -74,6 +76,17 @@ export class HeaderComponent {
   protected goToProfile(): void {
     this.closeNav();
     void this.router.navigate(['/profile']);
+  }
+
+  protected goToMails(): void {
+    this.closeNav();
+    void this.router.navigate(['/contact', 'mails']);
+  }
+
+  protected openMails(event: Event): void {
+    event.stopPropagation();
+    this.closeNav();
+    void this.router.navigate(['/contact', 'mails']);
   }
 
   protected logout(): void {

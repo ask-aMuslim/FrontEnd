@@ -1,40 +1,40 @@
 <section class="my-inquiries">
   <div class="my-inquiries__header">
-    <h2>My Inquiries</h2>
-    <button
-      routerLink="/question-and-answer/send-inquiry"
-      class="my-inquiries__cta"
-    >
+    <h2>My Mails</h2>
+    <a [routerLink]="['/contact']" class="my-inquiries__cta">
       Send an Inquiry
-    </button>
+    </a>
   </div>
 
-  @if (isLoading) {
-    <div class="my-inquiries__state">Loading your inquiries...</div>
-  }
-
-  @if (!isLoading && error) {
+  @if (isLoading()) {
+    <div class="my-inquiries__state">Loading your mails...</div>
+  } @else if (error()) {
     <div class="my-inquiries__state my-inquiries__state--error">
-      <p>{{ error }}</p>
+      <p>{{ error() }}</p>
       <button type="button" (click)="retry()">Retry</button>
     </div>
-  }
-
-  @if (!isLoading && !error && inquiries.length === 0) {
+  } @else if (mails().length === 0) {
     <div class="my-inquiries__state">You haven't sent any inquiries yet.</div>
-  }
-
-  @if (!isLoading && !error && inquiries.length > 0) {
+  } @else {
     <div class="my-inquiries__list">
-      @for (inquiry of inquiries; track inquiry.id) {
-        <article class="my-inquiries__item">
+      @for (mail of mails(); track mail.id) {
+        <a
+          class="my-inquiries__item"
+          [class.my-inquiries__item--unread]="mail.hasUnreadReply"
+          [routerLink]="['/contact', 'mails', mail.id]"
+        >
           <div class="my-inquiries__item-top">
-            <h3>{{ inquiry.subject }}</h3>
-            <span class="my-inquiries__status">{{ inquiry.status }}</span>
+            <h3 dir="auto">Mail #{{ mail.number }} · {{ mail.subject }}</h3>
+            <span [class]="'my-inquiries__status ' + statusClass(mail.status)">
+              {{ statusLabel(mail.status) }}
+            </span>
           </div>
-          <p class="my-inquiries__date">{{ inquiry.createdAt }}</p>
-        </article>
+          <p class="my-inquiries__date">{{ formatTime(mail.lastMessageAt) }}</p>
+        </a>
       }
     </div>
+    <a class="my-inquiries__all" [routerLink]="['/contact', 'mails']">
+      View all mails{{ totalCount() > mails().length ? " (" + totalCount() + ")" : "" }} &rsaquo;
+    </a>
   }
 </section>

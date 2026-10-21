@@ -3,5 +3,6 @@
 
 export interface CreateTagCommand {
   description?: string | null;
+  order?: number;
   title?: string;
 }

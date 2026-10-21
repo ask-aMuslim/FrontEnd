@@ -16,7 +16,21 @@
           <span class="user-name">{{ authService.getCurrentUserName() }}</span>
           <span class="user-meta">{{ authService.getCurrentUserMeta() }}</span>
         </div>
-        <button class="user-alert" type="button">
+        <button
+          class="user-alert"
+          type="button"
+          (click)="openMails($event)"
+          [attr.aria-label]="
+            mailUnreadCount() > 0
+              ? 'My mails, ' + mailUnreadCount() + ' unread'
+              : 'My mails'
+          "
+        >
+          @if (mailUnreadCount() > 0) {
+            <span class="user-alert__badge" aria-hidden="true">
+              {{ mailUnreadCount() > 9 ? "9+" : mailUnreadCount() }}
+            </span>
+          }
           <svg
             width="24"
             height="24"
@@ -61,6 +75,27 @@
               aria-hidden="true"
             />
             Profile
+          </button>
+          <button
+            class="user-popup__item"
+            type="button"
+            (click)="goToMails()"
+          >
+            <img
+              class="user-popup__icon"
+              src="/icons/icons-24/mail.svg"
+              alt=""
+              aria-hidden="true"
+            />
+            My Mails
+            @if (mailUnreadCount() > 0) {
+              <span
+                class="user-popup__badge"
+                [attr.aria-label]="mailUnreadCount() + ' unread'"
+              >
+                {{ mailUnreadCount() > 9 ? "9+" : mailUnreadCount() }}
+              </span>
+            }
           </button>
           <button class="user-popup__item" type="button" (click)="logout()">
             <img

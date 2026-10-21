@@ -504,3 +504,107 @@ textarea {
     min-width: 0;
   }
 }
+// Welcome text on the left, "My Mails" on the right (top-right, like the mobile app)
+.welcome-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+
+.my-mails-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #156b40;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 200ms ease;
+
+  .my-mails-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .my-mails-arrow {
+    width: 20px;
+    height: 20px;
+    transition: transform 160ms ease;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: #e8f5e8;
+
+    .my-mails-arrow {
+      transform: translateX(3px);
+    }
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(21, 107, 64, 0.3);
+    outline-offset: 2px;
+  }
+}
+
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding-inline: 6px;
+  border-radius: 9999px;
+  background: #dc3545;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.optional-label {
+  color: #6c757d;
+  font-weight: 400;
+}
+
+textarea#contact-explanation {
+  min-height: 180px;
+}
+
+.char-counter {
+  margin: 0;
+  align-self: flex-end;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.4;
+
+  &--limit {
+    color: #dc3545;
+  }
+}
+
+.cooldown-hint {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #8a4b00;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.submitted-message-card .submitted-topic {
+  display: inline-block;
+  margin-block-end: 8px;
+  color: #156b40;
+  font-size: 14px;
+  font-weight: 600;
+}

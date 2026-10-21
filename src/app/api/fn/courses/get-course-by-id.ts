@@ -10,12 +10,14 @@ import { RequestBuilder } from '../../request-builder';
 
 export interface GetCourseById$Params {
   id: string;
+  isPublished?: boolean | null;
 }
 
 export function getCourseById(http: HttpClient, rootUrl: string, params: GetCourseById$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, getCourseById.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});
+    rb.query('isPublished', params.isPublished, {});
   }
 
   return http.request(
