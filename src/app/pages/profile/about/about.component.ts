@@ -206,7 +206,7 @@ export class AboutComponent implements OnInit, OnDestroy {
 
     this.about = {
       religion: religionLabel,
-      reasonOfReligion: profile.reasonOfReligion ?? profile.reasonForConversion ?? this.about.reasonOfReligion,
+      reasonOfReligion: profile.reasonOfReligion ?? this.about.reasonOfReligion,
       reasonForConversion: profile.reasonForConversion ?? this.about.reasonForConversion,
       oldReligion: profile.oldReligion ?? this.about.oldReligion,
       bio: profile.bio ?? this.about.bio,
