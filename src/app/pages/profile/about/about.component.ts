@@ -9,7 +9,7 @@ import { StudentFacade } from '../../../api/facades/student.facade';
 import type { StudentProfile, UpdateStudentProfileRequest, LanguageDetail } from '../../../api/facades/student.facade';
 import { languageLabels, religiousStatusLabels } from '../../../core/helpers/enum-labels.helper';
 import { Language, ReligiousStatus } from '../../../core/models/interfaces/enums.model';
-import { ProfileError } from '../../../core/services/student-profile.service';
+import { ProfileError, StudentProfileService } from '../../../core/services/student-profile.service';
 
 /**
  * Local view-model for the profile screen.
@@ -59,6 +59,7 @@ export interface AboutProfileHeaderUpdate {
 })
 export class AboutComponent implements OnInit, OnDestroy {
   private readonly studentFacade = inject(StudentFacade);
+  private readonly profileService = inject(StudentProfileService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly destroy$ = new Subject<void>();
@@ -351,30 +352,49 @@ export class AboutComponent implements OnInit, OnDestroy {
     // Update display with language names from enum labels (will be replaced by API response)
     this.about.languagesSpeaks = data.languages.map((langId) => languageLabels[langId]).join(', ');
 
-    // Workaround: Persistently save language preferences in browser's local storage to bypass backend validation bug
-    if (this.isBrowser) {
-      const identifier = this.about.email || 'default';
-      localStorage.setItem(`student_languages_${identifier}`, JSON.stringify(data.languages));
-    }
-
     this.isLoading = true;
     this.clearMessages();
 
     const [firstName, ...lastNameParts] = data.name.trim().split(/\s+/).filter(Boolean);
     const lastName = lastNameParts.join(' ');
 
-    const payload: UpdateStudentProfileRequest = {
-      firstName: firstName || undefined,
-      lastName: lastName || undefined,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
-      // Workaround: Send empty list to avoid API validation error "One or more language IDs are invalid"
-      languages: [],
-    };
+    // The backend validates against AppLanguages database IDs, which are not guaranteed
+    // to match the frontend enum values, so resolve them by name first.
+    this.profileService
+      .getLanguages()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (appLanguages) => {
+          const languageIds = data.languages.map((langId) => {
+            const label = languageLabels[langId].toLowerCase();
+            // The API reports id 0 for languages that are not seeded in the database
+            const id = appLanguages.find((l) => l.name.toLowerCase() === label)?.id;
+            return id ? id : undefined;
+          });
 
-    this.executeProfileSave(payload, () => {
-      this.isEditingPersonal = false;
-    });
+          if (languageIds.some((id) => id === undefined)) {
+            this.isLoading = false;
+            this.error = 'Could not match the selected languages. Please try again.';
+            return;
+          }
+
+          const payload: UpdateStudentProfileRequest = {
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            gender: data.gender,
+            dateOfBirth: data.dateOfBirth,
+            languages: languageIds as Language[],
+          };
+
+          this.executeProfileSave(payload, () => {
+            this.isEditingPersonal = false;
+          });
+        },
+        error: (err: ProfileError) => {
+          this.isLoading = false;
+          this.error = this.getErrorMessage(err);
+        },
+      });
   }
 
   saveContactInfo(data: { city: string; country?: string; countryCode?: string; phoneNumber: string; email: string }): void {

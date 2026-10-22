@@ -106,6 +106,22 @@ export class StudentProfileService {
   }
 
   /**
+   * Get the languages known to the backend, with their database IDs
+   * GET /api/Languages
+   */
+  getLanguages(): Observable<{ id: number; name: string; code: string }[]> {
+    return this.http
+      .get<ApiResponse<{ id: number; name: string; code: string }[]> | { id: number; name: string; code: string }[]>(
+        `${this.baseUrl}/api/Languages`
+      )
+      .pipe(
+        map((response) => (Array.isArray(response) ? response : (response?.data ?? []))),
+        timeout(this.DEFAULT_TIMEOUT),
+        catchError((error) => this.handleError(error, 'getLanguages'))
+      );
+  }
+
+  /**
    * Create a new student profile
    * POST /api/StudentProfiles/me
    */
