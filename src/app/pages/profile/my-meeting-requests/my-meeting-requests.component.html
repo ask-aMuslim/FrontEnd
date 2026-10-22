@@ -1,0 +1,48 @@
+<section class="my-meetings">
+  <div class="my-meetings__header">
+    <h2>My Meetings</h2>
+    <a [routerLink]="['/question-and-answer', 'meet-scholar']" class="my-meetings__cta">
+      Request a Meeting
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <div class="my-meetings__state">Loading your meeting requests...</div>
+  } @else if (error()) {
+    <div class="my-meetings__state my-meetings__state--error">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="retry()">Retry</button>
+    </div>
+  } @else if (requests().length === 0) {
+    <div class="my-meetings__state">You haven't requested any meetings yet.</div>
+  } @else {
+    <div class="my-meetings__list">
+      @for (request of requests(); track request.id) {
+        <article class="my-meetings__item">
+          <div class="my-meetings__item-top">
+            <h3>{{ topicLabel(request.topic) }}</h3>
+            <span [class]="'my-meetings__status ' + statusClass(request.status)">
+              {{ statusLabel(request.status) }}
+            </span>
+          </div>
+
+          <p class="my-meetings__meta">
+            Scheduled for {{ formatTime(request.scheduledAt) }}
+            @if (request.moderatorName) {
+              · with {{ request.moderatorName }}
+            }
+          </p>
+
+          <p class="my-meetings__message" dir="auto">{{ request.message }}</p>
+
+          @if (request.response) {
+            <div class="my-meetings__response">
+              <h4>Response from the team</h4>
+              <p dir="auto">{{ request.response }}</p>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
