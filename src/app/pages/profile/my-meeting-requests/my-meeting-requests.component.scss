@@ -1,0 +1,67 @@
+.my-meetings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.my-meetings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-title);
+  }
+}
+
+.my-meetings__cta {
+  text-decoration: none;
+  border: none;
+  border-radius: var(--border-radius-default);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-background-white);
+  background: var(--color-button-primary-normal);
+  cursor: pointer;
+}
+
+.my-meetings__state {
+  padding: 1rem;
+  border-radius: var(--border-radius-default);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-card-surface-secondary);
+  color: var(--color-text-body);
+  font-size: 0.875rem;
+}
+
+.my-meetings__state--error {
+  color: #b91c1c;
+
+  button {
+    margin-top: 0.5rem;
+    border: 1px solid #ef4444;
+    border-radius: var(--border-radius-default);
+    padding: 0.35rem 0.65rem;
+    background: transparent;
+    color: #b91c1c;
+    cursor: pointer;
+  }
+}
+
+.my-meetings__all {
+  align-self: flex-start;
+  color: var(--color-button-primary-normal);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}

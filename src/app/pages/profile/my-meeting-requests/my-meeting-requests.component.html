@@ -1,0 +1,24 @@
+<section class="my-meetings">
+  <div class="my-meetings__header">
+    <h2>My Meetings</h2>
+    <a [routerLink]="['/question-and-answer', 'meet-scholar']" class="my-meetings__cta">
+      Request a Meeting
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <div class="my-meetings__state">Loading your meeting requests...</div>
+  } @else if (error()) {
+    <div class="my-meetings__state my-meetings__state--error">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="retry()">Retry</button>
+    </div>
+  } @else if (requests().length === 0) {
+    <div class="my-meetings__state">You haven't requested any meetings yet.</div>
+  } @else {
+    <app-meeting-request-list [requests]="requests()" />
+    <a class="my-meetings__all" [routerLink]="['/question-and-answer', 'meet-scholar', 'history']">
+      View full history &rsaquo;
+    </a>
+  }
+</section>

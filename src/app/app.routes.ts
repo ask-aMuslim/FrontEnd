@@ -53,6 +53,24 @@ const createQuestionAndAnswerRoutes = (): Routes => [
       ).then((m) => m.MeetScholarSuccessComponent),
     title: 'Meeting Request Submitted',
   },
+  {
+    path: 'meet-scholar/history',
+    loadComponent: () =>
+      import('./pages/question-and-answer/meet-scholar/history/meeting-history.component').then(
+        (m) => m.MeetingHistoryComponent,
+      ),
+    title: 'My Meetings',
+    canActivate: [authGuard],
+  },
+  {
+    path: 'meet-scholar/history/:id',
+    loadComponent: () =>
+      import('./pages/question-and-answer/meet-scholar/history/details/meeting-details.component').then(
+        (m) => m.MeetingDetailsComponent,
+      ),
+    title: 'Meeting Details',
+    canActivate: [authGuard],
+  },
 ];
 
 export const routes: Routes = [

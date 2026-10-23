@@ -380,6 +380,15 @@
               <app-my-inquiries></app-my-inquiries>
             </div>
           }
+
+          <!-- My Meetings Tab -->
+          @if (activeTabIndex === 3) {
+            <div class="profile-tab-panel">
+              <app-my-meeting-requests
+                [userId]="userProfile.id"
+              ></app-my-meeting-requests>
+            </div>
+          }
         </div>
 
         <!-- Right Side -->

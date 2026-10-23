@@ -3,6 +3,49 @@
   min-height: calc(100vh - 200px);
 }
 
+// Same look as the "My Mails" button on the contact page.
+.my-meetings-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #156b40;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 200ms ease;
+
+  .my-meetings-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .my-meetings-arrow {
+    width: 20px;
+    height: 20px;
+    transition: transform 160ms ease;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: #e8f5e8;
+
+    .my-meetings-arrow {
+      transform: translateX(3px);
+    }
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(21, 107, 64, 0.3);
+    outline-offset: 2px;
+  }
+}
+
 .meet-scholar-guest-cta {
   display: flex;
   flex-direction: column;

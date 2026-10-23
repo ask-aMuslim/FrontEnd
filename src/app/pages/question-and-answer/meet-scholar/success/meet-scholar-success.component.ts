@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { inject } from '@angular/core';
+import { TokenService } from '../../../../core/auth/token.service';
 
 @Component({
   selector: 'app-meet-scholar-success',
@@ -14,7 +16,8 @@ export class MeetScholarSuccessComponent {
   scheduledDateTime?: Date;
   scheduledTime?: string;
   durationMinutes?: number = 30;
-  confirmationEmail?: string;
+  /** The signed-in account's email; the backend sends its notifications there. */
+  readonly confirmationEmail = inject(TokenService).userEmail;
   doneIcon = '/icons/icons-24/done.svg';
   calendarIcon = '/icons/icons-24/calendar.svg';
   timeIcon = '/icons/icons-24/time.svg';
@@ -26,11 +29,10 @@ export class MeetScholarSuccessComponent {
       scheduledDateTime?: string | Date;
       scheduledTime?: string;
       durationMinutes?: number;
-      confirmationEmail?: string;
     };
 
     // Redirect if accessed directly without form submission
-    if (!state.scheduledDateTime && !state.confirmationEmail) {
+    if (!state.scheduledDateTime) {
       this.router.navigate(['/question-and-answer/meet-scholar']);
       return;
     }
@@ -43,7 +45,6 @@ export class MeetScholarSuccessComponent {
     }
     this.scheduledTime = state.scheduledTime ?? this.scheduledTime;
     this.durationMinutes = state.durationMinutes ?? this.durationMinutes;
-    this.confirmationEmail = state.confirmationEmail ?? this.confirmationEmail;
   }
 
   goToProfile(): void {

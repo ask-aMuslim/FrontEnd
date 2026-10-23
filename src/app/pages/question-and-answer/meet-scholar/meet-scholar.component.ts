@@ -2,7 +2,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { OnInit, inject } from '@angular/core';
 import { Language, MeetingInquiryTopic } from '../../../core/models/interfaces/enums.model';
 import type { CreateMeetingRequestCommand } from '../../../api/models';
@@ -41,6 +41,7 @@ interface TimeOption {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     StepperComponent,
     RequestStepComponent,
     DatetimeStepComponent,
@@ -104,8 +105,6 @@ export class MeetScholarComponent implements OnInit {
     private readonly tokenService: TokenService,
   ) {
     this.meetingForm = this.fb.group({
-      name: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
       topic: [null, Validators.required],
       message: ['', [Validators.required, Validators.minLength(10)]],
       durationMinutes: [30, [Validators.required, Validators.min(15)]],
@@ -242,7 +241,7 @@ export class MeetScholarComponent implements OnInit {
 
   submitMeetingRequest(): void {
     // Validate only required fields
-    const requiredControls = ['name', 'email', 'topic', 'message', 'durationMinutes'];
+    const requiredControls = ['topic', 'message', 'durationMinutes'];
     const hasInvalidRequired = requiredControls.some((ctrl) => this.meetingForm.get(ctrl)?.invalid);
     const selectedLanguagesEmpty = this.selectedLanguages().length === 0;
     const hasSelectedDateTime =
@@ -291,7 +290,6 @@ export class MeetScholarComponent implements OnInit {
             scheduledDateTime,
             scheduledTime: formValue.scheduledTime,
             durationMinutes: formValue.durationMinutes,
-            confirmationEmail: formValue.email,
           },
         });
       },

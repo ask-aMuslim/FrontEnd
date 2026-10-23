@@ -8,6 +8,7 @@ import { MosquesFacade, MosqueDto } from '../../api/facades/mosques.facade';
 // import { MyLearningComponent } from './my-learning/my-learning.component';
 import { AboutComponent } from './about/about.component';
 import { MyInquiriesComponent } from './my-inquiries/my-inquiries.component';
+import { MyMeetingRequestsComponent } from './my-meeting-requests/my-meeting-requests.component';
 import { ChatListComponent } from './chat-list/chat-list.component';
 import { AcademyProgressService } from '../../core/services/academy-progress.service';
 import { StudentFacade } from '../../api/facades/student.facade';
@@ -54,6 +55,7 @@ interface Verse {
     // MyLearningComponent,
     AboutComponent,
     MyInquiriesComponent,
+    MyMeetingRequestsComponent,
     ChatListComponent,
   ],
   templateUrl: './profile.component.html',
@@ -72,7 +74,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Only show tabs that have backend API support
   // 'Saved Answers' and 'Chat List' hidden until backend implementation
-  tabs = ['About', 'Chats', 'My Mails'];
+  tabs = ['About', 'Chats', 'My Mails', 'My Meetings'];
   activeTabIndex = 0;
 
   userProfile: UserProfile = {

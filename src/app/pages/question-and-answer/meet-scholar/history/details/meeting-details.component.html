@@ -1,0 +1,86 @@
+<section class="mails-page" aria-labelledby="meeting-details-title">
+  <div class="section-block mails-content">
+    <a class="back-link" [routerLink]="['/question-and-answer', 'meet-scholar', 'history']">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      My Meetings
+    </a>
+
+    @if (isLoading()) {
+      <p class="mails-state" role="status">Loading your meeting...</p>
+    } @else if (error()) {
+      <div class="mails-state mails-state--error" role="alert">
+        <p>{{ error() }}</p>
+        <button type="button" class="primary-button" (click)="retry()">Retry</button>
+      </div>
+    } @else if (notFound() || !request()) {
+      <div class="mails-state">
+        <h1 id="meeting-details-title">Meeting not found</h1>
+        <p>We couldn't find this meeting request in your account.</p>
+        <a class="primary-button" [routerLink]="['/question-and-answer', 'meet-scholar', 'history']">Back to My Meetings</a>
+      </div>
+    } @else {
+      @let meeting = request()!;
+
+      <header class="meeting-header">
+        <h1 id="meeting-details-title">{{ topicLabel(meeting) }}</h1>
+        <span [class]="'meeting-status ' + statusClass(meeting)">{{ statusLabel(meeting) }}</span>
+      </header>
+
+      <dl class="meeting-facts">
+        <div>
+          <dt>Scheduled for</dt>
+          <dd>{{ formatTime(meeting.scheduledAt) }}</dd>
+        </div>
+        <div>
+          <dt>Requested on</dt>
+          <dd>{{ formatTime(meeting.createdAt) }}</dd>
+        </div>
+        <div>
+          <dt>Scholar</dt>
+          <dd>{{ meeting.moderatorName || 'Not assigned yet' }}</dd>
+        </div>
+        @if (languagesLabel(meeting)) {
+          <div>
+            <dt>Languages</dt>
+            <dd>{{ languagesLabel(meeting) }}</dd>
+          </div>
+        }
+      </dl>
+
+      <section class="meeting-block" aria-label="Your message">
+        <h2>Your message</h2>
+        <p dir="auto">{{ meeting.message }}</p>
+      </section>
+
+      @if (meeting.response) {
+        <section class="meeting-block meeting-block--response" aria-label="Response from the team">
+          <h2>Response from the team</h2>
+          <p dir="auto">{{ meeting.response }}</p>
+        </section>
+      }
+
+      @if (canCancel()) {
+        <div class="meeting-actions">
+          @if (isConfirmingCancel()) {
+            <p class="meeting-actions__question" role="alert">Cancel this meeting? The scholar will be told.</p>
+            <div class="meeting-actions__buttons">
+              <button type="button" class="danger-button" [disabled]="isCancelling()" (click)="confirmCancel()">
+                {{ isCancelling() ? "Cancelling..." : "Yes, cancel meeting" }}
+              </button>
+              <button type="button" class="secondary-button" [disabled]="isCancelling()" (click)="keepMeeting()">
+                Keep meeting
+              </button>
+            </div>
+          } @else {
+            <button type="button" class="danger-button" (click)="askToCancel()">Cancel meeting</button>
+          }
+          @if (cancelError()) {
+            <p class="field-error" role="alert">{{ cancelError() }}</p>
+          }
+        </div>
+      }
+    }
+  </div>
+</section>
