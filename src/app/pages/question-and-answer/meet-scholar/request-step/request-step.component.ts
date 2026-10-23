@@ -44,7 +44,7 @@ export class RequestStepComponent {
 
     const form = this.form();
     this.languagesValidated.set(true);
-    const controlsToValidate = ['name', 'email', 'topic', 'message'];
+    const controlsToValidate = ['topic', 'message'];
     const hasInvalidControl = controlsToValidate.some((ctrl) => form.get(ctrl)?.invalid);
 
     if (hasInvalidControl || this.selectedLanguages().length === 0) {

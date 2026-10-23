@@ -1,0 +1,33 @@
+<div class="meeting-list">
+  @for (request of requests(); track request.id) {
+    <a
+      class="meeting-list__item"
+      [routerLink]="['/question-and-answer', 'meet-scholar', 'history', request.id]"
+    >
+      <div class="meeting-list__item-top">
+        <h3>{{ topicLabel(request.topic) }}</h3>
+        <span [class]="'meeting-list__status ' + statusClass(request.status)">
+          {{ statusLabel(request.status) }}
+        </span>
+      </div>
+
+      <p class="meeting-list__meta">
+        Scheduled for {{ formatTime(request.scheduledAt) }}
+        @if (request.moderatorName) {
+          · with {{ request.moderatorName }}
+        }
+      </p>
+
+      <p class="meeting-list__message" dir="auto">{{ request.message }}</p>
+
+      @if (request.response) {
+        <div class="meeting-list__response">
+          <h4>Response from the team</h4>
+          <p dir="auto">{{ request.response }}</p>
+        </div>
+      }
+
+      <span class="meeting-list__details">View details &rsaquo;</span>
+    </a>
+  }
+</div>

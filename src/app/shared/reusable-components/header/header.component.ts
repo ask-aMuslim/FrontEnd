@@ -83,6 +83,11 @@ export class HeaderComponent {
     void this.router.navigate(['/contact', 'mails']);
   }
 
+  protected goToMeetings(): void {
+    this.closeNav();
+    void this.router.navigate(['/question-and-answer', 'meet-scholar', 'history']);
+  }
+
   protected openMails(event: Event): void {
     event.stopPropagation();
     this.closeNav();

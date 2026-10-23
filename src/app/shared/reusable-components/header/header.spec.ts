@@ -38,6 +38,15 @@ describe('HeaderComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/contact', 'mails']);
   });
 
+  it('opens My Meetings from the user menu', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+
+    (component as unknown as { goToMeetings(): void }).goToMeetings();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/question-and-answer', 'meet-scholar', 'history']);
+  });
+
   it('opens Mails History from the bell without opening the user menu', () => {
     const router = TestBed.inject(Router);
     spyOn(router, 'navigate').and.resolveTo(true);

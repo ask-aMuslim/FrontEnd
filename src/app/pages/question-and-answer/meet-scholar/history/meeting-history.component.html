@@ -1,0 +1,49 @@
+<section class="mails-page" aria-labelledby="meeting-history-title">
+  <div class="section-block mails-content">
+    <a class="back-link" [routerLink]="['/question-and-answer', 'meet-scholar']">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Book a Meeting
+    </a>
+
+    <header class="meetings-header">
+      <h1 id="meeting-history-title">My Meetings</h1>
+      <a class="primary-button" [routerLink]="['/question-and-answer', 'meet-scholar']">New meeting request</a>
+    </header>
+
+    <div class="status-chips" role="group" aria-label="Filter by status">
+      @for (filter of statusFilters; track filter.label) {
+        <button
+          type="button"
+          class="status-chip"
+          [class.status-chip--active]="activeStatus() === filter.value"
+          [attr.aria-pressed]="activeStatus() === filter.value"
+          (click)="selectStatus(filter.value)"
+        >
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+
+    @if (isLoading()) {
+      <p class="mails-state" role="status">Loading your meetings...</p>
+    } @else if (error()) {
+      <div class="mails-state mails-state--error" role="alert">
+        <p>{{ error() }}</p>
+        <button type="button" class="status-chip" (click)="retry()">Retry</button>
+      </div>
+    } @else if (requests().length === 0) {
+      <div class="mails-state">
+        <p>No meetings yet.</p>
+        <a class="primary-button" [routerLink]="['/question-and-answer', 'meet-scholar']">Request a meeting</a>
+      </div>
+    } @else if (visibleRequests().length === 0) {
+      <div class="mails-state">
+        <p>No meetings match this filter.</p>
+      </div>
+    } @else {
+      <app-meeting-request-list [requests]="visibleRequests()" />
+    }
+  </div>
+</section>

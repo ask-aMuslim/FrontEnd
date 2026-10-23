@@ -4,20 +4,6 @@
 
     <div class="meet-scholar-review-step__details-list space-y-2">
       <div class="meet-scholar-review-step__detail-row booking-item-row">
-        <span class="meet-scholar-review-step__detail-label booking-label">Name:</span>
-        <p class="meet-scholar-review-step__detail-value booking-value text-(--color-text-title)">
-          {{ form().get('name')?.value || '-' }}
-        </p>
-      </div>
-
-      <div class="meet-scholar-review-step__detail-row booking-item-row">
-        <span class="meet-scholar-review-step__detail-label booking-label">Email:</span>
-        <p class="meet-scholar-review-step__detail-value booking-value text-(--color-text-title)">
-          {{ form().get('email')?.value || '-' }}
-        </p>
-      </div>
-
-      <div class="meet-scholar-review-step__detail-row booking-item-row">
         <span class="meet-scholar-review-step__detail-label booking-label">Subject:</span>
         <p class="meet-scholar-review-step__detail-value booking-value text-(--color-text-title)">
           {{ getTopicLabel(form().get('topic')?.value) }}

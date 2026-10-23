@@ -53,94 +53,15 @@
   }
 }
 
-.my-meetings__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.my-meetings__item {
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--border-radius-default);
-  background: var(--color-background-white);
-  padding: 0.875rem;
-}
-
-.my-meetings__item-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-
-  h3 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-title);
-  }
-}
-
-.my-meetings__status {
-  border-radius: 9999px;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-
-  &.meeting-status--pending {
-    background: #fff4e5;
-    color: #b25e00;
-  }
-
-  &.meeting-status--positive {
-    background: #e8f5e8;
-    color: #156b40;
-  }
-
-  &.meeting-status--negative {
-    background: #fdecec;
-    color: #b91c1c;
-  }
-
-  &.meeting-status--neutral {
-    background: #f1f3f5;
-    color: #6c757d;
-  }
-}
-
-.my-meetings__meta {
-  margin: 0.5rem 0 0;
-  font-size: 0.813rem;
-  color: var(--color-text-caption);
-}
-
-.my-meetings__message {
-  margin: 0.5rem 0 0;
+.my-meetings__all {
+  align-self: flex-start;
+  color: var(--color-button-primary-normal);
   font-size: 0.875rem;
-  color: var(--color-text-body);
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
+  font-weight: 600;
+  text-decoration: none;
 
-.my-meetings__response {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  border-left: 4px solid var(--color-button-primary-normal);
-  border-radius: var(--border-radius-default);
-  background: var(--color-card-surface-secondary);
-
-  h4 {
-    margin: 0 0 0.25rem;
-    font-size: 0.813rem;
-    font-weight: 600;
-    color: var(--color-text-title);
-  }
-
-  p {
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--color-text-body);
-    white-space: pre-line;
-    overflow-wrap: anywhere;
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
   }
 }

@@ -1,0 +1,49 @@
+.meetings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    color: #010d05;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+}
+
+.status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-chip {
+  padding: 8px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #343a40;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &--active {
+    border-color: #156b40;
+    background: #156b40;
+    color: #ffffff;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(21, 107, 64, 0.3);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 767px) {
+  .meetings-header h1 {
+    font-size: 28px;
+  }
+}

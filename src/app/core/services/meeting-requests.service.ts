@@ -18,6 +18,16 @@ export class MeetingRequestsService {
     return this.api.get(`${MeetingRequestsService.MEETING_REQUESTS_PATH}/${id}`);
   }
 
+  /** One of the signed-in user's own requests. Anyone else's reads as not found. */
+  getMine(id: string): Observable<unknown> {
+    return this.api.get(`${MeetingRequestsService.MEETING_REQUESTS_PATH}/my/${id}`);
+  }
+
+  /** Cancels one of the signed-in user's own pending or accepted requests. */
+  cancelMine(id: string): Observable<unknown> {
+    return this.api.put(`${MeetingRequestsService.MEETING_REQUESTS_PATH}/my/${id}/cancel`, {});
+  }
+
   getByRequester(requesterId: string): Observable<unknown> {
     return this.api.get(`${MeetingRequestsService.MEETING_REQUESTS_PATH}/by-requester/${requesterId}`);
   }

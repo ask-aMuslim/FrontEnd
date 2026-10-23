@@ -56,6 +56,15 @@ export const serverRoutes: ServerRoute[] = [
     path: 'question-and-answer/meet-scholar/success',
     renderMode: RenderMode.Server,
   },
+  // Signed-in meeting history: private, rendered in the browser only
+  {
+    path: 'question-and-answer/meet-scholar/history',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'question-and-answer/meet-scholar/history/:id',
+    renderMode: RenderMode.Client,
+  },
   // Signed-in Support Mails pages: private, rendered in the browser only
   {
     path: 'contact/mails',

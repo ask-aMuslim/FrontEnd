@@ -1,0 +1,161 @@
+.meeting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    color: #010d05;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+}
+
+.meeting-status {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.meeting-status--pending {
+    background: #fff4e5;
+    color: #b25e00;
+  }
+
+  &.meeting-status--positive {
+    background: #e8f5e8;
+    color: #156b40;
+  }
+
+  &.meeting-status--negative {
+    background: #fdecec;
+    color: #b91c1c;
+  }
+
+  &.meeting-status--neutral {
+    background: #f1f3f5;
+    color: #6c757d;
+  }
+}
+
+.meeting-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 20px 24px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #ffffff;
+
+  dt {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 4px 0 0;
+    color: #010d05;
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+.meeting-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #ffffff;
+
+  h2 {
+    margin: 0;
+    color: #010d05;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: #343a40;
+    font-size: 16px;
+    line-height: 1.6;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  &--response {
+    border-left: 4px solid #156b40;
+    background: #f6fbf7;
+  }
+}
+
+.meeting-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+
+  &__question {
+    margin: 0;
+    color: #343a40;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+.danger-button,
+.secondary-button {
+  min-height: 48px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(21, 107, 64, 0.3);
+    outline-offset: 2px;
+  }
+}
+
+.danger-button {
+  border: 1px solid #dc3545;
+  background: #dc3545;
+  color: #ffffff;
+
+  &:hover:not(:disabled) {
+    background: #b02a37;
+    border-color: #b02a37;
+  }
+}
+
+.secondary-button {
+  border: 1px solid #ced4da;
+  background: #ffffff;
+  color: #343a40;
+}
+
+@media (max-width: 767px) {
+  .meeting-header h1 {
+    font-size: 28px;
+  }
+}

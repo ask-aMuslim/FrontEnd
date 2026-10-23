@@ -97,6 +97,19 @@
               </span>
             }
           </button>
+          <button
+            class="user-popup__item"
+            type="button"
+            (click)="goToMeetings()"
+          >
+            <img
+              class="user-popup__icon"
+              src="/icons/icons-24/calendar.svg"
+              alt=""
+              aria-hidden="true"
+            />
+            My Meetings
+          </button>
           <button class="user-popup__item" type="button" (click)="logout()">
             <img
               class="user-popup__icon"
