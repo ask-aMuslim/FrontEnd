@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupportMailUnreadService } from '../../../core/services/support-mail-unread.service';
+import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 
 interface NavLink {
   label: string;
@@ -15,7 +16,7 @@ interface NavLink {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, NotificationBellComponent],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
 })
@@ -86,12 +87,6 @@ export class HeaderComponent {
   protected goToMeetings(): void {
     this.closeNav();
     void this.router.navigate(['/question-and-answer', 'meet-scholar', 'history']);
-  }
-
-  protected openMails(event: Event): void {
-    event.stopPropagation();
-    this.closeNav();
-    void this.router.navigate(['/contact', 'mails']);
   }
 
   protected logout(): void {

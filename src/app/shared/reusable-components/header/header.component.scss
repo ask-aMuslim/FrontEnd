@@ -221,38 +221,6 @@
   padding: 0.4rem;
 }
 
-.user-alert {
-  border: none;
-  background: var(--color-selected-surface);
-  border-radius: 12px;
-  padding: 0.45rem;
-  display: grid;
-  place-items: center;
-  margin-left: auto;
-  position: relative;
-  cursor: pointer;
-}
-
-.user-alert__badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 9999px;
-  background: #dc3545;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 18px;
-  text-align: center;
-}
-
-.user-alert__icon {
-  stroke: var(--color-button-primary-normal);
-}
-
 .mobile-user-card {
   display: none;
 }

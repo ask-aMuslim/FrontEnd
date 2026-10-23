@@ -1,0 +1,197 @@
+:host {
+  display: block;
+  position: relative;
+  margin-left: auto;
+}
+
+.bell {
+  border: none;
+  background: var(--color-selected-surface);
+  border-radius: 12px;
+  padding: 0.45rem;
+  display: grid;
+  place-items: center;
+  position: relative;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 3px solid rgba(21, 107, 64, 0.3);
+    outline-offset: 2px;
+  }
+}
+
+.bell__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: #dc3545;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.bell__icon {
+  stroke: var(--color-button-primary-normal);
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: min(380px, 92vw);
+  max-height: min(70vh, 520px);
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 0.65rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  z-index: 140;
+  cursor: default;
+}
+
+// In the mobile menu the user card sits at the bottom of the screen, so open upwards.
+:host-context(.mobile-user-card) .panel {
+  top: auto;
+  bottom: calc(100% + 0.5rem);
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+
+  h2 {
+    margin: 0;
+    color: #1d3122;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+}
+
+.panel__link {
+  border: none;
+  background: transparent;
+  color: var(--color-button-primary-normal);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.panel__state {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  color: #495057;
+  font-size: 0.9rem;
+  text-align: center;
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+
+  &--error {
+    color: #b91c1c;
+  }
+}
+
+.panel__list {
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(21, 107, 64, 0.08);
+  }
+
+  &--unread {
+    background: #f6fbf7;
+
+    .item__title {
+      font-weight: 700;
+    }
+
+    .item__dot {
+      background: #dc3545;
+    }
+  }
+}
+
+.item__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.4rem;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.item__title {
+  color: #1d3122;
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.item__message {
+  color: #495057;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.item__time {
+  color: #6c757d;
+  font-size: 0.78rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

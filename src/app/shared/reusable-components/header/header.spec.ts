@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 
 import { HeaderComponent } from './header.component';
 import { SupportMailUnreadService } from '../../../core/services/support-mail-unread.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
@@ -16,6 +17,16 @@ describe('HeaderComponent', () => {
       providers: [
         provideRouter([]),
         { provide: SupportMailUnreadService, useValue: { unreadCount, refresh: () => undefined } },
+        {
+          provide: NotificationsService,
+          useValue: {
+            unreadCount: signal(0),
+            notifications: signal([]),
+            isLoading: signal(false),
+            error: signal(null),
+            loadLatest: () => undefined,
+          },
+        },
       ],
     })
       .compileComponents();
@@ -45,18 +56,6 @@ describe('HeaderComponent', () => {
     (component as unknown as { goToMeetings(): void }).goToMeetings();
 
     expect(router.navigate).toHaveBeenCalledWith(['/question-and-answer', 'meet-scholar', 'history']);
-  });
-
-  it('opens Mails History from the bell without opening the user menu', () => {
-    const router = TestBed.inject(Router);
-    spyOn(router, 'navigate').and.resolveTo(true);
-    const event = new MouseEvent('click');
-    spyOn(event, 'stopPropagation');
-
-    (component as unknown as { openMails(e: Event): void }).openMails(event);
-
-    expect(event.stopPropagation).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/contact', 'mails']);
   });
 
   it('treats sibling Q&A routes as active', () => {
