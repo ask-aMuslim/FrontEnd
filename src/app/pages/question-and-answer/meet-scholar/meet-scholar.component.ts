@@ -1,6 +1,6 @@
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { OnInit, inject } from '@angular/core';
@@ -13,6 +13,16 @@ import { RequestStepComponent } from './request-step/request-step.component';
 import { DatetimeStepComponent } from './datetime-step/datetime-step.component';
 import { ReviewStepComponent } from './review-step/review-step.component';
 import { SeoService } from '../../../core/services/seo.service';
+import {
+  MEETING_DURATION_MINUTES,
+  buildDateOptions,
+  buildScheduledAt,
+  buildTimeOptions,
+  isSlotAvailable,
+  timeZoneLabel,
+  type DateOption,
+  type TimeOption,
+} from './meeting-schedule';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -22,18 +32,6 @@ interface TopicOption {
 interface LanguageOption {
   value: Language;
   label: string;
-}
-
-interface DateOption {
-  value: string;
-  label: string;
-  disabled: boolean;
-}
-
-interface TimeOption {
-  value: string;
-  label: string;
-  disabled: boolean;
 }
 
 @Component({
@@ -95,8 +93,11 @@ export class MeetScholarComponent implements OnInit {
   availableLanguages = signal<LanguageOption[]>(this.languages);
   selectedLanguages = signal<LanguageOption[]>([]);
 
-  availableDates: DateOption[] = [];
-  availableTimes: TimeOption[] = [];
+  readonly meetingDurationMinutes = MEETING_DURATION_MINUTES;
+  readonly timeZone = timeZoneLabel();
+  readonly availableDates: DateOption[] = buildDateOptions();
+  readonly selectedDate = signal<string | null>(null);
+  readonly availableTimes = computed(() => buildTimeOptions(this.selectedDate()));
 
   constructor(
     private fb: FormBuilder,
@@ -107,87 +108,26 @@ export class MeetScholarComponent implements OnInit {
     this.meetingForm = this.fb.group({
       topic: [null, Validators.required],
       message: ['', [Validators.required, Validators.minLength(10)]],
-      durationMinutes: [30, [Validators.required, Validators.min(15)]],
       languages: [[], Validators.required],
       scheduledDate: [null],
       scheduledTime: [null],
     });
 
     this.updateAvailableLanguages();
-    this.initializeDatesAndTimes();
-  }
-
-  private initializeDatesAndTimes(): void {
-    // Generate dates for the next 12 days
-    const today = new Date();
-    const dates: DateOption[] = [];
-
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-      const day = date.getDate();
-
-      const disabled = false;
-
-      dates.push({
-        value: date.toISOString().split('T')[0],
-        label: `${dayName}, ${monthName} ${day}`,
-        disabled,
-      });
-    }
-
-    this.availableDates = dates;
-
-    // Generate time slots
-    const times: TimeOption[] = [];
-    const timeSlots = [
-      '8:00 AM',
-      '9:00 AM',
-      '10:00 AM',
-      '11:00 AM',
-      '12:00 PM',
-      '1:00 PM',
-      '2:00 PM',
-      '3:00 PM',
-      '4:00 PM',
-      '5:00 PM',
-    ];
-
-    timeSlots.forEach((slot) => {
-      const disabled = false;
-      times.push({
-        value: this.convertTo24Hour(slot),
-        label: slot,
-        disabled,
-      });
-    });
-
-    this.availableTimes = times;
-  }
-
-  private convertTo24Hour(time12h: string): string {
-    const [time, modifier] = time12h.split(' ');
-    const timeParts = time.split(':');
-    let hours = timeParts[0];
-    const minutes = timeParts[1];
-
-    if (hours === '12') {
-      hours = '00';
-    }
-
-    if (modifier === 'PM') {
-      hours = String(parseInt(hours, 10) + 12);
-    }
-
-    return `${hours.padStart(2, '0')}:${minutes}`;
   }
 
   selectDate(date: DateOption): void {
-    if (!date.disabled) {
-      this.meetingForm.patchValue({ scheduledDate: date.value });
+    if (date.disabled) {
+      return;
+    }
+
+    this.selectedDate.set(date.value);
+    this.meetingForm.patchValue({ scheduledDate: date.value });
+
+    // Keep a time picked for another day only if it is still available on this one.
+    const time = this.meetingForm.value.scheduledTime;
+    if (typeof time === 'string' && !isSlotAvailable(date.value, time)) {
+      this.meetingForm.patchValue({ scheduledTime: null });
     }
   }
 
@@ -241,24 +181,29 @@ export class MeetScholarComponent implements OnInit {
 
   submitMeetingRequest(): void {
     // Validate only required fields
-    const requiredControls = ['topic', 'message', 'durationMinutes'];
+    const requiredControls = ['topic', 'message'];
     const hasInvalidRequired = requiredControls.some((ctrl) => this.meetingForm.get(ctrl)?.invalid);
     const selectedLanguagesEmpty = this.selectedLanguages().length === 0;
-    const hasSelectedDateTime =
-      typeof this.meetingForm.value.scheduledDate === 'string' &&
-      this.meetingForm.value.scheduledDate.length > 0 &&
-      typeof this.meetingForm.value.scheduledTime === 'string' &&
-      this.meetingForm.value.scheduledTime.length > 0;
+    const scheduledDateTime = buildScheduledAt(
+      this.meetingForm.value.scheduledDate,
+      this.meetingForm.value.scheduledTime,
+    );
 
-    if (hasInvalidRequired || selectedLanguagesEmpty || !hasSelectedDateTime || this.isSubmitting()) {
-      if (!hasSelectedDateTime) {
-        this.submitError.set('Please select both a date and time before submitting your booking.');
+    if (hasInvalidRequired || selectedLanguagesEmpty || !scheduledDateTime || this.isSubmitting()) {
+      if (!scheduledDateTime) {
+        this.submitError.set('Please select both a date and time before sending your request.');
       }
       return;
     }
 
+    // The page may have been open for a while; the notice period is measured from now.
+    if (!isSlotAvailable(this.meetingForm.value.scheduledDate, this.meetingForm.value.scheduledTime)) {
+      this.submitError.set('That time is no longer available. Please go back and pick a later time.');
+      return;
+    }
+
     if (!this.tokenService.isAuthenticated()) {
-      this.submitError.set('Please sign in before booking a meeting.');
+      this.submitError.set('Please sign in before requesting a meeting.');
       this.router.navigate(['/login'], {
         queryParams: { returnUrl: '/question-and-answer/meet-scholar' },
       });
@@ -269,28 +214,19 @@ export class MeetScholarComponent implements OnInit {
     this.submitError.set(null);
 
     const formValue = this.meetingForm.value;
-    const date = new Date(formValue.scheduledDate);
-    const [hours, minutes] = String(formValue.scheduledTime).split(':');
-    date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-    const scheduledAt = date.toISOString();
-    const scheduledDateTime: Date = date;
 
     const payload: CreateMeetingRequestCommand = {
       topic: formValue.topic,
       message: formValue.message,
       languages: formValue.languages,
-      scheduledAt,
+      scheduledAt: scheduledDateTime.toISOString(),
     };
 
     this._meetingRequestsService.create(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.router.navigate(['/question-and-answer/meet-scholar/success'], {
-          state: {
-            scheduledDateTime,
-            scheduledTime: formValue.scheduledTime,
-            durationMinutes: formValue.durationMinutes,
-          },
+          state: { scheduledDateTime },
         });
       },
       error: (error: unknown) => {

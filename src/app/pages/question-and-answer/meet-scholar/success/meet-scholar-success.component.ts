@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { inject } from '@angular/core';
 import { TokenService } from '../../../../core/auth/token.service';
+import { MEETING_DURATION_MINUTES, timeZoneLabel } from '../meeting-schedule';
 
 @Component({
   selector: 'app-meet-scholar-success',
@@ -14,8 +15,8 @@ import { TokenService } from '../../../../core/auth/token.service';
 })
 export class MeetScholarSuccessComponent {
   scheduledDateTime?: Date;
-  scheduledTime?: string;
-  durationMinutes?: number = 30;
+  readonly durationMinutes = MEETING_DURATION_MINUTES;
+  readonly timeZone = timeZoneLabel();
   /** The signed-in account's email; the backend sends its notifications there. */
   readonly confirmationEmail = inject(TokenService).userEmail;
   doneIcon = '/icons/icons-24/done.svg';
@@ -27,8 +28,6 @@ export class MeetScholarSuccessComponent {
     const nav = this.router.currentNavigation();
     const state = (nav?.extras?.state ?? {}) as {
       scheduledDateTime?: string | Date;
-      scheduledTime?: string;
-      durationMinutes?: number;
     };
 
     // Redirect if accessed directly without form submission
@@ -43,8 +42,6 @@ export class MeetScholarSuccessComponent {
           ? new Date(state.scheduledDateTime)
           : state.scheduledDateTime;
     }
-    this.scheduledTime = state.scheduledTime ?? this.scheduledTime;
-    this.durationMinutes = state.durationMinutes ?? this.durationMinutes;
   }
 
   goToProfile(): void {
