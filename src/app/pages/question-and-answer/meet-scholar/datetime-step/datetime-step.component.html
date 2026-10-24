@@ -1,43 +1,24 @@
 <div class="meet-scholar-datetime-step space-y-6 md:space-y-8 px-2 md:px-0">
-  <div class="meet-scholar-datetime-step__duration-field">
-    <label
-      for="meet-scholar-duration"
-      class="meet-scholar-datetime-step__label block text-sm md:text-base font-medium text-(--color-text-body) mb-2"
-      >Meeting duration (minutes)</label
-    >
-    <input
-      id="meet-scholar-duration"
-      name="durationMinutes"
-      type="number"
-      min="15"
-      step="15"
-      [formControl]="$any(form().get('durationMinutes'))"
-      placeholder="30"
-      class="meet-scholar-datetime-step__duration-input w-full rounded-lg border border-(--color-border-medium) px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-(--color-button-primary-normal) focus:border-transparent"
-      [class.border-red-500]="
-        form().get('durationMinutes')?.invalid &&
-        form().get('durationMinutes')?.touched
-      "
-    />
-    @if (
-      form().get("durationMinutes")?.invalid &&
-      form().get("durationMinutes")?.touched
-    ) {
-      <p class="meet-scholar-datetime-step__error mt-1 text-xs md:text-sm" style="color: var(--color-error)">
-        Please enter a duration of at least 15 minutes
-      </p>
+  <div class="meet-scholar-datetime-step__info rounded-lg bg-(--color-card-surface-secondary) px-4 py-3 text-sm md:text-base text-(--color-text-body) space-y-1">
+    <p class="font-medium text-(--color-text-title)">Choose your preferred date and time</p>
+    <p>
+      Sessions are {{ durationMinutes }} minutes. A scholar has to accept your request, so it is not
+      confirmed until you hear from us. Requests need at least {{ minNoticeHours }} hours' notice.
+    </p>
+    @if (timeZone()) {
+      <p class="meet-scholar-datetime-step__timezone">Times are shown in your local timezone: {{ timeZone() }}.</p>
     }
   </div>
 
   <div class="meet-scholar-datetime-step__date-section">
     <label
       class="meet-scholar-datetime-step__label block text-sm md:text-base font-medium text-(--color-text-body) mb-3 md:mb-4"
-      >Select Date:</label
+      >Preferred date:</label
     >
     <div
       class="meet-scholar-datetime-step__date-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 md:gap-3"
     >
-      @for (date of availableDates(); track date) {
+      @for (date of availableDates(); track date.value) {
         <button
           type="button"
           (click)="onSelectDate(date)"
@@ -81,12 +62,12 @@
     <div>
       <label
         class="block text-sm md:text-base font-medium text-text-title mb-3 md:mb-4"
-        >Select Time:</label
+        >Preferred time:</label
       >
       <div
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 md:gap-3"
       >
-        @for (time of availableTimes(); track time) {
+        @for (time of availableTimes(); track time.value) {
           <button
             type="button"
             (click)="onSelectTime(time)"
@@ -132,6 +113,12 @@
         }
       </div>
     </div>
+  }
+
+  @if (selectionError()) {
+    <p class="meet-scholar-datetime-step__error text-xs md:text-sm" style="color: var(--color-error)" role="alert">
+      Please choose both a date and a time.
+    </p>
   }
 
   <div class="meet-scholar-datetime-step__actions flex flex-col sm:flex-row gap-3 justify-between mb-5">

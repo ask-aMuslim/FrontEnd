@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MeetingInquiryTopic, Language } from '../../../../core/models/interfaces/enums.model';
+import { MEETING_DURATION_MINUTES, formatSlotTime, timeZoneLabel } from '../meeting-schedule';
 
 interface TopicOption {
   value: MeetingInquiryTopic;
@@ -31,6 +32,13 @@ export class ReviewStepComponent {
   back = output<void>();
   submit = output<void>();
   leftArrowIcon = '/icons/icons-24/arrow-left.svg';
+
+  readonly durationMinutes = MEETING_DURATION_MINUTES;
+  readonly timeZone = timeZoneLabel();
+
+  formatTime(value: string | null): string {
+    return value ? formatSlotTime(value) : '';
+  }
 
   getTopicLabel(value: MeetingInquiryTopic | null): string {
     if (!value) return 'Subject';

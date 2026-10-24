@@ -1,6 +1,9 @@
 <div class="meet-scholar-review-step space-y-5 md:space-y-6 px-2 md:px-0">
   <div class="meet-scholar-review-step__details-card bg-(--color-card-surface-secondary) rounded-lg px-4 py-4 md:px-6 md:py-5 space-y-4">
-    <h2 class="meet-scholar-review-step__section-title">Booking Details</h2>
+    <h2 class="meet-scholar-review-step__section-title">Request Details</h2>
+    <p class="text-sm text-(--color-text-body)">
+      A scholar will review your request. It is not confirmed until you hear from us.
+    </p>
 
     <div class="meet-scholar-review-step__details-list space-y-2">
       <div class="meet-scholar-review-step__detail-row booking-item-row">
@@ -13,7 +16,7 @@
       <div class="meet-scholar-review-step__detail-row booking-item-row">
         <span class="meet-scholar-review-step__detail-label booking-label">Duration:</span>
         <p class="meet-scholar-review-step__detail-value booking-value text-var(--color-text-title)">
-          {{ form().get('durationMinutes')?.value }} minutes
+          {{ durationMinutes }} minutes
         </p>
       </div>
 
@@ -42,7 +45,12 @@
       @if (form().get('scheduledTime')?.value) {
         <div class="meet-scholar-review-step__detail-row booking-item-row">
           <span class="meet-scholar-review-step__detail-label booking-label">Preferred Time:</span>
-          <p class="meet-scholar-review-step__detail-value booking-value text-text-title">{{ form().get('scheduledTime')?.value }}</p>
+          <p class="meet-scholar-review-step__detail-value booking-value text-text-title">
+            {{ formatTime(form().get('scheduledTime')?.value) }}
+            @if (timeZone) {
+              <span class="meet-scholar-review-step__timezone">({{ timeZone }})</span>
+            }
+          </p>
         </div>
       }
     </div>
@@ -75,7 +83,7 @@
       class="meet-scholar-review-step__submit-button button w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
     >
       @if (!isSubmitting()) {
-        <span>Confirm Booking</span>
+        <span>Send Request</span>
       }
       @if (isSubmitting()) {
         <span>Submitting...</span>
