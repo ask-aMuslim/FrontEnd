@@ -82,6 +82,7 @@ export class CourseTreeComponent {
   nodes = input.required<CourseNode[]>();
   loading = input<boolean>(false);
   error = input<string | null>(null);
+  isGuest = input<boolean>(false);
 
   // Outputs
   courseClick = output<CourseNode>();

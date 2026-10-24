@@ -72,7 +72,14 @@
                     track lesson.id;
                     let last = $last
                   ) {
-                    <div class="lesson-item">
+                    <div
+                      class="lesson-item"
+                      role="button"
+                      tabindex="0"
+                      (click)="onLessonClick(lesson)"
+                      (keydown.enter)="onLessonClick(lesson)"
+                      (keydown.space)="onLessonClick(lesson)"
+                    >
                       <div class="lesson-info">
                         <span class="lesson-title">{{ lesson.title }}</span>
                       </div>
@@ -95,8 +102,15 @@
                  justify-content: flex-end;
                "
              >
-               @if (
-                 !isUserAuthenticated ||
+               @if (!isUserAuthenticated) {
+                 <button
+                   type="button"
+                   class="btn btn-primary"
+                   (click)="openSignInModal()"
+                 >
+                   <span>Enroll</span>
+                 </button>
+               } @else if (
                  course.isLocked ||
                  course.hasUnmetPrerequisites
                ) {
@@ -110,9 +124,7 @@
                      font-size: 0.875rem;
                    "
                  >
-                   @if (!isUserAuthenticated) {
-                     Please sign in to enroll in this course.
-                   } @else if (course.isLocked) {
+                   @if (course.isLocked) {
                      You must finish the quizzes of all previous stages to unlock
                      this course.
                    } @else if (course.hasUnmetPrerequisites) {
@@ -164,48 +176,77 @@
            [duration]="course.duration"
            [lessons]="course.lessonsList"
            [showReadyDividerBeforeQuiz]="true"
+           [disableLockedLessonClick]="isUserAuthenticated"
            (lessonSelect)="onLessonClick($event)"
          />
        </div>
     </app-academy-page-shell>
 
-    @if (showSignInPrompt) {
+  }
+
+  @if (isSignInModalOpen) {
+    <div
+      class="sign-in-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="course-login-modal-title"
+      (click)="closeSignInModal()"
+    >
+      <div class="sign-in-modal__backdrop" aria-hidden="true"></div>
       <div
-        class="sign-in-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="academy-signin-title"
+        class="sign-in-modal__card"
+        (click)="$event.stopPropagation()"
       >
-        <div
-          class="sign-in-modal__backdrop"
-          (click)="closeSignInPrompt()"
-        ></div>
-        <div class="sign-in-modal__card">
-          <h2 id="academy-signin-title" class="sign-in-modal__title">
-            Sign in to begin this course
+        <button
+          type="button"
+          class="sign-in-modal__close-btn"
+          aria-label="Close"
+          (click)="closeSignInModal()"
+        >
+          <svg
+            style="pointer-events: none;"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              style="pointer-events: none;"
+              d="M18 6L6 18M6 6l12 12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+
+        <div class="sign-in-modal__header">
+          <h2 id="course-login-modal-title" class="sign-in-modal__title">
+            Log In Required
           </h2>
           <p class="sign-in-modal__text">
-            You can explore course overviews as a guest. To start lessons,
-            please sign in.
+            Please log in to your account to enroll in this course and access its lessons.
           </p>
-          <div class="sign-in-modal__actions">
-            <button
-              type="button"
-              class="btn btn-ghost"
-              (click)="closeSignInPrompt()"
-            >
-              Not now
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              (click)="continueToSignIn()"
-            >
-              Sign In
-            </button>
-          </div>
+        </div>
+
+        <div class="sign-in-modal__actions">
+          <button
+            type="button"
+            class="btn btn-secondary sign-in-modal__btn"
+            (click)="closeSignInModal()"
+          >
+            <span>Cancel</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary sign-in-modal__btn"
+            (click)="continueToLogin()"
+          >
+            <span>Log In</span>
+          </button>
         </div>
       </div>
-    }
+    </div>
   }
 </div>

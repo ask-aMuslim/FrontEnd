@@ -91,11 +91,6 @@ export class AcademyComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        if (this.isGuestUser) {
-            this.error = null;
-            return;
-        }
-
         const resolved = this.route.snapshot.data['academyData'] as AcademyResolvedData | null;
         if (!resolved) {
             if (this.isBrowser) {
@@ -360,10 +355,20 @@ export class AcademyComponent implements OnInit {
         return !this.authService.isAuthenticated();
     }
 
-    continueToSignIn(): void {
+    continueToLogin(): void {
         void this.router.navigate(['/login'], {
             queryParams: { returnUrl: this.router.url },
         });
+    }
+
+    continueToRegister(): void {
+        void this.router.navigate(['/register'], {
+            queryParams: { returnUrl: this.router.url },
+        });
+    }
+
+    continueToSignIn(): void {
+        this.continueToLogin();
     }
 
     getCourseAriaLabel(course: Course): string {

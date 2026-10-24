@@ -228,6 +228,18 @@
   }
 }
 
+.btn-secondary {
+  background: #ffffff;
+  color: var(--colors-green-100, #156b40);
+  border: 1.5px solid var(--colors-green-100, #156b40);
+
+  &:hover {
+    background: #f4faf6;
+    border-color: var(--colors-green-200, #0c4e2d);
+    color: var(--colors-green-200, #0c4e2d);
+  }
+}
+
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--colors-rare-grays-20, #e9ecef);
@@ -246,52 +258,6 @@
   cursor: not-allowed;
 }
 
-.sign-in-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &__backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-  }
-
-  &__card {
-    position: relative;
-    z-index: 1;
-    width: min(90vw, 460px);
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    background: var(--colors-rare-grays-0, #fff);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
-  }
-
-  &__title {
-    margin: 0;
-    color: var(--colors-rare-grays-100, #1a1a1a);
-    font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.4;
-  }
-
-  &__text {
-    margin: 0.75rem 0 0;
-    color: var(--colors-rare-grays-80, #343a40);
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
-
-  &__actions {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-  }
-}
 
 // ─── Lessons List Styling ───
 .lessons-list {
@@ -305,14 +271,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0;
+  padding: 0.625rem 0.75rem;
   background: transparent;
   border: none;
-  border-radius: 0;
-  transition: all 0.2s;
+  border-radius: var(--border-radius-sm, 6px);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
-    background: transparent;
+    background: var(--colors-rare-grays-10, #f8f9fa);
+
+    .lesson-title {
+      color: var(--colors-green-100, #156b40);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--colors-green-100, #156b40);
+    outline-offset: -2px;
   }
 }
 
@@ -330,8 +308,125 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.15s ease;
 }
 
 .lesson-divider {
   display: none;
+}
+
+// ─── Sign In Modal ───
+.sign-in-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 200;
+}
+
+.sign-in-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+}
+
+.sign-in-modal__card {
+  position: relative;
+  width: min(100%, 26rem);
+  background: var(--color-card-main, #ffffff);
+  border: 1px solid var(--color-border-brand-low, #bbd1c2);
+  border-radius: var(--border-radius-md, 12px);
+  box-shadow:
+    0 20px 40px -8px rgba(21, 107, 64, 0.18),
+    0 8px 16px -4px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 205 !important;
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.sign-in-modal__close-btn {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--colors-rare-grays-60, #6c757d);
+  cursor: pointer;
+  z-index: 210 !important;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background: var(--colors-rare-grays-10, #f8f9fa);
+    color: var(--color-text-title, #010d05);
+  }
+
+  svg,
+  svg *,
+  ::ng-deep svg,
+  ::ng-deep svg * {
+    pointer-events: none;
+  }
+}
+
+.sign-in-modal__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.sign-in-modal__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-title, #010d05);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.35;
+}
+
+.sign-in-modal__text {
+  font-size: 0.938rem;
+  line-height: 1.55;
+  color: var(--color-text-body, #343a40);
+  margin: 0;
+}
+
+.sign-in-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+
+  .sign-in-modal__btn {
+    height: 2.75rem;
+    min-width: 96px;
+    padding: 0 1.25rem;
+    font-size: 0.938rem;
+  }
 }

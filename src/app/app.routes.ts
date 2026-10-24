@@ -211,7 +211,6 @@ export const routes: Routes = [
 
       {
         path: 'academy',
-        canActivate: [authGuard],
         children: [
           {
             path: '',

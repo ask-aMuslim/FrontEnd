@@ -101,8 +101,18 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     isLoading = true;
     error: string | null = null;
-    showSignInPrompt = false;
     isEnrolling = false;
+    isSignInModalOpen = false;
+
+    openSignInModal(): void {
+        this.isSignInModalOpen = true;
+        this.cdr.detectChanges();
+    }
+
+    closeSignInModal(): void {
+        this.isSignInModalOpen = false;
+        this.cdr.detectChanges();
+    }
 
     backgroundImageUrl = '/backgrounds/course-background.png';
 
@@ -259,14 +269,6 @@ export class CourseComponent implements OnInit, OnDestroy {
                     };
                 });
 
-                const hasCurrent = enrichedLessonsList.some((l) => l.isCurrent);
-                if (!hasCurrent) {
-                    const firstPending = enrichedLessonsList.findIndex((l) => !l.isCompleted && l.type !== 'quiz');
-                    if (firstPending >= 0) {
-                        enrichedLessonsList[firstPending] = { ...enrichedLessonsList[firstPending], isCurrent: true };
-                    }
-                }
-
                 const processedLessons = this.prepareSidebarLessons(enrichedLessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
 
                 this.course = {
@@ -355,14 +357,6 @@ export class CourseComponent implements OnInit, OnDestroy {
                     isCurrent: false,
                 };
             });
-
-            const hasCurrent = enrichedLessonsList.some((l) => l.isCurrent);
-            if (!hasCurrent) {
-                const firstPending = enrichedLessonsList.findIndex((l) => !l.isCompleted && l.type !== 'quiz');
-                if (firstPending >= 0) {
-                    enrichedLessonsList[firstPending] = { ...enrichedLessonsList[firstPending], isCurrent: true };
-                }
-            }
 
             const processedLessons = this.prepareSidebarLessons(enrichedLessonsList, quizzes, isLocked || hasUnmetPrerequisites, isEnrolled);
 
@@ -534,7 +528,7 @@ export class CourseComponent implements OnInit, OnDestroy {
      */
     onQuizClick(quiz: Quiz): void {
         if (!this.authService.isAuthenticated()) {
-            this.showSignInPrompt = true;
+            this.openSignInModal();
             return;
         }
 
@@ -552,7 +546,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     onBeginClick(): void {
         if (!this.authService.isAuthenticated()) {
-            this.showSignInPrompt = true;
+            this.openSignInModal();
             return;
         }
 
@@ -614,7 +608,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     onTakeQuizClick(): void {
         if (!this.authService.isAuthenticated()) {
-            this.showSignInPrompt = true;
+            this.openSignInModal();
             return;
         }
 
@@ -633,7 +627,7 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     onLessonClick(lesson: AcademySidebarLessonItem): void {
         if (!this.authService.isAuthenticated()) {
-            this.showSignInPrompt = true;
+            this.openSignInModal();
             return;
         }
 
@@ -653,15 +647,21 @@ export class CourseComponent implements OnInit, OnDestroy {
         }
     }
 
-    closeSignInPrompt(): void {
-        this.showSignInPrompt = false;
-    }
-
-    continueToSignIn(): void {
-        this.showSignInPrompt = false;
+    continueToLogin(): void {
+        this.closeSignInModal();
         void this.router.navigate(['/login'], {
             queryParams: { returnUrl: this.router.url },
         });
+    }
+
+    continueToRegister(): void {
+        void this.router.navigate(['/register'], {
+            queryParams: { returnUrl: this.router.url },
+        });
+    }
+
+    continueToSignIn(): void {
+        this.continueToLogin();
     }
 
     private hydrateLessonsWithYouTube(lessonsList: Lesson[], rawLessons: any[]): Observable<Lesson[]> {

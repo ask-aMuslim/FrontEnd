@@ -16,22 +16,30 @@
     @if (isGuestUser) {
       <section class="academy-guest-signin" data-aos="fade-up">
         <div class="section-block academy-guest-signin__content">
-          <div class="academy-guest-signin__copy">
+          <div class="academy-guest-signin__main">
             <h2 class="academy-guest-signin__title">
-              Sign in to continue your Academy journey
+              Log in to continue your Academy journey
             </h2>
             <p class="academy-guest-signin__text">
-              You can browse Academy content as a guest. Sign in to track
-              progress, continue lessons, and take quizzes.
+              You are currently exploring the Academy as a guest. Log in to track your course progress, save your notes, and take quizzes — or register for free to start your journey.
             </p>
           </div>
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="continueToSignIn()"
-          >
-            Sign In
-          </button>
+          <div class="academy-guest-signin__actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="continueToLogin()"
+            >
+              <span>Log In</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="continueToRegister()"
+            >
+              <span>Register</span>
+            </button>
+          </div>
         </div>
       </section>
     }
@@ -209,6 +217,7 @@
                   [nodes]="stage.treeCourses"
                   [loading]="false"
                   [error]="error"
+                  [isGuest]="isGuestUser"
                   (retryAction)="ngOnInit()"
                   (courseClick)="onCourseClick($event)"
                 >

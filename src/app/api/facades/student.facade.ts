@@ -120,6 +120,10 @@ export class StudentFacade {
    * This method uses caching to avoid redundant API calls.
    */
   me(): Observable<StudentProfile | null> {
+    if (!this.tokenService.hasValidSession()) {
+      return of(null);
+    }
+
     // Trigger fetch if cache is empty, not already loading, and not yet fetched
     if (this.profileCache$.getValue() === null && !this.profileLoading && !this.profileFetched) {
       this.fetchProfile().subscribe();
@@ -176,6 +180,9 @@ export class StudentFacade {
    * GET /api/StudentProfiles/me
    */
   getMyProfileFromApi(): Observable<StudentProfile | null> {
+    if (!this.tokenService.hasValidSession()) {
+      return of(null);
+    }
     return this.profileService.getMyProfile().pipe(
       tap((profile) => {
         this.profileCache$.next(profile);
