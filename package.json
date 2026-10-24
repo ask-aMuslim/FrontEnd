@@ -94,6 +94,9 @@
     "typescript-eslint": "^8.56.1"
   },
   "overrides": {
-    "webpack-dev-middleware": "7.4.6"
+    "webpack-dev-middleware": "7.4.6",
+    "sockjs": {
+      "uuid": "11.1.1"
+    }
   }
 }
