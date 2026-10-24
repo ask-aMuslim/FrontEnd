@@ -259,4 +259,55 @@ describe('CourseComponent', () => {
         });
         expect(academyProgressServiceSpy.enrollCurrentStudentInCourse).toHaveBeenCalledWith('course-1');
     });
+
+    it('should open sign-in modal when unauthenticated user clicks Enroll or calls onBeginClick', () => {
+        const authService = TestBed.inject(AuthService);
+        spyOn(authService, 'isAuthenticated').and.returnValue(false);
+
+        component.isLoading = false;
+        component.course = createCourse([], []);
+        fixture.detectChanges();
+
+        expect(component.isSignInModalOpen).toBeFalse();
+
+        const enrollBtn = fixture.nativeElement.querySelector('button.btn-primary') as HTMLButtonElement | null;
+        expect(enrollBtn?.textContent?.trim()).toBe('Enroll');
+        enrollBtn?.click();
+
+        expect(component.isSignInModalOpen).toBeTrue();
+    });
+
+    it('should open sign-in modal when unauthenticated user clicks a lesson', () => {
+        const authService = TestBed.inject(AuthService);
+        spyOn(authService, 'isAuthenticated').and.returnValue(false);
+
+        expect(component.isSignInModalOpen).toBeFalse();
+
+        component.onLessonClick({
+            id: 'lesson-1',
+            title: 'Lesson 1',
+            duration: '10m',
+            type: 'video',
+            isLocked: false,
+            isCompleted: false,
+            isCurrent: false,
+        });
+
+        expect(component.isSignInModalOpen).toBeTrue();
+    });
+
+    it('should close sign-in modal when closeSignInModal is called', () => {
+        component.isSignInModalOpen = true;
+        component.closeSignInModal();
+        expect(component.isSignInModalOpen).toBeFalse();
+    });
+
+    it('should navigate to login and close modal when continueToLogin is called', () => {
+        component.isSignInModalOpen = true;
+        component.continueToLogin();
+        expect(component.isSignInModalOpen).toBeFalse();
+        expect(routerSpy.navigate).toHaveBeenCalledWith(['/login'], {
+            queryParams: { returnUrl: routerSpy.url },
+        });
+    });
 });

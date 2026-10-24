@@ -50,6 +50,7 @@ export class CourseTreeComponent implements OnChanges, AfterViewChecked {
     private readonly isBrowser = isPlatformBrowser(this.platformId);
 
     @Input() courses: TreeCourse[] = [];
+    @Input() isGuest = false;
     @Output() courseClick = new EventEmitter<TreeCourse>();
 
     @ViewChild('svgOverlay') svgOverlay!: ElementRef<SVGElement>;

@@ -21,7 +21,7 @@
           [attr.data-course-node-id]="node.id"
           [class.course-card--available]="node.status === 'available'"
           [class.course-card--in-progress]="
-            node.status === 'in-progress'
+            !isGuest() && node.status === 'in-progress'
           "
           [class.course-card--completed]="node.status === 'completed'"
           [class.course-card--locked]="node.status === 'locked'"
@@ -76,7 +76,7 @@
             }
           </div>
 
-          @if (node.status !== "locked") {
+          @if (!isGuest() && node.status !== "locked") {
             <div class="course-card__progress">
               <div class="course-card__progress-track">
                 <div
@@ -132,7 +132,7 @@
                   [attr.data-course-node-id]="node.id"
                   [class.course-card--available]="node.status === 'available'"
                   [class.course-card--in-progress]="
-                    node.status === 'in-progress'
+                    !isGuest() && node.status === 'in-progress'
                   "
                   [class.course-card--completed]="node.status === 'completed'"
                   [class.course-card--locked]="node.status === 'locked'"
@@ -188,7 +188,7 @@
                     }
                   </div>
 
-                  @if (node.status !== "locked") {
+                  @if (!isGuest() && node.status !== "locked") {
                     <div class="course-card__progress">
                       <div class="course-card__progress-track">
                         <div

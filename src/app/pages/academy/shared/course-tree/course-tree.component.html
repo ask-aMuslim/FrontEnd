@@ -65,15 +65,17 @@
               </div>
 
               <!-- Progress bar -->
-              <div class="node-progress">
-                <div class="node-progress-track">
-                  <div
-                    class="node-progress-fill"
-                    [style.width.%]="node.course.progress"
-                  ></div>
+              @if (!isGuest && node.course.status !== 'locked') {
+                <div class="node-progress">
+                  <div class="node-progress-track">
+                    <div
+                      class="node-progress-fill"
+                      [style.width.%]="node.course.progress"
+                    ></div>
+                  </div>
+                  <span class="node-progress-label">{{ node.course.progress }}%</span>
                 </div>
-                <span class="node-progress-label">{{ node.course.progress }}%</span>
-              </div>
+              }
 
               <!-- Completed badge -->
               @if (node.course.status === 'completed') {
