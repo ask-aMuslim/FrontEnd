@@ -11,10 +11,10 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  FormDto,
-  FormFieldDto,
-  FormFieldOptionDto,
-  FormFieldType,
+  type FormDto,
+  type FormFieldDto,
+  type FormFieldOptionDto,
+  type FormFieldType,
   FormsFacade,
 } from '../../../api/facades/forms.facade';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
