@@ -92,5 +92,8 @@
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.56.1"
+  },
+  "overrides": {
+    "webpack-dev-middleware": "7.4.6"
   }
 }
