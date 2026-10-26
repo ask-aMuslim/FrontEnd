@@ -18,6 +18,11 @@ export interface ResourceCard {
   readonly thumbnailUrls?: readonly string[];
   readonly thumbnailAlt: string;
   readonly driveFileId?: string;
+  readonly spanishDriveFileId?: string;
+  readonly spanishArticleUrl?: string;
+  readonly spanishDownloadUrl?: string;
+  readonly spanishThumbnailUrl?: string;
+  readonly spanishThumbnailUrls?: readonly string[];
 }
 
 export interface ResourceTab {
@@ -70,6 +75,8 @@ const driveFileIdsByAssetPath: Readonly<Record<string, string>> = {
     '13CTfSg8h0SAcaFgfEjLNvSqjt85y3rUF',
   'resources/pamphlets/AAM%20Pamphlets/AAM%20Women%20Pamphlet.pdf':
     '1GBeXoudcR58OTA72a9uJ6z7mAeFfy3q-',
+  'resources/pamphlets/AAM%20Pamphlets/AAM%20Prophet%20Abraham%20Pamphlet.pdf':
+    '13JvM2aYR_gk6zn1kBx5tfMMJvBACVwqu',
 
   // Scientific posters
   'resources/scientific-posters/PDF%20Versions/AAM%20Atmosphere%20Protects%20Humans%20on%20Earth%20.pdf':
@@ -136,6 +143,7 @@ const pamphletPdfFiles: readonly string[] = [
   'AAM Misconceptions Pamphlet.pdf',
   'AAM Women Pamphlet.pdf',
   "AAM Da'wah Pamphlet.pdf",
+  'AAM Prophet Abraham Pamphlet.pdf',
 ];
 
 const scientificPosterPdfFiles: readonly string[] = [
@@ -219,6 +227,71 @@ const buildDriveThumbnailCandidates = (fileId: string): readonly string[] => {
   return [...new Set(candidates)];
 };
 
+const spanishPamphletDriveFileIds: Readonly<Record<string, string>> = {
+  'Truth': '11aW4UBl7eD2U3NwVyEVe0UCAabSnwg4k',
+  'Science': '1XDXdYs7yC9sJKfA0AqWCrWDXm1LFDwNn',
+  'Prophecy': '1DsizXT3294iYxwYOuDUFiWsLwwtensru',
+  'Foretold': '1p_Mm_uKJCgEgcz29vBC4u3BVgj9ABOcM',
+  'Jesus': '1_Ot7eD0l0M_ZFysP7Bv7fLblk3R9rqVS',
+  'Prophet Muhammad': '1B9Wz-ZMdXiP8CXM8U-4SN0ovfiSzasu0',
+  'Misconceptions': '1VTLOrG2UWSLwq9MJASK7ew22hKfKnpd3',
+  'Women': '19Ih25NRqHSdk-Rjk8GR_8rsq-p6StFJC',
+  "Da'wah": '1zrxj2suzSED0dNis5f6FTKkKmyBBwvgK',
+  'Prophet Abraham': '1ZUs2IcnftE79yOE4lnvQGXCsCoNFnKnf',
+};
+
+const pamphletMetadata: Readonly<Record<string, { title: string; subtitle: string; articleId?: string }>> = {
+  'Truth': {
+    title: 'Truth in Islam',
+    subtitle: 'A guide to the true message',
+    articleId: '04941fd7-b369-4e8a-d7c4-08de7962a21d',
+  },
+  'Science': {
+    title: 'Science in the Quran',
+    subtitle: 'A miracle of Islam',
+    articleId: '4bc0851e-b42d-4416-d7c5-08de7962a21d',
+  },
+  'Prophecy': {
+    title: 'Prophecies of the Quran',
+    subtitle: 'Signs and historical predictions',
+    articleId: '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
+  },
+  'Foretold': {
+    title: 'Muhammad Foretold',
+    subtitle: 'Prophecies in previous scriptures',
+    articleId: 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+  },
+  'Jesus': {
+    title: 'Jesus in Islam',
+    subtitle: 'The honorable prophet of God',
+    articleId: '2ac25076-8d77-4c64-d7c8-08de7962a21d',
+  },
+  'Prophet Muhammad': {
+    title: 'Prophet Muhammad',
+    subtitle: 'Mercy to all mankind',
+    articleId: '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
+  },
+  'Misconceptions': {
+    title: 'Misconceptions About Islam',
+    subtitle: 'Common questions answered',
+    articleId: '414818d8-6405-45e6-d7cb-08de7962a21d',
+  },
+  'Women': {
+    title: 'Women in Islam',
+    subtitle: 'Status, rights, and honor',
+    articleId: 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
+  },
+  "Da'wah": {
+    title: 'Why Give Da’wah?',
+    subtitle: 'Importance & etiquettes of Da’wah',
+    articleId: '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
+  },
+  'Prophet Abraham': {
+    title: 'Prophet Abraham',
+    subtitle: 'The father of monotheism',
+  },
+};
+
 const buildPdfCards = (
   idPrefix: string,
   folderSegments: readonly string[],
@@ -234,11 +307,27 @@ const buildPdfCards = (
       ? buildDriveThumbnailCandidates(driveFileId)
       : [cardThumbnailFallback];
     const thumbnailUrl = thumbnailUrls[0] ?? cardThumbnailFallback;
-    const title = toDisplayTitle(fileName);
-    const subtitle = toCardSubtitle(idPrefix);
-    const articleId = idPrefix === 'pamphlet'
-      ? getPamphletArticleId(title)
-      : undefined;
+    const key = toDisplayTitle(fileName);
+    const cleanKey = key.replace(/\s*Pamphlet$/i, '').trim();
+    const meta = idPrefix === 'pamphlet' ? (pamphletMetadata[cleanKey] ?? pamphletMetadata[key]) : undefined;
+    const title = meta?.title ?? key;
+    const subtitle = meta?.subtitle ?? toCardSubtitle(idPrefix);
+    const articleId = meta?.articleId ?? (idPrefix === 'pamphlet' ? getPamphletArticleId(cleanKey) : undefined);
+
+    let spanishDriveFileId: string | undefined;
+    let spanishArticleUrl: string | undefined;
+    let spanishDownloadUrl: string | undefined;
+    let spanishThumbnailUrls: readonly string[] | undefined;
+    let spanishThumbnailUrl: string | undefined;
+
+    const spanishId = spanishPamphletDriveFileIds[cleanKey] ?? spanishPamphletDriveFileIds[key];
+    if (idPrefix === 'pamphlet' && spanishId) {
+      spanishDriveFileId = spanishId;
+      spanishArticleUrl = buildDriveViewUrl(spanishDriveFileId);
+      spanishDownloadUrl = buildDriveDownloadUrl(spanishDriveFileId);
+      spanishThumbnailUrls = buildDriveThumbnailCandidates(spanishDriveFileId);
+      spanishThumbnailUrl = spanishThumbnailUrls[0];
+    }
 
     return {
       id: `${idPrefix}-${index + 1}`,
@@ -251,6 +340,11 @@ const buildPdfCards = (
       thumbnailUrls,
       thumbnailAlt: `${title} thumbnail`,
       driveFileId,
+      spanishDriveFileId,
+      spanishArticleUrl,
+      spanishDownloadUrl,
+      spanishThumbnailUrl,
+      spanishThumbnailUrls,
     };
   });
 };

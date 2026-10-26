@@ -95,7 +95,7 @@
                 <article class="resource-card resource-card--legacy">
                   <a
                     class="resource-card__media-link"
-                    [href]="card.articleUrl"
+                    [href]="getActiveArticleUrl(card)"
                     target="_blank"
                     rel="noopener noreferrer"
                     [attr.aria-label]="'Open resource ' + card.title"
@@ -121,8 +121,47 @@
                   </a>
 
                   <div class="resource-card__content">
-                    <h3>{{ card.title }}</h3>
-                    <p>{{ card.subtitle }}</p>
+                    <div class="resource-card__header-info">
+                      <h3>{{ card.title }}</h3>
+                      <p>{{ card.subtitle }}</p>
+                    </div>
+
+                    <div
+                      class="resource-card__lang-toggle"
+                      *ngIf="isPamphletsTabActive(gallery) && card.spanishDriveFileId"
+                      role="radiogroup"
+                      [attr.aria-label]="'Select language for ' + card.title"
+                    >
+                      <button
+                        type="button"
+                        role="radio"
+                        class="resource-card__lang-btn"
+                        [class.resource-card__lang-btn--active]="getCardLanguage(card) === 'en'"
+                        [attr.aria-checked]="getCardLanguage(card) === 'en'"
+                        (click)="setCardLanguage(card, 'en')"
+                      >
+                        <span
+                          class="resource-card__radio-indicator"
+                          [class.resource-card__radio-indicator--checked]="getCardLanguage(card) === 'en'"
+                        ></span>
+                        <span>English</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="radio"
+                        class="resource-card__lang-btn"
+                        [class.resource-card__lang-btn--active]="getCardLanguage(card) === 'es'"
+                        [attr.aria-checked]="getCardLanguage(card) === 'es'"
+                        (click)="setCardLanguage(card, 'es')"
+                      >
+                        <span
+                          class="resource-card__radio-indicator"
+                          [class.resource-card__radio-indicator--checked]="getCardLanguage(card) === 'es'"
+                        ></span>
+                        <span>Spanish</span>
+                      </button>
+                    </div>
 
                     <div
                       class="resource-card__actions"
@@ -130,18 +169,30 @@
                         !isPamphletsTabActive(gallery)
                       "
                     >
-                      <a
-                        *ngIf="isPamphletsTabActive(gallery)"
-                        class="resources-button resources-button--outline resources-button--article"
-                        [routerLink]="card.articleId ? ['/question-and-answer/topics/question'] : null"
-                        [queryParams]="card.articleId ? { id: card.articleId, tag: 'Essentials', tagId: card.tagId } : {}"
-                      >
-                        Read Article
-                      </a>
+                      <ng-container *ngIf="isPamphletsTabActive(gallery)">
+                        <a
+                          *ngIf="getCardLanguage(card) === 'en' && card.articleId; else directViewLink"
+                          class="resources-button resources-button--outline resources-button--article"
+                          [routerLink]="['/question-and-answer/topics/question']"
+                          [queryParams]="{ id: card.articleId, tag: 'Essentials', tagId: card.tagId }"
+                        >
+                          Read Article
+                        </a>
+                        <ng-template #directViewLink>
+                          <a
+                            class="resources-button resources-button--outline resources-button--article"
+                            [href]="getActiveArticleUrl(card)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Read Article
+                          </a>
+                        </ng-template>
+                      </ng-container>
 
                       <a
                         class="resources-icon-button"
-                        [href]="card.downloadUrl"
+                        [href]="getActiveDownloadUrl(card)"
                         target="_blank"
                         rel="noopener noreferrer"
                         [attr.aria-label]="'Download ' + card.title"
