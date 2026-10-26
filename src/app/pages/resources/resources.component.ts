@@ -12,6 +12,71 @@ import {
     ResourcesResolvedData
 } from './resources.resolver';
 
+const spanishPamphletDriveFileIdsByTitle: Readonly<Record<string, string>> = {
+    'Truth': '11aW4UBl7eD2U3NwVyEVe0UCAabSnwg4k',
+    'Science': '1XDXdYs7yC9sJKfA0AqWCrWDXm1LFDwNn',
+    'Prophecy': '1DsizXT3294iYxwYOuDUFiWsLwwtensru',
+    'Foretold': '1p_Mm_uKJCgEgcz29vBC4u3BVgj9ABOcM',
+    'Jesus': '1_Ot7eD0l0M_ZFysP7Bv7fLblk3R9rqVS',
+    'Prophet Muhammad': '1B9Wz-ZMdXiP8CXM8U-4SN0ovfiSzasu0',
+    'Misconceptions': '1VTLOrG2UWSLwq9MJASK7ew22hKfKnpd3',
+    'Women': '19Ih25NRqHSdk-Rjk8GR_8rsq-p6StFJC',
+    "Da'wah": '1zrxj2suzSED0dNis5f6FTKkKmyBBwvgK',
+    'Prophet Abraham': '1ZUs2IcnftE79yOE4lnvQGXCsCoNFnKnf',
+};
+
+const pamphletMetadata: Readonly<Record<string, { title: string; subtitle: string; articleId?: string }>> = {
+    'Truth': {
+        title: 'Truth in Islam',
+        subtitle: 'A guide to the true message',
+        articleId: '04941fd7-b369-4e8a-d7c4-08de7962a21d',
+    },
+    'Science': {
+        title: 'Science in the Quran',
+        subtitle: 'A miracle of Islam',
+        articleId: '4bc0851e-b42d-4416-d7c5-08de7962a21d',
+    },
+    'Prophecy': {
+        title: 'Prophecies of the Quran',
+        subtitle: 'Signs and historical predictions',
+        articleId: '6c463f2b-b07e-4bcd-d7c6-08de7962a21d',
+    },
+    'Foretold': {
+        title: 'Muhammad Foretold',
+        subtitle: 'Prophecies in previous scriptures',
+        articleId: 'f6af4c61-1f17-4336-d7c7-08de7962a21d',
+    },
+    'Jesus': {
+        title: 'Jesus in Islam',
+        subtitle: 'The honorable prophet of God',
+        articleId: '2ac25076-8d77-4c64-d7c8-08de7962a21d',
+    },
+    'Prophet Muhammad': {
+        title: 'Prophet Muhammad',
+        subtitle: 'Mercy to all mankind',
+        articleId: '59f41efa-e0c1-4da5-d7c9-08de7962a21d',
+    },
+    'Misconceptions': {
+        title: 'Misconceptions About Islam',
+        subtitle: 'Common questions answered',
+        articleId: '414818d8-6405-45e6-d7cb-08de7962a21d',
+    },
+    'Women': {
+        title: 'Women in Islam',
+        subtitle: 'Status, rights, and honor',
+        articleId: 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
+    },
+    "Da'wah": {
+        title: 'Why Give Da’wah?',
+        subtitle: 'Importance & etiquettes of Da’wah',
+        articleId: '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
+    },
+    'Prophet Abraham': {
+        title: 'Prophet Abraham',
+        subtitle: 'The father of monotheism',
+    },
+};
+
 @Component({
     selector: 'app-resources',
     standalone: true,
@@ -69,6 +134,8 @@ export class ResourcesComponent implements OnInit {
             '13CTfSg8h0SAcaFgfEjLNvSqjt85y3rUF',
         'resources/pamphlets/AAM%20Pamphlets/AAM%20Women%20Pamphlet.pdf':
             '1GBeXoudcR58OTA72a9uJ6z7mAeFfy3q-',
+        'resources/pamphlets/AAM%20Pamphlets/AAM%20Prophet%20Abraham%20Pamphlet.pdf':
+            '13JvM2aYR_gk6zn1kBx5tfMMJvBACVwqu',
 
         // Scientific posters
         'resources/scientific-posters/PDF%20Versions/AAM%20Atmosphere%20Protects%20Humans%20on%20Earth%20.pdf':
@@ -141,6 +208,7 @@ export class ResourcesComponent implements OnInit {
         'AAM Misconceptions Pamphlet.pdf',
         'AAM Women Pamphlet.pdf',
         "AAM Da'wah Pamphlet.pdf",
+        'AAM Prophet Abraham Pamphlet.pdf',
     ];
 
     private readonly scientificPosterPdfFiles: readonly string[] = [
@@ -262,6 +330,42 @@ export class ResourcesComponent implements OnInit {
     private readonly thumbnailAttemptByCardId = signal<Record<string, number>>({});
     private readonly usePdfPreviewByCardId = signal<Record<string, boolean>>({});
     private readonly thumbnailLoadingByCardId = signal<Record<string, boolean>>({});
+    protected readonly selectedLanguageByCardId = signal<Record<string, 'en' | 'es'>>({});
+
+    protected getCardLanguage(card: ResourceCard): 'en' | 'es' {
+        return this.selectedLanguageByCardId()[card.id] ?? 'en';
+    }
+
+    protected setCardLanguage(card: ResourceCard, lang: 'en' | 'es'): void {
+        if (this.getCardLanguage(card) === lang) {
+            return;
+        }
+        this.selectedLanguageByCardId.update((current) => ({
+            ...current,
+            [card.id]: lang,
+        }));
+        this.thumbnailAttemptByCardId.update((current) => ({
+            ...current,
+            [card.id]: 0,
+        }));
+        this.setThumbnailLoading(card.id, true);
+    }
+
+    protected getActiveArticleUrl(card: ResourceCard): string {
+        const lang = this.getCardLanguage(card);
+        if (lang === 'es' && card.spanishArticleUrl) {
+            return card.spanishArticleUrl;
+        }
+        return card.articleUrl;
+    }
+
+    protected getActiveDownloadUrl(card: ResourceCard): string {
+        const lang = this.getCardLanguage(card);
+        if (lang === 'es' && card.spanishDownloadUrl) {
+            return card.spanishDownloadUrl;
+        }
+        return card.downloadUrl;
+    }
 
     @Input() set resolvedData(data: ResourcesResolvedData | null) {
         if (data) {
@@ -404,10 +508,12 @@ export class ResourcesComponent implements OnInit {
     }
 
     protected getCardThumbnailUrl(card: ResourceCard): string {
+        const lang = this.getCardLanguage(card);
+        const isSpanish = lang === 'es' && card.spanishThumbnailUrls && card.spanishThumbnailUrls.length > 0;
+        const candidates = isSpanish
+            ? card.spanishThumbnailUrls!
+            : (card.thumbnailUrls && card.thumbnailUrls.length > 0 ? card.thumbnailUrls : [card.thumbnailUrl]);
         const attempt = this.thumbnailAttemptByCardId()[card.id] ?? 0;
-        const candidates = card.thumbnailUrls && card.thumbnailUrls.length > 0
-            ? card.thumbnailUrls
-            : [card.thumbnailUrl];
         return candidates[attempt] ?? ResourcesComponent.cardThumbnailFallback;
     }
 
@@ -429,9 +535,11 @@ export class ResourcesComponent implements OnInit {
             return;
         }
 
-        const candidates = card.thumbnailUrls && card.thumbnailUrls.length > 0
-            ? card.thumbnailUrls
-            : [card.thumbnailUrl];
+        const lang = this.getCardLanguage(card);
+        const isSpanish = lang === 'es' && card.spanishThumbnailUrls && card.spanishThumbnailUrls.length > 0;
+        const candidates = isSpanish
+            ? card.spanishThumbnailUrls!
+            : (card.thumbnailUrls && card.thumbnailUrls.length > 0 ? card.thumbnailUrls : [card.thumbnailUrl]);
         const currentAttempt = this.thumbnailAttemptByCardId()[card.id] ?? 0;
         const nextAttempt = currentAttempt + 1;
 
@@ -477,11 +585,29 @@ export class ResourcesComponent implements OnInit {
                 ? this.buildDriveThumbnailCandidates(driveFileId)
                 : [ResourcesComponent.cardThumbnailFallback];
             const thumbnailUrl = thumbnailUrls[0] ?? ResourcesComponent.cardThumbnailFallback;
-            const title = this.toDisplayTitle(fileName);
-            const subtitle = this.toCardSubtitle(idPrefix);
-            const articleId = idPrefix === 'pamphlet'
-                ? ResourcesComponent.getPamphletArticleId(title)
-                : undefined;
+            const key = this.toDisplayTitle(fileName);
+            const cleanKey = key.replace(/\s*Pamphlet$/i, '').trim();
+            const meta = idPrefix === 'pamphlet' ? (pamphletMetadata[cleanKey] ?? pamphletMetadata[key]) : undefined;
+            const title = meta?.title ?? key;
+            const subtitle = meta?.subtitle ?? this.toCardSubtitle(idPrefix);
+            const articleId = meta?.articleId ?? (idPrefix === 'pamphlet'
+                ? ResourcesComponent.getPamphletArticleId(cleanKey)
+                : undefined);
+
+            let spanishDriveFileId: string | undefined;
+            let spanishArticleUrl: string | undefined;
+            let spanishDownloadUrl: string | undefined;
+            let spanishThumbnailUrls: readonly string[] | undefined;
+            let spanishThumbnailUrl: string | undefined;
+
+            const spanishId = spanishPamphletDriveFileIdsByTitle[cleanKey] ?? spanishPamphletDriveFileIdsByTitle[key];
+            if (idPrefix === 'pamphlet' && spanishId) {
+                spanishDriveFileId = spanishId;
+                spanishArticleUrl = this.buildDriveViewUrl(spanishDriveFileId);
+                spanishDownloadUrl = this.buildDriveDownloadUrl(spanishDriveFileId);
+                spanishThumbnailUrls = this.buildDriveThumbnailCandidates(spanishDriveFileId);
+                spanishThumbnailUrl = spanishThumbnailUrls[0];
+            }
 
             return {
                 id: `${idPrefix}-${index + 1}`,
@@ -494,6 +620,11 @@ export class ResourcesComponent implements OnInit {
                 thumbnailUrls,
                 thumbnailAlt: `${title} thumbnail`,
                 driveFileId,
+                spanishDriveFileId,
+                spanishArticleUrl,
+                spanishDownloadUrl,
+                spanishThumbnailUrl,
+                spanishThumbnailUrls,
             };
         });
     }
