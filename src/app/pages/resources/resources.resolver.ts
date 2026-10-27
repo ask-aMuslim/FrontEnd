@@ -289,6 +289,7 @@ const pamphletMetadata: Readonly<Record<string, { title: string; subtitle: strin
   'Prophet Abraham': {
     title: 'Prophet Abraham',
     subtitle: 'The father of monotheism',
+    articleId: '01a17b04-718a-7449-ab07-0c6e575ae3d3',
   },
 };
 
@@ -365,6 +366,8 @@ const getPamphletArticleId = (displayTitle: string): string | undefined => {
     'Misconceptions': '414818d8-6405-45e6-d7cb-08de7962a21d',
     'Women': 'c63be535-d7c4-4cf4-d7ca-08de7962a21d',
     "Da'wah": '4f3d0e0b-95ea-4efb-d7cc-08de7962a21d',
+    'Prophet Abraham': '01a17b04-718a-7449-ab07-0c6e575ae3d3',
+    'Abraham': '01a17b04-718a-7449-ab07-0c6e575ae3d3',
   };
 
   const key = displayTitle.replace(/\s*Pamphlet$/i, '').trim();
