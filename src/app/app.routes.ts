@@ -343,6 +343,18 @@ export const routes: Routes = [
           },
         ],
       },
+      ...(['privacy-policy', 'terms-of-use', 'delete-account'] as const).map((doc) => ({
+        path: doc,
+        loadComponent: () =>
+          import('./pages/legal/legal-page.component').then((m) => m.LegalPageComponent),
+        title:
+          doc === 'privacy-policy'
+            ? 'Privacy Policy'
+            : doc === 'terms-of-use'
+              ? 'Terms of Use'
+              : 'Delete Account',
+        data: { doc },
+      })),
       {
         path: 'profile',
         loadComponent: () =>

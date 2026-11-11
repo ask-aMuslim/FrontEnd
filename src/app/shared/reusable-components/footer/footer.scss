@@ -471,3 +471,27 @@
     display: none;
   }
 }
+
+.footer-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legal-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  a {
+    color: var(--colors-rare-grays-80);
+    font-size: 12px;
+    text-decoration: underline;
+    &:hover { color: var(--special-primary); }
+  }
+}
+
+.legal-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--colors-rare-grays-50);
+}
